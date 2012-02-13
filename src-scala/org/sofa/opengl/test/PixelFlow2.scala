@@ -1,0 +1,200 @@
+package org.sofa.opengl.test
+
+import com.jogamp.opengl.util._
+import com.jogamp.newt.event._
+import com.jogamp.newt.opengl._
+
+import org.sofa.math._
+import org.sofa.nio._
+import org.sofa.opengl._
+
+import javax.media.opengl.glu._
+import javax.media.opengl._
+import scala.math._
+
+import GL._
+import GL2._
+import GL2ES2._
+import GL3._ 
+
+object PixelFlow2 {
+	def main(args:Array[String]):Unit = {
+	    (new PixelFlow2).test
+	}
+}
+
+class PixelFlow2 extends WindowAdapter with GLEventListener {
+    var gl:SGL = null
+    var cube:VertexArray = null
+    var cubeShad:ShaderProgram = null
+    
+    val cubeVert = FloatBuffer( 
+        -0.5f, -0.5f,  0.5f,
+         0.5f, -0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,
+        -0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f,  0.5f, -0.5f,
+        -0.5f,  0.5f, -0.5f)
+         
+    val cubeClr = FloatBuffer(
+        1.0f, 0.0f, 0.0f, 1.0f,
+        0.0f, 1.0f, 0.0f, 1.0f,
+        0.0f, 0.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 0.0f, 1.0f,
+        1.0f, 0.0f, 1.0f, 1.0f,
+        0.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f)
+        
+    val cubeInd = IntBuffer(
+            // Front
+            0, 1, 2,
+            0, 2, 3,
+            // Right
+            1, 5, 6,
+            1, 6, 2,
+            // Back
+            5, 4, 7,
+            5, 7, 6,
+            // Left
+            4, 0, 3,
+            4, 3, 7,
+            // Top
+            3, 2, 6,
+            3, 6, 7,
+            // Bottom
+            4, 5, 0,
+            5, 1, 0)
+    
+    val projection:Matrix4 = new NioBufferMatrix4
+    
+    val modelview = new MatrixStack(new NioBufferMatrix4)
+    
+    val vertexShader = Array[String](
+    		"#version 330\n",
+    		"layout(location=0) in vec4 in_Position;\n",
+    		"layout(location=1) in vec4 in_Color;\n",
+    		"uniform mat4 projection;\n",
+    		"uniform mat4 modelview;\n",
+    		"out vec4 ex_Color;\n",
+
+    		"void main(void) {\n",
+    		"	vec4 p = in_Position;\n",
+    		"   p = modelview * p;\n",
+    		"	gl_Position = projection * p;\n",
+    		"	ex_Color = in_Color;\n",
+    		"}\n")
+        
+    val fragmentShader = Array[String](
+    		"#version 330\n",
+ 
+    		"in vec4 ex_Color;\n",
+    		"out vec4 out_Color;\n",
+ 
+    		"void main(void) {\n",
+    		"	out_Color = ex_Color;\n",
+    		"}\n")
+    
+    def test() {
+        val prof = GLProfile.get(GLProfile.GL3)
+        val caps = new GLCapabilities(prof)
+    
+        caps.setDoubleBuffered(true)
+        caps.setRedBits(8)
+        caps.setGreenBits(8)
+        caps.setBlueBits(8)
+        caps.setAlphaBits(8)
+        caps.setNumSamples(4)
+        caps.setHardwareAccelerated(true)
+        caps.setSampleBuffers(true)
+        
+        val win = GLWindow.create(caps)
+        val anim = new FPSAnimator(win , 60)
+
+        win.addWindowListener(this)
+        win.addGLEventListener(this)
+        win.setSize(800, 600)
+        win.setTitle("Basic OpenGL setup")
+        win.setVisible(true)
+        
+        anim.start
+    }
+    
+    override def windowDestroyNotify(ev:WindowEvent) { exit }
+    
+    def init(win:GLAutoDrawable) {
+        gl = new SGL(win.getGL.getGL3, GLU.createGLU)
+        
+        gl.printInfos
+        gl.clearColor(0f, 0f, 0f, 0f)
+        gl.clearDepth(1f)
+        gl.enable(GL_DEPTH_TEST)
+        gl.enable(GL_CULL_FACE)
+        gl.cullFace(GL_BACK)
+        gl.frontFace(GL_CCW)
+        
+        cubeShad = new ShaderProgram(gl,
+                new VertexShader(gl, vertexShader),
+                new FragmentShader(gl, fragmentShader))
+
+        projection.setIdentity
+        projection.frustum(-1, 1, -1, 1, 1, 20)
+        cubeShad.uniformMatrix("projection", projection)
+        gl.checkErrors
+        
+        cube = new VertexArray(gl, cubeInd, (3, cubeVert), (4, cubeClr))
+    }
+    
+    def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {
+        gl.viewport(0, 0, width, height)
+    }
+    
+    var eyeX=0.0
+    var eyeY=0.0
+    var eyeZ=0.0
+    var eyeD=0.0
+
+    def display(win:GLAutoDrawable) {
+        gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
+        cubeShad.use
+        modelview.setIdentity
+        modelview.lookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0)
+        modelview.translate(0, 1, 0)
+        cubeShad.uniformMatrix("modelview", modelview)
+        
+//        modelview.setIdentity
+//        modelview.translate(-1, 0, -2)
+//        modelview.rotate(angleX, 1, 0, 0)
+//        modelview.rotate(angleY, 0, 1, 0)
+//        cubeShad.uniformMatrix("modelview", modelview)
+        cube.drawTriangles
+        modelview.translate(0, -2, 0)
+        modelview.rotate(180, 0, 1, 0)
+        cubeShad.uniformMatrix("modelview", modelview)
+        cube.drawTriangles
+        modelview.translate(1, 0, 0)
+        cubeShad.uniformMatrix("modelview", modelview)
+        cube.drawTriangles
+        
+//        modelview.setIdentity
+//        modelview.translate(1, -0.5, -2)
+//        modelview.scale(0.5, 0.5, 0.5)
+//        cubeShad.uniformMatrix("modelview", modelview)
+//        cube.draw
+        
+        win.swapBuffers
+        animate
+    }
+    
+    def animate() {
+        eyeD += Pi/100.0;
+        eyeX = cos(eyeD)*2
+        eyeZ = sin(eyeD)*2
+        if(eyeD > 2*Pi) eyeD = 0
+    }
+    
+    def dispose(win:GLAutoDrawable) {}
+}

@@ -282,7 +282,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	/** Result of the multiplication of this by `other` using usual matrix multiplication. */
 	def * (other:NumberGrid):ReturnType = mult(other)
 	
-	/** Result of the multiplication of this by `other` using usual matrix/vector multiplicaton. */
+	/** Result of the multiplication of this by `other` using usual matrix/vector multiplication. */
 	def mult[T<:NumberSeq](other:T):T = {
 	    checkSizes(other)
 	    val result = other.newInstance.asInstanceOf[T]
@@ -298,7 +298,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	    result
 	}
 	
-	/** Result of the multiplication of this by `other` using usual matrix/vector multiplicaton. */
+	/** Result of the multiplication of this by `other` using usual matrix/vector multiplication. */
 	def *[T<:NumberSeq] (other:T):T = mult(other)
 	
 	/** Transpose in place. */

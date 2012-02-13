@@ -70,7 +70,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	}
 	
 	/** New number sequence of the same size as this. */
-	protected[math2] def newInstance():ReturnType
+	protected[math] def newInstance():ReturnType
 
 // Conversion
 
