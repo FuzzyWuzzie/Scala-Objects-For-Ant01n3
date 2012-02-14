@@ -24,8 +24,6 @@ void main(void) {
 	vec4 P; // Vertex position in MVP
 
 	P  = MV * vec4(position, 1);
-//	N  = MV3x3 * vec3(0,1,0);
-//	T  = MV3x3 * vec3(1,0,0);
 	N  = normalize(MV3x3 * normal);
 	T  = normalize(MV3x3 * tangent);
 	B  = normalize(cross(T, N));
