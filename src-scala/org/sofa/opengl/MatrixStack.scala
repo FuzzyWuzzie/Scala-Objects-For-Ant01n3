@@ -71,12 +71,18 @@ class MatrixStack(initialMatrix:Matrix4) {
      *  as (`dx`, `dy`, `dz`). */
     def translate(dx:Double, dy:Double, dz:Double) = current.translate(dx, dy, dz)
     
+    def translate(of:NumberSeq3) = current.translate(of)
+    
     /** Multiply the top matrix by a rotation matrix defining a rotation of `angle` degrees
      * around axis (`x`, `y`, `z`). */
     def rotate(angle:Double, x:Double, y:Double, z:Double) = current.rotate(angle, x, y, z)
     
+    def rotate(angle:Double, axis:NumberSeq3) = current.rotate(angle, axis)
+    
     /** Multiply the top matrix by a scaling matrix with factors (`sx`, `sy`, `sz`). */
     def scale(sx:Double, sy:Double, sz:Double) = current.scale(sx, sy, sz)
+    
+    def scale(by:Vector3) = current.scale(by)
     
     /** Replace the top matrix by new transformations matrix that mimics the positioning of
      * a camera whose position would be (`eyex`, `eyey`, `eyez`), that would point at a center

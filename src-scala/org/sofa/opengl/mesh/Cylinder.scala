@@ -290,8 +290,8 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
         
         for(s <- 0 until segments) {
         	buf(i+0) = start1 + s 
-        	buf(i+1) = start1 + ((s + 1)%segments)
-        	buf(i+2) = c1
+        	buf(i+1) = c1
+        	buf(i+2) = start1 + ((s + 1)%segments)
             
         	buf(i+3) = start2 + s
         	buf(i+4) = start2 + ((s + 1)%segments)

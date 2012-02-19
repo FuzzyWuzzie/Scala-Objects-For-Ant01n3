@@ -70,7 +70,12 @@ object Vector2 {
     def apply(fill:Double) = new ArrayVector2(fill, fill)
 }
 
-abstract class Vector2 extends NumberSeq2
+abstract class Vector2 extends NumberSeq2 {
+    def set(x:Double, y:Double) {
+        data(0) = x
+        data(1) = y
+    }
+}
 
 object ArrayVector2 {
     def apply(x:Double, y:Double) = new ArrayVector2(x, y)
@@ -179,6 +184,12 @@ abstract class Vector3 extends NumberSeq3 {
 	    result.cross(other)
 	    result.asInstanceOf[ReturnType]
 	}
+	
+	def set(x:Double, y:Double, z:Double) {
+        data(0) = x
+        data(1) = y
+        data(2) = z
+    }
 }
 
 object ArrayVector3 {
@@ -256,7 +267,14 @@ object Vector4 {
     def apply(fill:Double) = new ArrayVector4(fill, fill, fill, fill)
 }
 
-abstract class Vector4 extends NumberSeq4
+abstract class Vector4 extends NumberSeq4 {
+	def set(x:Double, y:Double, z:Double, w:Double) {
+        data(0) = x
+        data(1) = y
+        data(2) = z
+        data(3) = w
+    }
+}
 
 object ArrayVector4 {
     def apply(x:Double, y:Double, z:Double, w:Double) = new ArrayVector4(x, y, z, w)

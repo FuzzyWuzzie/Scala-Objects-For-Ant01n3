@@ -23,10 +23,10 @@ smooth out float LL;	// Light distance.
 void main(void) {
 	vec4 P; // Vertex position in MVP
 
-	P  = MV * vec4(position, 1);
 	N  = normalize(MV3x3 * normal);
 	T  = normalize(MV3x3 * tangent);
 	B  = normalize(cross(T, N));
+	P  = MV * vec4(position, 1);
 	L  = lightPos - vec3(P);
 	LL = length(L);
 	L  = normalize(L);

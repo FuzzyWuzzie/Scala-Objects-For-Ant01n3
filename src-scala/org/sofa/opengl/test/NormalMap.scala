@@ -116,7 +116,7 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 	    specTex.wrap(GL_REPEAT)
 	    
 //	    nmapTex = new Texture(gl, "textures/NormalFlat.png", false)
-	    nmapTex = new Texture(gl, "textures/stone_wall_normal_map__.jpg", true)
+	    nmapTex = new Texture(gl, "textures/normal.jpg", true)
 //	    nmapTex = new Texture(gl, "textures/facenrm.jpg", true)
 	    nmapTex.minMagFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR)
 	    nmapTex.wrap(GL_REPEAT)
