@@ -12,7 +12,7 @@ import org.sofa.math.Vector3
 import org.sofa.math.Vector2
 import java.awt.Color
 
-class Bone extends Mesh with ColorableMesh with IndexedMesh {
+class BoneMesh extends Mesh with ColorableMesh with IndexedMesh {
 	protected lazy val V:FloatBuffer = allocateVertices
 	
 	protected lazy val C:FloatBuffer = allocateColors

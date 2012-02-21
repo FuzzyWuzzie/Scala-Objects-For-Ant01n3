@@ -106,7 +106,7 @@ class NioBufferMatrix3 extends Matrix3 {
 
 object Matrix3 {
     def apply(row0:(Double,Double,Double), row1:(Double,Double,Double), row2:(Double,Double,Double)):ArrayMatrix3 = ArrayMatrix3(row0, row1, row2)
-    def apply(other:ArrayMatrix3):ArrayMatrix3 = ArrayMatrix3(other)
+    def apply(other:Matrix3):ArrayMatrix3 = ArrayMatrix3(other)
     def apply():ArrayMatrix3 = ArrayMatrix3()
 }
 
@@ -118,7 +118,7 @@ object ArrayMatrix3 {
     	result.row2 = row2
     	result
     }
-    def apply(other:ArrayMatrix3):ArrayMatrix3 = {
+    def apply(other:Matrix3):ArrayMatrix3 = {
         val result = new ArrayMatrix3()
         result.copy(other)
         result
@@ -183,7 +183,7 @@ object Matrix4 {
               row1:(Double,Double,Double,Double),
               row2:(Double,Double,Double,Double),
               row3:(Double,Double,Double,Double)):ArrayMatrix4 = ArrayMatrix4(row0, row1, row2, row3)
-    def apply(other:ArrayMatrix4):ArrayMatrix4 = ArrayMatrix4(other)
+    def apply(other:Matrix4):ArrayMatrix4 = ArrayMatrix4(other)
     def apply():ArrayMatrix4 = ArrayMatrix4()
 }
 
@@ -199,7 +199,7 @@ object ArrayMatrix4 {
     	result.row3 = row3
     	result
     }
-    def apply(other:ArrayMatrix4):ArrayMatrix4 = {
+    def apply(other:Matrix4):ArrayMatrix4 = {
         val result = new ArrayMatrix4()
         result.copy(other)
         result

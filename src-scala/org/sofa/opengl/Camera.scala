@@ -48,30 +48,46 @@ class Camera {
     /** Maximum depth of the view (far clip-plane position). */
     var maxDepth = 1000.0
 
+    /** Set the coordinates of the camera "eye" in spherical coordinates. This will be used
+      * to define the "view" part of the model-view matrix when using [[setupView()]]. */
     def viewSpherical(theta:Double, phi:Double, radius:Double) {
        sphericalEye.set(theta, phi, radius)
        cartesianFromSpherical
     }
     
+    /** Set the coordinates of the camera "eye" in Cartesian coordinates. This will be used
+      * to define the "view" part of the model-view matrix when using [[setupView()]]. */
     def viewCartesian(x:Double, y:Double, z:Double) {
         cartesianEye.set(x, y, z)
         sphericalFromCartesian
     }
     
+    /** Modify the coordinates of the camera "eye" by rotating horizontally around its focus point
+      * of the given amount `delta`. */
     def rotateViewHorizontal(delta:Double) {
         sphericalEye.x += delta
         cartesianFromSpherical
     } 
     
+    /** Modify the coordinates of the camera "eye" by rotating vertically around its focus point
+      * of the given amount `delta`. */
     def rotateViewVertical(delta:Double) {
         sphericalEye.y += delta
         cartesianFromSpherical
     }
     
+    /** Modify the distance between the camera "eye" and the focus point from the given amount
+      * `delta`. */
     def zoomView(delta:Double) {
         sphericalEye.z += delta
         cartesianFromSpherical
     }
+    
+    /** Set the focus point (looked-at point) at `(x, y, z)`. */
+    def setFocus(x:Double, y:Double, z:Double) = focus.set(x, y, z)
+    
+    /** Set the focus point (looked-at point) at `(p)`. */
+    def setFocus(p:NumberSeq3) = focus.copy(p)
     
     protected def cartesianFromSpherical() {
         cartesianEye.x = sphericalEye.z * cos(sphericalEye.x) * sin(sphericalEye.y)
@@ -85,57 +101,97 @@ class Camera {
     	sphericalEye.y = atan(cartesianEye.y / cartesianEye.x)
     }
     
+    /** Set the width and height of the output view-port in pixels. */
     def viewportPx(width:Double, height:Double) {
         viewportPx.set(width, height);
     }
     
+    /** Obtain the current view-port width / height ratio. */
     def viewportRatio:Double = viewportPx.x / viewportPx.y
     
+    /** Erase the projection matrix with a new projection using the given frustum
+      * specifications. */
     def frustum(left:Double, right:Double, up:Double, down:Double, near:Double) {
         projection.setIdentity
         projection.frustum(left, right, up, down, near, maxDepth)
     }
     
+    /** Erase the model-view matrix at the top of the model-view matrix stack and copy in
+      * it the "view" matrix, according to the position of the eye, the focus point and the
+      * up vector.
+      * 
+      * This method must be called before any transform done on the "model", usually first
+      * before drawing anything. 
+      * 
+      * This method does not empty the model-view matrix stack. */
     def setupView() {
         modelview.setIdentity
         modelview.lookAt(cartesianEye, focus, up)
     }
     
+    /** Push a copy of the current model-view matrix in the model-view matrix stack. */
     def push() {
         modelview.push
     }
     
+    /** Pop the top-most model-view matrix from the model-view matrix stack and restore the
+      * previous one as the current top mode-view matrix. */
     def pop() {
         modelview.pop
     }
     
+    /** Push a copy of the current model-view matrix on top of the model-view matrix stack, and
+      * execute the given code, then pop the top matrix and restore the previous one. */
     def pushpop(code: => Unit):Unit = {
         push
         code
         pop
     }
     
+    /** Apply a translation of vector `(dx, dy, dz)` to the current model-view matrix. */
     def translateModel(dx:Double, dy:Double, dz:Double) {
     	modelview.translate(dx, dy, dz)
     }
     
+    /** Apply a translation of vector `of` to the current model-view matrix. */
     def translateModel(of:Vector3) {
         modelview.translate(of)
     }
     
+    /** Apply a rotation of `angle` around axis `(x, y, z)` to the current model-view matrix. */
     def rotateModel(angle:Double, x:Double, y:Double, z:Double) {
         modelview.rotate(angle, x, y, z)
     }
     
+    /** Apply a rotation of `angle` around `axis` to the current model-view matrix. */
     def rotateModel(angle:Double, axis:Vector3) {
         modelview.rotate(angle, axis)
     }
     
+    /** Scale the current model-view matrix by coefficients `(sx, sy, sz)`. */
     def scaleModel(sx:Double, sy:Double, sz:Double) {
         modelview.scale(sx, sy, sz)
     }
     
+    /** Scale the current model-view matrix by coefficients from the vector `by`. */
     def scaleModel(by:Vector3) {
         modelview.scale(by)
+    }
+    
+    /** Apply the given `transform` to the current model-view matrix. */
+    def transformModel(transform:Matrix4) {
+        modelview.multBy(transform)
+    }
+    
+    /** Store as uniform variables the model-view matrix, the projection matrix and the top 3x3
+      * matrix extracted from the model-view matrix in the given shader.
+      * 
+      * These matrices are stored under the name "MV" for the model-view, "MVP" for the
+      * perspective * model-view and "MV3x3" for the top 3x3 model-view matrix.
+      */
+    def uniformMVP(shader:ShaderProgram) {
+    	shader.uniformMatrix("MV", modelview.top)
+	    shader.uniformMatrix("MV3x3", modelview.top3x3)
+	    shader.uniformMatrix("MVP", projection * modelview)
     }
 }

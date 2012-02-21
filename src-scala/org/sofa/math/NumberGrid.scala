@@ -535,7 +535,7 @@ trait NumberGrid4 extends NumberGrid {
       * 
       * @return a new matrix result of the multiplication.
       */
-    def *(other:Matrix4):ReturnType = {
+    def *(other:NumberGrid4):ReturnType = {
         val result = newInstance(4, 4).asInstanceOf[Matrix4]
         result.copy(this)
         result.multBy(other)

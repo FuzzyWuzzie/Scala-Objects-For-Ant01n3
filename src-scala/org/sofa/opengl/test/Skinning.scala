@@ -13,6 +13,7 @@ import org.sofa.nio._
 import org.sofa.math._
 import org.sofa.opengl._
 import org.sofa.opengl.mesh._
+import org.sofa.opengl.mesh.skeleton._
 
 import GL._
 import GL2._
@@ -38,11 +39,13 @@ class Skinning extends WindowAdapter with GLEventListener {
 // Geometry
     
     val planeMesh = new Plane(2, 2, 4 , 4)
-    val tubeMesh = new Cylinder(0.5f, 1, 16, 2)
-    val boneMesh = new Bone()
+    val tubeMesh = new Cylinder(0.5f, 1, 16, 3)
+    val boneMesh = new BoneMesh()
     var plane:VertexArray = null
     var tube:VertexArray = null
     var bone:VertexArray = null
+    
+    var skeleton:Bone = null
     
 // Shading
     
@@ -122,6 +125,13 @@ class Skinning extends WindowAdapter with GLEventListener {
 	    plane = planeMesh.newVertexArray(gl)
 	    tube  = tubeMesh.newVertexArray(gl)
 	    bone  = boneMesh.newVertexArray(gl)
+	    
+	    skeleton = new Bone(0)
+	    skeleton.addChild(1)
+	    skeleton.scale(0.3333, 0.3333, 0.3333)
+	    skeleton.children(0).translate(0, 1, 0)
+	    skeleton.children(0).addChild(2)
+	    skeleton.children(0).children(0).translate(0, 1, 0)
 	}
 	
 	protected def initTextures() {
@@ -149,34 +159,24 @@ class Skinning extends WindowAdapter with GLEventListener {
 	    camera.setupView
 	    useLights(shader1)
 	    useTextures(shader1)
-	    useMVP(shader1)
+	    camera.uniformMVP(shader1)
 	    gl.polygonMode(GL_FRONT_AND_BACK, GL_FILL)
 	    plane.draw(planeMesh.drawAs)
 	    
 	    shader2.use
 	    gl.polygonMode(GL_FRONT_AND_BACK, GL_LINE)
 	    camera.pushpop {
-	        camera.translateModel(0, 1, 0)
-	        camera.rotateModel(Pi/2, 1, 0, 0)
-	        camera.translateModel(0, -1, 0)
-	        camera.scaleModel(1, 2, 1)
-	        useMVP(shader2)
+	        //camera.translateModel(0, 1, 0)
+	        //camera.rotateModel(Pi/2, 1, 0, 0)
+	        //camera.translateModel(0, -1, 0)
+	        camera.scaleModel(1, 3, 1)
+	        camera.uniformMVP(shader2)
 	        tube.draw(tubeMesh.drawAs)
-	        camera.scaleModel(0.5, 0.5, 0.5)
-	        useMVP(shader2)
-	        bone.draw(boneMesh.drawAs)
-	        camera.translateModel(0, 1, 0)
-	        useMVP(shader2)
-	        bone.draw(boneMesh.drawAs)
+	        
+	        skeleton.drawSkeleton(gl, camera, shader2)
 	    }
 	    
 	    win.swapBuffers
-	}
-	
-	def useMVP(shader:ShaderProgram) {
-	    shader.uniformMatrix("MV", camera.modelview.top)
-	    shader.uniformMatrix("MV3x3", camera.modelview.top3x3)
-	    shader.uniformMatrix("MVP", camera.projection * camera.modelview)
 	}
 	
 	def useLights(shader:ShaderProgram) {
