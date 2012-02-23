@@ -11,11 +11,6 @@ import org.sofa.opengl.mesh._
 import org.sofa.nio._
 import org.sofa.math._
 import java.awt.Color
-import GL._
-import GL2._
-import GL2ES2._
-import GL2GL3._
-import GL3._ 
 
 object NormalMap {
 	def main(args:Array[String]):Unit = (new NormalMap).show
@@ -76,16 +71,16 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 	}
 	
 	def init(win:GLAutoDrawable) {
-	    gl = new SGL(win.getGL.getGL3, GLU.createGLU)
+	    gl = new SGLJogl(win.getGL.getGL3, GLU.createGLU)
 	    
 	    gl.clearColor(clearColor)
 	    gl.clearDepth(1f)
-	    gl.enable(GL_DEPTH_TEST)
+	    gl.enable(gl.DEPTH_TEST)
 	    //gl.polygonMode(GL_FRONT_AND_BACK, GL_LINE)
 	    
-	    gl.enable(GL_CULL_FACE)
-        gl.cullFace(GL_BACK)
-        gl.frontFace(GL_CW)
+	    gl.enable(gl.CULL_FACE)
+        gl.cullFace(gl.BACK)
+        gl.frontFace(gl.CW)
 
 	    setup
 	}
@@ -108,18 +103,18 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 	    
 	    uvTex = new Texture(gl, "textures/stone_wall__.jpg", true)
 //	    uvTex = new Texture(gl, "textures/face.jpg", true)
-	    uvTex.minMagFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR)
-	    uvTex.wrap(GL_REPEAT)
+	    uvTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    uvTex.wrap(gl.REPEAT)
 
 	    specTex = new Texture(gl, "textures/specular.png", true)
-	    specTex.minMagFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR)
-	    specTex.wrap(GL_REPEAT)
+	    specTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    specTex.wrap(gl.REPEAT)
 	    
 //	    nmapTex = new Texture(gl, "textures/NormalFlat.png", false)
 	    nmapTex = new Texture(gl, "textures/normal.jpg", true)
 //	    nmapTex = new Texture(gl, "textures/facenrm.jpg", true)
-	    nmapTex.minMagFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR)
-	    nmapTex.wrap(GL_REPEAT)
+	    nmapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    nmapTex.wrap(gl.REPEAT)
 	}
 	
 	def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {
@@ -133,7 +128,7 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 	}
 	
 	def display(win:GLAutoDrawable) {
-	    gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	    
 	    nmapShader.use
 	    
@@ -187,11 +182,11 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 	}
 	
 	def setupTextures() {
-	    uvTex.bindTo(GL_TEXTURE0)
+	    uvTex.bindTo(gl.TEXTURE0)
 	    nmapShader.uniform("texColor", 0)	// Texture Unit 0
-	    specTex.bindTo(GL_TEXTURE1)
+	    specTex.bindTo(gl.TEXTURE1)
 	    nmapShader.uniform("texSpec", 1)	// Texture Unit 1
-	    nmapTex.bindTo(GL_TEXTURE2)
+	    nmapTex.bindTo(gl.TEXTURE2)
 	    nmapShader.uniform("texNormal", 2)	// Texture Unit 2
 	}
 	

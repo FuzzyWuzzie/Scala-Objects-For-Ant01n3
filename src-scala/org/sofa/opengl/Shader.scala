@@ -2,14 +2,8 @@ package org.sofa.opengl
 
 import scala.collection.mutable._
 import org.sofa.math._
-import javax.media.opengl._
 import org.sofa.nio._
 import java.awt.Color
-
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._ 
 
 object Shader {
     def fileToArrayOfStrings(file:String):Array[String] = {
@@ -21,7 +15,6 @@ object Shader {
 }
 
 abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl) {
-    import gl.gl._
     import gl._
 
     def this(gl:SGL, sourceFile:String) = {
@@ -31,7 +24,7 @@ abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl)
     protected val shaderType:Int
     
     protected def init() {
-        super.init(glCreateShader(shaderType))
+        super.init(createShader(shaderType))
         checkErrors
         shaderSource(oid, source)
         compileShader(oid)
@@ -51,7 +44,7 @@ abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl)
 }
 
 class VertexShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
-    protected val shaderType = GL_VERTEX_SHADER
+    protected val shaderType = gl.VERTEX_SHADER
     
     init
     
@@ -61,7 +54,7 @@ class VertexShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
 }
 
 class FragmentShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
-    protected val shaderType = GL_FRAGMENT_SHADER
+    protected val shaderType = gl.FRAGMENT_SHADER
     
     init
     
@@ -71,7 +64,6 @@ class FragmentShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
 }
 
 class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
-    import gl.gl._
     import gl._
     
     protected val shaders = shdrs.toArray
@@ -81,7 +73,7 @@ class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
     init
     
     protected def init() {
-        super.init(glCreateProgram)
+        super.init(createProgram)
         shaders.foreach { shader => attachShader(oid, shader.id) }
         linkProgram(oid)
         checkErrors

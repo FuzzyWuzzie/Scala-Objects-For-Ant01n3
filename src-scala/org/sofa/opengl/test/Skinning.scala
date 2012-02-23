@@ -15,12 +15,6 @@ import org.sofa.opengl._
 import org.sofa.opengl.mesh._
 import org.sofa.opengl.mesh.skeleton._
 
-import GL._
-import GL2._
-import GL2ES2._
-import GL2GL3._
-import GL3._ 
-
 object Skinning {
     def main(args:Array[String]):Unit = (new Skinning).show
 }
@@ -86,7 +80,7 @@ class Skinning extends WindowAdapter with GLEventListener {
 	}
 	
 	def init(win:GLAutoDrawable) {
-	    gl = new SGL(win.getGL.getGL3, GLU.createGLU)
+	    gl = new SGLJogl(win.getGL.getGL3, GLU.createGLU)
 	    
 	    initGL
         initShaders
@@ -100,11 +94,11 @@ class Skinning extends WindowAdapter with GLEventListener {
 	protected def initGL() {
         gl.clearColor(clearColor)
 	    gl.clearDepth(1f)
-	    gl.enable(GL_DEPTH_TEST)
+	    gl.enable(gl.DEPTH_TEST)
 	    
-	    gl.enable(GL_CULL_FACE)
-        gl.cullFace(GL_BACK)
-        gl.frontFace(GL_CW)
+	    gl.enable(gl.CULL_FACE)
+        gl.cullFace(gl.BACK)
+        gl.frontFace(gl.CW)
 	}
 	
 	protected def initShaders() {
@@ -136,12 +130,12 @@ class Skinning extends WindowAdapter with GLEventListener {
 	
 	protected def initTextures() {
 	    tex1uv = new Texture(gl, "textures/grey-concrete-texture.jpg", true)
-	    tex1uv.minMagFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR)
-	    tex1uv.wrap(GL_REPEAT)
+	    tex1uv.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    tex1uv.wrap(gl.REPEAT)
 
 	    tex1nm = new Texture(gl, "textures/Sample64.png", true)
-	    tex1nm.minMagFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR)
-	    tex1nm.wrap(GL_REPEAT)
+	    tex1nm.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    tex1nm.wrap(gl.REPEAT)
 	}
 	
 	def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {
@@ -153,18 +147,18 @@ class Skinning extends WindowAdapter with GLEventListener {
 	}
 	
 	def display(win:GLAutoDrawable) {
-	    gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	    
 	    shader1.use
 	    camera.setupView
 	    useLights(shader1)
 	    useTextures(shader1)
 	    camera.uniformMVP(shader1)
-	    gl.polygonMode(GL_FRONT_AND_BACK, GL_FILL)
+	    gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    plane.draw(planeMesh.drawAs)
 	    
 	    shader2.use
-	    gl.polygonMode(GL_FRONT_AND_BACK, GL_LINE)
+	    gl.polygonMode(gl.FRONT_AND_BACK, gl.LINE)
 	    camera.pushpop {
 	        //camera.translateModel(0, 1, 0)
 	        //camera.rotateModel(Pi/2, 1, 0, 0)
@@ -187,52 +181,11 @@ class Skinning extends WindowAdapter with GLEventListener {
 	}
 	
 	def useTextures(shader:ShaderProgram) {
-	    tex1uv.bindTo(GL_TEXTURE0)
+	    tex1uv.bindTo(gl.TEXTURE0)
 	    shader.uniform("tex.color", 0)
-	    tex1nm.bindTo(GL_TEXTURE1)
+	    tex1nm.bindTo(gl.TEXTURE1)
 	    shader.uniform("tex.normal", 1)
 	}
 	
 	def dispose(win:GLAutoDrawable) {}
-}
-
-class CameraController(val camera:Camera) extends KeyListener with MouseListener {
-	
-	protected val step = 0.1
-	
-	def mouseClicked(e:MouseEvent) {} 
-           
-	def mouseDragged(e:MouseEvent) {} 
-           
-	def mouseEntered(e:MouseEvent) {} 
-           
-	def mouseExited(e:MouseEvent) {} 
-           
-	def mouseMoved(e:MouseEvent) {}
-           
-	def mousePressed(e:MouseEvent) {} 
-           
-	def mouseReleased(e:MouseEvent) {} 
-           
-	def mouseWheelMoved(e:MouseEvent) {
-	    camera.rotateViewHorizontal(e.getWheelRotation * step)
-	} 
-	
-	def keyPressed(e:KeyEvent) {
-	} 
-           
-	def keyReleased(e:KeyEvent) {
-	}
-           
-	def keyTyped(e:KeyEvent) {
-		e.getKeyCode match {
-		    case KeyEvent.VK_PAGE_UP   => { camera.zoomView(-step) } 
-		    case KeyEvent.VK_PAGE_DOWN => { camera.zoomView(step) }
-		    case KeyEvent.VK_UP        => { camera.rotateViewVertical(step) }
-		    case KeyEvent.VK_DOWN      => { camera.rotateViewVertical(-step) }
-		    case KeyEvent.VK_LEFT      => { camera.rotateViewHorizontal(-step) }
-		    case KeyEvent.VK_RIGHT     => { camera.rotateViewHorizontal(step) }
-		    case _ => {}
-		}
-	}       
 }

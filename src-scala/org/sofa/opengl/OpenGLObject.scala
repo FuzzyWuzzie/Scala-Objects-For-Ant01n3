@@ -1,19 +1,9 @@
 package org.sofa.opengl
 
-import javax.media.opengl._
-
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._ 
-
 /** Represents a base for any OpenGL object identified by a "name" that is an integer identifier
   * in the OpenGL jargon.
   */
 class OpenGLObject(val sgl:SGL) {
-    import sgl.glu._
-    import sgl.gl._
-
     /** The OpenGL name. */
     protected[this] var oid = -1
     
@@ -28,12 +18,7 @@ class OpenGLObject(val sgl:SGL) {
     
     /** Check if an error was raised by previous actions, if so, print it and raise a runtime
       * exception. */
-    def checkErrors() {
-        val error = glGetError
-        if(error != 0) {
-        	throw new RuntimeException(gluErrorString(error))
-        }
-    }
+    def checkErrors()  = sgl.checkErrors()
     
     /** Check the id has not been disposed, if so it it is less than 0. */
     protected def checkId() {

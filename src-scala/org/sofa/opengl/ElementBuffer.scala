@@ -1,12 +1,6 @@
 package org.sofa.opengl
 
-import javax.media.opengl._
 import org.sofa.nio._
-
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._ 
 
 object ElementBuffer {
     def apply(gl:SGL, data:Array[Int]):ElementBuffer = new ElementBuffer(gl, data)
@@ -15,7 +9,6 @@ object ElementBuffer {
 
 /** Stores a sequence of indices in an array buffer. */
 class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
-    import gl.gl._
     import gl._
     
     protected var elementCount:Int = 0
@@ -35,8 +28,8 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
         checkId
         data.rewind
         elementCount = data.size
-        bindBuffer(GL_ELEMENT_ARRAY_BUFFER, oid)
-        bufferData(GL_ELEMENT_ARRAY_BUFFER, data, GL_STATIC_DRAW)
+        bindBuffer(gl.ELEMENT_ARRAY_BUFFER, oid)
+        bufferData(gl.ELEMENT_ARRAY_BUFFER, data, gl.STATIC_DRAW)
         checkErrors
     }
     
@@ -44,7 +37,7 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
     
     override def dispose() {
         checkId
-        bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+        bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
         deleteBuffer(oid)
         super.dispose
     }    

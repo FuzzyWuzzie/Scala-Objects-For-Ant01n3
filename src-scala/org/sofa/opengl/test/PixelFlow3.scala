@@ -13,11 +13,6 @@ import javax.media.opengl.glu._
 import javax.media.opengl._
 import scala.math._
 
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._ 
-
 object PixelFlow3 {
 	def main(args:Array[String]):Unit = {
 	    (new PixelFlow3).test
@@ -193,15 +188,15 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
     override def windowDestroyNotify(ev:WindowEvent) { exit }
     
     def init(win:GLAutoDrawable) {
-        gl = new SGL(win.getGL.getGL3, GLU.createGLU)
+        gl = new SGLJogl(win.getGL.getGL3, GLU.createGLU)
         
         gl.printInfos
         gl.clearColor(0f, 0f, 0f, 0f)
         gl.clearDepth(1f)
-        gl.enable(GL_DEPTH_TEST)
-        gl.enable(GL_CULL_FACE)
-        gl.cullFace(GL_BACK)
-        gl.frontFace(GL_CCW)
+        gl.enable(gl.DEPTH_TEST)
+        gl.enable(gl.CULL_FACE)
+        gl.cullFace(gl.BACK)
+        gl.frontFace(gl.CCW)
     
         cubeShad = new ShaderProgram(gl,
                 new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3VertexShader.glsl"),
@@ -227,7 +222,7 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
         animate
 
         gl.checkErrors
-        gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
      
         cubeShad.use
         modelview.setIdentity

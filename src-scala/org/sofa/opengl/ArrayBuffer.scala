@@ -1,12 +1,6 @@
 package org.sofa.opengl
 
-import javax.media.opengl._
 import org.sofa.nio._
-
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._ 
 
 object ArrayBuffer {
     def apply(gl:SGL, valuesPerElement:Int, data:Array[Float]):ArrayBuffer = new ArrayBuffer(gl, valuesPerElement, data)
@@ -20,7 +14,6 @@ object ArrayBuffer {
   * The `data` argument must contain a float buffer whose length is a multiple
   * of the `valuesPerElement` parameter. */
 class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:FloatBuffer) extends OpenGLObject(gl) {
-    import gl.gl._
     import gl._
     
     /** Number of components in the buffer. */
@@ -44,8 +37,8 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:FloatBuffer) extends Op
         checkId
         data.rewind
         componentCount = data.size
-        bindBuffer(GL_ARRAY_BUFFER, oid)
-        bufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW)
+        bindBuffer(gl.ARRAY_BUFFER, oid)
+        bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW)
         checkErrors
     }
     
@@ -54,14 +47,14 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:FloatBuffer) extends Op
     
     def vertexAttrib(number:Int) {
         checkId
-        bindBuffer(GL_ARRAY_BUFFER, oid)
-        vertexAttribPointer(number, valuesPerElement, GL_FLOAT, false, 0, 0)
+        bindBuffer(gl.ARRAY_BUFFER, oid)
+        vertexAttribPointer(number, valuesPerElement, gl.FLOAT, false, 0, 0)
         checkErrors
     }
     
     override def dispose() {
         checkId
-        bindBuffer(GL_ARRAY_BUFFER, 0)
+        bindBuffer(gl.ARRAY_BUFFER, 0)
         deleteBuffer(oid)
         super.dispose
     }

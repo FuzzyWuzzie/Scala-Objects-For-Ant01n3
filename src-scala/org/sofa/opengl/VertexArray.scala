@@ -1,15 +1,9 @@
 package org.sofa.opengl
 
-import javax.media.opengl._
 import org.sofa.nio._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._ 
 
 /** Associates several array buffers and an eventual element buffer in a common structure. */
 class VertexArray(gl:SGL) extends OpenGLObject(gl) {
-    import gl.gl._
     import gl._
  
     /** Set of data (vertices, colors, normals, etc.) */
@@ -83,7 +77,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
         bindVertexArray(oid)
         
         if(elements ne null)
-             drawElements(kind, elements.size, GL_UNSIGNED_INT, 0)
+             drawElements(kind, elements.size, gl.UNSIGNED_INT, 0)
         else drawArrays(kind, 0, buffers(0).size)
 
         checkErrors
@@ -98,6 +92,6 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     }
     
     def drawTriangles() {
-        draw(GL_TRIANGLES)
+        draw(gl.TRIANGLES)
     }
 }
