@@ -8,9 +8,7 @@ import GL._
 import GL2._
 import GL2ES2._
 import GL3._
-import org.sofa.math.Vector3
-import org.sofa.math.Vector2
-import java.awt.Color
+import org.sofa.math.{Vector2, Vector3, Rgba}
 
 //     +-----+                     m = Sections = 2.
 //    / \   / \                    n = Segments = 6.
@@ -309,20 +307,16 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
     
     def drawAs():Int = GL_TRIANGLES
     
-    def setTopDiskColor(color:Color) {
+    def setTopDiskColor(color:Rgba) {
         // The disk color.
         
-        val red   = color.getRed / 255f
-        val green = color.getGreen / 255f
-        val blue  = color.getBlue / 255f
-        val alpha = color.getAlpha / 255f
         var start = segments * (2+sections) * 4
         
         for(s <- 0 until segments) {
-            colors(start+0) = red
-            colors(start+1) = green
-            colors(start+2) = blue
-            colors(start+3) = alpha
+            colors(start+0) = color.red.toFloat
+            colors(start+1) = color.green.toFloat
+            colors(start+2) = color.blue.toFloat
+            colors(start+3) = color.alpha.toFloat
             
             start += 4
         }
@@ -331,46 +325,38 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
 
         // The central point color.
         
-        colors(start+0) = red
-        colors(start+1) = green
-        colors(start+2) = blue
-        colors(start+3) = alpha
+        colors(start+0) = color.red.toFloat
+        colors(start+1) = color.green.toFloat
+        colors(start+2) = color.blue.toFloat
+        colors(start+3) = color.alpha.toFloat
     }
     
-    def setDiskColor(disk:Int, color:Color) {
+    def setDiskColor(disk:Int, color:Rgba) {
         // The disk color.
         
-        val red   = color.getRed / 255f
-        val green = color.getGreen / 255f
-        val blue  = color.getBlue / 255f
-        val alpha = color.getAlpha / 255f
         var start = segments * (disk) * 4
         
         for(s <- 0 until segments) {
-            colors(start+0) = red
-            colors(start+1) = green
-            colors(start+2) = blue
-            colors(start+3) = alpha
+            colors(start+0) = color.red.toFloat
+            colors(start+1) = color.green.toFloat
+            colors(start+2) = color.blue.toFloat
+            colors(start+3) = color.alpha.toFloat
             
             start += 4
         }
         
     }
     
-    def setBottomDiskColor(color:Color) {
+    def setBottomDiskColor(color:Rgba) {
         // The disk color.
         
-        val red   = color.getRed / 255f
-        val green = color.getGreen / 255f
-        val blue  = color.getBlue / 255f
-        val alpha = color.getAlpha / 255f
         var start = 0
         
         for(s <- 0 until segments) {
-            colors(start+0) = red
-            colors(start+1) = green
-            colors(start+2) = blue
-            colors(start+3) = alpha
+            colors(start+0) = color.red.toFloat
+            colors(start+1) = color.green.toFloat
+            colors(start+2) = color.blue.toFloat
+            colors(start+3) = color.alpha.toFloat
             
             start += 4
         }
@@ -379,25 +365,21 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
 
         // The central point color.
         
-        colors(start+0) = red
-        colors(start+1) = green
-        colors(start+2) = blue
-        colors(start+3) = alpha        
+        colors(start+0) = color.red.toFloat
+        colors(start+1) = color.green.toFloat
+        colors(start+2) = color.blue.toFloat
+        colors(start+3) = color.alpha.toFloat 
     }
     
-    def setCylinderColor(color:Color) {
+    def setCylinderColor(color:Rgba) {
         var start = segments * 4;
         var end   = (2+sections) * segments * 4
-        val red   = color.getRed / 255f
-        val green = color.getGreen / 255f
-        val blue  = color.getBlue / 255f
-        val alpha = color.getAlpha / 255f
         
         for(i <- start until end by 4) {
-            colors(i+0) = red
-            colors(i+1) = green
-            colors(i+2) = blue
-            colors(i+3) = alpha
+            colors(i+0) = color.red.toFloat
+            colors(i+1) = color.green.toFloat
+            colors(i+2) = color.blue.toFloat
+            colors(i+3) = color.alpha.toFloat
         }
     }
 }

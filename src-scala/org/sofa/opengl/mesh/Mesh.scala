@@ -29,7 +29,7 @@ trait Mesh {
     /** True if this mesh has a set of texture coordinates, associated with the vertices. */
     def hasTexCoords:Boolean = false
     
-    /** True if the mesh needs an indice array to define which elements to draw. */
+    /** True if the mesh needs an index array to define which elements to draw. */
     def hasIndices:Boolean = false
     
     /** How to draw the mesh (as lines, lines loops, triangles, quads, etc.). */

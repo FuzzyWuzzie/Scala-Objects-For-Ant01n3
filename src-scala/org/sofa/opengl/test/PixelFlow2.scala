@@ -120,7 +120,7 @@ class PixelFlow2 extends WindowAdapter with GLEventListener {
     override def windowDestroyNotify(ev:WindowEvent) { exit }
     
     def init(win:GLAutoDrawable) {
-        gl = new SGLJogl(win.getGL.getGL3, GLU.createGLU)
+        gl = new backend.SGLJogl(win.getGL.getGL3, GLU.createGLU)
         
         gl.printInfos
         gl.clearColor(0f, 0f, 0f, 0f)

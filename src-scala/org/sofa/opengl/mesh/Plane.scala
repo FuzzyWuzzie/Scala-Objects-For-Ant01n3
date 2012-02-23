@@ -2,12 +2,12 @@ package org.sofa.opengl.mesh
 
 import org.sofa.nio._
 import org.sofa.opengl._
+import org.sofa.math.Rgba
 import javax.media.opengl._
 import GL._
 import GL2._
 import GL2ES2._
 import GL3._
-import java.awt.Color
 
 /** A single plane of several quads (themselves made of two triangles) in the XZ plane, centered
   * around the (0, 0, 0) point.
@@ -170,18 +170,14 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Int, val depth:Int)
         buf
     }
     
-    def setColor(color:Color) {
+    def setColor(color:Rgba) {
         val n     = nVertX * nVertZ * 4
-        val red   = color.getRed / 255f
-        val green = color.getGreen / 255f
-        val blue  = color.getBlue / 255f
-        val alpha = color.getAlpha / 255f
         
         for(i <- 0 until n by 4) {
-            colors(i+0) = red
-            colors(i+1) = green
-            colors(i+2) = blue
-            colors(i+3) = alpha
+            colors(i+0) = color.red.toFloat
+            colors(i+1) = color.green.toFloat
+            colors(i+2) = color.blue.toFloat
+            colors(i+3) = color.alpha.toFloat
         }
     }
     

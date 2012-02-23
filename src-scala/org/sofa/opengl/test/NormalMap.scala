@@ -32,7 +32,7 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
     var specTex:Texture = null
     var nmapTex:Texture = null
     
-    val clearColor = Color.black
+    val clearColor = Rgba.black
     val eye = Vector3(1, 1.5, 0)
     var radius = 4.0
     val lookAt = Vector3(0, 0, 0)
@@ -71,7 +71,7 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 	}
 	
 	def init(win:GLAutoDrawable) {
-	    gl = new SGLJogl(win.getGL.getGL3, GLU.createGLU)
+	    gl = new backend.SGLJogl(win.getGL.getGL3, GLU.createGLU)
 	    
 	    gl.clearColor(clearColor)
 	    gl.clearDepth(1f)
@@ -92,11 +92,11 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 
 	    reshape(null, 0, 0, widthPx.toInt, heightPx.toInt)
 	    
-	    tubeMesh.setTopDiskColor(Color.yellow)
-	    tubeMesh.setBottomDiskColor(Color.yellow)
-	    //tubeMesh.setDiskColor(4, Color.red)
-	    tubeMesh.setCylinderColor(Color.blue);
-	    planeMesh.setColor(Color.magenta)
+	    tubeMesh.setTopDiskColor(Rgba.yellow)
+	    tubeMesh.setBottomDiskColor(Rgba.yellow)
+	    //tubeMesh.setDiskColor(4, Rgba.red)
+	    tubeMesh.setCylinderColor(Rgba.blue);
+	    planeMesh.setColor(Rgba.magenta)
 	    
 	    plane = planeMesh.newVertexArray(gl)
 	    tube  = tubeMesh.newVertexArray(gl)

@@ -1,7 +1,6 @@
 package org.sofa.opengl.test
 
 import scala.math._
-import java.awt.Color
 
 import javax.media.opengl._
 import javax.media.opengl.glu._
@@ -43,7 +42,7 @@ class Skinning extends WindowAdapter with GLEventListener {
     
 // Shading
     
-    val clearColor = Color.black
+    val clearColor = Rgba.black
     var shader1:ShaderProgram = null
     var shader2:ShaderProgram = null
     var light1 = Vector4(2, 2, 2, 1)
@@ -80,7 +79,7 @@ class Skinning extends WindowAdapter with GLEventListener {
 	}
 	
 	def init(win:GLAutoDrawable) {
-	    gl = new SGLJogl(win.getGL.getGL3, GLU.createGLU)
+	    gl = new backend.SGLJogl(win.getGL.getGL3, GLU.createGLU)
 	    
 	    initGL
         initShaders
@@ -112,9 +111,9 @@ class Skinning extends WindowAdapter with GLEventListener {
 	}
 	
 	protected def initGeometry() {
-	    tubeMesh.setBottomDiskColor(Color.red)
-	    tubeMesh.setCylinderColor(Color.blue)
-	    tubeMesh.setTopDiskColor(Color.red)
+	    tubeMesh.setBottomDiskColor(Rgba.red)
+	    tubeMesh.setCylinderColor(Rgba.blue)
+	    tubeMesh.setTopDiskColor(Rgba.red)
 	    
 	    plane = planeMesh.newVertexArray(gl)
 	    tube  = tubeMesh.newVertexArray(gl)

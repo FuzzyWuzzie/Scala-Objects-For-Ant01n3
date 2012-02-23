@@ -3,7 +3,6 @@ package org.sofa.opengl
 import scala.collection.mutable._
 import org.sofa.math._
 import org.sofa.nio._
-import java.awt.Color
 
 object Shader {
     def fileToArrayOfStrings(file:String):Array[String] = {
@@ -130,7 +129,7 @@ class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
         checkErrors
     }
     
-    def uniform(variable:String, color:Color) {
+    def uniform(variable:String, color:Rgba) {
         checkId
         val loc = getUniformLocation(variable)
         gl.uniform(loc, color)
