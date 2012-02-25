@@ -29,7 +29,6 @@ class Skinning extends SurfaceRenderer {
 // View
     
     var camera:Camera = null
-    var camCtrl = new CameraController(camera)
     var fps = 30
     
 // Geometry
@@ -57,9 +56,10 @@ class Skinning extends SurfaceRenderer {
     build
     
     private def build() {
-	    camera = Camera()
-	    caps   =  new GLCapabilities(GLProfile.get(GLProfile.GL3))
-
+	    camera   = Camera()
+	    caps     = new GLCapabilities(GLProfile.get(GLProfile.GL3))
+	    val ctrl = new BasicCameraController(camera)
+	    
 		caps.setDoubleBuffered(true)
 		caps.setHardwareAccelerated(true)
 		caps.setSampleBuffers(true)
@@ -69,6 +69,9 @@ class Skinning extends SurfaceRenderer {
 	    frame          = display
 	    surfaceChanged = reshape
 	    close          = { surface => exit }
+	    key            = ctrl.key
+	    motion         = ctrl.motion
+	    scroll         = ctrl.scroll
 	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Skining test", caps)
 	}
     
