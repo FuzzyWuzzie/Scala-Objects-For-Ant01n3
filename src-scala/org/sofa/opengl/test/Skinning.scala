@@ -24,22 +24,11 @@ class Skinning extends SurfaceRenderer {
     
     var gl:SGL = null
     var surface:Surface = null
-    val prof:GLProfile = GLProfile.get(GLProfile.GL3)
-    var caps:GLCapabilities = new GLCapabilities(prof)
-    
-	caps.setDoubleBuffered(true)
-	caps.setHardwareAccelerated(true)
-	caps.setSampleBuffers(true)
-	caps.setNumSamples(4)
-    surface = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Skining test", caps)
-    initSurface = initializeSuface
-    frame = display
-    surfaceChanged = reshape
-    close = { exit }
-    
+    var caps:GLCapabilities = null
+	
 // View
     
-    val camera = Camera()
+    var camera:Camera = null
     var camCtrl = new CameraController(camera)
     var fps = 30
     
@@ -62,20 +51,42 @@ class Skinning extends SurfaceRenderer {
     var light1 = Vector4(2, 2, 2, 1)
     var tex1uv:Texture = null
     var tex1nm:Texture = null
+
+// Go
+        
+    build
+    
+    private def build() {
+	    camera = Camera()
+	    caps   =  new GLCapabilities(GLProfile.get(GLProfile.GL3))
+
+		caps.setDoubleBuffered(true)
+		caps.setHardwareAccelerated(true)
+		caps.setSampleBuffers(true)
+		caps.setNumSamples(4)
+
+	    initSurface    = initializeSuface
+	    frame          = display
+	    surfaceChanged = reshape
+	    close          = { surface => exit }
+	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Skining test", caps)
+	}
     
 // Rendering
     
-	def initializeSuface() {
-	    initGL
+	def initializeSuface(gl:SGL, surface:Surface) {
+	    initGL(gl)
         initShaders
 	    initGeometry
 	    initTextures
 	    
 	    camera.viewCartesian(2, 2, 2)
-	    reshape(camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
+	    reshape(surface)
 	}
 
-	protected def initGL() {
+	protected def initGL(sgl:SGL) {
+	    gl = sgl
+	    
         gl.clearColor(clearColor)
 	    gl.clearDepth(1f)
 	    gl.enable(gl.DEPTH_TEST)
@@ -122,15 +133,15 @@ class Skinning extends SurfaceRenderer {
 	    tex1nm.wrap(gl.REPEAT)
 	}
 	
-	def reshape(width:Int, height:Int) {
-	    camera.viewportPx(width, height)
+	def reshape(surface:Surface) {
+	    camera.viewportPx(surface.width, surface.height)
         var ratio = camera.viewportRatio
         
         gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
         camera.frustum(-ratio, ratio, -1, 1, 1)
 	}
 	
-	def display() {
+	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	    
 	    shader1.use

@@ -15,9 +15,16 @@ import org.sofa.opengl.SGL
   * basic needs. For more advanced uses, using the native interfaces of the
   * system is recommended. */
 abstract class Surface(val renderer:SurfaceRenderer) {
-    val gl:SGL
+    /** SGL implementation. */
+    def gl:SGL
     
     def swapBuffers():Unit
+    
+    /** Surface width in pixels. */
+    def width:Int
+    
+    /** Surface height in pixels. */
+    def height:Int
 }
 
 /** Rendering and event managing class associated to a rendering surface.
@@ -27,23 +34,23 @@ abstract class Surface(val renderer:SurfaceRenderer) {
   * when an event occurs on the rendering surface. */
 trait SurfaceRenderer {
     /** Code to call to render a frame. */
-	type Frame = ()=>Unit
+	type Frame = (Surface)=>Unit
 	/** Code to call to initialize a rendering surface. */
-	type InitSurface  = ()=>Unit
+	type InitSurface  = (SGL, Surface)=>Unit
 	/** Code to call at each surface reconfiguration. The two arguments are the width and height in pixels. */
-	type SurfaceChanged = (Int, Int)=>Unit
+	type SurfaceChanged = (Surface)=>Unit
 	/** Code to call when a key was type and the rendering surface was active. */
-	type Key = (KeyEvent)=>Unit
+	type Key = (Surface, KeyEvent)=>Unit
 	/** Code to call when the surface has been clicked (touch-click on touchable devices, left-click on desktops). */
-	type Action = (ActionEvent)=>Unit
+	type Action = (Surface, ActionEvent)=>Unit
 	/** Code to call when the user requested configuration (long-click on touchable devices, right-click on desktops). */
-	type Configure = (ConfigureEvent)=>Unit
+	type Configure = (Surface, ConfigureEvent)=>Unit
 	/** Code to call when the user moved one or more pointers (the mouse on desktops, touch motions of touchable devices). */
-	type Motion = (MotionEvent)=>Unit
+	type Motion = (Surface, MotionEvent)=>Unit
 	/** Code to call when a scroll wheel is used. */
-	type Scroll = (ScrollEvent)=>Unit
+	type Scroll = (Surface, ScrollEvent)=>Unit
 	/** Code to call when closing the surface. */
-	type Close = ()=>Unit
+	type Close = (Surface)=>Unit
 	
 	var frame:Frame = null
 	var initSurface:InitSurface = null

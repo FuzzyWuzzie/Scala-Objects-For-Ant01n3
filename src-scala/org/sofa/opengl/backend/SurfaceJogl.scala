@@ -19,27 +19,42 @@ class SurfaceNewt(
 	with    MouseListener
 	with    GLEventListener {
 
-    var fps = 30
-    val win = GLWindow.create(caps)
-    val anim = new FPSAnimator(win, fps)
+    protected var fps = 30
+    protected var win:GLWindow = null
+    protected var anim:FPSAnimator = null
+    protected var sgl:SGL = null
+    protected var w:Int = 0
+    protected var h:Int = 0
     
-    win.addWindowListener(this)
-    win.addGLEventListener(this)
-    win.addMouseListener(this)
-    win.addKeyListener(this)
-    win.setSize(camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
-    win.setTitle(title)
-    win.setVisible(true)
-    anim.start
+    build
     
-    val gl:SGL = new SGLJogl(win.getGL.getGL3, GLU.createGLU)
+    protected def build() {
+        win  =GLWindow.create(caps)
+        anim = new FPSAnimator(win, fps)
+        sgl  = null
+        w    = camera.viewportPx.x.toInt
+        h    = camera.viewportPx.y.toInt
+
+	    win.addWindowListener(this)
+	    win.addGLEventListener(this)
+	    win.addMouseListener(this)
+	    win.addKeyListener(this)
+	    win.setSize(w, h)
+	    win.setTitle(title)
+	    win.setVisible(true)
+
+	    anim.start
+    }
     
+    def gl:SGL = { if(sgl==null) sgl = new SGLJogl(win.getGL.getGL3, GLU.createGLU); sgl }
     def swapBuffers():Unit = win.swapBuffers
+    def width = w
+    def height = h
     
-    def init(win:GLAutoDrawable) { renderer.initSurface() }
-    def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) { renderer.surfaceChanged(width, height) }
-    def display(win:GLAutoDrawable) { renderer.frame() }
-    def dispose(win:GLAutoDrawable) { renderer.close() }
+    def init(win:GLAutoDrawable) { renderer.initSurface(gl, this) }
+    def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) { w = width; h = height; if(renderer.surfaceChanged ne null) renderer.surfaceChanged(this) }
+    def display(win:GLAutoDrawable) { if(renderer.frame ne null) renderer.frame(this) }
+    def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
     
     def windowDestroyNotify(ev:WindowEvent) {}
     def windowDestroyed(e:WindowEvent) {}
@@ -51,22 +66,22 @@ class SurfaceNewt(
     
 	def keyPressed(e:JoglKeyEvent) {} 
 	def keyReleased(e:JoglKeyEvent) {}
-	def keyTyped(e:JoglKeyEvent) { renderer.key(new KeyEventJogl(e)) }
+	def keyTyped(e:JoglKeyEvent) { if(renderer.key ne null) renderer.key(this, new KeyEventJogl(e)) }
 	
     def mouseClicked(e:MouseEvent) {
         e.getButton match {
-            case 1 => { renderer.action(new ActionEvent) }
-            case 3 => { renderer.configure(new ConfigureEvent) }
+            case 1 => { if(renderer.action ne null) renderer.action(this, new ActionEvent) }
+            case 3 => { if(renderer.configure ne null) renderer.configure(this, new ConfigureEvent) }
             case _ => {}
         }
     }
     def mouseEntered(e:MouseEvent) {}
     def mouseExited(e:MouseEvent) {}
     def mouseMoved(e:MouseEvent) {}
-    def mousePressed(e:MouseEvent) { renderer.motion(new MotionEventJogl(e, true, false)) }
-    def mouseDragged(e:MouseEvent) { renderer.motion(new MotionEventJogl(e, false, false)) }
-    def mouseReleased(e:MouseEvent) { renderer.motion(new MotionEventJogl(e, false, true)) }
-    def mouseWheelMoved(e:MouseEvent) { renderer.scroll(new ScrollEventJogl(e)) }
+    def mousePressed(e:MouseEvent) { if(renderer.motion ne null) renderer.motion(this, new MotionEventJogl(e, true, false)) }
+    def mouseDragged(e:MouseEvent) { if(renderer.motion ne null) renderer.motion(this, new MotionEventJogl(e, false, false)) }
+    def mouseReleased(e:MouseEvent) { if(renderer.motion ne null) renderer.motion(this, new MotionEventJogl(e, false, true)) }
+    def mouseWheelMoved(e:MouseEvent) { if(renderer.scroll ne null) renderer.scroll(this, new ScrollEventJogl(e)) }
 }
 
 class KeyEventJogl(val source:JoglKeyEvent) extends KeyEvent {
