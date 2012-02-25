@@ -11,18 +11,32 @@ import com.jogamp.newt.opengl._
 import org.sofa.nio._
 import org.sofa.math._
 import org.sofa.opengl._
+import org.sofa.opengl.surface._
 import org.sofa.opengl.mesh._
 import org.sofa.opengl.mesh.skeleton._
 
 object Skinning {
-    def main(args:Array[String]):Unit = (new Skinning).show
+    def main(args:Array[String]):Unit = (new Skinning)
 }
 
-class Skinning extends WindowAdapter with GLEventListener {
+class Skinning extends SurfaceRenderer {
 // General
     
     var gl:SGL = null
-
+    var surface:Surface = null
+    val prof:GLProfile = GLProfile.get(GLProfile.GL3)
+    var caps:GLCapabilities = new GLCapabilities(prof)
+    
+	caps.setDoubleBuffered(true)
+	caps.setHardwareAccelerated(true)
+	caps.setSampleBuffers(true)
+	caps.setNumSamples(4)
+    surface = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Skining test", caps)
+    initSurface = initializeSuface
+    frame = display
+    surfaceChanged = reshape
+    close = { exit }
+    
 // View
     
     val camera = Camera()
@@ -49,45 +63,16 @@ class Skinning extends WindowAdapter with GLEventListener {
     var tex1uv:Texture = null
     var tex1nm:Texture = null
     
-// Init
+// Rendering
     
-	def show() {
-	    val prof = GLProfile.get(GLProfile.GL3)
-	    val caps = new GLCapabilities(prof)
-	    
-	    caps.setDoubleBuffered(true)
-	    caps.setHardwareAccelerated(true)
-	    caps.setSampleBuffers(true)
-	    caps.setNumSamples(4)
-	    
-	    val win  = GLWindow.create(caps)
-	    val anim = new FPSAnimator(win, fps)
-	    
-	    win.addWindowListener(this)
-	    win.addGLEventListener(this)
-	    win.addMouseListener(camCtrl)
-	    win.addKeyListener(camCtrl)
-	    win.setSize(camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
-	    win.setTitle("Skinning")
-	    win.setVisible(true)
-	    
-	    anim.start
-	}
-    
-    override def windowDestroyNotify(ev:WindowEvent) {
-	    exit
-	}
-	
-	def init(win:GLAutoDrawable) {
-	    gl = new backend.SGLJogl(win.getGL.getGL3, GLU.createGLU)
-	    
+	def initializeSuface() {
 	    initGL
         initShaders
 	    initGeometry
 	    initTextures
 	    
 	    camera.viewCartesian(2, 2, 2)
-	    reshape(null, 0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
+	    reshape(camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
 	}
 
 	protected def initGL() {
@@ -137,7 +122,7 @@ class Skinning extends WindowAdapter with GLEventListener {
 	    tex1nm.wrap(gl.REPEAT)
 	}
 	
-	def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {
+	def reshape(width:Int, height:Int) {
 	    camera.viewportPx(width, height)
         var ratio = camera.viewportRatio
         
@@ -145,7 +130,7 @@ class Skinning extends WindowAdapter with GLEventListener {
         camera.frustum(-ratio, ratio, -1, 1, 1)
 	}
 	
-	def display(win:GLAutoDrawable) {
+	def display() {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	    
 	    shader1.use
@@ -169,7 +154,7 @@ class Skinning extends WindowAdapter with GLEventListener {
 	        skeleton.drawSkeleton(gl, camera, shader2)
 	    }
 	    
-	    win.swapBuffers
+	    surface.swapBuffers
 	}
 	
 	def useLights(shader:ShaderProgram) {
@@ -185,6 +170,4 @@ class Skinning extends WindowAdapter with GLEventListener {
 	    tex1nm.bindTo(gl.TEXTURE1)
 	    shader.uniform("tex.normal", 1)
 	}
-	
-	def dispose(win:GLAutoDrawable) {}
 }

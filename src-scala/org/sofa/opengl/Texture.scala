@@ -75,7 +75,7 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     }
     
     protected def imageData(image:BufferedImage):ByteBuffer = {
-        val buf = new ByteBuffer(width * height * 4)
+        val buf = new ByteBuffer(width * height * 4, true)
         
         // Very inefficient.
         
