@@ -14,7 +14,7 @@ import org.sofa.opengl.SGL
   * The surface interface is quite limited, and therefore will only fulfill
   * basic needs. For more advanced uses, using the native interfaces of the
   * system is recommended. */
-abstract class Surface(val renderer:SurfaceRenderer) {
+abstract trait Surface {
     /** SGL implementation. */
     def gl:SGL
     
@@ -39,6 +39,10 @@ trait SurfaceRenderer {
 	type InitSurface  = (SGL, Surface)=>Unit
 	/** Code to call at each surface reconfiguration. The two arguments are the width and height in pixels. */
 	type SurfaceChanged = (Surface)=>Unit
+	/** Code to call when the application pauses. */
+	type Pause = (Surface)=>Unit
+	/** Code to call when the application resumes. */
+	type Resume = (Surface)=>Unit
 	/** Code to call when a key was type and the rendering surface was active. */
 	type Key = (Surface, KeyEvent)=>Unit
 	/** Code to call when the surface has been clicked (touch-click on touchable devices, left-click on desktops). */
@@ -60,6 +64,8 @@ trait SurfaceRenderer {
 	var configure:Configure = null
 	var motion:Motion = null
 	var scroll:Scroll = null
+	var pause:Pause = null
+	var resume:Resume = null
 	var close:Close = null
 }
 

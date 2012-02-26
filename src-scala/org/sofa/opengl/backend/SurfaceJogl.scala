@@ -9,11 +9,11 @@ import com.jogamp.opengl.util.FPSAnimator
 import javax.media.opengl.glu.GLU
 
 class SurfaceNewt(
-    renderer:SurfaceRenderer,
+    val renderer:SurfaceRenderer,
     val camera:Camera,
     val title:String,
     val caps:GLCapabilities)
-	extends Surface(renderer)
+	extends Surface
 	with    WindowListener
 	with    KeyListener
 	with    MouseListener

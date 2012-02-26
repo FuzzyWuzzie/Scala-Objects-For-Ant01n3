@@ -1,47 +1,43 @@
 package org.sofa.opengl.test
 
 import scala.math._
-import javax.media.opengl._
-import javax.media.opengl.glu._
-import com.jogamp.opengl.util._
-import com.jogamp.newt.event._
-import com.jogamp.newt.opengl._
 import org.sofa.opengl._
 import org.sofa.opengl.mesh._
+import org.sofa.opengl.surface._
 import org.sofa.nio._
 import org.sofa.math._
-import java.awt.Color
 
 object NormalMap {
-	def main(args:Array[String]):Unit = (new NormalMap).show
+	def main(args:Array[String]):Unit = (new NormalMap)
 }
 
-class NormalMap extends WindowAdapter with GLEventListener with MouseListener with KeyListener {
+class NormalMap extends SurfaceRenderer {
     var gl:SGL = null
+    var surface:Surface = null
+    
     val projection:Matrix4 = new ArrayMatrix4
     val modelview = new MatrixStack(new ArrayMatrix4)
+    
     var nmapShader:ShaderProgram = null 
-    var widthPx = 800.0
-    var heightPx = 600.0
-    var maxDepth = 1000.0
+    
     val planeMesh = new Plane(2, 2, 4, 4)
     var plane:VertexArray = null
     val tubeMesh = new Cylinder(0.5f, 1, 16, 1)
     var tube:VertexArray = null
+    
     var uvTex:Texture = null
     var specTex:Texture = null
     var nmapTex:Texture = null
-    
+
+    var camera:Camera = null
+    var ctrl:BasicCameraController = null
     val clearColor = Rgba.black
-    val eye = Vector3(1, 1.5, 0)
-    var radius = 4.0
-    val lookAt = Vector3(0, 0, 0)
-    val up = Vector3(0, 1, 0)
-    val light1 = Vector4(0, 2, 0, 1)
+    val light1 = Vector4(2, 2, 2, 1)
     
-	def show() {
-	    val prof = GLProfile.get(GLProfile.GL3)
-	    val caps = new GLCapabilities(prof)
+    build
+    
+	def build() {
+	    val caps = new javax.media.opengl.GLCapabilities(javax.media.opengl.GLProfile.get(javax.media.opengl.GLProfile.GL3))
 	    
 	    caps.setDoubleBuffered(true)
 	    caps.setHardwareAccelerated(true)
@@ -51,27 +47,21 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 	    caps.setBlueBits(8)
 	    caps.setAlphaBits(8)
 	    caps.setNumSamples(4)
-	    
-	    val win = GLWindow.create(caps)
-	    val anim = new FPSAnimator(win, 30)
-	    
-	    win.addWindowListener(this)
-	    win.addGLEventListener(this)
-	    win.addMouseListener(this)
-	    win.addKeyListener(this)
-	    win.setSize(widthPx.toInt, heightPx.toInt)
-	    win.setTitle("Normal Mapping")
-	    win.setVisible(true)
-	    
-	    anim.start
+
+        camera         = Camera()
+	    ctrl           = new MyCameraController(camera, light1)
+	    initSurface    = initializeSurface
+	    frame          = display
+	    surfaceChanged = reshape
+	    key            = ctrl.key
+	    motion         = ctrl.motion
+	    scroll         = ctrl.scroll
+	    close          = { surface => exit }
+	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Normal mapping", caps)
 	}
 	
-	override def windowDestroyNotify(ev:WindowEvent) {
-	    exit
-	}
-	
-	def init(win:GLAutoDrawable) {
-	    gl = new backend.SGLJogl(win.getGL.getGL3, GLU.createGLU)
+	def initializeSurface(sgl:SGL, surface:Surface) {
+	    gl = sgl
 	    
 	    gl.clearColor(clearColor)
 	    gl.clearDepth(1f)
@@ -82,15 +72,17 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
         gl.cullFace(gl.BACK)
         gl.frontFace(gl.CW)
 
-	    setup
+	    setup(surface)
 	}
 	
-	def setup() {
+	def setup(surface:Surface) {
+	    camera.viewCartesian(2, 2, 2)
+	    
 	    nmapShader = new ShaderProgram(gl,
 	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
 	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
 
-	    reshape(null, 0, 0, widthPx.toInt, heightPx.toInt)
+	    reshape(surface)
 	    
 	    tubeMesh.setTopDiskColor(Rgba.yellow)
 	    tubeMesh.setBottomDiskColor(Rgba.yellow)
@@ -117,65 +109,52 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 	    nmapTex.wrap(gl.REPEAT)
 	}
 	
-	def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {
-	    widthPx = width
-        heightPx = height
-        var ratio = widthPx / heightPx
+	def reshape(surface:Surface) {
+	    camera.viewportPx(surface.width, surface.height)
+        var ratio = camera.viewportRatio
         
-        gl.viewport(0, 0, width, height)
-        projection.setIdentity
-        projection.frustum(-ratio, ratio, -1, 1, 1, maxDepth)
+        gl.viewport(0, 0, surface.width, surface.height)
+        camera.frustum(-ratio, ratio, -1, 1, 1)
 	}
 	
-	def display(win:GLAutoDrawable) {
+	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	    
 	    nmapShader.use
-	    
-	    modelview.setIdentity
-	    modelview.lookAt(eye, lookAt, up)
+
+	    camera.setupView
 	    
 	    setupLights
 	    setupTextures
 	    
-	    nmapShader.uniformMatrix("MV", modelview.top)
-	    nmapShader.uniformMatrix("MV3x3", modelview.top3x3)
-	    nmapShader.uniformMatrix("MVP", projection * modelview)
+	    camera.uniformMVP(nmapShader)
 	    plane.draw(planeMesh.drawAs)
 /*	    tube.draw(tubeMesh.drawAs)
 
-	    modelview.pushpop {
-		    modelview.translate(0, 1.1, 0)
-		    nmapShader.uniformMatrix("MV", modelview.top)
-		    nmapShader.uniformMatrix("MV3x3", modelview.top3x3)
-		    nmapShader.uniformMatrix("MVP", projection * modelview)
+	    camera.pushpop {
+		    camera.translateModel(0, 1.1, 0)
+		    camera.uniformMVP(nmapShader)
 		    tube.draw(tubeMesh.drawAs)
 	    }
 */
-	    modelview.pushpop {
-		    modelview.translate(-1, 0, -1)
-		    nmapShader.uniformMatrix("MV", modelview.top)
-		    nmapShader.uniformMatrix("MV3x3", modelview.top3x3)
-		    nmapShader.uniformMatrix("MVP", projection * modelview)
+	    camera.pushpop {
+		    camera.translateModel(-1, 0, -1)
+		    camera.uniformMVP(nmapShader)
 		    tube.draw(tubeMesh.drawAs)
 		    
-		    modelview.translate(0, 1.1, 0)
-		    nmapShader.uniformMatrix("MV", modelview.top)
-		    nmapShader.uniformMatrix("MV3x3", modelview.top3x3)
-		    nmapShader.uniformMatrix("MVP", projection * modelview)
+		    camera.translateModel(0, 1.1, 0)
+		    camera.uniformMVP(nmapShader)
 		    tube.draw(tubeMesh.drawAs)
 	    }
 	    
-	    win.swapBuffers
-	    
-	    //animate
+	    surface.swapBuffers
 	}
 	
 	def setupLights() {
 	    // We need to position the light by ourself, but avoid doing
 	    // it at each pixel in the shader.
 	    
-	    nmapShader.uniform("lightPos", Vector3(modelview.top * light1))
+	    nmapShader.uniform("lightPos", Vector3(camera.modelview.top * light1))
 	    nmapShader.uniform("lightIntensity", 5f)
 	    nmapShader.uniform("ambientIntensity", 0.1f)
 	    nmapShader.uniform("specularPow", 16f)
@@ -189,108 +168,22 @@ class NormalMap extends WindowAdapter with GLEventListener with MouseListener wi
 	    nmapTex.bindTo(gl.TEXTURE2)
 	    nmapShader.uniform("texNormal", 2)	// Texture Unit 2
 	}
-	
-	def dispose(win:GLAutoDrawable) {}
-	
-	var angle = 0.0
-	
-	def animate() {
-	    angle += 0.01
-	    
-	    if(angle > 360) angle = 0
-	    
-	    eye.x = (cos(angle)*4).toFloat
-	    eye.z = (sin(angle)*4).toFloat
-	}
-	
-	// Events
-	
-	def mouseClicked(e:MouseEvent) {} 
-           
-	def mouseDragged(e:MouseEvent) {} 
-           
-	def mouseEntered(e:MouseEvent) {} 
-           
-	def mouseExited(e:MouseEvent) {} 
-           
-	def mouseMoved(e:MouseEvent) {}
-           
-	def mousePressed(e:MouseEvent) {} 
-           
-	def mouseReleased(e:MouseEvent) {} 
-           
-	def mouseWheelMoved(e:MouseEvent) {
-	    val rotation = e.getWheelRotation / 100f
-	    
-	    angle = (angle + rotation) % (2*Pi)
-	    eye.x = (cos(angle)*radius).toFloat
-	    eye.z = (sin(angle)*radius).toFloat
-	} 
-	
-	def keyPressed(e:KeyEvent) {
-	} 
-           
-	def keyReleased(e:KeyEvent) {
-	}
-           
-	def keyTyped(e:KeyEvent) {
-		e.getKeyCode match {
-		    case KeyEvent.VK_PAGE_UP   => { pageUp(e) } 
-		    case KeyEvent.VK_PAGE_DOWN => { pageDown(e) }
-		    case KeyEvent.VK_UP        => { up(e) }
-		    case KeyEvent.VK_DOWN      => { down(e) }
-		    case KeyEvent.VK_LEFT      => { left(e) }
-		    case KeyEvent.VK_RIGHT     => { right(e) }
-		    case _ => {}
-		}
-		
-	}       
+}
 
-	protected def pageUp(e:KeyEvent) {
-	    radius -= 0.5
-		eye.x = (cos(angle)*radius).toFloat
-	    eye.z = (sin(angle)*radius).toFloat
-	}
-	
-	protected def pageDown(e:KeyEvent) {
-	    radius += 0.5
-		eye.x = (cos(angle)*radius).toFloat
-	    eye.z = (sin(angle)*radius).toFloat
-	}
-	
-	protected def up(e:KeyEvent) {
-	    if(e.isShiftDown()) {
-	        light1.x -= 0.1
-	    } else {
-	    	eye.y  += 0.1
-	    }
-	}
-	
-	protected def down(e:KeyEvent) {
-	    if(e.isShiftDown()) {
-	        light1.x += 0.1	        
-	    } else {
-	    	eye.y  -= 0.1
-	    }
-	}
-	
-	protected def left(e:KeyEvent) {
-	    if(e.isShiftDown()) {
-	        light1.z += 0.1
-	    } else {
-	    	angle = (angle - 0.1f) % (2*Pi)
-	    	eye.x = (cos(angle)*radius).toFloat
-	    	eye.z = (sin(angle)*radius).toFloat
-	    }
-	}
-	
-	protected def right(e:KeyEvent) {
-	    if(e.isShiftDown()) {
-	        light1.z -= 0.1
-	    } else {
-	    	angle = (angle + 0.1f) % (2*Pi)
-	    	eye.x = (cos(angle)*radius).toFloat
-			eye.z = (sin(angle)*radius).toFloat
-	    }
-	}
+class MyCameraController(camera:Camera, light:Vector4) extends BasicCameraController(camera) {
+    override def key(surface:Surface, keyEvent:KeyEvent) {
+        import keyEvent.ActionChar._
+        if(keyEvent.isShiftDown) {
+            if(! keyEvent.isPrintable) {
+                keyEvent.actionChar match {
+                    case Up    => { light.x -= 0.1 }
+                    case Down  => { light.x += 0.1 }
+                    case Right => { light.z -= 0.1 }
+                    case Left  => { light.z += 0.1 }
+                }
+            }
+        } else {
+            super.key(surface, keyEvent)
+        }
+    }
 }
