@@ -28,12 +28,17 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
         checkId
         data.rewind
         elementCount = data.size
-        bindBuffer(gl.ELEMENT_ARRAY_BUFFER, oid)
+        bind
         bufferData(gl.ELEMENT_ARRAY_BUFFER, data, gl.STATIC_DRAW)
         checkErrors
     }
     
     def size:Int = elementCount
+    
+    def bind() {
+        checkId
+        bindBuffer(gl.ELEMENT_ARRAY_BUFFER, oid)
+    }
     
     override def dispose() {
         checkId

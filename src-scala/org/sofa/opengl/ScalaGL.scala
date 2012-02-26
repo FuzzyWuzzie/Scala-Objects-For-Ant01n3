@@ -48,6 +48,10 @@ abstract class SGL {
     
     val TRIANGLES:Int
     
+// Info
+    
+    def isES:Boolean
+    
 // Vertex arrays
 	
 	def genVertexArray():Int
@@ -134,6 +138,7 @@ abstract class SGL {
 
 // Basic API
 	
+    def getError:Int
 	def getString(i:Int)
     def clear(mode:Int)
 	def clearColor(r:Float, g:Float, b:Float, a:Float)

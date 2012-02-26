@@ -62,7 +62,11 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
     val FRAGMENT_SHADER:Int = GL2ES2.GL_FRAGMENT_SHADER
 
     val TRIANGLES:Int = GL.GL_TRIANGLES
+
+    // Info
     
+    def isES:Boolean = false
+
 // Vertex arrays
 	
 	def genVertexArray():Int = {
@@ -229,6 +233,7 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
 
 // Basic API
 	
+    def getError:Int = glGetError
 	def getString(i:Int) = glGetString(i)
     def clear(mode:Int) = glClear(mode)
 	def clearColor(r:Float, g:Float, b:Float, a:Float) = glClearColor(r, g, b, a)

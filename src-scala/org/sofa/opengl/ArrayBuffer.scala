@@ -45,11 +45,16 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:FloatBuffer) extends Op
     /** Overall number of components in the array (not the number of elements!). */
     def size:Int = elementCount
     
-    def vertexAttrib(number:Int) {
+    def vertexAttrib(index:Int) {
         checkId
         bindBuffer(gl.ARRAY_BUFFER, oid)
-        vertexAttribPointer(number, valuesPerElement, gl.FLOAT, false, 0, 0)
+        vertexAttribPointer(index, valuesPerElement, gl.FLOAT, false, 0, 0)
         checkErrors
+    }
+    
+    def bind() {
+        checkId
+        bindBuffer(gl.ARRAY_BUFFER, oid)
     }
     
     override def dispose() {

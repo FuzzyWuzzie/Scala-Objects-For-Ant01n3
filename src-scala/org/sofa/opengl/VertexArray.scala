@@ -15,18 +15,18 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     init
     
     /** Initialize the vertex array. */
-    protected def init() { super.init(genVertexArray) }
+    protected def init() { super.init(if(gl.isES) 0 else genVertexArray) }
     
     /** Store the indices and array buffers. */
     protected def storeData(gl:SGL, indices:IntBuffer, data:(Int,FloatBuffer)*) {
         this.buffers = new Array[ArrayBuffer](data.size)
-        bindVertexArray(oid)
+        if(!gl.isES) bindVertexArray(oid)
         var i=0
         data.foreach { item =>
             buffers(i) = ArrayBuffer(gl, item._1, item._2)
-            enableVertexAttribArray(i)
             buffers(i).vertexAttrib(i)      // This is here that the association is
             							    // done between the buffer and the vertex array.
+            enableVertexAttribArray(i)
             i += 1
         }
         if(indices ne null) {
@@ -34,7 +34,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
         	// Creating the element buffer will also bind it, therefore
         	// this will assign it to this vertex array.
         }
-        bindVertexArray(0)
+        if(!gl.isES) bindVertexArray(0)
     }
     
     /** Create a vertex array without indices, only made of vertices, colors, normals, etc.
@@ -62,8 +62,12 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     override def dispose() {
         checkId
         buffers.foreach { _.dispose }
-        bindVertexArray(0)
-        deleteVertexArray(oid)
+        
+        if(! gl.isES) {
+        	bindVertexArray(0)
+        	deleteVertexArray(oid)
+        }
+
         super.dispose
     }
 
@@ -74,7 +78,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * etc.  */
     def draw(kind:Int):Unit = {
         checkId
-        bindVertexArray(oid)
+        bind
         
         if(elements ne null)
              drawElements(kind, elements.size, gl.UNSIGNED_INT, 0)
@@ -85,10 +89,27 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     
     def multiDraw(kind:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) {
         checkId
-        bindVertexArray(oid)
+        bind
         
         if(elements ne null) { /* TODO */ }
         else multiDrawArrays(kind, firsts, counts, primcount)
+    }
+
+    protected def bind() {
+        if(gl.isES) {
+            var i = 0
+            buffers.foreach { buffer =>
+                buffer.bind
+                enableVertexAttribArray(i)
+                buffer.vertexAttrib(i)
+                i += 1
+            }
+            if(elements ne null) {
+                elements.bind
+            }
+        } else {
+            bindVertexArray(oid)
+        }
     }
     
     def drawTriangles() {
