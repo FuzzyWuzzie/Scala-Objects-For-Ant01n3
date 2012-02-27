@@ -98,8 +98,11 @@ abstract class SGL {
 // Shaders
 	
 	def getShaderCompileStatus(id:Int):Boolean
-	def getShaderInfoLogLength(id:Int):Int
+	def getShader(id:Int, status:Int):Int
 	def getShaderInfoLog(id:Int):String 
+	def getProgram(id:Int, status:Int):Int
+	def getProgramLinkStatus(id:Int):Boolean
+	def getProgramInfoLog(id:Int):String
 	
 	def createShader(shaderType:Int):Int
 	def createProgram():Int

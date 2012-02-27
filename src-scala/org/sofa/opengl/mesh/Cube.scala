@@ -136,5 +136,5 @@ class Cube(val side:Float) extends Mesh with ColorableMesh with IndexedMesh with
     
     def drawAs:Int = GL_TRIANGLES
     
-    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (3, vertices), (4, colors), (3, normals))
+    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (0, 4, colors), (0, 3, normals))
 }

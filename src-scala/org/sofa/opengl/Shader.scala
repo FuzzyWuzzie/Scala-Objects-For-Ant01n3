@@ -30,8 +30,9 @@ abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl)
         checkErrors
         
         if(!getShaderCompileStatus(oid)) {
-        	Console.err.println(getShaderInfoLog(oid))
-        	throw new RuntimeException("Cannot compile shader")
+            val log = getShaderInfoLog(oid)
+        	Console.err.println(log)
+        	throw new RuntimeException("Cannot compile shader:%n%s".format(log))
         }
     }
     
@@ -75,6 +76,14 @@ class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
         super.init(createProgram)
         shaders.foreach { shader => attachShader(oid, shader.id) }
         linkProgram(oid)
+        
+        if(! getProgramLinkStatus(oid)) {
+            val log = "error"
+            //val log = getProgramInfoLog(oid)
+            //Console.err.println(log)
+            throw new RuntimeException("Cannot link shaders program:%n%s".format(log))
+        }
+        
         checkErrors
     }
     
@@ -189,6 +198,14 @@ class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
         else if(matrix.size == 16)
             uniformMatrix4(loc, 1, false, matrix)
         else throw new RuntimeException("matrix must be 9 (3x3) or 16 (4x4) floats");
+    }
+    
+    def getAttribLocation(variable:String):Int ={
+        checkId
+        useProgram(oid)
+        val loc = gl.getAttribLocation(oid, variable)
+        checkErrors
+        loc
     }
     
     def getUniformLocation(variable:String):Int = {

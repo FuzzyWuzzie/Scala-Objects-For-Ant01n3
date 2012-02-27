@@ -42,7 +42,7 @@ class CubicCurve(val segments:Int, val A:Point3, val B:Point3, val C:Point3, val
 	
 	def vertices:FloatBuffer = V
 	
-	def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (3, vertices))
+	def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (0, 3, vertices))
 	
 	def drawAs():Int = GL_LINE_STRIP
 }
@@ -92,5 +92,5 @@ class CubicCurves(countCurves:Int, val segments:Int) extends Mesh with MultiArra
     
     def drawAs():Int = GL_LINE_STRIP
     
-    def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (3, vertices))
+    def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (0, 3, vertices))
 }

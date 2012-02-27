@@ -303,7 +303,7 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
         buf
     }
     
-    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (3, vertices), (4, colors), (3, normals), (3, tangents), (2, texCoords))
+    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors), (2, 3, normals), (3, 3, tangents), (4, 2, texCoords))
     
     def drawAs():Int = GL_TRIANGLES
     

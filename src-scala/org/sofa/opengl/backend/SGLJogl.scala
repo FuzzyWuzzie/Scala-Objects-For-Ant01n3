@@ -155,20 +155,31 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
 	
 	def createProgram():Int = glCreateProgram()
 	
-	def getShaderCompileStatus(id:Int):Boolean = {
-	    glGetShaderiv(id, GL_COMPILE_STATUS, ib1)
-	    ib1.get(0) == GL_TRUE
-	}
+	def getShaderCompileStatus(id:Int):Boolean = { getShader(id, GL_COMPILE_STATUS) == GL_TRUE }
 	
-	def getShaderInfoLogLength(id:Int):Int = {
+	def getProgramLinkStatus(id:Int):Boolean = { getProgram(id, GL_LINK_STATUS) == GL_TRUE }
+	
+	def getShader(id:Int, status:Int):Int = {
 	    glGetShaderiv(id, GL_INFO_LOG_LENGTH, ib1)
 	    ib1.get(0)
 	}
 	
 	def getShaderInfoLog(id:Int):String = {
-		val len = getShaderInfoLogLength(id)
-		val data = NioByteBuffer.allocate(len)
+		val len = getShader(id, GL_INFO_LOG_LENGTH)
+		val data = NioByteBuffer.allocateDirect(len)
 	    gl.glGetShaderInfoLog(id, len, ib1, data)
+	    new String(data.array)
+	}
+	
+	def getProgram(id:Int, status:Int):Int = {
+		glGetProgramiv(id, status, ib1)
+		ib1.get(0)
+	}
+	
+	def getProgramInfoLog(id:Int):String = {
+	    val len = getProgram(id, GL_INFO_LOG_LENGTH)
+	    val data = NioByteBuffer.allocateDirect(len)
+	    gl.glGetProgramInfoLog(id, len, ib1, data)
 	    new String(data.array)
 	}
 	

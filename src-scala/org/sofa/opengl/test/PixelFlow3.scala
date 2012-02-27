@@ -206,7 +206,7 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
         projection.frustum(-1, 1, -1, 1, 1, 20)
         cubeShad.uniformMatrix("projection", projection)
 
-        cube = new VertexArray(gl, cubeInd, (3, cubeVert), (4, cubeClr), (3, cubeNorm))
+        cube = new VertexArray(gl, cubeInd, (0, 3, cubeVert), (1, 4, cubeClr), (2, 3, cubeNorm))
     }
     
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {

@@ -33,7 +33,7 @@ class TriangleSet(count:Int) extends Mesh {
 	
     def vertices:FloatBuffer = V
 
-    def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (3, vertices))
+    def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (0, 3, vertices))
     
     def drawAs():Int = GL_TRIANGLES
 }
@@ -66,5 +66,5 @@ class ColoredTriangleSet(count:Int) extends TriangleSet(count) with ColorableMes
         C(pos+11) = ac
     }
     
-    override def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (3, vertices), (4, colors))
+    override def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (0, 3, vertices), (1, 4, colors))
 }
