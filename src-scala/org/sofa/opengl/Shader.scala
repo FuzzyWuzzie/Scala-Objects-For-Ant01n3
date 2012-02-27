@@ -6,8 +6,11 @@ import org.sofa.nio._
 
 object Shader {
     def fileToArrayOfStrings(file:String):Array[String] = {
+        streamToArrayOfStrings(new java.io.FileInputStream(file))
+    }
+    def streamToArrayOfStrings(in:java.io.InputStream):Array[String] = {
         val buf = new scala.collection.mutable.ArrayBuffer[String]
-        val src = new scala.io.BufferedSource(new java.io.FileInputStream(file))
+        val src = new scala.io.BufferedSource(in)
         src.getLines.foreach { line => buf += "%s%n".format(line) }
         buf.toArray
     }
@@ -16,9 +19,9 @@ object Shader {
 abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl) {
     import gl._
 
-    def this(gl:SGL, sourceFile:String) = {
-        this(gl, Shader.fileToArrayOfStrings(sourceFile))
-    }
+    def this(gl:SGL, sourceFile:String) = this(gl, Shader.fileToArrayOfStrings(sourceFile))
+
+    def this(gl:SGL, stream:java.io.InputStream) = this(gl, Shader.streamToArrayOfStrings(stream))
     
     protected val shaderType:Int
     
@@ -48,9 +51,9 @@ class VertexShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
     
     init
     
-    def this(gl:SGL, fileSource:String) {
-        this(gl, Shader.fileToArrayOfStrings(fileSource))
-    }
+    def this(gl:SGL, fileSource:String) = this(gl, Shader.fileToArrayOfStrings(fileSource))
+    
+    def this(gl:SGL, stream:java.io.InputStream) = this(gl, Shader.streamToArrayOfStrings(stream))
 }
 
 class FragmentShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
@@ -58,9 +61,9 @@ class FragmentShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
     
     init
     
-    def this(gl:SGL, fileSource:String) {
-        this(gl, Shader.fileToArrayOfStrings(fileSource))
-    }
+    def this(gl:SGL, fileSource:String) = this(gl, Shader.fileToArrayOfStrings(fileSource))
+
+    def this(gl:SGL, stream:java.io.InputStream) = this(gl, Shader.streamToArrayOfStrings(stream))
 }
 
 class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
