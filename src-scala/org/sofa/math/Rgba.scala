@@ -10,6 +10,8 @@ object Rgba {
     val magenta = new Rgba(1, 0, 1, 1)
     val yellow  = new Rgba(1, 1, 0, 1)
     def apply(from:java.awt.Color):Rgba = new Rgba(from.getRed/255.0, from.getGreen/255.0, from.getBlue/255.0, from.getAlpha/255.0)
+    def apply(r:Double, g:Double, b:Double, a:Double):Rgba = new Rgba(r, g, b, a)
+    def apply(r:Double, g:Double, b:Double):Rgba = new Rgba(r, g, b, 1)
 }
 
 class Rgba(
@@ -17,7 +19,4 @@ class Rgba(
 	var green:Double,
 	var blue:Double,
 	var alpha:Double) {
-	
-	
-	
 }

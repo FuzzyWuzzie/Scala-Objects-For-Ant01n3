@@ -124,4 +124,5 @@ class MotionEventJogl(source:MouseEvent, pressed:Boolean, released:Boolean) exte
     def y(pointer:Int):Double = source.getY(pointer)
     def pressure(pointer:Int):Double = source.getPressure(pointer)
     def pointerCount:Int = source.getPointerCount
+    def sourceEvent:AnyRef = source
 }

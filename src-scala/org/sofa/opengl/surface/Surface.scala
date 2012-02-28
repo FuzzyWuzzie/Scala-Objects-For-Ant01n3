@@ -140,6 +140,8 @@ abstract class MotionEvent extends Event {
         val Finger = Value
         val Unknown = Value
     }
+    
+    def sourceEvent:AnyRef
 }
 
 /** Event for all sorts of scrolling. */
