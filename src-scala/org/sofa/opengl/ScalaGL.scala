@@ -48,6 +48,8 @@ abstract class SGL {
     
     val TRIANGLES:Int
     
+    val EXTENSIONS:Int
+    
 // Info
     
     def isES:Boolean
@@ -142,7 +144,7 @@ abstract class SGL {
 // Basic API
 	
     def getError:Int
-	def getString(i:Int)
+	def getString(i:Int):String
     def clear(mode:Int)
 	def clearColor(r:Float, g:Float, b:Float, a:Float)
 	def clearColor(color:Rgba)

@@ -63,7 +63,9 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
 
     val TRIANGLES:Int = GL.GL_TRIANGLES
 
-    // Info
+    val EXTENSIONS:Int = GL.GL_EXTENSIONS
+
+// Info
     
     def isES:Boolean = false
 
@@ -245,7 +247,7 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
 // Basic API
 	
     def getError:Int = glGetError
-	def getString(i:Int) = glGetString(i)
+	def getString(i:Int):String = glGetString(i)
     def clear(mode:Int) = glClear(mode)
 	def clearColor(r:Float, g:Float, b:Float, a:Float) = glClearColor(r, g, b, a)
 	def clearColor(color:Rgba) = glClearColor(color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)

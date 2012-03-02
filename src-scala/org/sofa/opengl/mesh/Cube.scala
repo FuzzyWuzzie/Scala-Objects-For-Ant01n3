@@ -13,22 +13,36 @@ import GL3._
   * The vertex data must use indices. The cube is made of single triangles and therefore must be
   * drawn using "triangle" mode. You can use normals, and colors with this mesh.
   */
-class Cube(val side:Float) extends Mesh with ColorableMesh with IndexedMesh with SurfaceMesh {
+class Cube(val side:Float)
+	extends Mesh with ColorableMesh with IndexedMesh
+	with SurfaceMesh with TexturableMesh with TangentSurfaceMesh {
+    
     protected lazy val V:FloatBuffer = allocateVertices
     protected lazy val C:FloatBuffer = allocateColors
     protected lazy val N:FloatBuffer = allocateNormals
     protected lazy val I:IntBuffer = allocateIndices
+    protected lazy val X:FloatBuffer = allocateTexCoords
+    protected lazy val T:FloatBuffer = allocateTangents
+
+    protected var textureRepeatS:Int = 1
+    protected var textureRepeatT:Int = 1
 
     def vertices:FloatBuffer = V
     def colors:FloatBuffer = C
     def normals:FloatBuffer = N
     def indices:IntBuffer = I
+    def texCoords:FloatBuffer = X
+    def tangents:FloatBuffer = T
         
     override def hasColors = true
 
     override def hasIndices = true
     
     override def hasNormals = true
+    
+    override def hasTexCoords = true
+    
+    override def hasTangents = true
     
     protected def allocateVertices:FloatBuffer = {
         val s = side / 2f
@@ -65,6 +79,44 @@ class Cube(val side:Float) extends Mesh with ColorableMesh with IndexedMesh with
          s, -s,  s,			// 22
         -s, -s,  s)			// 23
 
+    }
+    
+    protected def allocateTexCoords:FloatBuffer = {
+        val s = textureRepeatS
+        val t = textureRepeatT
+        
+        FloatBuffer(
+        	// Front
+            0, 0,
+        	s, 0,
+        	s, t,
+        	0, t,
+        	// Right
+        	0, 0,
+        	s, 0,
+        	s, t,
+        	0, t,
+        	// Back
+        	0, 0,
+        	s, 0,
+        	s, t,
+        	0, t,
+        	// Left
+        	0, 0,
+        	s, 0,
+        	s, t,
+        	0, t,
+        	// Top
+        	0, 0,
+        	s, 0,
+        	s, t,
+        	0, t,
+        	// Bottom
+        	0, 0,
+        	s, 0,
+        	s, t,
+        	0, t
+        )
     }
 
     protected def allocateColors:FloatBuffer = {
@@ -110,6 +162,40 @@ class Cube(val side:Float) extends Mesh with ColorableMesh with IndexedMesh with
          0, -1,  0,
          0, -1,  0,
          0, -1,  0)
+    }
+
+    protected def allocateTangents:FloatBuffer = {
+        FloatBuffer(
+    	// Front
+         1,  0,  0,
+         1,  0,  0,
+         1,  0,  0,
+         1,  0,  0,
+    	// Right
+         0,  0, -1,
+         0,  0, -1,
+         0,  0, -1,
+         0,  0, -1,
+    	// Back
+        -1,  0,  0,
+        -1,  0,  0,
+        -1,  0,  0,
+        -1,  0,  0,
+    	// Left
+         0,  0,  1,
+         0,  0,  1,
+         0,  0,  1,
+         0,  0,  1,
+    	// Top
+         1,  0,  0,
+         1,  0,  0,
+         1,  0,  0,
+         1,  0,  0,
+    	// Bottom
+        -1,  0,  0,
+        -1,  0,  0,
+        -1,  0,  0,
+        -1,  0,  0)
     }
 
     protected def allocateIndices:IntBuffer = {

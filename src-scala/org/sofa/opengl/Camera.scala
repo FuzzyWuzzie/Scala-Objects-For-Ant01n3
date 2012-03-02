@@ -47,6 +47,18 @@ class Camera {
     
     /** Maximum depth of the view (far clip-plane position). */
     var maxDepth = 1000.0
+    
+    def zoom_= (value:Double):Unit = { sphericalEye.z = value; cartesianFromSpherical }
+    
+    def zoom:Double = sphericalEye.z
+    
+    def theta_= (value:Double):Unit = { sphericalEye.x = value; cartesianFromSpherical }
+    
+    def theta:Double = sphericalEye.x
+    
+    def phi_= (value:Double):Unit = { sphericalEye.y = value; cartesianFromSpherical }
+    
+    def phi:Double = sphericalEye.y
 
     /** Set the coordinates of the camera "eye" in spherical coordinates. This will be used
       * to define the "view" part of the model-view matrix when using [[setupView()]]. */
