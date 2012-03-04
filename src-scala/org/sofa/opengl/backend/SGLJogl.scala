@@ -266,9 +266,6 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
     
 // Utilities
     
-    /** Display the OpenGL version, the GLSL version, the renderer name, and renderer vendor
-      * on standard output.
-      */
     def printInfos() {
 	    println("OpenGL version  %s".format(getString(GL_VERSION)))
         println("       glsl     %s".format(getString(GL_SHADING_LANGUAGE_VERSION)))
@@ -276,10 +273,6 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
         println("       vendor   %s".format(getString(GL_VENDOR)))
 	}
 	
-	/** Check any potential error recorded by the GL.
-	  * 
-	  * If an error flag is found, a runtime exception is raised.
-	  */
 	def checkErrors() {
 	    val err = glGetError
 	    if(err != GL_NO_ERROR) {

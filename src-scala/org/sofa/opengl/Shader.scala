@@ -4,10 +4,13 @@ import scala.collection.mutable._
 import org.sofa.math._
 import org.sofa.nio._
 
+/** Shader companion object. */
 object Shader {
+    /** Transform a text file into an array of strings. */
     def fileToArrayOfStrings(file:String):Array[String] = {
         streamToArrayOfStrings(new java.io.FileInputStream(file))
     }
+    /** Transform a text file from a stream into an array of strings. */
     def streamToArrayOfStrings(in:java.io.InputStream):Array[String] = {
         val buf = new scala.collection.mutable.ArrayBuffer[String]
         val src = new scala.io.BufferedSource(in)
@@ -16,15 +19,24 @@ object Shader {
     }
 }
 
+/** Represents a shader, either vertex, fragment or geometry.
+ *  
+ * @param gl The SGL instance.
+ * @param source An array of lines of code. 
+ */
 abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl) {
     import gl._
 
+    /** Try to open the given `sourceFile` on the file system and compile it. */
     def this(gl:SGL, sourceFile:String) = this(gl, Shader.fileToArrayOfStrings(sourceFile))
 
+    /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, stream:java.io.InputStream) = this(gl, Shader.streamToArrayOfStrings(stream))
     
+    /** Kind of shader, vertex, fragment or geometry ? */
     protected val shaderType:Int
     
+    /** Upload the source, compile it and check errors. */
     protected def init() {
         super.init(createShader(shaderType))
         checkErrors
@@ -39,6 +51,7 @@ abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl)
         }
     }
     
+    /** Release the shader. */
     override def dispose() {
         checkId
         deleteShader(oid)
@@ -46,32 +59,44 @@ abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl)
     }
 }
 
+/** A vertex shader/ */
 class VertexShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
     protected val shaderType = gl.VERTEX_SHADER
     
     init
     
+    /** Try to open the given `sourceFile` on the file system and compile it. */
     def this(gl:SGL, fileSource:String) = this(gl, Shader.fileToArrayOfStrings(fileSource))
     
+    /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, stream:java.io.InputStream) = this(gl, Shader.streamToArrayOfStrings(stream))
 }
 
+/** A fragment shader. */
 class FragmentShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
     protected val shaderType = gl.FRAGMENT_SHADER
     
     init
     
+    /** Try to open the given `sourceFile` on the file system and compile it. */
     def this(gl:SGL, fileSource:String) = this(gl, Shader.fileToArrayOfStrings(fileSource))
 
+    /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, stream:java.io.InputStream) = this(gl, Shader.streamToArrayOfStrings(stream))
 }
 
+/** Composition of several shaders into a program. */
 class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
     import gl._
     
+    /** Set of shaders. */
     protected val shaders = shdrs.toArray
     
+    /** Locations of each uniform variable in the shader. */
     protected val uniformLocations = new HashMap[String, Int]
+    
+    /** Location of each vertex attribute variable in the shader. */
+    protected val attributeLocations = new HashMap[String, Int]
     
     init
     
@@ -206,7 +231,11 @@ class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
     def getAttribLocation(variable:String):Int ={
         checkId
         useProgram(oid)
-        val loc = gl.getAttribLocation(oid, variable)
+        var loc = attributeLocations.get(variable).getOrElse {
+            val l = gl.getAttribLocation(oid, variable) 
+        	attributeLocations.put(variable, l)
+            l
+        }
         checkErrors
         loc
     }
@@ -214,9 +243,13 @@ class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
     def getUniformLocation(variable:String):Int = {
         checkId
         useProgram(oid)
-        val loc = gl.getUniformLocation(oid, variable)
+        val loc = uniformLocations.get(variable).getOrElse {
+            var l = gl.getUniformLocation(oid, variable)
+            uniformLocations.put(variable, l)
+            l
+        }
         checkErrors
-        uniformLocations.put(variable, loc)
+        //uniformLocations.put(variable, loc)
         loc
     }
 }

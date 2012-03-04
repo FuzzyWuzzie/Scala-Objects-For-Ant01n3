@@ -29,7 +29,7 @@ import GL3._
   * |/ |/ |
   * +--+--+-->X
   * 
-  * Triangles are in CCW order.
+  * Triangles are in CW order.
   */
 class Plane(val nVertX:Int, val nVertZ:Int, val width:Int, val depth:Int)
 	extends Mesh with ColorableMesh with TangentSurfaceMesh

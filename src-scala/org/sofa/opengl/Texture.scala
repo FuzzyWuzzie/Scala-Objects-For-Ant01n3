@@ -21,6 +21,11 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
         checkErrors
     }
     
+    def this(gl:SGL, buffer:ByteBuffer, width:Int, height:Int, format:Int, theType:Int, doGenerateMipmaps:Boolean) {
+        this(gl, gl.TEXTURE_2D, width, height, 0)
+        initFromBuffer(buffer, format, theType, doGenerateMipmaps)
+    }
+    
     def this(gl:SGL, image:BufferedImage, generateMipmaps:Boolean) {
         this(gl, gl.TEXTURE_2D, image.getWidth, image.getHeight, 0)
         initFromImage(image, generateMipmaps)
@@ -33,6 +38,10 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     protected def initFromImage(image:BufferedImage, doGenerateMipmaps:Boolean) {
        val (format, theType) = imageFormatAndType(image)
        val data = imageData(image)
+       initFromBuffer(data, format, theType, doGenerateMipmaps)
+    }
+    
+    protected def initFromBuffer(data:ByteBuffer, format:Int, theType:Int, doGenerateMipmaps:Boolean) {
        texImage2D(mode, 0, gl.RGBA, width, height, 0, format, theType, data)
        if(doGenerateMipmaps)
            generateMipmaps(gl.TEXTURE_2D)
