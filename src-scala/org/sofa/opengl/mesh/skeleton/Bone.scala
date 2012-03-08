@@ -63,12 +63,45 @@ class Bone(val id:Int) {
 	/** Child bone `index`. */
 	def apply(index:Int):Bone = children(index)
 
-	/** The shader must have an uniform vec4 variable whose name is passed
-	  * as `uniformColorName` to set the color of the bone. */
+// Render
+	
+	/** Draw a representation of the skeleton.
+	  * The given `shader` must have an uniform `vec4` variable whose name is passed
+	  * as `uniformColorName` to set the color of the bone.
+	  * 
+	  * The [[Camera]] class being used, the shader must also define:
+	  *  
+	  *      uniform mat4 MV;    // Model-View matrix.
+	  *      uniform mat3 MV3x3; // Upper 3x3 model-view matrix.
+	  *      uniform mat4 MVP;   // Projection-Model-View matrix.
+	  */
 	def drawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram, uniformColorName:String) {
+	    camera.uniformMVP(shader)
 	    recursiveDrawSkeleton(gl, camera, shader, uniformColorName)
 	}
 	
+	/** Draw the model deformed by bones animations.
+	  * The given `shader` must define a bone structure that at least contains two
+	  * fields `MV` for the animation matrix and `MV3x3` for the upper 3x3 matrix
+	  * extracted from `MV`.
+	  *      
+	  *     struct Bone {
+	  *         mat4 MV;
+	  *         mat3 MV3x3;
+	  *     };
+	  * 
+	  *  In addition the shader must define an uniform variable named 'bone'
+	  *  which is an array of the form:
+	  *  
+	  *      uniform Bone bone[n];
+	  *  
+	  *  Where `n` is the max number of bones used in the skeleton. The [[Camera]] class
+	  *  being used, the shader must also define:
+	  *  
+	  *      uniform mat4 MV;    // Model-View matrix.
+	  *      uniform mat3 MV3x3; // Upper 3x3 model-view matrix.
+	  *      uniform mat4 MVP;   // Projection-Model-View matrix.
+	  */
 	def drawModel(gl:SGL, camera:Camera, model:Mesh, modelInstance:VertexArray, shader:ShaderProgram) {
 		val orientation = ArrayMatrix4(); orientation.setIdentity
 	    val forward = ArrayMatrix4(); forward.setIdentity
@@ -79,23 +112,44 @@ class Bone(val id:Int) {
 	    modelInstance.draw(model.drawAs)
 	}
 	
-	def identity() = orientation.setIdentity
+// Orientation
 	
-	def translate(tx:Double, ty:Double, tz:Double) = orientation.translate(tx, ty, tz)
+	def orientationIdentity() = orientation.setIdentity
 	
-	def translate(t:NumberSeq3) = orientation.translate(t)
+	def orientationTranslate(tx:Double, ty:Double, tz:Double) = orientation.translate(tx, ty, tz)
+	
+	def orientationTranslate(t:NumberSeq3) = orientation.translate(t)
 	    
-	def scale(sx:Double, sy:Double, sz:Double) = orientation.scale(sx, sy, sz)
+	def orientationScale(sx:Double, sy:Double, sz:Double) = orientation.scale(sx, sy, sz)
 	
-	def scale(s:NumberSeq3) = orientation.scale(s)
+	def orientationScale(s:NumberSeq3) = orientation.scale(s)
 
-	def rotate(angle:Double, x:Double, y:Double, z:Double) = orientation.rotate(angle, x, y, z)
+	def orientationRotate(angle:Double, x:Double, y:Double, z:Double) = orientation.rotate(angle, x, y, z)
 	
-	def rotate(angle:Double, axis:NumberSeq3) = orientation.rotate(angle, axis)
+	def orientationRotate(angle:Double, axis:NumberSeq3) = orientation.rotate(angle, axis)
+	
+// Animation
+	
+	def identity() = animation.setIdentity
+	
+	def translate(tx:Double, ty:Double, tz:Double) = animation.translate(tx, ty, tz)
+	
+	def translate(t:NumberSeq3) = animation.translate(t)
+	
+	def scale(sx:Double, sy:Double, sz:Double) = animation.scale(sx, sy, sz)
+	
+	def scale(s:NumberSeq3) = animation.scale(s)
+
+	def rotate(angle:Double, x:Double, y:Double, z:Double) = animation.rotate(angle, x, y, z)
+	
+	def rotate(angle:Double, axis:NumberSeq3) = animation.rotate(angle, axis)
+
+// Compute
 	
 	protected def recursiveDrawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram, uniformColorName:String) {
 	    camera.pushpop {
 	        camera.transformModel(orientation)
+	        camera.transformModel(animation)
 	        camera.uniformMVP(shader)
 
 	        if(Bone.bone == null) Bone.bone = Bone.boneMesh.newVertexArray(gl)
@@ -120,7 +174,6 @@ class Bone(val id:Int) {
 	    // The final matrix is then multiplied by the inverse bone orientation since the mesh
 	    // points are not naturally transformed by the bone initial orientation).
 	    TX.copy(localForward * inverseOrientation)
-//Console.println("bone[%d] TX=%s".format(id, TX))
 	    // Process the children.
 	    children.foreach { child =>
 	    	child.recursiveComputeMatrices(localOrientation, localForward)

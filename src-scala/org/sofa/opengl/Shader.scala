@@ -1,21 +1,55 @@
 package org.sofa.opengl
 
+import java.io.{File, InputStream, FileInputStream}
 import scala.collection.mutable._
 import org.sofa.math._
 import org.sofa.nio._
 
 /** Shader companion object. */
 object Shader {
+    val includeMatcher = "#include\\s+<([^>]+)>\\s*".r
+
+    val includePath = scala.collection.mutable.ArrayBuffer[String]()
+    
     /** Transform a text file into an array of strings. */
     def fileToArrayOfStrings(file:String):Array[String] = {
-        streamToArrayOfStrings(new java.io.FileInputStream(file))
+        streamToArrayOfStrings(locateFileName(file))
     }
     /** Transform a text file from a stream into an array of strings. */
-    def streamToArrayOfStrings(in:java.io.InputStream):Array[String] = {
+    def streamToArrayOfStrings(in:InputStream):Array[String] = {
         val buf = new scala.collection.mutable.ArrayBuffer[String]
         val src = new scala.io.BufferedSource(in)
-        src.getLines.foreach { line => buf += "%s%n".format(line) }
+        src.getLines.foreach { line =>
+        	if(line.startsWith("#include")) {
+        	    val fileName = line match {
+        	        case includeMatcher(file) => file 
+        	        case _                    => throw new RuntimeException("invalid include statement '%s'".format(line))
+        	    }
+        	    buf ++= streamToArrayOfStrings(locateFileName(fileName))
+        	} else {
+        		buf += "%s%n".format(line)
+        	}
+        }
+
         buf.toArray
+    }
+    
+    /** Try to open the given filename, and if this is not possible, try to
+      * open it from a repository of shaders in each of the paths listed
+      * in the `includePath` variable. Throw an exception if the file cannot
+      * be open, else returns an input stream on it. */
+    def locateFileName(fileName:String):InputStream = {
+        var file = new File(fileName)
+        if(! file.exists) {
+            includePath.foreach { path =>
+                val f = new File("%s/%s".format(path, fileName))
+                if(f.exists) file = f
+            }
+        }
+        
+        if(! file.exists) throw new RuntimeException("cannot locate include file %s".format(fileName))
+        
+        new FileInputStream(file)
     }
 }
 

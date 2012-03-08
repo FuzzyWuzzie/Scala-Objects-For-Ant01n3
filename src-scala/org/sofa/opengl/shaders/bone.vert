@@ -1,10 +1,5 @@
 #version 330
-
-struct Bone {
-	mat4 MV;
-	mat3 MV3x3;
-	vec4 color;
-};
+#include <boneStruct.glsl>
 
 layout(location=0) in vec3 position;
 layout(location=1) in float boneIndex;

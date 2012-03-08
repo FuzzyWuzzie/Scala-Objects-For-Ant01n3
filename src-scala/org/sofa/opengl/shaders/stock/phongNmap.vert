@@ -1,11 +1,5 @@
 #version 330
-
-struct Light {
-	vec3 pos;
-	float intensity;
-	float ambient;
-	float specular;
-};
+#include <lightStruct.glsl>
 
 // Input:
 layout(location=0) in vec3 pos;			// Position.
