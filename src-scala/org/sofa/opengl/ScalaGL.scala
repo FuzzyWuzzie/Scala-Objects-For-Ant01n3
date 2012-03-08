@@ -37,6 +37,7 @@ abstract class SGL {
     val UNSIGNED_BYTE:Int
     val UNSIGNED_INT:Int
     val FLOAT:Int
+    val DOUBLE:Int
     val RGBA:Int
     
     val ELEMENT_ARRAY_BUFFER:Int
@@ -95,6 +96,7 @@ abstract class SGL {
 	def bufferData(target:Int, data:Array[Float], mode:Int)
 	def bufferData(target:Int, data:IntBuffer, mode:Int)
 	def bufferData(target:Int, data:Array[Int], mode:Int)
+    def bufferData(target:Int, data:NioBuffer, mode:Int)
 	def bindBuffer(mode:Int, id:Int)
 
 // Shaders

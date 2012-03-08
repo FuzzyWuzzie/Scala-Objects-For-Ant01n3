@@ -105,12 +105,14 @@ class Camera {
         cartesianEye.x = sphericalEye.z * cos(sphericalEye.x) * sin(sphericalEye.y)
         cartesianEye.z = sphericalEye.z * sin(sphericalEye.x) * sin(sphericalEye.y)
         cartesianEye.y = sphericalEye.z * cos(sphericalEye.y)
+    	//Console.err.println("cart(%s) -> sphe(%s)".format(cartesianEye, sphericalEye))
     }
     
     protected def sphericalFromCartesian() {
         sphericalEye.z = sqrt(cartesianEye.x*cartesianEye.x + cartesianEye.y*cartesianEye.y + cartesianEye.z*cartesianEye.z)
-    	sphericalEye.x = acos(cartesianEye.z / sphericalEye.z)
-    	sphericalEye.y = atan(cartesianEye.y / cartesianEye.x)
+    	sphericalEye.y = acos(cartesianEye.z / sphericalEye.z)
+    	sphericalEye.x = atan(cartesianEye.y / cartesianEye.x)
+    	//Console.err.println("sphe(%s) -> cart(%s)".format(sphericalEye, cartesianEye))
     }
     
     /** Set the width and height of the output view-port in pixels. */

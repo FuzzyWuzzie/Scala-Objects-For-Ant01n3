@@ -33,6 +33,9 @@ class Bone(val id:Int) {
 	/** Final matrix computed for the vertices attached to this bone. */
 	val TX:Matrix4 = ArrayMatrix4()
 	
+	/** Bone color. */
+	var color = new Rgba(1, 1, 1, 1)
+	
 	/** Parent bone. */
 	var parent:Bone = null
 	
@@ -56,17 +59,22 @@ class Bone(val id:Int) {
 	    child.parent = this
 	    child
 	}
+	
+	/** Child bone `index`. */
+	def apply(index:Int):Bone = children(index)
 
-	def drawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram) {
-	    recursiveDrawSkeleton(gl, camera, shader)
+	/** The shader must have an uniform vec4 variable whose name is passed
+	  * as `uniformColorName` to set the color of the bone. */
+	def drawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram, uniformColorName:String) {
+	    recursiveDrawSkeleton(gl, camera, shader, uniformColorName)
 	}
 	
 	def drawModel(gl:SGL, camera:Camera, model:Mesh, modelInstance:VertexArray, shader:ShaderProgram) {
-		val orientation = ArrayMatrix4(); orientation.setIdentity; //ArrayMatrix4(camera.modelview)
+		val orientation = ArrayMatrix4(); orientation.setIdentity
 	    val forward = ArrayMatrix4(); forward.setIdentity
 	    
 	    recursiveComputeMatrices(orientation, forward)
-	    recursiveUniformMatrices(shader)
+	    recursiveUniformMatrices(shader, camera)
 	    camera.uniformMVP(shader)
 	    modelInstance.draw(model.drawAs)
 	}
@@ -85,16 +93,17 @@ class Bone(val id:Int) {
 	
 	def rotate(angle:Double, axis:NumberSeq3) = orientation.rotate(angle, axis)
 	
-	protected def recursiveDrawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram) {
+	protected def recursiveDrawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram, uniformColorName:String) {
 	    camera.pushpop {
 	        camera.transformModel(orientation)
 	        camera.uniformMVP(shader)
 
 	        if(Bone.bone == null) Bone.bone = Bone.boneMesh.newVertexArray(gl)
+	        shader.uniform(uniformColorName, color)
 	        Bone.bone.draw(Bone.boneMesh.drawAs)
 	        
 	        children.foreach { child =>
-	        	child.recursiveDrawSkeleton(gl, camera, shader)
+	        	child.recursiveDrawSkeleton(gl, camera, shader, uniformColorName)
 	        }
 	    }
 	}
@@ -111,6 +120,7 @@ class Bone(val id:Int) {
 	    // The final matrix is then multiplied by the inverse bone orientation since the mesh
 	    // points are not naturally transformed by the bone initial orientation).
 	    TX.copy(localForward * inverseOrientation)
+//Console.println("bone[%d] TX=%s".format(id, TX))
 	    // Process the children.
 	    children.foreach { child =>
 	    	child.recursiveComputeMatrices(localOrientation, localForward)
@@ -118,13 +128,14 @@ class Bone(val id:Int) {
 	    // At the end of the process each bone as a TX matrix setup. 
 	}
 	
-	protected def recursiveUniformMatrices(shader:ShaderProgram) {
+	protected def recursiveUniformMatrices(shader:ShaderProgram, camera:Camera) {
 	    // Store in the shader each bone final TX matrix.
-	    shader.uniformMatrix("bone.MV[%d]".format(id), TX)
-	    shader.uniformMatrix("bone.MV3x3[%d]".format(id), TX.top3x3)
+	    shader.uniformMatrix("bone[%d].MV".format(id), TX)
+	    shader.uniformMatrix("bone[%d].MV3x3".format(id), TX.top3x3)
+//	    shader.uniform("bone[%d].color", color)
 	    
 	    children.foreach { child =>
-	    	child.recursiveUniformMatrices(shader)
+	    	child.recursiveUniformMatrices(shader, camera)
 	    }
 	}
 }

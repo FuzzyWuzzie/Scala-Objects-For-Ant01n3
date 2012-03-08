@@ -52,6 +52,7 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
     val UNSIGNED_BYTE:Int = GL.GL_UNSIGNED_BYTE
     val UNSIGNED_INT:Int = GL.GL_UNSIGNED_INT
     val FLOAT:Int = GL.GL_FLOAT
+    val DOUBLE:Int = -1
     val RGBA:Int = GL.GL_RGBA
 
     val ELEMENT_ARRAY_BUFFER:Int = GL.GL_ELEMENT_ARRAY_BUFFER
@@ -149,6 +150,20 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
 	    bufferData(target, new IntBuffer(data), mode)
 	}
 
+	def bufferData(target:Int, data:NioBuffer, mode:Int) {
+	    if(data.isByte) {
+	        bufferData(target, data.asInstanceOf[ByteBuffer], mode)
+	    } else if(data.isInt) {
+	        bufferData(target, data.asInstanceOf[IntBuffer], mode)
+	    } else if(data.isFloat) {
+	        bufferData(target, data.asInstanceOf[FloatBuffer], mode)
+	    } else if(data.isDouble) {
+	        bufferData(target, data.asInstanceOf[DoubleBuffer], mode)
+	    } else {
+	        throw new RuntimeException("Unknown Nio buffer data type")
+	    }
+	}
+	
 	def bindBuffer(mode:Int, id:Int) = glBindBuffer(mode, id)
 
 // Shaders
@@ -168,7 +183,7 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
 	
 	def getShaderInfoLog(id:Int):String = {
 		val len = getShader(id, GL_INFO_LOG_LENGTH)
-		val data = NioByteBuffer.allocateDirect(len)
+		val data = NioByteBuffer.allocate(len)
 	    gl.glGetShaderInfoLog(id, len, ib1, data)
 	    new String(data.array)
 	}
@@ -180,7 +195,7 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
 	
 	def getProgramInfoLog(id:Int):String = {
 	    val len = getProgram(id, GL_INFO_LOG_LENGTH)
-	    val data = NioByteBuffer.allocateDirect(len)
+	    val data = NioByteBuffer.allocate(len)
 	    gl.glGetProgramInfoLog(id, len, ib1, data)
 	    new String(data.array)
 	}

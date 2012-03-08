@@ -28,7 +28,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     protected def init() { super.init(if(gl.isES) 0 else genVertexArray) }
     
     /** Store the indices and array buffers. */
-    protected def storeData(gl:SGL, indices:IntBuffer, data:(Int,Int,FloatBuffer)*) {
+    protected def storeData(gl:SGL, indices:IntBuffer, data:(Int,Int,NioBuffer)*) {
         this.buffers = new Array[(Int,ArrayBuffer)](data.size)
         if(!gl.isES) bindVertexArray(oid)
         var i=0
@@ -51,7 +51,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
       * number of components per element. */
-    def this(gl:SGL, data:(Int, Int, FloatBuffer)*) {
+    def this(gl:SGL, data:(Int, Int, NioBuffer)*) {
         this(gl)
         storeData(gl, null, data:_*)
     }
@@ -64,7 +64,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
       * number of components per element. */
-    def this(gl:SGL, indices:IntBuffer, data:(Int, Int, FloatBuffer)*) {
+    def this(gl:SGL, indices:IntBuffer, data:(Int, Int, NioBuffer)*) {
         this(gl)
         storeData(gl, indices, data:_*)
     }

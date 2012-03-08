@@ -1,7 +1,16 @@
 package org.sofa.nio
 
+trait NioBuffer {
+    def isByte:Boolean
+    def isInt:Boolean
+    def isFloat:Boolean
+    def isDouble:Boolean
+    def size():Int
+    def rewind()
+}
+
 /** Base for NIO buffers, seen as Scala IndexedSeq. */
-trait NioBuffer[T] extends IndexedSeq[T] {
+trait NioTypedBuffer[T] extends IndexedSeq[T] with NioBuffer {
 	type BufferLike <: { def get(i:Int):T }
 	/** The maximum capacity of the buffer. */
     var capacity:Int
@@ -102,7 +111,7 @@ object DoubleBuffer {
     }
 }
 
-class ByteBuffer(var capacity:Int, direct:Boolean) extends NioBuffer[Byte] {
+class ByteBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Byte] {
 	type BufferLike = java.nio.ByteBuffer
 	var buffer = if(direct) java.nio.ByteBuffer.allocateDirect(capacity) else java.nio.ByteBuffer.allocate(capacity)
 	nativeOrder
@@ -115,9 +124,13 @@ class ByteBuffer(var capacity:Int, direct:Boolean) extends NioBuffer[Byte] {
 	def nativeOrder() = buffer.order(java.nio.ByteOrder.nativeOrder())
 	def bigEndian() = buffer.order(java.nio.ByteOrder.BIG_ENDIAN)
 	def littleEndian() = buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+    def isByte:Boolean = true
+    def isInt:Boolean = false
+    def isFloat:Boolean = false
+    def isDouble:Boolean = false
 }
 
-class IntBuffer(var capacity:Int, direct:Boolean) extends NioBuffer[Int] {
+class IntBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Int] {
 	type BufferLike = java.nio.IntBuffer
 	var buffer:java.nio.IntBuffer = if(capacity>0) IntBuffer.allocate(capacity, direct) else null    
 	def this(capacity:Int) { this(capacity, true) }
@@ -128,9 +141,13 @@ class IntBuffer(var capacity:Int, direct:Boolean) extends NioBuffer[Int] {
 	def update(i:Int, value:Int):Unit = buffer.put(i, value)
 	def copy(other:IntBuffer) = { buffer.rewind; other.rewind; buffer.put(other.buffer) }
 	def copy(data:Array[Int]) = { buffer.rewind; buffer.put(data) }
+    def isByte:Boolean = false
+    def isInt:Boolean = true
+    def isFloat:Boolean = false
+    def isDouble:Boolean = false
 }
 
-class FloatBuffer(var capacity:Int, direct:Boolean) extends NioBuffer[Float] {
+class FloatBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Float] {
 	type BufferLike = java.nio.FloatBuffer
 	var buffer:java.nio.FloatBuffer = if(capacity>0) FloatBuffer.allocate(capacity, direct) else null
 	def this(capacity:Int) { this(capacity, true) }
@@ -141,9 +158,13 @@ class FloatBuffer(var capacity:Int, direct:Boolean) extends NioBuffer[Float] {
 	def update(i:Int, value:Float):Unit = buffer.put(i, value)
 	def copy(other:FloatBuffer) = { buffer.rewind; other.rewind; buffer.put(other.buffer) }
 	def copy(data:Array[Float]) = { buffer.rewind; buffer.put(data) }
+    def isByte:Boolean = false
+    def isInt:Boolean = false
+    def isFloat:Boolean = true
+    def isDouble:Boolean = false
 }
 
-class DoubleBuffer(var capacity:Int, direct:Boolean) extends NioBuffer[Double] {
+class DoubleBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Double] {
     type BufferLike = java.nio.DoubleBuffer
 	var buffer:java.nio.DoubleBuffer = if(capacity>0) DoubleBuffer.allocate(capacity, direct) else null
 	def this(capacity:Int) { this(capacity, true) }
@@ -154,4 +175,8 @@ class DoubleBuffer(var capacity:Int, direct:Boolean) extends NioBuffer[Double] {
 	def update(i:Int, value:Double):Unit = buffer.put(i, value)
 	def copy(other:DoubleBuffer) = { buffer.rewind; other.rewind; buffer.put(other.buffer) }
 	def copy(data:Array[Double]) = { buffer.rewind; buffer.put(data) }
+    def isByte:Boolean = false
+    def isInt:Boolean = false
+    def isFloat:Boolean = false
+    def isDouble:Boolean = true
 }

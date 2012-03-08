@@ -1,13 +1,11 @@
 package org.sofa.opengl.test
 
 import scala.math._
-
 import javax.media.opengl._
 import javax.media.opengl.glu._
 import com.jogamp.opengl.util._
 import com.jogamp.newt.event._
 import com.jogamp.newt.opengl._
-
 import org.sofa.nio._
 import org.sofa.math._
 import org.sofa.opengl._
@@ -45,8 +43,9 @@ class Skinning extends SurfaceRenderer {
 // Shading
     
     val clearColor = Rgba.black
-    var shader1:ShaderProgram = null
-    var shader2:ShaderProgram = null
+    var nmapShader:ShaderProgram = null
+    var plainShader:ShaderProgram = null
+    var boneShader:ShaderProgram = null
     var light1 = Vector4(2, 2, 2, 1)
     var tex1uv:Texture = null
     var tex1nm:Texture = null
@@ -79,11 +78,12 @@ class Skinning extends SurfaceRenderer {
     
 	def initializeSuface(gl:SGL, surface:Surface) {
 	    initGL(gl)
+	    initSkeleton
         initShaders
 	    initGeometry
 	    initTextures
 	    
-	    camera.viewCartesian(2, 2, 2)
+	    camera.viewCartesian(0, 5, 5)
 	    reshape(surface)
 	}
 
@@ -98,15 +98,37 @@ class Skinning extends SurfaceRenderer {
         gl.cullFace(gl.BACK)
         gl.frontFace(gl.CW)
 	}
+
+	protected def initSkeleton() {
+	    skeleton = new Bone(0)
+	    skeleton.addChild(1)
+	    skeleton.scale(0.3333, 0.3333, 0.3333)
+	    skeleton.color = Rgba.red
+	    skeleton(0).translate(0, 1, 0)
+	    skeleton(0).color = Rgba.green
+	    skeleton(0).addChild(2)
+	    skeleton(0)(0).translate(0, 1, 0)
+	    skeleton(0)(0).color = Rgba.blue
+	}
 	
 	protected def initShaders() {
-	    shader1 = new ShaderProgram(gl,
+	    nmapShader = new ShaderProgram(gl,
 	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/stock/phongNmap.vert"),
 	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/stock/phongNmap.frag"))
 	    
-	    shader2 = new ShaderProgram(gl,
-	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/stock/plainColor.vert"),
-	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/stock/plainColor.frag"))
+	    plainShader = new ShaderProgram(gl,
+	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/uniformColor.vert"),
+	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/uniformColor.frag"))
+	    
+	    boneShader = new ShaderProgram(gl,
+	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/bone.vert"),
+	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/bone.frag"))
+	
+	    boneShader.uniform("bone[0].color", skeleton.color)
+	    boneShader.uniform("bone[1].color", skeleton(0).color)
+	    boneShader.uniform("bone[2].color", (skeleton(0))(0).color)
+
+	    plainShader.uniform("uniformColor", Rgba.white)
 	}
 	
 	protected def initGeometry() {
@@ -115,15 +137,10 @@ class Skinning extends SurfaceRenderer {
 	    tubeMesh.setTopDiskColor(Rgba.red)
 	    
 	    plane = planeMesh.newVertexArray(gl)
-	    tube  = tubeMesh.newVertexArray(gl)
+	    tube  = new VertexArray(gl, tubeMesh.indices,
+	            	(boneShader.getAttribLocation("position"), 3, tubeMesh.vertices),
+	            	(boneShader.getAttribLocation("boneIndex"), 1, tubeMesh.bones))
 	    bone  = boneMesh.newVertexArray(gl)
-	    
-	    skeleton = new Bone(0)
-	    skeleton.addChild(1)
-	    skeleton.scale(0.3333, 0.3333, 0.3333)
-	    skeleton.children(0).translate(0, 1, 0)
-	    skeleton.children(0).addChild(2)
-	    skeleton.children(0).children(0).translate(0, 1, 0)
 	}
 	
 	protected def initTextures() {
@@ -141,34 +158,36 @@ class Skinning extends SurfaceRenderer {
         var ratio = camera.viewportRatio
         
         gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
-        camera.frustum(-ratio, ratio, -1, 1, 1)
+        camera.frustum(-ratio, ratio, -1, 1, 2)
 	}
 	
 	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	    
-	    shader1.use
+	    nmapShader.use
 	    camera.setupView
-	    useLights(shader1)
-	    useTextures(shader1)
-	    camera.uniformMVP(shader1)
+	    useLights(nmapShader)
+	    useTextures(nmapShader)
+	    camera.uniformMVP(nmapShader)
 	    gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    plane.draw(planeMesh.drawAs)
 	    
-	    shader2.use
 	    gl.polygonMode(gl.FRONT_AND_BACK, gl.LINE)
+	    plainShader.use
 	    camera.pushpop {
-	        //camera.translateModel(0, 1, 0)
-	        //camera.rotateModel(Pi/2, 1, 0, 0)
-	        //camera.translateModel(0, -1, 0)
 	        camera.scaleModel(1, 3, 1)
-	        camera.uniformMVP(shader2)
-	        tube.draw(tubeMesh.drawAs)
-	        
-	        skeleton.drawSkeleton(gl, camera, shader2)
+	        camera.uniformMVP(plainShader)
+	        skeleton.drawSkeleton(gl, camera, plainShader, "uniformColor")
+	    }
+	    
+	    boneShader.use
+	    camera.pushpop {
+	        camera.scaleModel(1, 3, 1)
+	        skeleton.drawModel(gl, camera, tubeMesh, tube, boneShader)	        
 	    }
 	    
 	    surface.swapBuffers
+	    gl.checkErrors
 	}
 	
 	def useLights(shader:ShaderProgram) {

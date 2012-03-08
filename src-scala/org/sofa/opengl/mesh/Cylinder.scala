@@ -10,26 +10,40 @@ import GL2ES2._
 import GL3._
 import org.sofa.math.{Vector2, Vector3, Rgba}
 
-//     +-----+                     m = Sections = 2.
-//    / \   / \                    n = Segments = 6.
-//   +--- * ---+ ---- Disk 4       
-//    \ /   \ /                    n = 6 points per disk.
-//   + +-----+ + ---- Disk 3       disks 0 and 4 close the tube.
-//   |\       /|                   disks 1 to 3 make up the cylinder.
-//   | +-----+ |
-//   + |     | + ---- Disk 2       n = 6 triangles per opening/closing disk.
-//   |\|     |/|                   2n = 12 triangles per section. 
-//   | +-----+ |
-//   + |     | + ---- Disk 1       The vertex array contains the disks in order.
-//    \|     |/                    The middle points of disk 0 and 4 are the two last points.
-//   + +-----+ + ---- Disk 0
-//    \       /                    
-//     +-----+
-//
-// Triangles : CCW
-
+/** Representation of a cylinder.
+  * 
+  * The cylinder is closed by two top and bottom sections. It approximates a circle
+  * using a given number of segments.
+  * 
+  * The cylinder is by default using a single section of tube, but can be configured
+  * to have more sections.
+  * 
+  * The normals are organized so that the top and bottom disks points to the up
+  * and down directions respectively, hence the reason to have two more disks at
+  * the top and bottom. Normals along the tube points toward the exterior following
+  * the radius of the tube. 
+  *
+  *     +-----+                     m = Sections = 2, therefore m+3 = 5 disks.
+  *    / \   / \                    n = Segments = 6.
+  *   +--- * ---+ ---- Disk 4       
+  *    \ /   \ /                    n = 6 points per disk.
+  *   + +-----+ + ---- Disk 3       disks 0 and 4 close the tube.
+  *   |\       /|                   disks 1 to 3 make up the cylinder.
+  *   | +-----+ |
+  *   + |     | + ---- Disk 2       n = 6 triangles per opening/closing disk.
+  *   |\|     |/|                   2n = 12 triangles per section. 
+  *   | +-----+ |
+  *   + |     | + ---- Disk 1       The vertices are organized by disk, plus two last vertices
+  *    \|     |/                    The first to close the bottom disk, the second to close the
+  *   + +-----+ + ---- Disk 0       top disk.
+  *    \       /                    
+  *     +-----+                     
+  *                                 
+  * The triangles are given in CW order.
+  */
 class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:Int = 1) extends Mesh 
-			with TangentSurfaceMesh with ColorableMesh with IndexedMesh with TexturableMesh {
+			with TangentSurfaceMesh with ColorableMesh with IndexedMesh
+			with TexturableMesh with AnimableMesh {
     
     if(segments < 3)
         throw new RuntimeException("Cannot create cylinder with less than 3 sides")
@@ -45,6 +59,8 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
     protected lazy val X:FloatBuffer = allocateTexCoords
     
     protected lazy val I:IntBuffer   = allocateIndices
+    
+    protected lazy val B:IntBuffer   = allocateBones
 
     protected var textureRepeatS = 4
     
@@ -60,6 +76,8 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
     
     def texCoords:FloatBuffer = X
     
+    def bones:IntBuffer = B
+    
     def indices:IntBuffer = I
      
     override def hasColors = true
@@ -71,6 +89,8 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
     override def hasTangents = true
     
     override def hasTexCoords = true
+    
+    override def hasBones = true
    
     protected def allocateVertices:FloatBuffer = {
         // There are 'segments' points per disc.
@@ -248,6 +268,53 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
         buf(n-2) =  0
         buf(n-3) =  0
         
+        buf
+    }
+    
+    protected def allocateBones:IntBuffer = {
+        val n = segments * (3+sections)
+        val buf = IntBuffer(n+2)
+
+        // There are by default 'segments' bones
+        
+        if(segments == 1) {
+            // Only one bone.
+            for(s <- 0 until n) {
+                buf(s) = 0
+            }
+        } else if(segments == 2) {
+            // The bone 0 is for the two bottom disks and the third disk.
+            for(s <- 0 until segments * 2) {
+                buf(s) = 0
+            }
+            // The bone 1 is for the two top disks.
+            for(s <- segments * 2 until n) {
+                buf(s) = 1
+            }
+        } else {
+            // The two bottom disks and first disk and one more are for bone 0 (first section).
+            for(s <- 0 until segments * 3) {
+                buf(s) = 0
+            }
+            // Other disks until the end are for each bone.
+			var start = 3 * segments
+			var end   = start + segments
+            for(b <- 1 until sections) {
+            	for(s<- start until end) {
+            	    buf(s) = b
+            	}
+                start += segments
+                end   += segments
+            }
+            // The top disks is also for the last bone.
+            for(s <- (n-segments) until n) {
+                buf(s) = sections - 1
+            }
+        }
+        
+        buf(n) = 0
+        buf(n+1) = sections - 1
+
         buf
     }
 

@@ -28,6 +28,9 @@ trait Mesh {
     
     /** True if this mesh has a set of texture coordinates, associated with the vertices. */
     def hasTexCoords:Boolean = false
+
+    /** True if this mesh has bone indices for each vertex. */
+    def hasBones:Boolean = false
     
     /** True if the mesh needs an index array to define which elements to draw. */
     def hasIndices:Boolean = false
@@ -77,6 +80,13 @@ trait TexturableMesh {
     def texCoordCompoenents = 2
     
     def hasColors:Boolean = true
+}
+
+/** Trait for meshes that have bone indices. */
+trait AnimableMesh {
+    def bones:IntBuffer
+    
+    def hasBones:Boolean = true
 }
 
 /** Trait for meshes that have indices in the vertex arrays. */
