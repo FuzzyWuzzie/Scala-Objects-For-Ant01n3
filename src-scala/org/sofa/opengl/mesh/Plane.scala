@@ -13,7 +13,7 @@ import GL3._
   * around the (0, 0, 0) point.
   * 
   * The number of rows and columns of quads can be specified with `nVertX` and `nVertZ` and the
-  * overal size of the plane can be given with `width` and `depth`.
+  * overall size of the plane can be given with `width` and `depth`.
   * 
   * The plane is made of triangles and must be drawn in this mode. Indices must be used. You can
   * use a normal, color, tangent, and tex-coords arrays with this mesh.
@@ -23,10 +23,10 @@ import GL3._
   * |
   * +--+--+  nVertX = 3
   * | /| /|  nVertZ = 3
-  * |/ |/ |  The origin is at the center.
+  * |/ï¿½|/ |  The origin is at the center.
   * +--0--+
   * | /| /|
-  * |/ |/ |
+  * |/ï¿½|/ |
   * +--+--+-->X
   * 
   * Triangles are in CW order.

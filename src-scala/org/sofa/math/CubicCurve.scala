@@ -1,8 +1,8 @@
 package org.sofa.math
 
-/**  Utility methods to deal with Bézier cubic curves. */
+/**  Utility methods to deal with BÃ©zier cubic curves. */
 object CubicCurve {
-	/** Evaluate a cubic Bézier curve according to control points `x0`, `x1`, `x2` and `x3` and 
+	/** Evaluate a cubic BÃ©zier curve according to control points `x0`, `x1`, `x2` and `x3` and 
 	 * return the position at parametric position `t` of the curve.
 	 * @return The coordinate at parametric position `t` on the curve. */
 	def evalCubic(x0:Double, x1:Double, x2:Double, x3:Double, t:Double):Double = {
@@ -11,7 +11,7 @@ object CubicCurve {
 		x0 * (tt*tt*tt) + 3f * x1 * t * (tt*tt) + 3f * x2 * (t*t) * tt + x3 * (t*t*t)
 	}
 
-	/** Evaluate a cubic Bézier curve according to control points `p0`, `p1`, `p2` and `p3` and 
+	/** Evaluate a cubic BÃ©zier curve according to control points `p0`, `p1`, `p2` and `p3` and 
 	 * return the position at parametric position `t` of the curve.
 	 * @return The point at parametric position `t` on the curve. */
 	def evalCubic(p0:Point2, p1:Point2, p2:Point2, p3:Point2, t:Double):Point2 = {
@@ -19,7 +19,7 @@ object CubicCurve {
 		       evalCubic( p0.y, p1.y, p2.y, p3.y, t ))
 	}
 	
-	/** Evaluate a cubic Bézier curve according to control points `p0`, `p1`, `p2` and `p3` and 
+	/** Evaluate a cubic BÃ©zier curve according to control points `p0`, `p1`, `p2` and `p3` and 
 	 * return the position at parametric position `t` of the curve.
 	 * @return The point at parametric position `t` on the curve. */
 	def evalCubic(p0:Point3, p1:Point3, p2:Point3, p3:Point3, t:Double):Point3 = {
@@ -28,7 +28,7 @@ object CubicCurve {
 	           evalCubic(p0.z, p1.z, p2.z, p3.z, t))
 	}
 
-	/** Evaluate a cubic Bézier curve according to control points `p0`, `p1`, `p2` and `p3` and 
+	/** Evaluate a cubic BÃ©zier curve according to control points `p0`, `p1`, `p2` and `p3` and 
 	 * store the position at parametric position `t` of the curve in `result`.
 	 * @return the given reference to `result`. */
 	def evalCubic(p0:Point2, p1:Point2, p2:Point2, p3:Point2, t:Double, result:Point2):Point2 = {
@@ -37,7 +37,7 @@ object CubicCurve {
 		result
 	}
 	
-	/** Evaluate a cubic Bézier curve according to control points `p0`, `p1`, `p2` and `p3` and 
+	/** Evaluate a cubic BÃ©zier curve according to control points `p0`, `p1`, `p2` and `p3` and 
 	 * store the position at parametric position `t` of the curve in `result`.
 	 * @return the given reference to `result`. */
 	def evalCubic(p0:Point3, p1:Point3, p2:Point3, p3:Point3, t:Double, result:Point3):Point3 = {
@@ -47,7 +47,7 @@ object CubicCurve {
 		result
 	}
 	
-	/** Derivative of a cubic Bézier curve according to control points `x0`, `x1`, `x2` and `x3` 
+	/** Derivative of a cubic BÃ©zier curve according to control points `x0`, `x1`, `x2` and `x3` 
 	 * at parametric position `t` of the curve.
 	 * @return The derivative at parametric position `t` on the curve. */
 	def derivativeCubic(x0:Double, x1:Double, x2:Double, x3:Double, t:Double):Double = {
@@ -61,7 +61,7 @@ object CubicCurve {
 		    ( 3 * x1 - 3 * x0 )
 	}
 	
-	/** Derivative point of a cubic Bézier curve according to control points `x0`, `x1`, `x2` and
+	/** Derivative point of a cubic BÃ©zier curve according to control points `x0`, `x1`, `x2` and
 	 * `x3` at parametric position `t` of the curve.
 	 * @return The derivative point at parametric position `t` on the curve. */
 	def derivativeCubic(p0:Point2, p1:Point2, p2:Point2, p3:Point2, t:Double):Point2 = {
@@ -69,7 +69,7 @@ object CubicCurve {
 		       derivativeCubic(p0.y, p1.y, p2.y, p3.y, t))
 	}
 	
-	/** Derivative point of a cubic Bézier curve according to control points `x0`, `x1`, `x2` and
+	/** Derivative point of a cubic BÃ©zier curve according to control points `x0`, `x1`, `x2` and
 	 * `x3` at parametric position `t` of the curve.
 	 * @return The derivative point at parametric position `t` on the curve. */
 	def derivativeCubic(p0:Point3, p1:Point3, p2:Point3, p3:Point3, t:Double):Point3 = {
@@ -78,7 +78,7 @@ object CubicCurve {
 		       derivativeCubic(p0.z, p1.z, p2.z, p3.z, t))
 	}
 
-	/** Store in `result` the derivative point of a cubic Bézier curve according to control points
+	/** Store in `result` the derivative point of a cubic BÃ©zier curve according to control points
 	 * `x0`, `x1`, `x2` and `x3` at parametric position `t` of the curve.
 	 * @return the given reference to `result`. */
 	def derivativeCubic(p0:Point2, p1:Point2, p2:Point2, p3:Point3, t:Double, result:Point2):Point2 = {
@@ -87,7 +87,7 @@ object CubicCurve {
 		result
 	}
 	
-	/** Store in `result` the derivative point of a cubic Bézier curve according to control points
+	/** Store in `result` the derivative point of a cubic BÃ©zier curve according to control points
 	 * `x0`, `x1`, `x2` and `x3` at parametric position `t` of the curve.
 	 * @return the given reference to `result`. */
 	def derivativeCubic(p0:Point3, p1:Point3, p2:Point3, p3:Point3, t:Double, result:Point3):Point3 = {
@@ -113,7 +113,7 @@ object CubicCurve {
 		result
 	}
 	
-	/** Evaluate the length of a Bézier curve by taking n points on the curve and summing the lengths of
+	/** Evaluate the length of a Bï¿½zier curve by taking n points on the curve and summing the lengths of
 	 * the n+1 segments thus defined. */
 	def approxLengthOfCurve(p0:Point3, p1:Point3, p2:Point3, p3:Point3):Double = {
 		val inc = 0.1

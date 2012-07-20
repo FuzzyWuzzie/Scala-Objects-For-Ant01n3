@@ -17,7 +17,7 @@ object MostBasicSetup {
 
 class MostBasicSetup extends WindowAdapter with GLEventListener {
     def test() {
-        val prof = GLProfile.get(GLProfile.GL3)
+        val prof = GLProfile.get(GLProfile.GL2ES2)
         val caps = new GLCapabilities(prof)
     
         caps.setDoubleBuffered(true)
@@ -34,28 +34,28 @@ class MostBasicSetup extends WindowAdapter with GLEventListener {
         win.setSize(800, 600)
         win.setTitle("Basic OpenGL setup")
         win.setVisible(true)
-        
+     
         anim.start
     }
     
     override def windowDestroyNotify(ev:WindowEvent) { exit }
     
     def init(win:GLAutoDrawable) {
-        val gl = win.getGL.getGL3; import gl._;
+        val gl = win.getGL.getGL2ES2; import gl._;
         
-        glClearColor(0f, 0f, 0f, 0f)
+        glClearColor(0.7f, 0f, 0.9f, 0f)
         glClearDepth(1f)
         glEnable(GL_DEPTH_TEST)
     }
     
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {
-        val gl = win.getGL.getGL3; import gl._;
+        val gl = win.getGL.getGL2ES2; import gl._;
         
         glViewport(0, 0, width, height)
     }
     
     def display(win:GLAutoDrawable) {
-        val gl = win.getGL.getGL3; import gl._;
+        val gl = win.getGL.getGL2ES2; import gl._;
     
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
@@ -66,5 +66,6 @@ class MostBasicSetup extends WindowAdapter with GLEventListener {
     
     def dispose(win:GLAutoDrawable) {
         val gl = win.getGL.asInstanceOf[GL3]; import gl._;
+        sys.exit
     }
 }
