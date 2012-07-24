@@ -71,9 +71,10 @@ object Vector2 {
 }
 
 abstract class Vector2 extends NumberSeq2 {
-    def set(x:Double, y:Double) {
+    def set(x:Double, y:Double):Vector2 = {
         data(0) = x
         data(1) = y
+        this
     }
 }
 
@@ -185,10 +186,11 @@ abstract class Vector3 extends NumberSeq3 {
 	    result.asInstanceOf[ReturnType]
 	}
 	
-	def set(x:Double, y:Double, z:Double) {
+	def set(x:Double, y:Double, z:Double):Vector3 = {
         data(0) = x
         data(1) = y
         data(2) = z
+        this
     }
 }
 

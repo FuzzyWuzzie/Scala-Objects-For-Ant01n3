@@ -75,6 +75,7 @@ abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl)
         super.init(createShader(shaderType))
         checkErrors
         shaderSource(oid, source)
+        checkErrors
         compileShader(oid)
         checkErrors
         

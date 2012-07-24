@@ -17,7 +17,7 @@ object MostBasicSetup {
 
 class MostBasicSetup extends WindowAdapter with GLEventListener {
     def test() {
-        val prof = GLProfile.get(GLProfile.GL2ES2)
+        val prof = GLProfile.getGL2ES2//(GLProfile.GL2ES2)
         val caps = new GLCapabilities(prof)
     
         caps.setDoubleBuffered(true)
@@ -65,7 +65,7 @@ class MostBasicSetup extends WindowAdapter with GLEventListener {
     }
     
     def dispose(win:GLAutoDrawable) {
-        val gl = win.getGL.asInstanceOf[GL3]; import gl._;
+        val gl = win.getGL.getGL2ES2; import gl._;
         sys.exit
     }
 }

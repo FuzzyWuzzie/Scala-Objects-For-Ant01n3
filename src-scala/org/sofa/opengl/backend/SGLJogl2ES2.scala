@@ -15,7 +15,7 @@ import GL2ES2._
   * The goal is to provide an easy access to some OpenGL methods, facilitating the use of NIO
   * buffers for example.
   */
-class SGLJogl2ES(val gl:GL2ES2, val glu:GLU) extends SGL {
+class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 	private[this] val ib1 = NioIntBuffer.allocate(1)
 	
 	import gl._
@@ -66,7 +66,7 @@ class SGLJogl2ES(val gl:GL2ES2, val glu:GLU) extends SGL {
 
 // Info
     
-    def isES:Boolean = false
+    def isES:Boolean = true
 
 // Vertex arrays
 	
@@ -168,7 +168,7 @@ class SGLJogl2ES(val gl:GL2ES2, val glu:GLU) extends SGL {
 	def getProgramLinkStatus(id:Int):Boolean = { getProgram(id, GL_LINK_STATUS) == GL_TRUE }
 	
 	def getShader(id:Int, status:Int):Int = {
-	    glGetShaderiv(id, GL_INFO_LOG_LENGTH, ib1)
+	    glGetShaderiv(id, status, ib1)
 	    ib1.get(0)
 	}
 	
@@ -191,8 +191,19 @@ class SGLJogl2ES(val gl:GL2ES2, val glu:GLU) extends SGL {
 	    new String(data.array)
 	}
 	
-	def shaderSource(id:Int, source:Array[String]) = glShaderSource(id, source.size, source, null)
-	def shaderSource(id:Int, source:String) = glShaderSource(id, 1, Array[String](source), null)
+	def shaderSource(id:Int, source:Array[String]) = {
+		val lengths = NioIntBuffer.allocate(source.size)
+		for(i <- 0 until source.size) {
+			lengths.put(i, source(i).length)
+		}
+		lengths.rewind
+		glShaderSource(id, source.size, source, lengths)
+	}
+	def shaderSource(id:Int, source:String) = {
+		ib1.put(0, source.length)
+		ib1.rewind
+		glShaderSource(id, 1, Array[String](source), ib1)
+	}
 	def compileShader(id:Int) = glCompileShader(id)
 	def deleteShader(id:Int) = glDeleteShader(id)
     def attachShader(id:Int, shaderId:Int) = glAttachShader(id, shaderId)

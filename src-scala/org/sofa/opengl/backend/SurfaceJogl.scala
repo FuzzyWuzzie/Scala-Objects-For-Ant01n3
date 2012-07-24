@@ -46,7 +46,7 @@ class SurfaceNewt(
 	    anim.start
     }
     
-    def gl:SGL = { if(sgl==null) sgl = new SGLJogl(win.getGL.getGL3, GLU.createGLU); sgl }
+    def gl:SGL = { if(sgl==null) sgl = new SGLJogl3(win.getGL.getGL3, GLU.createGLU); sgl }
     def swapBuffers():Unit = win.swapBuffers
     def width = w
     def height = h

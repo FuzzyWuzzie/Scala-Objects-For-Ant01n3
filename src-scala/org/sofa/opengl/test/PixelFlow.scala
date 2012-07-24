@@ -35,11 +35,31 @@ class PixelFlow extends WindowAdapter with GLEventListener {
         
     val indices = IntBuffer(0, 1, 2, 0, 2, 3)
     
+//    val vertexShader = Array[String](
+//    		"#version 330\n",
+//    		"layout(location=0) in vec4 in_Position;\n",
+//    		"layout(location=1) in vec4 in_Color;\n",
+//    		"out vec4 ex_Color;\n",
+//
+//    		"void main(void) {\n",
+//    		"	gl_Position = in_Position;\n",
+//    		"	ex_Color = in_Color;\n",
+//    		"}\n")
+//        
+//    val fragmentShader = Array[String](
+//    		"#version 330\n",
+// 
+//    		"in vec4 ex_Color;\n",
+//    		"out vec4 out_Color;\n",
+// 
+//    		"void main(void) {\n",
+//    		"	out_Color = ex_Color;\n",
+//    		"}\n")
     val vertexShader = Array[String](
-    		"#version 330\n",
-    		"layout(location=0) in vec4 in_Position;\n",
-    		"layout(location=1) in vec4 in_Color;\n",
-    		"out vec4 ex_Color;\n",
+    		"#version 120\n",
+    		"attribute vec4 in_Position;\n",
+    		"attribute vec4 in_Color;\n",
+    		"varying vec4 ex_Color;\n",
 
     		"void main(void) {\n",
     		"	gl_Position = in_Position;\n",
@@ -47,17 +67,16 @@ class PixelFlow extends WindowAdapter with GLEventListener {
     		"}\n")
         
     val fragmentShader = Array[String](
-    		"#version 330\n",
- 
-    		"in vec4 ex_Color;\n",
-    		"out vec4 out_Color;\n",
+    		"#version 120\n",
+    		
+    		"varying vec4 ex_Color;\n",
  
     		"void main(void) {\n",
-    		"	out_Color = ex_Color;\n",
+    		"	gl_FragColor = ex_Color;\n",
     		"}\n")
     
     def test() {
-        val prof = GLProfile.get(GLProfile.GL3)
+        val prof = GLProfile.get(GLProfile.GL2ES2)
         val caps = new GLCapabilities(prof)
     
         caps.setDoubleBuffered(true)
@@ -78,10 +97,10 @@ class PixelFlow extends WindowAdapter with GLEventListener {
         anim.start
     }
     
-    override def windowDestroyNotify(ev:WindowEvent) { exit }
+    override def windowDestroyNotify(ev:WindowEvent) { sys.exit }
     
     def init(win:GLAutoDrawable) {
-        gl = new backend.SGLJogl(win.getGL.getGL3, GLU.createGLU)
+    	gl = new backend.SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU)
         
         gl.printInfos
         gl.clearColor(0f, 0f, 0f, 0f)
