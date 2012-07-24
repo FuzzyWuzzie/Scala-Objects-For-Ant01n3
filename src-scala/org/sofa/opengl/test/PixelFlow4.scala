@@ -51,7 +51,8 @@ class PixelFlow4 extends WindowAdapter with GLEventListener {
     var height = 600.0
     
     def test() {
-        val prof = GLProfile.get(GLProfile.GL3)
+//        val prof = GLProfile.get(GLProfile.GL3)
+        val prof = GLProfile.get(GLProfile.GL2ES2)
         val caps = new GLCapabilities(prof)
     
         caps.setDoubleBuffered(true)
@@ -75,10 +76,11 @@ class PixelFlow4 extends WindowAdapter with GLEventListener {
         anim.start
     }
     
-    override def windowDestroyNotify(ev:WindowEvent) { exit }
+    override def windowDestroyNotify(ev:WindowEvent) { sys.exit }
     
     def init(win:GLAutoDrawable) {
-        gl = new backend.SGLJogl3(win.getGL.getGL3, GLU.createGLU)
+//        gl = new backend.SGLJogl3(win.getGL.getGL3, GLU.createGLU)
+        gl = new backend.SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU)
         
         gl.printInfos
         gl.clearColor(0f, 0f, 0f, 0f)
@@ -86,11 +88,13 @@ class PixelFlow4 extends WindowAdapter with GLEventListener {
         gl.enable(gl.DEPTH_TEST)
         gl.enable(gl.CULL_FACE)
         gl.cullFace(gl.BACK)
-        gl.frontFace(gl.CCW)
+        gl.frontFace(gl.CW)
     
         cubeShad = new ShaderProgram(gl,
-                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow4VertexShader.glsl"),
-                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3FragmentShader.glsl"))
+                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow4VertexShader.glsl"),
+                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
+//                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow4VertexShader.glsl"),
+//                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3FragmentShader.glsl"))
 
         projection.setIdentity
         projection.frustum(-1, 1*(width/height), -1, 1*(width/height), 1, 20)

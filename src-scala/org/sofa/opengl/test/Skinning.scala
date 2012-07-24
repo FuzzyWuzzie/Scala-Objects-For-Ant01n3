@@ -71,7 +71,8 @@ class Skinning extends SurfaceRenderer {
 	    key            = ctrl.key
 	    motion         = ctrl.motion
 	    scroll         = ctrl.scroll
-	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Bistouquette", caps)
+	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Bistouquette", caps,
+	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL3)
 	}
     
 // Rendering

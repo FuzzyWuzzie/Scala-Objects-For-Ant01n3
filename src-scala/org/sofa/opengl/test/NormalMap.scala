@@ -37,7 +37,8 @@ class NormalMap extends SurfaceRenderer {
     build
     
 	def build() {
-	    val caps = new javax.media.opengl.GLCapabilities(javax.media.opengl.GLProfile.get(javax.media.opengl.GLProfile.GL3))
+//	    val caps = new javax.media.opengl.GLCapabilities(javax.media.opengl.GLProfile.getGL3)
+	    val caps = new javax.media.opengl.GLCapabilities(javax.media.opengl.GLProfile.getGL2ES2)
 	    
 	    caps.setDoubleBuffered(true)
 	    caps.setHardwareAccelerated(true)
@@ -56,8 +57,9 @@ class NormalMap extends SurfaceRenderer {
 	    key            = ctrl.key
 	    motion         = ctrl.motion
 	    scroll         = ctrl.scroll
-	    close          = { surface => exit }
-	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Normal mapping", caps)
+	    close          = { surface => sys.exit }
+	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Normal mapping", caps,
+	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
@@ -79,8 +81,10 @@ class NormalMap extends SurfaceRenderer {
 	    camera.viewCartesian(2, 2, 2)
 	    
 	    nmapShader = new ShaderProgram(gl,
-	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
-	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
+	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.vert"),
+	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.frag"))
+//	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
+//	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
 
 	    reshape(surface)
 	    

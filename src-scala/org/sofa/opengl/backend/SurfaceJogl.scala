@@ -8,11 +8,17 @@ import com.jogamp.newt.event.{KeyEvent=>JoglKeyEvent, MouseEvent, MouseListener,
 import com.jogamp.opengl.util.FPSAnimator
 import javax.media.opengl.glu.GLU
 
+object SurfaceNewtGLBackend extends Enumeration {
+	val GL2ES2 = Value
+	val GL3 = Value
+}
+
 class SurfaceNewt(
     val renderer:SurfaceRenderer,
     val camera:Camera,
     val title:String,
-    val caps:GLCapabilities)
+    val caps:GLCapabilities,
+    val backend:SurfaceNewtGLBackend.Value)
 	extends Surface
 	with    WindowListener
 	with    KeyListener
@@ -26,14 +32,14 @@ class SurfaceNewt(
     protected var w:Int = 0
     protected var h:Int = 0
     
-    build
+    build(backend)
     
-    protected def build() {
-        win  =GLWindow.create(caps)
+    protected def build(backend:SurfaceNewtGLBackend.Value) {
+        win  = GLWindow.create(caps)
         anim = new FPSAnimator(win, fps)
-        sgl  = null
         w    = camera.viewportPx.x.toInt
         h    = camera.viewportPx.y.toInt
+        sgl  = null
 
 	    win.addWindowListener(this)
 	    win.addGLEventListener(this)
@@ -46,7 +52,15 @@ class SurfaceNewt(
 	    anim.start
     }
     
-    def gl:SGL = { if(sgl==null) sgl = new SGLJogl3(win.getGL.getGL3, GLU.createGLU); sgl }
+    def gl:SGL = {
+    	if(sgl eq null) {
+    		sgl = backend match {
+        		case SurfaceNewtGLBackend.GL2ES2 => new SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU)
+        		case SurfaceNewtGLBackend.GL3    => new SGLJogl3(win.getGL.getGL3, GLU.createGLU)
+    		}
+    	}
+    	sgl
+    }
     def swapBuffers():Unit = win.swapBuffers
     def width = w
     def height = h
