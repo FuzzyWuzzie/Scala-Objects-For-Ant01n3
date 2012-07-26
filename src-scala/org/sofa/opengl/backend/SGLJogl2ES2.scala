@@ -268,6 +268,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     def clear(mode:Int) = glClear(mode)
 	def clearColor(r:Float, g:Float, b:Float, a:Float) = glClearColor(r, g, b, a)
 	def clearColor(color:Rgba) = glClearColor(color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
+	def clearColor(color:java.awt.Color) = glClearColor((color.getRed/255.0).toFloat, (color.getGreen/255.0).toFloat, (color.getBlue/255.0).toFloat, (color.getAlpha/255.0).toFloat)
     def clearDepth(value:Float) = glClearDepth(value)
     def viewport(x:Int, y:Int, width:Int, height:Int) = glViewport(x, y, width, height)
     def enable(i:Int) = glEnable(i)

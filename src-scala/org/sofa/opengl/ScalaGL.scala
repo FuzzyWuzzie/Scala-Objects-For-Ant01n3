@@ -150,6 +150,7 @@ abstract class SGL {
     def clear(mode:Int)
 	def clearColor(r:Float, g:Float, b:Float, a:Float)
 	def clearColor(color:Rgba)
+    def clearColor(color:java.awt.Color)
     def clearDepth(value:Float)
     def viewport(x:Int, y:Int, width:Int, height:Int)
     def enable(i:Int)
