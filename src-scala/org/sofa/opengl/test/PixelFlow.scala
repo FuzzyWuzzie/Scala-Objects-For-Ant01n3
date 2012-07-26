@@ -107,7 +107,7 @@ class PixelFlow extends WindowAdapter with GLEventListener {
         gl.clearDepth(1f)
         gl.enable(gl.DEPTH_TEST)
     
-        shadProg = new ShaderProgram(gl,
+        shadProg = new ShaderProgram(gl, "basic shader",
                 new VertexShader(gl, vertexShader),
                 new FragmentShader(gl, fragmentShader))
 

@@ -23,10 +23,10 @@ import GL3._
   * |
   * +--+--+  nVertX = 3
   * | /| /|  nVertZ = 3
-  * |/�|/ |  The origin is at the center.
+  * |/���|/ |  The origin is at the center.
   * +--0--+
   * | /| /|
-  * |/�|/ |
+  * |/���|/ |
   * +--+--+-->X
   * 
   * Triangles are in CW order.
@@ -181,7 +181,16 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Int, val depth:Int)
         }
     }
     
-    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors), (2, 3, normals), (3, 3, tangents), (4, 2, texCoords))
+    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors),
+    			(2, 3, normals), (3, 3, tangents), (4, 2, texCoords))
+    
+    def newVertexArray(gl:SGL, attributeIndices:Tuple5[Int,Int,Int,Int,Int]) = {
+    	new VertexArray(gl, indices, (attributeIndices._1, 3, vertices),
+    	                             (attributeIndices._2, 4, colors),
+    	                             (attributeIndices._3, 3, normals),
+    	                             (attributeIndices._4, 3, tangents),
+    	                             (attributeIndices._5, 2, texCoords))
+    }
     
     def drawAs():Int = GL_TRIANGLES
 }

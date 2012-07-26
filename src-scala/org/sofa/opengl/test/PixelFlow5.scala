@@ -90,7 +90,7 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         gl.cullFace(gl.BACK)
         gl.frontFace(gl.CW)
     
-        cubeShad = new ShaderProgram(gl,
+        cubeShad = new ShaderProgram(gl, "phong shader",
                 new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow4VertexShader.glsl"),
                 new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
 //                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow4VertexShader.glsl"),
@@ -100,8 +100,12 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         projection.frustum(-1, 1*(width/height), -1, 1*(width/height), 1, 20)
         cubeShad.uniformMatrix("projection", projection)
         
-        cube = new VertexArray(gl, cubeMesh.indices, (0, 3, cubeMesh.vertices), (1, 4, cubeMesh.colors), (2, 3, cubeMesh.normals))
-        plane = new VertexArray(gl, planeMesh.indices, (0, 3, planeMesh.vertices), (1, 4, planeMesh.colors), (2, 3, planeMesh.normals))
+        val p = cubeShad.getAttribLocation("position")
+        val c = cubeShad.getAttribLocation("color")
+        val n = cubeShad.getAttribLocation("normal")
+        
+        cube = new VertexArray(gl, cubeMesh.indices, (p, 3, cubeMesh.vertices), (c, 4, cubeMesh.colors), (n, 3, cubeMesh.normals))
+        plane = new VertexArray(gl, planeMesh.indices, (p, 3, planeMesh.vertices), (c, 4, planeMesh.colors), (n, 3, planeMesh.normals))
     }
     
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {

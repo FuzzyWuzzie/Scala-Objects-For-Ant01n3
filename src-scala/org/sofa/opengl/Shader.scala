@@ -121,7 +121,7 @@ class FragmentShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
 }
 
 /** Composition of several shaders into a program. */
-class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
+class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject(gl) {
     import gl._
     
     /** Set of shaders. */
@@ -263,27 +263,35 @@ class ShaderProgram(gl:SGL, shdrs:Shader*) extends OpenGLObject(gl) {
         else throw new RuntimeException("matrix must be 9 (3x3) or 16 (4x4) floats");
     }
     
-    def getAttribLocation(variable:String):Int ={
-        checkId
-        useProgram(oid)
+    def getAttribLocation(variable:String):Int = {
         var loc = attributeLocations.get(variable).getOrElse {
+        	checkId
+        	useProgram(oid)
             val l = gl.getAttribLocation(oid, variable) 
-        	attributeLocations.put(variable, l)
+            checkErrors
+            if(l >= 0) {
+            	attributeLocations.put(variable, l)
+            } else {
+            	throw new RuntimeException("Cannot find attribute %s in program %s".format(variable, name))
+            }
             l
         }
-        checkErrors
         loc
     }
     
     def getUniformLocation(variable:String):Int = {
-        checkId
-        useProgram(oid)
         val loc = uniformLocations.get(variable).getOrElse {
+        	checkId
+        	useProgram(oid)
             var l = gl.getUniformLocation(oid, variable)
-            uniformLocations.put(variable, l)
+            checkErrors
+            if(l >= 0) {
+            	uniformLocations.put(variable, l)
+            } else {
+            	throw new RuntimeException("Cannot find uniform %s in program %s".format(variable, name))
+            }
             l
         }
-        checkErrors
         //uniformLocations.put(variable, loc)
         loc
     }

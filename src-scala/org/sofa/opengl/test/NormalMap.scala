@@ -38,8 +38,8 @@ class NormalMap extends SurfaceRenderer {
     build
     
 	def build() {
-	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.get(GLProfile.GL3))
-//	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.getGL2ES2)
+//	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.get(GLProfile.GL3))
+	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.getGL2ES2)
 	    
 	    caps.setDoubleBuffered(true)
 	    caps.setHardwareAccelerated(true)
@@ -60,8 +60,8 @@ class NormalMap extends SurfaceRenderer {
 	    scroll         = ctrl.scroll
 	    close          = { surface => sys.exit }
 	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Normal mapping", caps,
-//	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
-	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL3)
+	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
+//	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL3)
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
@@ -82,12 +82,17 @@ class NormalMap extends SurfaceRenderer {
 	def setup(surface:Surface) {
 	    camera.viewCartesian(2, 2, 2)
 	    
-	    nmapShader = new ShaderProgram(gl,
-//	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.vert"),
-//	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.frag"))
-	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
-	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
+	    nmapShader = new ShaderProgram(gl, "normal map phong",
+	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.vert"),
+	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.frag"))
+//	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
+//	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
 
+	    val p = nmapShader.getAttribLocation("position")
+	    val n = nmapShader.getAttribLocation("normal")
+	    val t = nmapShader.getAttribLocation("tangent")
+	    val u = nmapShader.getAttribLocation("texCoords")
+	    
 	    reshape(surface)
 	    
 	    tubeMesh.setTopDiskColor(Rgba.yellow)
@@ -96,8 +101,10 @@ class NormalMap extends SurfaceRenderer {
 	    tubeMesh.setCylinderColor(Rgba.blue);
 	    planeMesh.setColor(Rgba.magenta)
 	    
-	    plane = planeMesh.newVertexArray(gl)
-	    tube  = tubeMesh.newVertexArray(gl)
+	    plane = new VertexArray(gl, planeMesh.indices, (p, 3, planeMesh.vertices), 
+    			(n, 3, planeMesh.normals), (t, 3, planeMesh.tangents), (u, 2, planeMesh.texCoords))
+    	tube  = new VertexArray(gl, tubeMesh.indices, (p, 3, tubeMesh.vertices),
+    			(n, 3, tubeMesh.normals), (t, 3, tubeMesh.tangents), (u, 2, tubeMesh.texCoords))
 	    
 	    uvTex = new Texture(gl, "textures/stone_wall__.jpg", true)
 //	    uvTex = new Texture(gl, "textures/face.jpg", true)
@@ -169,8 +176,8 @@ class NormalMap extends SurfaceRenderer {
 	def setupTextures() {
 	    uvTex.bindTo(gl.TEXTURE0)
 	    nmapShader.uniform("texColor", 0)	// Texture Unit 0
-	    specTex.bindTo(gl.TEXTURE1)
-	    nmapShader.uniform("texSpec", 1)	// Texture Unit 1
+//	    specTex.bindTo(gl.TEXTURE1)
+//	    nmapShader.uniform("texSpec", 1)	// Texture Unit 1
 	    nmapTex.bindTo(gl.TEXTURE2)
 	    nmapShader.uniform("texNormal", 2)	// Texture Unit 2
 	}

@@ -117,15 +117,15 @@ class Skinning extends SurfaceRenderer {
 	}
 	
 	protected def initShaders() {
-	    nmapShader = new ShaderProgram(gl,
+	    nmapShader = new ShaderProgram(gl, "phong normal map shader",
 	            new VertexShader(gl, "stock/phongNmap.vert"),
 	            new FragmentShader(gl, "stock/phongNmap.frag"))
 	    
-	    plainShader = new ShaderProgram(gl,
+	    plainShader = new ShaderProgram(gl, "plain shader",
 	            new VertexShader(gl, "uniformColor.vert"),
 	            new FragmentShader(gl, "uniformColor.frag"))
 	    
-	    boneShader = new ShaderProgram(gl,
+	    boneShader = new ShaderProgram(gl, "phong normal map and bone shader",
 	            new VertexShader(gl, "bonePhong.vert"),
 	            new FragmentShader(gl, "bonePhong.frag"))
 	
@@ -141,12 +141,17 @@ class Skinning extends SurfaceRenderer {
 	    tubeMesh.setCylinderColor(Rgba.blue)
 	    tubeMesh.setTopDiskColor(Rgba.red)
 	    
-	    plane = planeMesh.newVertexArray(gl)
+	    plane = planeMesh.newVertexArray(gl)//new VertexArray(gl, planeMesh.indices,
+//	    			(nmapShader.getAttribLocation("pos"),     3, planeMesh.vertices),
+//	    			(nmapShader.getAttribLocation("normal"),  3, planeMesh.normals),
+//	    			(nmapShader.getAttribLocation("tangent"), 3, planeMesh.normals),
+//	    			(nmapShader.getAttribLocation("texPos"),  2, planeMesh.normals))
 	    tube  = new VertexArray(gl, tubeMesh.indices,
 	            	(boneShader.getAttribLocation("position"),  3, tubeMesh.vertices),
 	            	(boneShader.getAttribLocation("normal"),    3, tubeMesh.normals),
 	            	(boneShader.getAttribLocation("boneIndex"), 1, tubeMesh.bones))
-	    bone  = boneMesh.newVertexArray(gl)
+	    bone  = boneMesh.newVertexArray(gl)//new VertexArray(gl, boneMesh.indices,
+	    		//	(plainShader.getAttribLocation("position"), 3, boneMesh.vertices))
 	}
 	
 	protected def initTextures() {

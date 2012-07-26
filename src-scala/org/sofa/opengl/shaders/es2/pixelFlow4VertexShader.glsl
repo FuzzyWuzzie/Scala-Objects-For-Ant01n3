@@ -3,7 +3,7 @@
 attribute vec3 position;
 attribute vec4 color;
 attribute vec3 normal;
-attribute vec3 tangent;
+//attribute vec3 tangent;
 
 uniform mat4 projection;
 uniform mat4 modelview;

@@ -158,7 +158,7 @@ class PixelFlow2 extends WindowAdapter with GLEventListener {
         gl.cullFace(gl.BACK)
         gl.frontFace(gl.CCW)
         
-        cubeShad = new ShaderProgram(gl,
+        cubeShad = new ShaderProgram(gl, "basic shader",
                 new VertexShader(gl, vertexShader),
                 new FragmentShader(gl, fragmentShader))
 
@@ -167,10 +167,10 @@ class PixelFlow2 extends WindowAdapter with GLEventListener {
         cubeShad.uniformMatrix("projection", projection)
         gl.checkErrors
         
-        // 0 and 1 are the positions of the attributes, by default they maps
-        // to the order they are defined in the shader, but to be cleaner,
-        // we should get the location of the variable in the shader and use it.
-        cube = new VertexArray(gl, cubeInd, (0, 3, cubeVert), (1, 4, cubeClr))
+        val p = cubeShad.getAttribLocation("in_Position")
+        val c = cubeShad.getAttribLocation("in_Color")
+        
+        cube = new VertexArray(gl, cubeInd, (p, 3, cubeVert), (c, 4, cubeClr))
     }
     
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {
