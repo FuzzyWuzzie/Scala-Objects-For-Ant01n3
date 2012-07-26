@@ -288,6 +288,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
         println("       glsl     %s".format(getString(GL_SHADING_LANGUAGE_VERSION)))
         println("       renderer %s".format(getString(GL_RENDERER)))
         println("       vendor   %s".format(getString(GL_VENDOR)))
+        println("       profiles %s".format(GLProfile.GL_PROFILE_LIST_ALL.filter(GLProfile.isAvailable(_)).mkString(",")))
 	}
 	
 	def checkErrors() {

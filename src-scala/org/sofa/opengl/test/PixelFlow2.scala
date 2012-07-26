@@ -201,7 +201,7 @@ class PixelFlow2 extends WindowAdapter with GLEventListener {
         cubeShad.uniformMatrix("modelview", modelview)
         cube.drawTriangles
         
-        win.swapBuffers
+        //win.swapBuffers // Automatic
         animate
     }
     

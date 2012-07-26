@@ -6,6 +6,7 @@ import org.sofa.opengl.mesh._
 import org.sofa.opengl.surface._
 import org.sofa.nio._
 import org.sofa.math._
+import javax.media.opengl.GLProfile
 
 object NormalMap {
 	def main(args:Array[String]):Unit = (new NormalMap)
@@ -37,8 +38,8 @@ class NormalMap extends SurfaceRenderer {
     build
     
 	def build() {
-//	    val caps = new javax.media.opengl.GLCapabilities(javax.media.opengl.GLProfile.getGL3)
-	    val caps = new javax.media.opengl.GLCapabilities(javax.media.opengl.GLProfile.getGL2ES2)
+	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.get(GLProfile.GL3))
+//	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.getGL2ES2)
 	    
 	    caps.setDoubleBuffered(true)
 	    caps.setHardwareAccelerated(true)
@@ -59,7 +60,8 @@ class NormalMap extends SurfaceRenderer {
 	    scroll         = ctrl.scroll
 	    close          = { surface => sys.exit }
 	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this, camera, "Normal mapping", caps,
-	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
+//	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
+	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL3)
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
@@ -81,10 +83,10 @@ class NormalMap extends SurfaceRenderer {
 	    camera.viewCartesian(2, 2, 2)
 	    
 	    nmapShader = new ShaderProgram(gl,
-	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.vert"),
-	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.frag"))
-//	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
-//	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
+//	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.vert"),
+//	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.frag"))
+	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
+	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
 
 	    reshape(surface)
 	    

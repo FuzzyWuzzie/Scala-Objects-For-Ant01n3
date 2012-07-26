@@ -122,7 +122,7 @@ class PixelFlow extends WindowAdapter with GLEventListener {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
         shadProg.use
         triangle.drawTriangles
-        win.swapBuffers
+        //win.swapBuffers // NOT Needed !!
     }
     
     def dispose(win:GLAutoDrawable) {}

@@ -61,7 +61,7 @@ class SurfaceNewt(
     	}
     	sgl
     }
-    def swapBuffers():Unit = win.swapBuffers
+    def swapBuffers():Unit = {}//win.swapBuffers // Automatic
     def width = w
     def height = h
     
