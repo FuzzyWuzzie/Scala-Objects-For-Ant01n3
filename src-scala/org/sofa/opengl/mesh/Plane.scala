@@ -23,15 +23,15 @@ import GL3._
   * |
   * +--+--+  nVertX = 3
   * | /| /|  nVertZ = 3
-  * |/���|/ |  The origin is at the center.
+  * |/ |/ |  The origin is at the center.
   * +--0--+
   * | /| /|
-  * |/���|/ |
+  * |/ |/ |
   * +--+--+-->X
   * 
   * Triangles are in CW order.
   */
-class Plane(val nVertX:Int, val nVertZ:Int, val width:Int, val depth:Int)
+class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
 	extends Mesh with ColorableMesh with TangentSurfaceMesh
 		with IndexedMesh with TexturableMesh {
     
@@ -64,8 +64,8 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Int, val depth:Int)
     
     protected def allocateVertices:FloatBuffer = {
         val buf = new FloatBuffer(nVertX * nVertZ * 3)
-        val nw  = width.toFloat / (nVertX-1).toFloat
-        val nd  = depth.toFloat / (nVertZ-1).toFloat 
+        val nw  = width / (nVertX-1).toFloat
+        val nd  = depth / (nVertZ-1).toFloat 
         var xx  = -width/2f
         var zz  = -depth/2f
         var i   = 0

@@ -241,14 +241,14 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
         cubeShad.uniform("ambientIntensity", 0.05f)
         
         modelview.translate(0, 1, 0)
-        cubeShad.uniformMatrix("modelview", modelview)
-        cubeShad.uniformMatrix("nmodelview", modelview.top3x3)
+        cubeShad.uniformMatrix("modelview", modelview.top)
+        cubeShad.uniformMatrix("nmodelview", modelview.top.top3x3)
         cube.drawTriangles
         
         modelview.translate(0, -2, 0)
         modelview.rotate(180, 0, 1, 0)
-        cubeShad.uniformMatrix("modelview", modelview)
-        cubeShad.uniformMatrix("nmodelview", modelview.top3x3)
+        cubeShad.uniformMatrix("modelview", modelview.top)
+        cubeShad.uniformMatrix("nmodelview", modelview.top.top3x3)
         cube.drawTriangles
         
         //win.swapBuffers // Automatic

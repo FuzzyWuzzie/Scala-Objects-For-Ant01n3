@@ -189,16 +189,16 @@ class PixelFlow2 extends WindowAdapter with GLEventListener {
         modelview.setIdentity
         modelview.lookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0)
         modelview.translate(0, 1, 0)
-        cubeShad.uniformMatrix("modelview", modelview)        
+        cubeShad.uniformMatrix("modelview", modelview.top)        
         cube.drawTriangles
 
         modelview.translate(0, -2, 0)
         modelview.rotate(180, 0, 1, 0)
-        cubeShad.uniformMatrix("modelview", modelview)
+        cubeShad.uniformMatrix("modelview", modelview.top)
         cube.drawTriangles
 
         modelview.translate(1, 0, 0)
-        cubeShad.uniformMatrix("modelview", modelview)
+        cubeShad.uniformMatrix("modelview", modelview.top)
         cube.drawTriangles
         
         //win.swapBuffers // Automatic

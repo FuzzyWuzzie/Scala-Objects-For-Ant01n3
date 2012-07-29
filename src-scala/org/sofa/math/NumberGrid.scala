@@ -794,10 +794,10 @@ trait NumberGrid4 extends NumberGrid {
 	 * 
 	 * This completely replace the current values.
 	 * 
-	 * @param left The left-most point of the projection plane.
-	 * @param right The right-most point of the projection plane.
-	 * @param bottom The bottom-most point of the projection plane.
-	 * @param top The top-most point of the projection plane.
+	 * @param left The left-most point of the projection plane (near).
+	 * @param right The right-most point of the projection plane (near).
+	 * @param bottom The bottom-most point of the projection plane (near).
+	 * @param top The top-most point of the projection plane (near).
 	 * @param near The near clipping plane.
 	 * @param far The far clipping plane.
 	 */
@@ -815,7 +815,7 @@ trait NumberGrid4 extends NumberGrid {
 	/**
 	 * Store a perspective projection into this matrix.
 	 * 
-	 * This completely replace the current values.
+	 * This completely replaces the current values.
 	 * 
 	 * @param fov The field of view angle in radians.
 	 * @param aspect The aspect ratio (width / height).
@@ -833,6 +833,35 @@ trait NumberGrid4 extends NumberGrid {
 		data(10) = -(zFar + zNear) / (zFar - zNear)
 		data(11) = -1;
 		data(14) = -(2 * zFar * zNear) / (zFar - zNear)
+	}
+	
+	/** Store an orthographic projection into this matrix.
+	  * 
+	  * This completely replaces the current values.
+	  *
+	  * @param left The left-most point of the projection plane (near and far).
+	  * @param right The right-most point of the projection plane (near and far).
+	  * @param bottom The bottom-most point of the projection plane (near and far).
+	  * @param top The top-most point of the projection plane (near and far).
+	  * @param near The near clipping plane.
+	  * @param far The far clipping plane.
+	  */
+	def orthographic(left:Double, right:Double, bottom:Double, top:Double, near:Double, far:Double) {
+		setRow(0, 2/(right-left), 0,              0,            -(right+left)/(right-left))
+		setRow(1, 0,              2/(top-bottom), 0,            -(top+bottom)/(top-bottom))
+		setRow(2, 0,              0,              2/(far-near), -(far+near)/(far-near))
+		setRow(3, 0,              0,              0,            1)
+	}
+	
+	/** Quick inverse of an orthographic projection as set in the 'othographic' method.
+	  * 
+	  * This completely replaces the current values.
+	  */
+	def inverseOrthographic(left:Double, right:Double, bottom:Double, top:Double, near:Double, far:Double) {
+		setRow(0, (right-left)/2, 0,              0,            (right+left)/2)
+		setRow(1, 0,              (top-bottom)/2, 0,            (top+bottom)/2)
+		setRow(2, 0,              0,              (far-near)/2, (far+near)/2)
+		setRow(3, 0,              0,              0,            1)
 	}
 
 	/**

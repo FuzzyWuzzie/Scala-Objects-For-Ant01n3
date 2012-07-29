@@ -5,9 +5,9 @@ import scala.collection.mutable.ArrayStack
 import org.sofa.math._
 
 object MatrixStack {
-	implicit def toMatrix4(stack:MatrixStack):Matrix4 = stack.top
+	implicit def toMatrix4(stack:MatrixStack[Matrix4]):Matrix4 = stack.top
 
-    def apply(initialMatrix:Matrix4):MatrixStack = new MatrixStack(initialMatrix)
+    def apply(initialMatrix:Matrix4):MatrixStack[Matrix4] = new MatrixStack[Matrix4](initialMatrix)
 }
 
 /**
@@ -20,7 +20,7 @@ object MatrixStack {
  * 
  * You can push and pop as many times as you want.
  */
-class MatrixStack(initialMatrix:Matrix4) {
+class MatrixStack[M<:Matrix4](initialMatrix:M) {
     
 // Attributes
     
@@ -28,12 +28,12 @@ class MatrixStack(initialMatrix:Matrix4) {
     protected var current = initialMatrix
     
     /** The stack of matrices, excepted the top. */
-    protected var stack = new ArrayStack[Matrix4]
+    protected var stack = new ArrayStack[M]
     
 // Access
     
     /** Access to the top-most matrix. */
-    def top:Matrix4 = current
+    def top:M = current
     
     /** Number of matrices in the stack. */
     def size = stack.size + 1
@@ -43,7 +43,7 @@ class MatrixStack(initialMatrix:Matrix4) {
     /** Make a copy of the top matrix and push it on the top of the stack. */
     def push() {
         stack.push(current)
-        current = current.newClone.asInstanceOf[Matrix4]
+        current = current.newClone.asInstanceOf[M]
     }
     
     /** Delete the top matrix and install the previous one on the top of the stack. */

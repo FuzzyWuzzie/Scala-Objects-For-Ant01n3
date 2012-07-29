@@ -53,6 +53,14 @@ object Shader {
     }
 }
 
+object ShaderProgram {
+    /** Create a new shader program from a vertex shader and a fragment shader. */
+    def apply(gl:SGL, name:String, vertexShaderFileName:String, fragementShaderFileName:String):ShaderProgram = {
+    	new ShaderProgram(gl, name, new VertexShader(gl, vertexShaderFileName),
+    			new FragmentShader(gl, fragementShaderFileName))
+    }
+}
+
 /** Represents a shader, either vertex, fragment or geometry.
  *  
  * @param gl The SGL instance.
