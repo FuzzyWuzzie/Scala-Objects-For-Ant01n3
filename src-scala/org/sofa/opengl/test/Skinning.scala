@@ -121,15 +121,15 @@ class Skinning extends SurfaceRenderer {
 	}
 	
 	protected def initShaders() {
-	    nmapShader = new ShaderProgram(gl,
+	    nmapShader = new ShaderProgram(gl, "phong n-map",
 	            new VertexShader(gl, "stock/phongNmap.vert.glsl"),
 	            new FragmentShader(gl, "stock/phongNmap.frag.glsl"))
 	    
-	    plainShader = new ShaderProgram(gl,
+	    plainShader = new ShaderProgram(gl, "plain", 
 	            new VertexShader(gl, "uniformColor.vert.glsl"),
 	            new FragmentShader(gl, "uniformColor.frag.glsl"))
 	    
-	    boneShader = new ShaderProgram(gl,
+	    boneShader = new ShaderProgram(gl, "phong n-map with bones",
 	            new VertexShader(gl, "bonePhong.vert.glsl"),
 	            new FragmentShader(gl, "bonePhong.frag.glsl"))
 	
