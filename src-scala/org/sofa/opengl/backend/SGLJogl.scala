@@ -26,6 +26,9 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
 // Awful constants
 	
 	val DEPTH_TEST:Int = GL.GL_DEPTH_TEST
+	val BLEND:Int = GL.GL_BLEND
+    val SRC_ALPHA:Int = GL.GL_SRC_ALPHA
+    val ONE_MINUS_SRC_ALPHA:Int = GL.GL_ONE_MINUS_SRC_ALPHA
     val CULL_FACE:Int = GL.GL_CULL_FACE
     val BACK:Int = GL.GL_BACK
     val CW:Int = GL.GL_CW
@@ -269,6 +272,7 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
     def clearDepth(value:Float) = glClearDepth(value)
     def viewport(x:Int, y:Int, width:Int, height:Int) = glViewport(x, y, width, height)
     def enable(i:Int) = glEnable(i)
+    def disable(i:Int) = glDisable(i)
     def cullFace(i:Int) = glCullFace(i)
     def frontFace(i:Int) = glFrontFace(i)
     def lineWidth(width:Float) = glLineWidth(width)

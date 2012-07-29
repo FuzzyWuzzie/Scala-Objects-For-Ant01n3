@@ -11,6 +11,9 @@ abstract class SGL {
 // Awful constants
     
     val DEPTH_TEST:Int
+    val BLEND:Int
+    val SRC_ALPHA:Int
+    val ONE_MINUS_SRC_ALPHA:Int
     val CULL_FACE:Int
     val BACK:Int
     val CW:Int
@@ -153,6 +156,7 @@ abstract class SGL {
     def clearDepth(value:Float)
     def viewport(x:Int, y:Int, width:Int, height:Int)
     def enable(i:Int)
+    def disable(i:Int)
     def cullFace(i:Int)
     def frontFace(i:Int)
     def lineWidth(width:Float)

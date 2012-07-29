@@ -23,8 +23,6 @@ uniform Texture tex;
 out vec4 C;
 
 void main(void) {
-	vec4 S;
-	
 	mat3  TBN = transpose(mat3(T, B, N));
 	vec3  n   = normalize((2 * (texture(tex.normal, UV.st).rgb)) - 1);
 	vec3  l   = normalize(TBN * L);
@@ -34,9 +32,10 @@ void main(void) {
 	float dd  = LL * LL;
 
 	C = texture(tex.color, UV.st);
-	S = vec4(1, 1, 1, 1);
+	vec3 c = vec3(C.rgb);
+	vec3 S = vec3(1, 1, 1);
 
-	C = ((C * d * lights[0].intensity) / dd)
-	  + ((S * s * lights[0].intensity) / dd)
-	  + ( C *     lights[0].ambient);
+	C = vec4((c * d * lights[0].intensity) / dd, C.a)
+	  + vec4((S * s * lights[0].intensity) / dd, 0)
+	  + vec4( c *     lights[0].ambient, 0);
 }

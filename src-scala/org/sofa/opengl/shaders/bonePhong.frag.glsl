@@ -17,8 +17,9 @@ void main(void) {
 	vec3  r  = normalize(reflect(-l, n));
 	float s  = pow(max(dot(n, r), 0), lights[0].specular);
 	float dd = LL * LL;
+	vec3  c  = vec3(C.rgb);
 
-	out_Color = ((C * d * lights[0].intensity) / dd)
-	          + ((vec4(1, 1, 1, 1) * s * lights[0].intensity) / dd)
-	          +  (C * lights[0].ambient);
+	out_Color = vec4((c * d * lights[0].intensity) / dd, C.a)
+	          + vec4((vec3(1, 1, 1) * s * lights[0].intensity) / dd, 0)
+	          + vec4(c * lights[0].ambient, 0);
 }

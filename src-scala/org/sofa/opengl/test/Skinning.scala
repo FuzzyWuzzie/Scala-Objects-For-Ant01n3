@@ -42,7 +42,7 @@ class Skinning extends SurfaceRenderer {
     
 // Shading
     
-    val clearColor = Rgba.black
+    val clearColor = Rgba.grey30
     var nmapShader:ShaderProgram = null
     var plainShader:ShaderProgram = null
     var boneShader:ShaderProgram = null
@@ -52,10 +52,10 @@ class Skinning extends SurfaceRenderer {
 
 // Go
         
-    build
-    
+    build()
+
     private def build() {
-	    camera   = Camera()
+	    camera   = Camera(); camera.viewportPx(600,800)
 	    caps     = new GLCapabilities(GLProfile.get(GLProfile.GL3))
 	    val ctrl = new BasicCameraController(camera)
 	    
@@ -86,6 +86,7 @@ class Skinning extends SurfaceRenderer {
 	    initTextures
 	    
 	    camera.viewCartesian(0, 5, 5)
+	    camera.setFocus(0, 1.5, 0)
 	    reshape(surface)
 	}
 
@@ -99,6 +100,9 @@ class Skinning extends SurfaceRenderer {
 	    gl.enable(gl.CULL_FACE)
         gl.cullFace(gl.BACK)
         gl.frontFace(gl.CW)
+        
+        gl.disable(gl.BLEND)
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	}
 
 	protected def initSkeleton() {
@@ -117,16 +121,16 @@ class Skinning extends SurfaceRenderer {
 	
 	protected def initShaders() {
 	    nmapShader = new ShaderProgram(gl,
-	            new VertexShader(gl, "stock/phongNmap.vert"),
-	            new FragmentShader(gl, "stock/phongNmap.frag"))
+	            new VertexShader(gl, "stock/phongNmap.vert.glsl"),
+	            new FragmentShader(gl, "stock/phongNmap.frag.glsl"))
 	    
 	    plainShader = new ShaderProgram(gl,
-	            new VertexShader(gl, "uniformColor.vert"),
-	            new FragmentShader(gl, "uniformColor.frag"))
+	            new VertexShader(gl, "uniformColor.vert.glsl"),
+	            new FragmentShader(gl, "uniformColor.frag.glsl"))
 	    
 	    boneShader = new ShaderProgram(gl,
-	            new VertexShader(gl, "bonePhong.vert"),
-	            new FragmentShader(gl, "bonePhong.frag"))
+	            new VertexShader(gl, "bonePhong.vert.glsl"),
+	            new FragmentShader(gl, "bonePhong.frag.glsl"))
 	
 	    boneShader.uniform("bone[0].color", skeleton.color)
 	    boneShader.uniform("bone[1].color", skeleton(0).color)
@@ -149,11 +153,11 @@ class Skinning extends SurfaceRenderer {
 	}
 	
 	protected def initTextures() {
-	    tex1uv = new Texture(gl, "textures/grey-concrete-texture.jpg", true)
+	    tex1uv = new Texture(gl, "textures/stone_wall__.jpg", true)
 	    tex1uv.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    tex1uv.wrap(gl.REPEAT)
 
-	    tex1nm = new Texture(gl, "textures/Sample64.png", true)
+	    tex1nm = new Texture(gl, "textures/stone_wall_normal_map__.jpg", true)
 	    tex1nm.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    tex1nm.wrap(gl.REPEAT)
 	}
@@ -183,38 +187,62 @@ class Skinning extends SurfaceRenderer {
 	        skeleton.drawSkeleton(gl, camera, plainShader, "uniformColor")
 	    }
 	    
-	    gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    boneShader.use
 	    useLights(boneShader)
 	    camera.pushpop {
+	    	setBonesColor(1)
 	        skeleton.drawModel(gl, camera, tubeMesh, tube, boneShader)	        
+	    	gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
+	    	setBonesColor(0.5f)
+	    	gl.enable(gl.BLEND)
+	    	skeleton.drawModel(gl, camera, tubeMesh, tube, boneShader)
+	    	gl.disable(gl.BLEND)
 	    }
 	    
 	    surface.swapBuffers
 	    gl.checkErrors
 	    animate
 	}
-	
+
+	def setBonesColor(alpha:Float) {
+	   if(alpha == 1) {
+		   boneShader.uniform("bone[0].color", skeleton.color)
+		   boneShader.uniform("bone[1].color", skeleton(0).color)
+		   boneShader.uniform("bone[2].color", (skeleton(0))(0).color)
+	   } else {
+		   val c1 = skeleton.color
+		   val c2 = skeleton(0).color
+		   val c3 = skeleton(0)(0).color
+		   boneShader.uniform("bone[0].color", Rgba(c1.red, c1.green, c1.blue, alpha))
+		   boneShader.uniform("bone[1].color", Rgba(c2.red, c2.green, c2.blue, alpha))
+		   boneShader.uniform("bone[2].color", Rgba(c3.red, c3.green, c3.blue, alpha))
+	   }
+	}
+
 	var join0 = 0.0
 	var join1 = 0.0
 	var join2 = 0.0
-	var join1Dir = +0.01
-	var join2Dir = +0.01
+	var join0Dir = +0.005
+	var join1Dir = +0.05
+	var join2Dir = +0.1
 	
 	def animate() {
+//	    join0 += join1Dir
 	    join1 += join1Dir
 	    join2 += join2Dir
 	    
-	    if(join1 > Pi/8 || join1 < -Pi/8) join1Dir = -join1Dir
-	    if(join2 > Pi/8 || join2 < -Pi/8) join2Dir = -join2Dir
+//	    if(join0 > Pi/20 || join1 < -Pi/20) join0Dir = -join0Dir
+	    if(join1 > Pi/4 || join1 < -Pi/4) join1Dir = -join1Dir
+	    if(join2 > Pi/4 || join2 < -Pi/4) join2Dir = -join2Dir
 
-	    skeleton.identity
-	    //skeleton.scale(1, 3, 1)
+//	    skeleton.identity
+//	    skeleton.rotate(join0, 1, 0, 0)
 	    skeleton(0).identity
 	    skeleton(0).rotate(join1, 0, 0, 1)
-//	    skeleton(0).scale(1, 2, 1)
+	    //skeleton(0).scale(0.7, 1, 0.7)
 	    skeleton(0)(0).identity
-	    skeleton(0)(0).rotate(join2, 0, 0, 1)
+	    skeleton(0)(0).rotate(join2, 1, 0, 0)
+	    //skeleton(0)(0).scale(0.7, 1, 0.7)
 	}
 	
 	def useLights(shader:ShaderProgram) {
