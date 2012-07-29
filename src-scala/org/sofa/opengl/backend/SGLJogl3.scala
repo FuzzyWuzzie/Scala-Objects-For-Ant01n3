@@ -17,7 +17,7 @@ import GL3._
   * The goal is to provide an easy access to some OpenGL methods, facilitating the use of NIO
   * buffers for example.
   */
-class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
+class SGLJogl3(val gl:GL3, val glu:GLU) extends SGL {
 	private[this] val ib1 = NioIntBuffer.allocate(1)
 	
 	import gl._
@@ -180,7 +180,7 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
 	def getProgramLinkStatus(id:Int):Boolean = { getProgram(id, GL_LINK_STATUS) == GL_TRUE }
 	
 	def getShader(id:Int, status:Int):Int = {
-	    glGetShaderiv(id, GL_INFO_LOG_LENGTH, ib1)
+	    glGetShaderiv(id, status, ib1)
 	    ib1.get(0)
 	}
 	
@@ -269,6 +269,7 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
     def clear(mode:Int) = glClear(mode)
 	def clearColor(r:Float, g:Float, b:Float, a:Float) = glClearColor(r, g, b, a)
 	def clearColor(color:Rgba) = glClearColor(color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
+	def clearColor(color:java.awt.Color) = glClearColor((color.getRed/255.0).toFloat, (color.getGreen/255.0).toFloat, (color.getBlue/255.0).toFloat, (color.getAlpha/255.0).toFloat)
     def clearDepth(value:Float) = glClearDepth(value)
     def viewport(x:Int, y:Int, width:Int, height:Int) = glViewport(x, y, width, height)
     def enable(i:Int) = glEnable(i)
@@ -290,6 +291,7 @@ class SGLJogl(val gl:GL3, val glu:GLU) extends SGL {
         println("       glsl     %s".format(getString(GL_SHADING_LANGUAGE_VERSION)))
         println("       renderer %s".format(getString(GL_RENDERER)))
         println("       vendor   %s".format(getString(GL_VENDOR)))
+        println("       profiles %s".format(GLProfile.GL_PROFILE_LIST_ALL.filter(GLProfile.isAvailable(_)).mkString(",")))
 	}
 	
 	def checkErrors() {

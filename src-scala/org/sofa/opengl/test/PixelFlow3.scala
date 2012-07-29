@@ -161,7 +161,8 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
     val modelview = new MatrixStack(new NioBufferMatrix4)
     
     def test() {
-        val prof = GLProfile.get(GLProfile.GL3)
+//        val prof = GLProfile.get(GLProfile.GL3)
+        val prof = GLProfile.get(GLProfile.GL2ES2)
         val caps = new GLCapabilities(prof)
     
         caps.setDoubleBuffered(true)
@@ -185,10 +186,11 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
         anim.start
     }
     
-    override def windowDestroyNotify(ev:WindowEvent) { exit }
+    override def windowDestroyNotify(ev:WindowEvent) { sys.exit }
     
     def init(win:GLAutoDrawable) {
-        gl = new backend.SGLJogl(win.getGL.getGL3, GLU.createGLU)
+//        gl = new backend.SGLJogl3(win.getGL.getGL3, GLU.createGLU)
+        gl = new backend.SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU)
         
         gl.printInfos
         gl.clearColor(0f, 0f, 0f, 0f)
@@ -198,15 +200,21 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
         gl.cullFace(gl.BACK)
         gl.frontFace(gl.CCW)
     
-        cubeShad = new ShaderProgram(gl,
-                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3VertexShader.glsl"),
-                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3FragmentShader.glsl"))
+        cubeShad = new ShaderProgram(gl, "gouraud shader",
+                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3VertexShader.glsl"),
+                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
+//                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3VertexShader.glsl"),
+//                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3FragmentShader.glsl"))
+
+        val p = cubeShad.getAttribLocation("position")
+        val c = cubeShad.getAttribLocation("color")
+        val n = cubeShad.getAttribLocation("normal")
 
         projection.setIdentity
         projection.frustum(-1, 1, -1, 1, 1, 20)
         cubeShad.uniformMatrix("projection", projection)
 
-        cube = new VertexArray(gl, cubeInd, (0, 3, cubeVert), (1, 4, cubeClr), (2, 3, cubeNorm))
+        cube = new VertexArray(gl, cubeInd, (p, 3, cubeVert), (c, 4, cubeClr), (n, 3, cubeNorm))
     }
     
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {
@@ -233,17 +241,17 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
         cubeShad.uniform("ambientIntensity", 0.05f)
         
         modelview.translate(0, 1, 0)
-        cubeShad.uniformMatrix("modelview", modelview)
-        cubeShad.uniformMatrix("nmodelview", modelview.top3x3)
+        cubeShad.uniformMatrix("modelview", modelview.top)
+        cubeShad.uniformMatrix("nmodelview", modelview.top.top3x3)
         cube.drawTriangles
         
         modelview.translate(0, -2, 0)
         modelview.rotate(180, 0, 1, 0)
-        cubeShad.uniformMatrix("modelview", modelview)
-        cubeShad.uniformMatrix("nmodelview", modelview.top3x3)
+        cubeShad.uniformMatrix("modelview", modelview.top)
+        cubeShad.uniformMatrix("nmodelview", modelview.top.top3x3)
         cube.drawTriangles
         
-        win.swapBuffers
+        //win.swapBuffers // Automatic
     }
     
     def animate() {

@@ -13,7 +13,7 @@ import GL3._
   * around the (0, 0, 0) point.
   * 
   * The number of rows and columns of quads can be specified with `nVertX` and `nVertZ` and the
-  * overal size of the plane can be given with `width` and `depth`.
+  * overall size of the plane can be given with `width` and `depth`.
   * 
   * The plane is made of triangles and must be drawn in this mode. Indices must be used. You can
   * use a normal, color, tangent, and tex-coords arrays with this mesh.
@@ -23,15 +23,15 @@ import GL3._
   * |
   * +--+--+  nVertX = 3
   * | /| /|  nVertZ = 3
-  * |/ |/ |  The origin is at the center.
+  * |/ |/ |  The origin is at the center.
   * +--0--+
   * | /| /|
-  * |/ |/ |
+  * |/ |/ |
   * +--+--+-->X
   * 
   * Triangles are in CW order.
   */
-class Plane(val nVertX:Int, val nVertZ:Int, val width:Int, val depth:Int)
+class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
 	extends Mesh with ColorableMesh with TangentSurfaceMesh
 		with IndexedMesh with TexturableMesh {
     
@@ -64,8 +64,8 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Int, val depth:Int)
     
     protected def allocateVertices:FloatBuffer = {
         val buf = new FloatBuffer(nVertX * nVertZ * 3)
-        val nw  = width.toFloat / (nVertX-1).toFloat
-        val nd  = depth.toFloat / (nVertZ-1).toFloat 
+        val nw  = width / (nVertX-1).toFloat
+        val nd  = depth / (nVertZ-1).toFloat 
         var xx  = -width/2f
         var zz  = -depth/2f
         var i   = 0
@@ -181,7 +181,16 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Int, val depth:Int)
         }
     }
     
-    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors), (2, 3, normals), (3, 3, tangents), (4, 2, texCoords))
+    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors),
+    			(2, 3, normals), (3, 3, tangents), (4, 2, texCoords))
+    
+    def newVertexArray(gl:SGL, attributeIndices:Tuple5[Int,Int,Int,Int,Int]) = {
+    	new VertexArray(gl, indices, (attributeIndices._1, 3, vertices),
+    	                             (attributeIndices._2, 4, colors),
+    	                             (attributeIndices._3, 3, normals),
+    	                             (attributeIndices._4, 3, tangents),
+    	                             (attributeIndices._5, 2, texCoords))
+    }
     
     def drawAs():Int = GL_TRIANGLES
 }
