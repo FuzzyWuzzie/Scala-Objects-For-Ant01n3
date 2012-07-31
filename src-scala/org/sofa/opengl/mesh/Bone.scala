@@ -21,9 +21,9 @@ class BoneMesh extends Mesh with ColorableMesh with IndexedMesh {
 	
 	def vertices:FloatBuffer = V
 	
-	def colors:FloatBuffer = C
+	override def colors:FloatBuffer = C
 	
-	def indices:IntBuffer = I
+	override def indices:IntBuffer = I
 	
 	override def hasColors = true
 	
@@ -101,7 +101,7 @@ class BoneMesh extends Mesh with ColorableMesh with IndexedMesh {
 	
 	def drawAs():Int = GL_TRIANGLES
 	
-	def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors))
+//	def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors))
 	
 	def setColor(color:Color) {
 	    val n = 6 * 4

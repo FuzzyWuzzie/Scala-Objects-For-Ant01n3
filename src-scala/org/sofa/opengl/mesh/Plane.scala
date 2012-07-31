@@ -43,11 +43,11 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
     protected lazy val I:IntBuffer = allocateIndices
 
     def vertices:FloatBuffer = V
-    def colors:FloatBuffer = C
-    def normals:FloatBuffer = N
-    def tangents:FloatBuffer = T
-    def texCoords:FloatBuffer = X
-    def indices:IntBuffer = I
+    override def colors:FloatBuffer = C
+    override def normals:FloatBuffer = N
+    override def tangents:FloatBuffer = T
+    override def texCoords:FloatBuffer = X
+    override def indices:IntBuffer = I
     
     protected var textureRepeatS:Int = 4
     protected var textureRepeatT:Int = 4
@@ -179,17 +179,6 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
             colors(i+2) = color.blue.toFloat
             colors(i+3) = color.alpha.toFloat
         }
-    }
-    
-    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors),
-    			(2, 3, normals), (3, 3, tangents), (4, 2, texCoords))
-    
-    def newVertexArray(gl:SGL, attributeIndices:Tuple5[Int,Int,Int,Int,Int]) = {
-    	new VertexArray(gl, indices, (attributeIndices._1, 3, vertices),
-    	                             (attributeIndices._2, 4, colors),
-    	                             (attributeIndices._3, 3, normals),
-    	                             (attributeIndices._4, 3, tangents),
-    	                             (attributeIndices._5, 2, texCoords))
     }
     
     def drawAs():Int = GL_TRIANGLES

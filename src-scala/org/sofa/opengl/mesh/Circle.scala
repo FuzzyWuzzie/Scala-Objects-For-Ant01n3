@@ -52,9 +52,9 @@ class Circle(radius:Double, sides:Int) extends Mesh with IndexedMesh {
     
     def vertices:FloatBuffer = V
     
-    def indices:IntBuffer = I
+    override def indices:IntBuffer = I
     
     override def drawAs:Int = GL_LINE_LOOP
     
-    def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, indices, (0, 3, vertices))
+//    def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, indices, (0, 3, vertices))
 }

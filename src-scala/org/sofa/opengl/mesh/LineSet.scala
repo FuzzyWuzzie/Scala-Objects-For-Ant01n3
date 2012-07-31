@@ -28,7 +28,7 @@ class LineSet(val count:Int) extends Mesh {
     
     def vertices:FloatBuffer = V
     
-    def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (0, 3, vertices))
+//    def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, (0, 3, vertices))
     
     def drawAs():Int = GL_LINES
 }

@@ -3,11 +3,11 @@ package org.sofa.opengl.mesh
 import javax.media.opengl._
 import org.sofa.nio._
 import org.sofa.opengl._
-
 import GL._
 import GL2._
 import GL2ES2._
 import GL3._ 
+import scala.collection.mutable.HashMap
 
 
 /** A mesh is a set of vertex data. */
@@ -15,8 +15,39 @@ trait Mesh {
     /** The set of vertices making up the mesh. */
     def vertices:FloatBuffer
 
-    def verticesComponents = 3
+    /** The set of normal vectors associated with each vertex. */
+    def normals:FloatBuffer = throw new RuntimeException("no normal attributes in this mesh")
+
+    /** The set of tangent vectors associated with each vertex and normal. */
+    def tangents:FloatBuffer = throw new RuntimeException("no tangent attributes in this mesh")
+
+    /** The set of colors for each vertex of the mesh. */
+    def colors:FloatBuffer = throw new RuntimeException("no color attributes in this mesh")
+
+    /** The set of texture coordinates of the mesh. */
+    def texCoords:FloatBuffer = throw new RuntimeException("no texture coordinate attributes in this mesh")
+ 
+    /** The set of bone indices. */
+    def bones:IntBuffer = throw new RuntimeException("no bone attributes in this mesh")
+
+    /** Indices in the attributes array, draw order. */
+    def indices:IntBuffer = throw new RuntimeException("no indices in this mesh")
+
+    /** Number of components per vertices. */
+    def verticeComponents = 3
     
+    /** Number of components per normal. */
+    def normalComponents = 3
+    
+    /** Number of components per tangent. */
+    def tangentComponents = 3
+    
+    /** Number of components per color. */
+    def colorComponents = 4
+    
+    /** Number of components per texture coordinate. */
+    def texCoordComponents = 2
+
     /** True if this mesh has a set of normals, associated with the vertices. */
     def hasNormals:Boolean = false
     
@@ -35,64 +66,134 @@ trait Mesh {
     /** True if the mesh needs an index array to define which elements to draw. */
     def hasIndices:Boolean = false
     
-    /** How to draw the mesh (as lines, lines loops, triangles, quads, etc.). */
+    /** How to draw the mesh (as lines, lines loops, triangles, quads, etc.).
+      * This depends on the way the data is defined. */
     def drawAs:Int
+ 
+//        def newVertexArray(gl:SGL) = new VertexArray(gl, indices,
+//    									(0, verticeComponents, vertices),
+//    									(1, colorComponents, colors),
+//    									(2, normalComponents, normals),
+//    									(3, tangentComponents, tangents),
+//    									(4, texCoordComponents, texCoords))
+//    
+//    def newVertexArray(gl:SGL, attributeIndices:Tuple6[Int,Int,Int,Int,Int, Int]) = {
+//    	new VertexArray(gl, indices, (attributeIndices._1, verticeComponents, vertices),
+//    	                             (attributeIndices._2, colorComponents, colors),
+//    	                             (attributeIndices._3, normalComponents, normals),
+//   	                                 (attributeIndices._4, tangentComponents, tangents),
+//    	                             (attributeIndices._5, texCoordComponents, texCoords))
+//    }
+
+    /** Number of attributes defines (vertices, colors, normals, tangents, texCoords, bones). */
+    def attributeCount():Int = {
+    	var count = 1;	// Vertices are always present
+    	
+    	count += {if(hasColors) 1 else 0}
+    	count += {if(hasNormals) 1 else 0}
+    	count += {if(hasTangents) 1 else 0}
+    	count += {if(hasTexCoords) 1 else 0}
+    	count += {if(hasBones) 1 else 0}
+    	
+    	count
+    }
     
-    /** Create a vertex array for the mesh. */
-    def newVertexArray(gl:SGL):VertexArray
+    /** Create a vertex array for the mesh. This method will create the vertex array with
+      * all the defined attribute arrays (colors, normals, tangents, texCoords, bones, etc.)
+      * if they are available. It will associate each attribute with a location like this:
+      * 
+      *  - 0 = vertex,
+      *  - 1 = color,
+      *  - 2 = normals,
+      *  - 3 = tangents,
+      *  - 4 = texCoords,
+      *  - 5 = bones.
+      *  
+      *  This is useful only for shaders having the possibility to associate this index
+      *  with the attribute (having the 'layout' qualifier (e.g. layout(location=1)),
+      *  that is under OpenGL 3) */
+    def newVertexArray(gl:SGL):VertexArray = newVertexArray(gl, (0, 1, 2, 3, 4, 5)) 
+
+    /** Create a vertex array for the mesh. This method will create the vertex array with
+      * all the defined attribute arrays (color, normals, tangents, texCoords, bones,
+      * etc.) if they are available (see the 'has*' methods). It will associate each
+      * attribute with the attribute location given by the 'locations' argument in this
+      * order: vertex, color, normals, tangents, texCoords, bones. If the attribute
+      * location given is negative, the attribute will not be associated.
+      * 
+      * Examples:
+      *    // Define all attributes, vertices at location 0, bones at location 3... 
+      *    val v = newVertexArray(gl, (0, 1, 2, 5, 4, 3))
+      *    // Define some attributes only, no colors, no tangents, no bones.
+      *    val v = newVertexArray(gl, (0, -1, 6, -1, 4, -1))  
+      */
+    def newVertexArray(gl:SGL, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+    	val attribs = new Array[Tuple3[Int,Int,NioBuffer]](attributeCount)
+    	var i = 0
+    	
+    	attribs(0) = (locations._1, verticeComponents,  vertices);  i+=1
+    	
+    	if(hasColors    && locations._2 >= 0) { attribs(i) = (locations._2, colorComponents,    colors);    i+=1 }
+    	if(hasNormals   && locations._3 >= 0) { attribs(i) = (locations._3, normalComponents,   normals);   i+=1 }
+    	if(hasTangents  && locations._4 >= 0) { attribs(i) = (locations._4, tangentComponents,  tangents);  i+=1 }
+    	if(hasTexCoords && locations._5 >= 0) { attribs(i) = (locations._5, texCoordComponents, texCoords); i+=1 }
+    	if(hasBones     && locations._6 >= 0) { attribs(i) = (locations._6, 1,                  bones);     i+=1 }
+    	
+    	new VertexArray(gl, attribs:_*)
+    }
+    
+    /** Create a vertex array from the given map of location / attributes and only
+      * with the specified attributes.
+      * 
+      * Example usage: newVertexArray(gl, {("vertices" => 0), ("normals => 1)})
+      */
+    def newVertexArray(gl:SGL, locations:HashMap[String,Int]):VertexArray = {
+    	val locs = new Array[Tuple3[Int,Int,NioBuffer]](locations.size)
+    	var pos = 0
+    	locations.foreach { value:(String,Int) =>
+    		locs(pos) = value._1.toLowerCase match {
+    			case "vertices"  => (value._2, verticeComponents, vertices)
+    			case "colors"    => (value._2, colorComponents, colors)
+    			case "normals"   => (value._2, normalComponents, normals)
+    			case "tangents"  => (value._2, tangentComponents, tangents)
+    			case "texcoords" => (value._2, texCoordComponents, texCoords)
+    			case "bones"     => (value._2, 1, bones)
+    			case _ => throw new RuntimeException("Unknown key %s (available: vertices, colors, normals, tangents, texCoords or texcoords, bones)".format(value._1))
+    		}
+    		pos += 1
+    	}
+    	new VertexArray(gl, locs:_*)
+    }
 }
 
 /** Trait for meshes that have normal data. */
-trait SurfaceMesh {
-    /** The set of normal vectors associated with each vertex. */
-    def normals:FloatBuffer
-    
-    def normalComponents = 3
-    
+trait SurfaceMesh {    
     def hasNormals:Boolean = true
 }
 
 /** Trait for meshes that have normal data and tangent data. The Bi-tangents can be obtained
   * from the normal and tangents. */
-trait TangentSurfaceMesh extends SurfaceMesh {
-    /** The set of tangent vectors associated with each vertex and normal. */
-    def tangents:FloatBuffer
-    
-    def tangentsComponents = 3
-    
+trait TangentSurfaceMesh extends SurfaceMesh {    
     def hasTangents:Boolean = true
 }
 
 /** Trait for meshes that have color data. */
-trait ColorableMesh {
-    /** The set of colors for each vertex of the mesh. */
-    def colors:FloatBuffer    
-    
-    def colorComponents = 4
-    
+trait ColorableMesh {    
     def hasColors:Boolean = true
 }
 
 /** Trait for meshes that have texture coordinates. */
 trait TexturableMesh {
-    def texCoords:FloatBuffer
-    
-    def texCoordCompoenents = 2
-    
     def hasColors:Boolean = true
 }
 
 /** Trait for meshes that have bone indices. */
 trait AnimableMesh {
-    def bones:IntBuffer
-    
     def hasBones:Boolean = true
 }
 
 /** Trait for meshes that have indices in the vertex arrays. */
-trait IndexedMesh {
-    def indices:IntBuffer
-    
+trait IndexedMesh {    
     def hasIndices:Boolean = true
 }
 
@@ -102,8 +203,4 @@ trait MultiArrayMesh {
     def counts:IntBuffer
     
     def count:Int
-}
-
-trait MultiElementMesh {
-    // TODO
 }

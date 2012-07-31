@@ -1,5 +1,7 @@
 package org.sofa.nio
 
+import scala.collection.mutable.ArrayBuffer
+
 trait NioBuffer {
     def isByte:Boolean
     def isInt:Boolean
@@ -120,6 +122,7 @@ class ByteBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Byte] 
 	def position(i:Int) { buffer.position(i) }
 	def update(i:Int, value:Byte):Unit = buffer.put(i, value)
 	def copy(other:ByteBuffer) = { buffer.rewind; other.rewind; buffer.put(other.buffer) }
+	def copy(data:ArrayBuffer[Byte]) { buffer.rewind; buffer.put(data.toArray[Byte]) }
 	def copy(data:Array[Byte]) = { buffer.rewind; buffer.put(data) }
 	def nativeOrder() = buffer.order(java.nio.ByteOrder.nativeOrder())
 	def bigEndian() = buffer.order(java.nio.ByteOrder.BIG_ENDIAN)
@@ -135,6 +138,7 @@ class IntBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Int] {
 	var buffer:java.nio.IntBuffer = if(capacity>0) IntBuffer.allocate(capacity, direct) else null    
 	def this(capacity:Int) { this(capacity, true) }
 	def this(data:Array[Int]) { this(data.size); copy(data) }
+	def this(data:ArrayBuffer[Int]) { this(data.size); copy(data.toArray[Int]) }
 	def this(from:ByteBuffer) { this(0); buffer = from.buffer.asIntBuffer; capacity = buffer.capacity/4 }
 	def rewind() { buffer.rewind() }
 	def position(i:Int) { buffer.position(i) }
@@ -152,6 +156,7 @@ class FloatBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Float
 	var buffer:java.nio.FloatBuffer = if(capacity>0) FloatBuffer.allocate(capacity, direct) else null
 	def this(capacity:Int) { this(capacity, true) }
 	def this(data:Array[Float]) { this(data.size); copy(data) }
+	def this(data:ArrayBuffer[Float]) { this(data.size); copy(data.toArray[Float]) }
 	def this(from:ByteBuffer) { this(0); buffer = from.buffer.asFloatBuffer; capacity = buffer.capacity/4 }
 	def rewind() { buffer.rewind() }
 	def position(i:Int) { buffer.position(i) }
@@ -169,6 +174,7 @@ class DoubleBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Doub
 	var buffer:java.nio.DoubleBuffer = if(capacity>0) DoubleBuffer.allocate(capacity, direct) else null
 	def this(capacity:Int) { this(capacity, true) }
 	def this(data:Array[Double]) { this(data.size); copy(data) }
+	def this(data:ArrayBuffer[Double]) { this(data.size); copy(data.toArray[Double]) }
     def this(from:ByteBuffer) { this(0); buffer = from.buffer.asDoubleBuffer; capacity = buffer.capacity/8 }
 	def rewind() { buffer.rewind() }
 	def position(i:Int) { buffer.position(i) }

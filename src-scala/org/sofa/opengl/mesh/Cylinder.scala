@@ -68,17 +68,17 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
     
     def vertices:FloatBuffer = V
     
-    def colors:FloatBuffer = C
+    override def colors:FloatBuffer = C
     
-    def normals:FloatBuffer = N
+    override def normals:FloatBuffer = N
     
-    def tangents:FloatBuffer = T
+    override def tangents:FloatBuffer = T
     
-    def texCoords:FloatBuffer = X
+    override def texCoords:FloatBuffer = X
     
-    def bones:IntBuffer = B
+    override def bones:IntBuffer = B
     
-    def indices:IntBuffer = I
+    override def indices:IntBuffer = I
      
     override def hasColors = true
     
@@ -370,15 +370,15 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
         buf
     }
     
-    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors), (2, 3, normals), (3, 3, tangents), (4, 2, texCoords))
-
-    def newVertexArray(gl:SGL, attributeIndices:Tuple5[Int,Int,Int,Int,Int]) = {
-    	new VertexArray(gl, indices, (attributeIndices._1, 3, vertices),
-    	                             (attributeIndices._2, 4, colors),
-    	                             (attributeIndices._3, 3, normals),
-    	                             (attributeIndices._4, 3, tangents),
-    	                             (attributeIndices._5, 2, texCoords))
-    }
+//    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors), (2, 3, normals), (3, 3, tangents), (4, 2, texCoords))
+//
+//    def newVertexArray(gl:SGL, attributeIndices:Tuple5[Int,Int,Int,Int,Int]) = {
+//    	new VertexArray(gl, indices, (attributeIndices._1, 3, vertices),
+//    	                             (attributeIndices._2, 4, colors),
+//    	                             (attributeIndices._3, 3, normals),
+//    	                             (attributeIndices._4, 3, tangents),
+//    	                             (attributeIndices._5, 2, texCoords))
+//    }
 
     def drawAs():Int = GL_TRIANGLES
     

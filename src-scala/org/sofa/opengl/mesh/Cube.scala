@@ -30,11 +30,11 @@ class Cube(val side:Float)
     protected var textureRepeatT:Int = 1
 
     def vertices:FloatBuffer = V
-    def colors:FloatBuffer = C
-    def normals:FloatBuffer = N
-    def indices:IntBuffer = I
-    def texCoords:FloatBuffer = X
-    def tangents:FloatBuffer = T
+    override def colors:FloatBuffer = C
+    override def normals:FloatBuffer = N
+    override def indices:IntBuffer = I
+    override def texCoords:FloatBuffer = X
+    override def tangents:FloatBuffer = T
         
     override def hasColors = true
 
@@ -222,7 +222,5 @@ class Cube(val side:Float)
         20, 23, 22)
     }
     
-    def drawAs:Int = GL_TRIANGLES
-    
-    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (0, 4, colors), (0, 3, normals))
+    def drawAs:Int = GL_TRIANGLES    
 }
