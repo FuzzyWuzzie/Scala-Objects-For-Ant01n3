@@ -145,12 +145,20 @@ trait Mesh {
     /** Create a vertex array from the given map of location / attributes and only
       * with the specified attributes.
       * 
-      * Example usage: newVertexArray(gl, {("vertices" => 0), ("normals => 1)})
+      * Example usage: newVertexArray(gl, ("vertices", 0), ("normals, 1))
+      * 
+      * Possible attributes are:
+      *  - vertices
+      *  - colors
+      *  - normals
+      *  - tangents
+      *  - texcoords
+      *  - bones
       */
-    def newVertexArray(gl:SGL, locations:HashMap[String,Int]):VertexArray = {
+    def newVertexArray(gl:SGL, locations:Tuple2[String,Int]*):VertexArray = {
     	val locs = new Array[Tuple3[Int,Int,NioBuffer]](locations.size)
     	var pos = 0
-    	locations.foreach { value:(String,Int) =>
+    	locations.foreach { value =>
     		locs(pos) = value._1.toLowerCase match {
     			case "vertices"  => (value._2, verticeComponents, vertices)
     			case "colors"    => (value._2, colorComponents, colors)
@@ -162,7 +170,10 @@ trait Mesh {
     		}
     		pos += 1
     	}
-    	new VertexArray(gl, locs:_*)
+    	
+    	if(hasIndices)
+    	     new VertexArray(gl, indices, locs:_*)
+    	else new VertexArray(gl, locs:_*)
     }
 }
 
