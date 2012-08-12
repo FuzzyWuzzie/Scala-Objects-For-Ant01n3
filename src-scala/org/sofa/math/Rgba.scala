@@ -28,4 +28,5 @@ class Rgba(
 	var green:Double,
 	var blue:Double,
 	var alpha:Double) {
+	override def toString():String = "RGBA[%f, %f, %f, %f]".format(red, green, blue, alpha)
 }

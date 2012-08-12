@@ -5,8 +5,16 @@ import scala.collection.mutable.HashMap
 import org.sofa.nio.FloatBuffer
 import org.sofa.nio.IntBuffer
 
+import javax.media.opengl.GL._
+import javax.media.opengl.GL2._
+
 case class BadlyNestedBeginEnd(msg:String) extends Throwable(msg) {
 	def this() { this("Badly nested begin()/end()") }
+}
+
+object MeshDrawMode extends Enumeration {
+	val TRIANGLES = Value(GL_TRIANGLES)
+	val QUADS     = Value(GL_QUADS)
 }
 
 class EditableMesh extends Mesh {
