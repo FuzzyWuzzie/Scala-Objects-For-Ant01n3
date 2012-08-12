@@ -8,19 +8,28 @@ import scala.collection.mutable.ArrayBuffer
 import org.sofa.math.Rgba
 import org.sofa.math.Vector3
 
+/** A Collada file, assets, library of elements and a scene. */
 class File(root:NodeSeq) {
 	var asset:Assets = new Assets((root \\ "asset").head)
 	val library = new Library(root)
+	// TODO scene
+	
+	override def toString():String = "%s%n%s".format(asset, library)
 }
 
+/** Unit types used inside a Collada file. */
 object Units extends Enumeration {
 	val Meters = Value(1)
 	val Centimeters = Value(100)
 }
 
+/** Units of a Collada file. */
 class Unit {
+	/** The unit. */
 	var units = Units.Meters
+	/** How many meters does the units resolves to. */
 	var meter = 1.0
+	
 	def this(xml:Node) {
 		this()
 		meter = (xml\"@meter").text.toDouble
@@ -30,24 +39,33 @@ class Unit {
 			case _ => Units.Meters
 		}
 	}
+
 	override def toString():String = "%s(%f meters)".format(units, meter)
 }
 
+/** Axis types. */
 object Axis extends Enumeration {
 	val X = Value(0)
 	val Y = Value(1)
 	val Z = Value(2)
 }
 
+/** A contributor in a Collada file. */
 class Contributor(val name:String, val tool:String) {
 	override def toString():String = "contrib(%s, %s)".format(name, tool)
 }
 
+/** Assets of a Collada file. */
 class Assets {
+	/** Contributors to the file. */
 	var contributors = new ArrayBuffer[Contributor]()
+	/** File creation. */
 	var created:String = ""
+	/** Last modification date. */
 	var modified:String = ""
+	/** Units of the file. */
 	var units = new Unit()
+	/** What is the up axis ? */
 	var upAxis = Axis.Y
 	
 	def this(xml:Node) {
@@ -70,10 +88,18 @@ class Assets {
 	override def toString():String = "asset((%s), created %s, modified %s, %s up, %s)".format(contributors.mkString(", "), created, modified, upAxis, units)
 }
 
+/** Library of elements used an referenced inside a Collada file. */
 class Library(root:NodeSeq) {
-	val cameras      = new HashMap[String,Camera]()
-	val lights       = new HashMap[String,Light]()
+	/** All the cameras. */
+	val cameras = new HashMap[String,Camera]()
+	
+	/** All the lights. */
+	val lights = new HashMap[String,Light]()
+	
+	/** All the geometries. */
 	val geometries   = new HashMap[String,Geometry]()
+	
+	/** All the scenes. */
 	val visualScenes = new HashMap[String,VisualScene]()
 
 	parse(root)
@@ -91,6 +117,9 @@ class Library(root:NodeSeq) {
 		(root \\ "library_geometries" \ "geometry").foreach { node =>
 			geometries += ((node.label, Geometry(node)))
 		}
+		// Visual Scenes
+		(root \\ "library_visual_scenes" \ "visual_scene").foreach { node =>
+			visualScenes += ((node.label, VisualScene(node))) }
 	}
 	
 	override def toString():String = {
@@ -104,14 +133,20 @@ class Library(root:NodeSeq) {
 		if(!geometries.isEmpty) {
 			geometries.foreach { item => builder.append(item._2.toString); builder.append("%n".format()) }
 		}
+		if(!visualScenes.isEmpty) {
+			visualScenes.foreach { item => builder.append(item._2.toString); builder.append("%n".format()) }
+		}
 		builder.toString
 	}
 }
 
+/** An element of a Collada library. */
 class ColladaFeature {}
 
+/** A camera in the Collada camera library. */
 class Camera extends ColladaFeature {}
 
+/** A perspective camera. */
 class CameraPerspective(val fovAxis:Axis.Value, val fov:Double, val aspectRatio:Double, val znear:Double, val zfar:Double) extends Camera {
 	override def toString():String = "camera(fov %f(%s), ratio %f, znear %f, zfar %f)".format(fov, fovAxis, aspectRatio, znear, zfar)
 }
@@ -145,13 +180,16 @@ object Camera {
 	}
 }
 
+/** A light in the Collada light library. */
 class Light(val color:Rgba) extends ColladaFeature {
 }
 
+/** A point light. */
 class PointLight(color:Rgba, val constant_att:Double, linear_att:Double, quad_att:Double) extends Light(color) {
 	override def toString():String = "pointLight(%s, cstAtt %f, linAtt %f, quadAtt %f)".format(color, constant_att, linear_att, quad_att)
 }
 
+/** A directional light. */
 class DirectionalLight(color:Rgba) extends Light(color) {
 	override def toString():String = "dirLight(%s)".format(color)
 }
@@ -191,6 +229,7 @@ object Geometry {
 	def apply(node:Node):Geometry = new Geometry(node)
 }
 
+/** A geometry descriptor in a collada geometry library. */
 class Geometry(node:Node) extends ColladaFeature {
 	var name = ""
 	
@@ -206,10 +245,15 @@ class Geometry(node:Node) extends ColladaFeature {
 	override def toString():String = "geometry(%s, (%s))".format(name, meshes.values.mkString(", "))
 }
 
+/** One source of data in a mesh (in OpenGL terms, a vertex attribute). */
 class MeshSource(node:Node) {
+	/** Unique identifier of the source. */
 	var id:String = ""
+	/** Optional name of the source. */
 	var name:String = "noname"
+	/** Number of components per element (for example vertices are usually made of three components). */
 	var stride = 0
+	/** The raw data. */
 	var data:Array[Float] = null
 
 	parse(node)
@@ -260,17 +304,13 @@ class Faces(node:Node, sources:HashMap[String,MeshSource]) {
 	}
 }
 
+/** Faces only made of triangles. */
 class Triangles(node:Node, sources:HashMap[String,MeshSource]) extends Faces(node, sources) {
-	
-	protected override def parse(node:Node) {
-		super.parse(node)
-	}
-
 	parse(node)
-	
 	override def toString():String = "triangles(%d, [%s], data %d(%d))".format(count, inputs.mkString(","), data.length, (data.length/inputs.length)/3)
 }
 
+/** Faces made of polygons with an arbitrary number of vertices. */
 class Polygons(node:Node, sources:HashMap[String,MeshSource]) extends Faces(node, sources) {
 	/** Number of vertex per face. */
 	var vcount:Array[Int] = null
@@ -285,12 +325,16 @@ class Polygons(node:Node, sources:HashMap[String,MeshSource]) extends Faces(node
 	override def toString():String = "polys(%d, [%s], vcount %d, data %d)".format(count, inputs.mkString(","), vcount.length, data.length)
 }
 
+/** Describe a mesh (source (vertex attributes), and indices in the source under the form of faces. */
 class ColladaMesh(node:Node) {
 	
+	/** All the vertex attributes. */
 	protected val sources = new HashMap[String,MeshSource]()
 	
+	/** What source is the main vertex position attribute ? */
 	protected var vertices:String = ""
 	
+	/** Indices into the source to build the real geometry. */
 	protected var faces:Faces = null
 		
 	parse(node)
@@ -323,8 +367,90 @@ class ColladaMesh(node:Node) {
 	override def toString():String = "mesh(%s(%s), %s)".format(sources(vertices).name, sources.values.mkString(","), faces)
 }
 
-class VisualScene extends ColladaFeature {
+class Transform {
+}
+
+class Rotate(text:String) extends Transform {
+	var axis = new Array[Float](3)
 	
+	var angle = 0f
+	
+	parse(text)
+	
+	protected def parse(text:String) {
+		val data = text.split(" ").map(_.toFloat)
+		axis(0) = data(0)
+		axis(1) = data(1)
+		axis(2) = data(2)
+		angle   = data(3)
+	}
+	
+	override def toString():String = "rotate(angle %f, axis [%s])".format(angle, axis.mkString(", "))
+}
+
+class Translate(text:String) extends Transform {
+	var data:Array[Float] = null
+	
+	parse(text)
+	
+	protected def parse(text:String) {
+		data = text.split(" ").map(_.toFloat)
+	}	
+	
+	override def toString():String = "translate(%s)".format(data.mkString(", "))
+}
+
+/** An element of a Collada visual scene. */
+class SceneNode(node:Node) {
+	var name = ""
+	var id = ""
+	val transforms = new ArrayBuffer[Transform]()
+	var instance = ""
+	
+	parse(node)
+	
+	protected def parse(node:Node) {
+		name = (node\"@name").text
+		id   = (node\"@id").text
+		
+		node.child.foreach { item =>
+			item.label match {
+				case "translate" => transforms += new Translate(item.text)
+				case "rotate"    => transforms += new Rotate(item.text)
+				case "instance_light"    => instance = (item\"@url").text.substring(1)
+				case "instance_camera"   => instance = (item\"@url").text.substring(1)
+				case "instance_geometry" => instance = (item\"@url").text.substring(1)
+				case _ => {}
+			} 
+		}
+	}
+	
+	override def toString():String = "node(%s, instance %s, transform(%s))".format(name, instance, transforms.mkString(", "))
+}
+
+object VisualScene {
+	def apply(node:Node):VisualScene = new VisualScene(node)
+}
+
+/** A scene in the Collada library of visual scenes. */
+class VisualScene(node:Node) extends ColladaFeature {
+	/** Name of the scene. */
+	var name = ""
+	/** Unique identifier of the scene. */
+	var id = ""
+	/** Set of scene nodes making up the scene. */
+	val nodes = new ArrayBuffer[SceneNode]()
+	
+	parse(node)
+	
+	protected def parse(node:Node) {
+		name = (node\"@name").text
+		id   = (node\"@id").text
+		
+		(node\\"node").foreach { item => nodes += new SceneNode(item) }
+	}
+	
+	override def toString():String = "visualScene(%s, (%s)".format(name, nodes.mkString(", "))
 }
 
 object ColladaInput { def main(args:Array[String]) { (new ColladaInput).test } }
@@ -338,14 +464,8 @@ class ColladaInput {
 	def process(root:NodeSeq) {
 		val file = new File(root)
 		
-		println(file.asset)
-		println(file.library)
+		println(file)
 		
 		println("----------------")
-		println("File Contents:")
-		root.foreach { e =>
-			if(e.label != "#PCDATA")
-				println("element %s".format(e.label))
-		}
 	}
 }
