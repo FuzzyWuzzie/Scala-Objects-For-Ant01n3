@@ -189,10 +189,13 @@ class MyCameraController(camera:Camera, light:Vector4) extends BasicCameraContro
         if(keyEvent.isShiftDown) {
             if(! keyEvent.isPrintable) {
                 keyEvent.actionChar match {
-                    case Up    => { light.x -= 0.1 }
-                    case Down  => { light.x += 0.1 }
-                    case Right => { light.z -= 0.1 }
-                    case Left  => { light.z += 0.1 }
+                    case Up       => { light.x -= 0.1 }
+                    case Down     => { light.x += 0.1 }
+                    case Right    => { light.z -= 0.1 }
+                    case Left     => { light.z += 0.1 }
+                    case PageUp   => { light.y += 0.1 }
+                    case PageDown => { light.y -= 0.1 }
+                    case _ => {}
                 }
             }
         } else {

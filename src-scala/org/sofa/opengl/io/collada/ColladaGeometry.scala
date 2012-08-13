@@ -42,6 +42,20 @@ class MeshSource(node:Node) {
 
 	parse(node)
 	
+	/** Data stride. */
+	def getData(index:Int):Array[Float] = {
+		val res = new Array[Float](stride)
+		var i   = 0
+		var p   = index * stride
+
+		while(i < stride) {
+			res(i) = data(p+i)
+			i += 1
+		}
+		
+		res
+	}
+	
 	protected def parse(node:Node) {
 		id     = (node \ "@id").text
 		name   = (node \ "@name").text; if(name.length == 0) name = "noname"
@@ -52,8 +66,37 @@ class MeshSource(node:Node) {
 	override def toString():String = "source(%s, stride %d, %d floats)".format(name, stride, data.length) 
 }
 
-/** Faces making up a mesh. */
-abstract class Faces(node:Node, sources:HashMap[String,MeshSource]) {
+/** Faces making up a mesh.
+  * 
+  * The faces are polygons. They are arranged in Collada as a list of indices in various
+  * sources of input data. The number of such inputs depends on the number of attributes
+  * per vertex. The data is interleaved, this means that each vertex and its attribute
+  * are a set of subsequent integers. This class will allow to know how many inputs
+  * are available (in OpenGL terms how many attributes per vertex), their kind (normals,
+  * colors, tangents, texture coordinates, etc.), and the identifier of the source where they
+  * are stored. 
+  * 
+  * For example if the file defines that a vertex is made of three elements:
+  *   - the vertex coordinates proper,
+  *   - the vertex normal,
+  *   - the vertex color,
+  * In this case, there will be three inputs of type "Vertex", "Normal" and "Color". Lets say
+  * the data defines a single triangle. In this case there will be three times three values in
+  * the data, since each vertex is defined by three integers that are indices in the sources
+  * meshes. 
+  * 
+  * For example, the data can be:
+  *    0 0 0  1 0 1  2 0 2
+  * 
+  * The offset for vertices is 0, the offset for normals is 1 and the offset for color is 2.
+  * This means that each bunch of three numbers define a single vertex, where the first number
+  * in this bunch is the vertex index, the second number is the normal index and the third
+  * number is the color index. Here all vertices share the same normal, but each has a different
+  * color.
+  * 
+  * For each kind of input you can get the name of the source mesh where the data is defined.
+  * */
+abstract class Faces(node:Node, mesh:ColladaMesh) {
 	
 	/** Number of faces. */
 	var count = 0
@@ -61,10 +104,13 @@ abstract class Faces(node:Node, sources:HashMap[String,MeshSource]) {
 	/** Face vertices reference several attributes in order (vertex, normal, tex-coords, etc.). */
 	var inputs:Array[(Input.Value,String)] = null
 	
-	/** Reverse input types, give the type of input and get the offset. */
+	/** Reverse input types, give the type of input and get the offset (or position in the data). */
 	var revInputs = new HashMap[Input.Value,Int]()
 	
-	/** References to vertex attributes stored in the sources. */
+	/** References to vertex attributes stored in the sources. This is an interleaved array,
+	  * where each element is composed of several integers, the vertex index in the sources,
+	  * then for example the color index and the normal index. In this example, there would be
+	  * three inputs. */
 	var data:Array[Int] = null
 
 	/** Possible type of vertex attributes. */
@@ -78,29 +124,25 @@ abstract class Faces(node:Node, sources:HashMap[String,MeshSource]) {
 		val User     = Value
 	}	
 	
+	/** Does the vertex attribute 'input' is provided for this face set ? */
 	def hasInput(input:Input.Value):Boolean = revInputs.contains(input)
 
+	/** Position of a given input type in the interleaved array. */
 	def offset(input:Input.Value):Int = revInputs.get(input).get
 	
+	/** Get the i-th element in the array plus the offset of the given input type. */
 	def getData(i:Int, input:Input.Value):Int = if(hasInput(input)) data(i + offset(input)) else -1
 	
+	/** Get the name of the source mesh for the given input. */
 	def getSource(input:Input.Value):String = inputs(revInputs.get(input).get)._2
 	
-	def getSourceData(input:Input.Value, index:Int):Array[Float] = getSourceData(getSource(input), index)
+	/** Get the index-th vertex. */
+	def getVertex(index:Int):Array[Float] = getAttribute(mesh.vertices, index)
 	
-	def getSourceData(source:String, index:Int):Array[Float] = {
-		val src = sources.get(source).get
-		val n   = src.stride
-		val res = Array[Float](n)
-		var i   = 0
-		var p   = index * n
-
-		while(i < n) {
-			res(i) = src.data(p+i)
-		}
-		
-		res
-	}
+	/** Get the index-th attributes value corresponding to the given input type. */
+	def getAttribute(input:Input.Value, index:Int):Array[Float] = getAttribute(getSource(input), index)
+	
+	protected def getAttribute(source:String, index:Int):Array[Float] = mesh.sources.get(source).get.getData(index)
 	
 	protected def parse(node:Node) {
 		count = (node \ "@count").text.toInt
@@ -109,28 +151,29 @@ abstract class Faces(node:Node, sources:HashMap[String,MeshSource]) {
 		in.foreach { input =>
 			val offset = (input\"@offset").text.toInt
 			inputs(offset) = (input\"@semantic").text match {
-				case "VERTEX"   => { revInputs += ((Input.Vertex,   offset)); (Input.Vertex,   (input\"@source").text) }
-				case "NORMAL"   => { revInputs += ((Input.Normal,   offset)); (Input.Normal,   (input\"@source").text) }
-				case "TEXCOORD" => { revInputs += ((Input.TexCoord, offset)); (Input.TexCoord, (input\"@source").text) }
-				case "TANGENT"  => { revInputs += ((Input.Tangent,  offset)); (Input.Tangent,  (input\"@source").text) }
-				case "COLOR"    => { revInputs += ((Input.Color,    offset)); (Input.Color,    (input\"@source").text) }
-				case "JOINT"    => { revInputs += ((Input.Bone,     offset)); (Input.Bone,     (input\"@source").text) }
-				case _          => { revInputs += ((Input.User,     offset)); (Input.User,     (input\"@source").text) }
+				case "VERTEX"   => { revInputs += ((Input.Vertex,   offset)); (Input.Vertex,   (input\"@source").text.substring(1)) }
+				case "NORMAL"   => { revInputs += ((Input.Normal,   offset)); (Input.Normal,   (input\"@source").text.substring(1)) }
+				case "TEXCOORD" => { revInputs += ((Input.TexCoord, offset)); (Input.TexCoord, (input\"@source").text.substring(1)) }
+				case "TANGENT"  => { revInputs += ((Input.Tangent,  offset)); (Input.Tangent,  (input\"@source").text.substring(1)) }
+				case "COLOR"    => { revInputs += ((Input.Color,    offset)); (Input.Color,    (input\"@source").text.substring(1)) }
+				case "JOINT"    => { revInputs += ((Input.Bone,     offset)); (Input.Bone,     (input\"@source").text.substring(1)) }
+				case _          => { revInputs += ((Input.User,     offset)); (Input.User,     (input\"@source").text.substring(1)) }
 			}
 		}
 		data = (node\"p").text.split(" ").map(_.toInt)
 	}
 	
+	/** Transform this into a SOFA mesh, usable to draw in an OpenGL scene. */
 	def toMesh():Mesh
 
 	/** Generate a list of vertices from the data given in the Collada file such that each vertex
 	  * owns its own set of attributes (as needed by OpenGL). The procedure try to ensure that
 	  * two vertices having exactly the same attributes will not be duplicated. Naturally the order
 	  * remains the same. */
-	def toVertexList():ArrayBuffer[Vertex] = {
+	def toVertexList():(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
 		val unicity  = new HashMap[Vertex,Int]()		// To test unicity, and retrieve the original.
 		val vertices = new ArrayBuffer[Vertex]()		// The element buffer.
-		val vertexList = new ArrayBuffer[Vertex]()
+		val elements = new ArrayBuffer[Int]()
 		
 		var i = 0
 		while(i < data.length) {
@@ -141,20 +184,48 @@ abstract class Faces(node:Node, sources:HashMap[String,MeshSource]) {
 				val index = vertices.length
 				vertices += vertex
 				unicity += ((vertex,index))
-			} else {
-				vertex = vertices(unicity.get(vertex).get)
 			}
+//			else {
+//				vertex = vertices(unicity.get(vertex).get)
+//			}
 			
-			vertexList += vertex
+			elements += unicity.get(vertex).get
 			
 			i += inputs.length
 		}
 
-Console.err.println("Generated a list of vertices (%d vertices, for %d inputs, data size %d), with %d unique vertices".format(vertexList.size, inputs.length, data.size, vertices.size))
+//Console.err.println("Generated a list of vertices (%d vertices, for %d inputs, data size %d), with %d unique vertices".format(vertexList.size, inputs.length, data.size, vertices.size))
 		
-		vertexList
+		(elements, vertices)
+	}
+
+	protected def toMesh(elements:ArrayBuffer[Int], vertices:ArrayBuffer[Vertex]):Mesh = {
+		val mesh = new EditableMesh()
+	
+		mesh.begin(MeshDrawMode.TRIANGLES)
+			vertices.foreach { vertex =>
+				if(vertex.normal >= 0) {
+					val norm = getAttribute(Input.Normal, vertex.normal)
+					mesh.normal(norm(0), norm(1), norm(2))
+				}
+				if(vertex.texcoord >= 0) {
+					val uv = getAttribute(Input.TexCoord, vertex.texcoord)
+					mesh.texCoord(uv(0), uv(1))
+				}
+				if(vertex.index >= 0) {
+					val vert = getVertex(vertex.index)
+					mesh.vertex(vert(0), vert(1), vert(2))
+				}
+			}
+		mesh.end
+		mesh.beginIndices
+			elements.foreach { mesh.index(_) }
+		mesh.endIndices
+		
+		mesh
 	}
 	
+	/** Represents internally a vertex. */
 	class Vertex(val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int) {
 		override def equals(other:Any):Boolean = other match {
 			case v:Vertex => (index==v.index && normal==v.normal && texcoord==v.texcoord && tangent==v.tangent && color==v.color && bone==v.bone)
@@ -165,33 +236,14 @@ Console.err.println("Generated a list of vertices (%d vertices, for %d inputs, d
 }
 
 /** Faces only made of triangles. */
-class Triangles(node:Node, sources:HashMap[String,MeshSource]) extends Faces(node, sources) {
+class Triangles(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	parse(node)
 	override def toString():String = "triangles(%d, [%s], data %d(%d))".format(count, inputs.mkString(","), data.length, (data.length/inputs.length)/3)
-	
-	def toMesh():Mesh = {
-		val vertices = toVertexList
-		val mesh = new EditableMesh()
-	
-		mesh.begin(MeshDrawMode.TRIANGLES)
-			vertices.foreach { vertex =>
-				if(vertex.normal >= 0) {
-					val norm = getSourceData(Input.Normal, vertex.normal)
-					mesh.normal(norm(0), norm(1), norm(2))
-				}
-				if(vertex.index >= 0) {
-					val vert = getSourceData(Input.Vertex, vertex.index)
-					mesh.vertex(vert(0), vert(1), vert(2))
-				}
-			}
-		mesh.end
-		
-		mesh
-	}
+	def toMesh():Mesh = { val (elements,vertices) = toVertexList; toMesh(elements, vertices) }
 }
 
 /** Faces made of polygons with an arbitrary number of vertices. */
-class Polygons(node:Node, sources:HashMap[String,MeshSource]) extends Faces(node, sources) {
+class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	/** Number of vertex per face. */
 	var vcount:Array[Int] = null
 	
@@ -206,14 +258,42 @@ class Polygons(node:Node, sources:HashMap[String,MeshSource]) extends Faces(node
 	
 	/** */
 	def toMesh():Mesh = {
-		val vertices = toVertexList
-		val mesh = new EditableMesh()
+		var (elements,vertices) = triangulate
+		toMesh(elements,vertices)
+	}
 	
-//		mesh.begin(MeshDrawMode.TRIANGLES)
-//			vertices.
-//		mesh.end
+	def triangulate():(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
+		var (elements,vertices) = toVertexList
+		val elems = new ArrayBuffer[Int]
+		var i = 0
+		var v = 0
+
+		while(i < vcount.length) {
+			val vn = vcount(i)
+			
+			if(vn == 4) {
+				// Emit two triangles.
+				elems += elements(v)
+				elems += elements(v+1)
+				elems += elements(v+3)
+				elems += elements(v+1)
+				elems += elements(v+2)
+				elems += elements(v+3)
+				v += 4
+			} else if(vn == 3) {
+				// Emit the triangle as is.
+				elems += elements(v)
+				elems += elements(v+1)
+				elems += elements(v+2)
+				v += 3
+			} else {
+				throw new RuntimeException("only quads and triangles are possible actually :(")
+			}
+			
+			i += 1
+		}
 		
-		mesh
+		(elems,vertices)
 	}
 }
 
@@ -250,11 +330,13 @@ class ColladaMesh(node:Node) {
 		val polylist = (node\\"polylist")
 		
 		if(!triangles.isEmpty) {
-			faces = new Triangles(triangles.head, sources)
+			faces = new Triangles(triangles.head, this)
 		} else if(!polylist.isEmpty) {
-			faces = new Polygons(polylist.head, sources)
+			faces = new Polygons(polylist.head, this)
 		}
 	}
+	
+	def toMesh():Mesh = faces.toMesh
 	
 	override def toString():String = "mesh(%s(%s), %s)".format(sources(vertices).name, sources.values.mkString(","), faces)
 }

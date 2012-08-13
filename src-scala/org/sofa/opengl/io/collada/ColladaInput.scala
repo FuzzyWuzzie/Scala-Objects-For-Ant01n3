@@ -25,13 +25,15 @@ class ColladaInput {
 		
 		println(file)
 		
-		file.library.geometries.foreach { geometry =>
-			println("  geometry %s".format(geometry._1))
-			geometry._2.meshes.foreach { mesh =>
-				println("    mesh %s".format(mesh._1))
-				mesh._2.faces.toMesh
-			}
-		}
+		println(file.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh)
+		
+//		file.library.geometries.foreach { geometry =>
+//			println("  geometry %s".format(geometry._1))
+//			geometry._2.meshes.foreach { mesh =>
+//				println("    mesh %s".format(mesh._1))
+//				mesh._2.toMesh
+//			}
+//		}
 		
 		println("----------------")
 	}
