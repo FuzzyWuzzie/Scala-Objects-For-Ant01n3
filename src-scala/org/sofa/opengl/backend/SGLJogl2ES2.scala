@@ -58,7 +58,6 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 
     val ELEMENT_ARRAY_BUFFER:Int = GL.GL_ELEMENT_ARRAY_BUFFER
     val ARRAY_BUFFER:Int = GL.GL_ARRAY_BUFFER
-    val STATIC_DRAW:Int = GL.GL_STATIC_DRAW
 
     val VERTEX_SHADER:Int = GL2ES2.GL_VERTEX_SHADER
     val FRAGMENT_SHADER:Int = GL2ES2.GL_FRAGMENT_SHADER
@@ -67,6 +66,10 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 
     val EXTENSIONS:Int = GL.GL_EXTENSIONS
 
+    val STATIC_DRAW:Int = GL.GL_STATIC_DRAW
+//    val STREAM_DRAW:Int = GL.GL_STREAM_DRAW
+    val DYNAMIC_DRAW:Int = GL.GL_DYNAMIC_DRAW
+    
 // Info
     
     def isES:Boolean = true
@@ -158,6 +161,32 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 	    }
 	}
 	
+	def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer) {
+		gl.glBufferSubData(target, offset*8, size*8, data.buffer)
+	}
+
+	def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer) {
+		gl.glBufferSubData(target, offset*4, size*4, data.buffer)
+	}
+
+	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer) {
+		gl.glBufferSubData(target, offset, size, data.buffer)
+	}
+	
+	def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer) {
+	    if(data.isByte) {
+	        bufferSubData(target, offset, size, data.asInstanceOf[ByteBuffer])
+	    } else if(data.isInt) {
+	        bufferSubData(target, offset, size, data.asInstanceOf[IntBuffer])
+	    } else if(data.isFloat) {
+	        bufferSubData(target, offset, size, data.asInstanceOf[FloatBuffer])
+	    } else if(data.isDouble) {
+	        bufferSubData(target, offset, size, data.asInstanceOf[DoubleBuffer])
+	    } else {
+	        throw new RuntimeException("Unknown Nio buffer data type")
+	    }
+	}
+
 	def bindBuffer(mode:Int, id:Int) = glBindBuffer(mode, id)
 
 // Shaders

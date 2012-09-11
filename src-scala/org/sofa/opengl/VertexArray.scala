@@ -32,13 +32,13 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     protected def init() { super.init(if(gl.isES) 0 else genVertexArray) }
     
     /** Store the indices and array buffers. Indices may be null. */
-    protected def storeData(gl:SGL, indices:IntBuffer, attributes:(Int,Int,NioBuffer)*) {
+    protected def storeData(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(Int,Int,NioBuffer)*) {
         this.buffers = new Array[(Int,ArrayBuffer)](attributes.size)
         if(!gl.isES) bindVertexArray(oid)
         var i=0
         attributes.foreach { item =>
             // The creation binds the buffer.
-            buffers(i) = (item._1, ArrayBuffer(gl, item._2, item._3))
+            buffers(i) = (item._1, ArrayBuffer(gl, item._2, item._3, drawMode))
             if(!gl.isES) buffers(i)._2.vertexAttrib(item._1, true)	// Identify the attribute to the vertex array.
             i += 1
         }
@@ -73,10 +73,36 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * the attribute number of component per element(for example vertices have 3 components
       * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
-      * number of components per element. */
+      * number of components per element. The array buffers are created with gl.STATIC_DRAW
+      * draw mode. */
     def this(gl:SGL, attributes:(Int, Int, NioBuffer)*) {
         this(gl)
-        storeData(gl, null, attributes:_*)
+        storeData(gl, null, gl.STATIC_DRAW, attributes:_*)
+    }
+    
+    /** Create a vertex array with indices, made of vertices, colors, normals, etc.
+      * The `indices` must be a set of integers defining which element to use in the `data`. The
+      * use of the indices depends on the way elements are drawn (triangles, lines, etc.). 
+      * The `data` must be a tuple with three values, first the attribute index, then
+      * the attribute number of component per element(for example vertices have 3 components
+      * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
+      * data as a float buffer containing the data, whose length must be a multiple of the
+      * number of components per element. The array buffers are created with gl.STATIC_DRAW
+      * draw mode. */
+    def this(gl:SGL, indices:IntBuffer, attributes:(Int, Int, NioBuffer)*) {
+        this(gl)
+        storeData(gl, indices, gl.STATIC_DRAW, attributes:_*)
+    }
+    
+    /** Create a vertex array without indices, only made of vertices, colors, normals, etc.
+      * The `data` must be a tuple with three values, first the attribute index, then
+      * the attribute number of component per element(for example vertices have 3 components
+      * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
+      * data as a float buffer containing the data, whose length must be a multiple of the
+      * number of components per element. */
+    def this(gl:SGL, drawMode:Int, attributes:(Int, Int, NioBuffer)*) {
+        this(gl)
+        storeData(gl, null, drawMode, attributes:_*)
     }
     
     /** Create a vertex array with indices, made of vertices, colors, normals, etc.
@@ -87,9 +113,9 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
       * number of components per element. */
-    def this(gl:SGL, indices:IntBuffer, attributes:(Int, Int, NioBuffer)*) {
+    def this(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(Int, Int, NioBuffer)*) {
         this(gl)
-        storeData(gl, indices, attributes:_*)
+        storeData(gl, indices, drawMode, attributes:_*)
     }
     
     /*  Create a vertex array without indices, only made of vertices, colors, normals, etc.
@@ -167,4 +193,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     def drawTriangles() {
         draw(gl.TRIANGLES)
     }
+
+    /** I-th stored buffer. Buffers are stored in the order they where first given at creation. */
+    def buffer(i:Int):ArrayBuffer = buffers(i)._2
 }

@@ -111,7 +111,7 @@ trait Mesh {
       *  
       *  This is useful only for shaders having the possibility to associate this index
       *  with the attribute (having the 'layout' qualifier (e.g. layout(location=1)),
-      *  that is under OpenGL 3) */
+      *  that is under OpenGL 3). The draw mode for the array buffers is STATIC_DRAW. */
     def newVertexArray(gl:SGL):VertexArray = newVertexArray(gl, (0, 1, 2, 3, 4, 5)) 
 
     /** Create a vertex array for the mesh. This method will create the vertex array with
@@ -119,7 +119,8 @@ trait Mesh {
       * etc.) if they are available (see the 'has*' methods). It will associate each
       * attribute with the attribute location given by the 'locations' argument in this
       * order: vertex, color, normals, tangents, texCoords, bones. If the attribute
-      * location given is negative, the attribute will not be associated.
+      * location given is negative, the attribute will not be associated. The draw mode
+      * for the array buffers is STATIC_DRAW.
       * 
       * Examples:
       *    // Define all attributes, vertices at location 0, bones at location 3... 
@@ -127,7 +128,23 @@ trait Mesh {
       *    // Define some attributes only, no colors, no tangents, no bones.
       *    val v = newVertexArray(gl, (0, -1, 6, -1, 4, -1))  
       */
-    def newVertexArray(gl:SGL, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+    def newVertexArray(gl:SGL,locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, locations)
+    
+    /** Create a vertex array for the mesh. This method will create the vertex array with
+      * all the defined attribute arrays (color, normals, tangents, texCoords, bones,
+      * etc.) if they are available (see the 'has*' methods). It will associate each
+      * attribute with the attribute location given by the 'locations' argument in this
+      * order: vertex, color, normals, tangents, texCoords, bones. If the attribute
+      * location given is negative, the attribute will not be associated. The draw mode
+      * can be STATIC_DRAW, STREAM_DRAW, or DYNAMIC_DRAW.
+      * 
+      * Examples:
+      *    // Define all attributes, vertices at location 0, bones at location 3... 
+      *    val v = newVertexArray(gl, (0, 1, 2, 5, 4, 3))
+      *    // Define some attributes only, no colors, no tangents, no bones.
+      *    val v = newVertexArray(gl, (0, -1, 6, -1, 4, -1))  
+      */
+    def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
     	val attribs = new Array[Tuple3[Int,Int,NioBuffer]](attributeCount)
     	var i = 0
     	
@@ -143,7 +160,8 @@ trait Mesh {
     }
     
     /** Create a vertex array from the given map of location / attributes and only
-      * with the specified attributes.
+      * with the specified attributes. The draw mode for the array buffers is
+      * STATIC_DRAW.
       * 
       * Example usage: newVertexArray(gl, ("vertices", 0), ("normals, 1))
       * 
@@ -155,7 +173,23 @@ trait Mesh {
       *  - texcoords
       *  - bones
       */
-    def newVertexArray(gl:SGL, locations:Tuple2[String,Int]*):VertexArray = {
+    def newVertexArray(gl:SGL, locations:Tuple2[String,Int]*):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, locations:_*)
+    
+    /** Create a vertex array from the given map of location / attributes and only
+      * with the specified attributes. You can specify the draw mode for the array buffers,
+      * either STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW.
+      * 
+      * Example usage: newVertexArray(gl, ("vertices", 0), ("normals, 1))
+      * 
+      * Possible attributes are:
+      *  - vertices
+      *  - colors
+      *  - normals
+      *  - tangents
+      *  - texcoords
+      *  - bones
+      */
+    def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple2[String,Int]*):VertexArray = {
     	val locs = new Array[Tuple3[Int,Int,NioBuffer]](locations.size)
     	var pos = 0
     	locations.foreach { value =>
@@ -172,8 +206,8 @@ trait Mesh {
     	}
     	
     	if(hasIndices)
-    	     new VertexArray(gl, indices, locs:_*)
-    	else new VertexArray(gl, locs:_*)
+    	     new VertexArray(gl, indices, drawMode, locs:_*)
+    	else new VertexArray(gl, drawMode, locs:_*)
     }
 }
 

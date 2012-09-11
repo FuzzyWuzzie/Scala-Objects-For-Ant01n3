@@ -516,6 +516,16 @@ trait NumberSeq extends IndexedSeq[Double] {
 	    result.normalize
 	    result
 	}
+	
+	/** Arbitrarily move this point in a random direction of a maximum given factor. */
+	def brownianMotion(factor:Double) {
+		var i = 0
+		val n = size
+		while(i<n) {
+			data(i) += (scala.math.random-0.5) * factor
+			i += 1
+		}
+	}
 }
 
 //===================================================

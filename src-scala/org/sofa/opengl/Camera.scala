@@ -208,4 +208,12 @@ class Camera {
 	    shader.uniformMatrix("MV3x3", modelview.top3x3)
 	    shader.uniformMatrix("MVP", projection * modelview)
     }
+    
+    def setUniformMVP(shader:ShaderProgram) { shader.uniformMatrix("MVP", projection * modelview) }
+    	
+    def setUniformMV(shader:ShaderProgram) { shader.uniformMatrix("MV", modelview.top) }
+    
+    def setUniformMV3x3(shader:ShaderProgram) { shader.uniformMatrix("MV3x3", modelview.top3x3) }
+    
+    
 }

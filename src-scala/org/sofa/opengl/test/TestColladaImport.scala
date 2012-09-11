@@ -130,7 +130,7 @@ class TestColladaImport extends SurfaceRenderer {
 	
 	def initThing() {
 //		val model = new File(scala.xml.XML.loadFile("/Users/antoine/Desktop/duck_triangulate.dae").child)
-		val model = new File(scala.xml.XML.loadFile("/Users/antoine/Desktop/Suzanne2.dae").child)
+		val model = new File(scala.xml.XML.loadFile("/Users/antoine/Documents/Art/Blender/Suzanne2.dae").child)
 		thingMesh = model.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh 
 	}
 	

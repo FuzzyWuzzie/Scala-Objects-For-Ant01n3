@@ -45,7 +45,6 @@ abstract class SGL {
     
     val ELEMENT_ARRAY_BUFFER:Int
     val ARRAY_BUFFER:Int
-    val STATIC_DRAW:Int
 
     val VERTEX_SHADER:Int
     val FRAGMENT_SHADER:Int
@@ -53,6 +52,10 @@ abstract class SGL {
     val TRIANGLES:Int
     
     val EXTENSIONS:Int
+    
+    val STATIC_DRAW:Int
+//    val STREAM_DRAW:Int
+    val DYNAMIC_DRAW:Int
     
 // Info
     
@@ -100,7 +103,13 @@ abstract class SGL {
 	def bufferData(target:Int, data:IntBuffer, mode:Int)
 	def bufferData(target:Int, data:Array[Int], mode:Int)
     def bufferData(target:Int, data:NioBuffer, mode:Int)
-	def bindBuffer(mode:Int, id:Int)
+    
+    def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer)
+    def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer)
+    def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer)
+    def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer)
+	
+    def bindBuffer(mode:Int, id:Int)
 
 // Shaders
 	
