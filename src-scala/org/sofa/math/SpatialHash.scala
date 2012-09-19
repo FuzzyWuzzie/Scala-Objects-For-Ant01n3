@@ -32,7 +32,10 @@ object HashPoint3 {
 /** An object that can be handled by the spatial hash. */
 trait SpatialObject { 
 	/** Set of areas the object appears in. */
-	protected var buckets:HashSet[Bucket] = null
+	protected var buckets:HashSet[Bucket[SpatialObject]] = null
+	
+	/** Number of buckets occupied by this object. */
+	def bucketCount:Int = if(buckets ne null) buckets.size else 0
 	
 	/** True if this object is a volume, rather than a single point. */
 	def isVolume:Boolean
@@ -44,9 +47,9 @@ trait SpatialObject {
 	def to:Point3
 
 	/** The object appears in the given spatial area. */
-	def addBucket(bucket:Bucket) {
+	def addBucket(bucket:Bucket[SpatialObject]) {
 		if(buckets eq null)
-			buckets = new HashSet[Bucket]()
+			buckets = new HashSet[Bucket[SpatialObject]]()
 		
 		buckets += bucket 
 	}
@@ -54,8 +57,9 @@ trait SpatialObject {
 	/** The object is removed from the spatial hash.
 	  * This returns a list of buckets were the object
 	  * was previously. */
-	def removeBuckets():Set[Bucket] = {
-		assert((buckets ne null) && (!buckets.isEmpty))
+	def removeBuckets():Set[Bucket[SpatialObject]] = {
+		assert(buckets ne null)
+		assert(!buckets.isEmpty)
 		val b = buckets
 		buckets = null
 		b
@@ -76,7 +80,20 @@ trait SpatialCube extends SpatialObject {
 /** A space area that can contain spatial objects. A spatial object
   * can appear in several spatial areas if it is larger or overlaps
   * spatial areas. */
-class Bucket(val position:HashPoint3) extends HashSet[SpatialObject] {}
+class Bucket[T<:SpatialObject](val position:HashPoint3) extends HashSet[T] {
+	override def hashCode():Int = {
+		 (position.x*73856093)^(position.y*19349663)^(position.z*83492791)	
+	}
+	
+	override def equals(other:Any):Boolean = {
+		var result = false
+		if(other.isInstanceOf[Bucket[T]]) {
+			val o = other.asInstanceOf[Bucket[T]]
+			result = o.position.x == position.x && o.position.y == position.y && o.position.z == position.z
+		}
+		result
+	}
+}
 
 /** A spatial indexing that place objects in cubic areas or "buckets"
   * that have a given side size.
@@ -117,7 +134,7 @@ class Bucket(val position:HashPoint3) extends HashSet[SpatialObject] {}
 class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 
 	/** Set of buckets. */
-	val buckets = new HashMap[HashPoint3,Bucket]()
+	val buckets = new HashMap[HashPoint3,Bucket[T]]()
 
 	/** Transform "user" space coordinates into "bucket" space coordinates. */
 	def hash(p:Point3):HashPoint3 = hash(p.x, p.y, p.z)
@@ -145,12 +162,12 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 			
 			for(z <- p0.z to p1.z) {
 				for(y <- p0.y to p1.y) {
-					for(x <- p0.x to p0.x) {
+					for(x <- p0.x to p1.x) {
 						val p = HashPoint3(x,y,z) //hash(x,y,z)
-						var b = buckets.get(p).getOrElse(new Bucket(p))
+						var b = buckets.get(p).getOrElse({new Bucket(p)})
 						
 						b += thing
-						thing.addBucket(b)
+						thing.addBucket(b.asInstanceOf[Bucket[SpatialObject]])
 						buckets += ((p, b))
 					}
 				}
@@ -160,7 +177,7 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 			var b = buckets.get(p).getOrElse(new Bucket(p))
 		
 			b += thing		
-			thing.addBucket(b)
+			thing.addBucket(b.asInstanceOf[Bucket[SpatialObject]])
 			buckets += ((p,b))
 		}
 	}
@@ -173,7 +190,8 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 		// set of bucket stored in the thing that tells inside
 		// which bucket the thing appears.
 
-		thing.removeBuckets.foreach { bucket =>
+		val b = thing.removeBuckets
+		b.foreach { bucket =>
 			bucket.remove(thing)
 			if(bucket.isEmpty) {
 				buckets.remove(bucket.position)
@@ -200,9 +218,9 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 		val bucks  = getBuckets(x-s2, y-s2, z-s2, x+s2, y+s2, z+s2)
 		val result = new HashSet[T]
 		
-//		bucks.foreach { bucket =>
-//			result ++= bucket
-//		}
+		bucks.foreach { bucket =>
+			result ++= bucket
+		}
 		
 		result
 	}
@@ -211,17 +229,17 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 	  * Buckets have their own coordinates and have indices at
 	  * integer positions in a 3D space, where each integer
 	  * position is a multiple of `cellSize`. */
-	def getBucket(x:Double, y:Double, z:Double):Bucket = buckets.get(hash(x,y,z)).getOrElse(null)
+	def getBucket(x:Double, y:Double, z:Double):Bucket[T] = buckets.get(hash(x,y,z)).getOrElse(null)
 
 	/** All the buckets containing or intersecting the bounding box defined by point
 	  * (`x0`,`y0`,`z0`)  and point (`x1`,`y1`,`z1`). The first point must be
 	  * the lower-left-front point and the second point must be the top-right-back
 	  * point (in other words, the coordinates of the second point must be
 	  * greater than the coordinates of the first point). */
-	def getBuckets(x0:Double, y0:Double, z0:Double, x1:Double, y1:Double, z1:Double):ArrayBuffer[Bucket] = {
+	def getBuckets(x0:Double, y0:Double, z0:Double, x1:Double, y1:Double, z1:Double):ArrayBuffer[Bucket[T]] = {
 		val from = hash(x0, y0, z0)
 		val to   = hash(x1, y1, z1)
-		val res  = new ArrayBuffer[Bucket]
+		val res  = new ArrayBuffer[Bucket[T]]
 
 		for(z <- from.z to to.z) {
 			for(y <- from.y to to.y) {
