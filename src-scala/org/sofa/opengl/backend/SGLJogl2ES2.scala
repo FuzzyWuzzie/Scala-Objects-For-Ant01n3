@@ -70,6 +70,8 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 //    val STREAM_DRAW:Int = GL.GL_STREAM_DRAW
     val DYNAMIC_DRAW:Int = GL.GL_DYNAMIC_DRAW
     
+    val PROGRAM_POINT_SIZE:Int = GL3.GL_PROGRAM_POINT_SIZE
+    
 // Info
     
     def isES:Boolean = true

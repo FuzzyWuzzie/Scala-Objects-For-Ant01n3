@@ -2,6 +2,7 @@ package org.sofa.opengl.mesh
 
 import org.sofa.nio._
 import org.sofa.opengl._
+import org.sofa.math.Rgba
 import javax.media.opengl._
 import GL._
 import GL2._
@@ -130,6 +131,18 @@ class Cube(val side:Float)
         }
         
         buf
+    }
+    
+    /** Set the color of each face. */
+    def setColor(color:Rgba) {
+    	val n = 6 * 4 * 4
+    	
+    	for(i <- 0 until n by 4) {
+    		C(i+0) = color.red.toFloat
+    		C(i+1) = color.green.toFloat
+    		C(i+2) = color.blue.toFloat
+    		C(i+3) = color.alpha.toFloat
+    	}
     }
 
     protected def allocateNormals:FloatBuffer = {

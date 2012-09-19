@@ -56,7 +56,9 @@ abstract class SGL {
     val STATIC_DRAW:Int
 //    val STREAM_DRAW:Int
     val DYNAMIC_DRAW:Int
-    
+            
+    val PROGRAM_POINT_SIZE:Int
+
 // Info
     
     def isES:Boolean

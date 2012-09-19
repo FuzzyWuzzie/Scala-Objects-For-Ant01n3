@@ -5,6 +5,7 @@ import scala.math._
 object Point2 {
     implicit def point2ToTuple(v:Point2):(Double, Double) = (v.x, v.y)
     def apply(x:Double, y:Double):Point2 = ArrayPoint2(x, y)
+    def apply():Point2 = ArrayPoint2(0, 0)
 }
 
 abstract class Point2 extends NumberSeq2 {
@@ -98,6 +99,7 @@ class NioBufferPoint2(xInit:Double, yInit:Double) extends Point2 {
 object Point3 {
     implicit def point3ToTuple(v:Point3):(Double, Double, Double) = (v.x, v.y, v.z)
     def apply(x:Double, y:Double, z:Double):Point3 = ArrayPoint3(x, y, z)
+    def apply():Point3 = ArrayPoint3(0, 0, 0)
 }
 
 abstract class Point3 extends NumberSeq3 {

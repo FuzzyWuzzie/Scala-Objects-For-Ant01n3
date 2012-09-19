@@ -71,11 +71,11 @@ object Vector2 {
 }
 
 abstract class Vector2 extends NumberSeq2 {
-    def set(x:Double, y:Double):Vector2 = {
-        data(0) = x
-        data(1) = y
-        this
-    }
+//    def set(x:Double, y:Double):Vector2 = {
+//        data(0) = x
+//        data(1) = y
+//        this
+//    }
 }
 
 object ArrayVector2 {
@@ -186,12 +186,12 @@ abstract class Vector3 extends NumberSeq3 {
 	    result.asInstanceOf[ReturnType]
 	}
 	
-	def set(x:Double, y:Double, z:Double):Vector3 = {
-        data(0) = x
-        data(1) = y
-        data(2) = z
-        this
-    }
+//	def set(x:Double, y:Double, z:Double):Vector3 = {
+//        data(0) = x
+//        data(1) = y
+//        data(2) = z
+//        this
+//    }
 }
 
 object ArrayVector3 {
@@ -270,12 +270,12 @@ object Vector4 {
 }
 
 abstract class Vector4 extends NumberSeq4 {
-	def set(x:Double, y:Double, z:Double, w:Double) {
-        data(0) = x
-        data(1) = y
-        data(2) = z
-        data(3) = w
-    }
+//	def set(x:Double, y:Double, z:Double, w:Double) {
+//        data(0) = x
+//        data(1) = y
+//        data(2) = z
+//        data(3) = w
+//    }
 }
 
 object ArrayVector4 {

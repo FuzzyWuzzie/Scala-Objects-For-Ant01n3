@@ -177,26 +177,28 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * This modifies in place this sequence. The size of the smallest sequence determines the
 	  * number of elements to be added, starting at 0.
 	  */
-	def addBy(other:NumberSeq) {
+	def addBy(other:NumberSeq):ReturnType = {
 	    val n = scala.math.min(size, other.size)
 	    var i = 0
 	    while(i<n) {
 	    	data(i) += other(i)
 	    	i += 1
 	    }
+	    this.asInstanceOf[ReturnType]
 	}
 
 	/** Add `value` to each element of this.
 	  *
 	  * This modifies in place this sequence.
 	  */
-	def addBy(value:Double) {
+	def addBy(value:Double):ReturnType = {
 	    val n = size
 	    var i = 0
 	    while(i<n) {
 	    	data(i) += value
 	    	i += 1
 	    }
+	    this.asInstanceOf[ReturnType]
 	}
 
 	/** Add each element of `other` to the corresponding element of this.
@@ -204,13 +206,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * This modifies in place this sequence. The size of the smallest sequence determines the
 	  * number of elements to be added, starting at 0.
 	  */
-	def +=(other:NumberSeq):ReturnType = { addBy(other); this.asInstanceOf[ReturnType] }
+	def +=(other:NumberSeq):ReturnType = addBy(other)
 
 	/** Add `value` to each element of this.
 	  *
 	  * This modifies in place this sequence.
 	  */
-	def +=(value:Double):ReturnType = { addBy(value); this.asInstanceOf[ReturnType] }
+	def +=(value:Double):ReturnType = addBy(value)
 	
 	/** Result of the addition of each element of this by the corresponding element of
 	  * `other`.
@@ -243,26 +245,28 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * This modifies in place this sequence. The size of the smallest sequence determines the
 	  * number of elements to be added, starting at 0.
 	  */
-	def subBy(other:NumberSeq) {
+	def subBy(other:NumberSeq):ReturnType = {
 	    val n = scala.math.min(size, other.size)
 	    var i = 0
 	    while(i<n) {
 	    	data(i) -= other(i)
 	    	i += 1
 	    }
+	    this.asInstanceOf[ReturnType]
 	}
 
 	/** Subtract `value` to each element of this.
 	  *
 	  * This modifies in place this sequence.
 	  */
-	def subBy(value:Double) {
+	def subBy(value:Double):ReturnType = {
 	    val n = size
 	    var i = 0
 	    while(i<n) {
 	    	data(i) -= value
 	    	i += 1
 	    }
+	    this.asInstanceOf[ReturnType]
 	}
 
 	/** Subtract each element of `other` to the corresponding element of this.
@@ -270,13 +274,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * This modifies in place this sequence. The size of the smallest sequence determines the
 	  * number of elements to be added, starting at 0.
 	  */
-	def -=(other:NumberSeq):ReturnType = { subBy(other); this.asInstanceOf[ReturnType] }
+	def -=(other:NumberSeq):ReturnType = subBy(other)
 
 	/** Subtract `value` to each element of this.
 	  *
 	  * This modifies in place this sequence.
 	  */
-	def -=(value:Double):ReturnType = { subBy(value); this.asInstanceOf[ReturnType] }
+	def -=(value:Double):ReturnType = subBy(value)
 	
 	/** Result of the subtraction of each element `other` to the corresponding element of
 	  * this.
@@ -311,26 +315,28 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * This modifies in place this sequence. The size of the smallest sequence determines the
 	  * number of elements to be multiplied, starting at 0.
 	  */
-	def multBy(other:NumberSeq) {
+	def multBy(other:NumberSeq):ReturnType = {
 	    val n = scala.math.min(size, other.size)
 	    var i = 0
 	    while(i<n) {
 	    	data(i) *= other(i)
 	    	i += 1
 	    }
+	    this.asInstanceOf[ReturnType]
 	}
 
 	/** Multiply each element of this by `value`.
 	  * 
 	  * This modifies in place this sequence.
 	  */
-	def multBy(value:Double) {
+	def multBy(value:Double):ReturnType = {
 	    val n = size
 	    var i = 0
 	    while(i<n) {
 	    	data(i) *= value
 	    	i += 1
 	    }
+	    this.asInstanceOf[ReturnType]
 	}
 
 	/** Multiply each element of `other` with the corresponding element of this.
@@ -340,13 +346,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * This modifies in place this sequence. The size of the smallest sequence determines the
 	  * number of elements to be multiplied, starting at 0.
 	  */
-	def *=(other:NumberSeq):ReturnType = { multBy(other); this.asInstanceOf[ReturnType] }
+	def *=(other:NumberSeq):ReturnType = multBy(other)
 
 	/** Multiply each element of this by `value`.
 	  * 
 	  * This modifies in place this sequence.
 	  */
-	def *=(value:Double):ReturnType = { multBy(value); this.asInstanceOf[ReturnType] }
+	def *=(value:Double):ReturnType = multBy(value)
 	
 	/** Result of the multiplication of each element of this by the corresponding element of
 	  * `other`.
@@ -381,7 +387,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * This modifies in place this sequence. The size of the smallest sequence determines the
 	  * number of elements to be divided, starting at 0.
 	  */
-	def divBy(other:NumberSeq) {
+	def divBy(other:NumberSeq):ReturnType = {
 	    checkSizes(other)
 	    val n = scala.math.min(size, other.size)
 	    var i = 0
@@ -389,19 +395,21 @@ trait NumberSeq extends IndexedSeq[Double] {
 	    	data(i) /= other(i)
 	    	i += 1
 	    }
+	    this.asInstanceOf[ReturnType]
 	}
 
 	/** Divide each element of this by `value`.
 	  * 
 	  * This modifies in place this sequence.
 	  */
-	def divBy(value:Double) {
+	def divBy(value:Double):ReturnType = {
 	    val n = size
 	    var i = 0
 	    while(i<n) {
 	    	data(i) /= value
 	    	i += 1
 	    }
+	    this.asInstanceOf[ReturnType]
 	}
 	
 	/** Divide each element of this by the corresponding element of `other`.
@@ -411,13 +419,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * This modifies in place this sequence. The size of the smallest sequence determines the
 	  * number of elements to be divided, starting at 0.
 	  */
-	def /=(other:NumberSeq):ReturnType = { divBy(other); this.asInstanceOf[ReturnType] }
+	def /=(other:NumberSeq):ReturnType = divBy(other)
 
 	/** Divide each element of this by `value`.
 	  * 
 	  * This modifies in place this sequence.
 	  */
-	def /=(value:Double):ReturnType = { divBy(value); this.asInstanceOf[ReturnType] }
+	def /=(value:Double):ReturnType = divBy(value)
 	
 	/** Result of the division of each element of this by the corresponding element of
 	  * `other`.
@@ -538,6 +546,8 @@ trait NumberSeq2 extends NumberSeq {
     def x_=(value:Double) = data(0) = value
     def y_=(value:Double) = data(1) = value
     def xy_=(value:(Double, Double)) = { data(0) = value._1; data(1) = value._2 }
+    
+    def set(x:Double, y:Double):ReturnType = { data(0) = x; data(1) = y; this.asInstanceOf[ReturnType] }
 }
 
 //===================================================
@@ -552,6 +562,8 @@ trait NumberSeq3 extends NumberSeq2 {
     def yz_=(value:(Double, Double)) = { data(1) = value._1; data(2) = value._2 }
     def xz_=(value:(Double, Double)) = { data(0) = value._1; data(2) = value._2 }
     def xyz_=(value:(Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(2) = value._3 }
+    
+    def set(x:Double, y:Double, z:Double):ReturnType = { data(0) = x; data(1) = y; data(2) = z; this.asInstanceOf[ReturnType] }
 }
 
 //===================================================
@@ -575,4 +587,5 @@ trait NumberSeq4 extends NumberSeq3 {
     def yzw_=(value:(Double, Double, Double)) = { data(1) = value._1; data(2) = value._2; data(3) = value._3 }
     def xyzw_=(value:(Double, Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(2) = value._3; data(3) = value._4 }
 
+    def set(x:Double, y:Double, z:Double, w:Double):ReturnType = { data(0) = x; data(1) = y; data(2) = z; data(3) = w; this.asInstanceOf[ReturnType] }
 }
