@@ -213,14 +213,17 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 	  * the cube area of `size` side, around the point (`x`,`y`,`z`).
 	  * The returned objects may therefore be out of the cube defined
 	  * by the parameters. */
-	def neighborsInBox(size:Double, x:Double, y:Double, z:Double):Set[T] = {
+	def neighborsInBox(thing:T, size:Double):Set[T] = {
 		val s2     = size/2
-		val bucks  = getBuckets(x-s2, y-s2, z-s2, x+s2, y+s2, z+s2)
+		val p      = thing.from
+		val bucks  = getBuckets(p.x-s2, p.y-s2, p.z-s2, p.x+s2, p.y+s2, p.z+s2)
 		val result = new HashSet[T]
 		
 		bucks.foreach { bucket =>
 			result ++= bucket
 		}
+		
+		result -= thing
 		
 		result
 	}
