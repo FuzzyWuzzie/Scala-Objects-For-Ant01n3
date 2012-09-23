@@ -9,7 +9,7 @@ class BasicCameraController(val camera:Camera) {
 	protected val step = 0.1
 	
 	def scroll(surface:Surface, e:ScrollEvent) {
-	    camera.rotateViewHorizontal(e.amount * step)
+	    camera.rotateViewHorizontal(e.amount * step * 0.05)
 	} 
 	
 	def key(surface:Surface, e:KeyEvent) {
