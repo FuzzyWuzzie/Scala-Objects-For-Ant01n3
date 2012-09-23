@@ -151,9 +151,9 @@ class Skinning extends SurfaceRenderer {
 //	    			(nmapShader.getAttribLocation("tangent"), 3, planeMesh.normals),
 //	    			(nmapShader.getAttribLocation("texPos"),  2, planeMesh.normals))
 	    tube  = new VertexArray(gl, tubeMesh.indices,
-	            	(boneShader.getAttribLocation("position"),  3, tubeMesh.vertices),
-	            	(boneShader.getAttribLocation("normal"),    3, tubeMesh.normals),
-	            	(boneShader.getAttribLocation("boneIndex"), 1, tubeMesh.bones))
+	            	("vertices", boneShader.getAttribLocation("position"),  3, tubeMesh.vertices),
+	            	("normals", boneShader.getAttribLocation("normal"),    3, tubeMesh.normals),
+	            	("bones", boneShader.getAttribLocation("boneIndex"), 1, tubeMesh.bones))
 	    bone  = boneMesh.newVertexArray(gl)//new VertexArray(gl, boneMesh.indices,
 	    		//	(plainShader.getAttribLocation("position"), 3, boneMesh.vertices))
 	}

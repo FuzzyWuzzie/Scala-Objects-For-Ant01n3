@@ -284,7 +284,7 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 		simuCube.move()
 		spaceHash.move(simuCube)
 		
-		particlesMesh.updateVertexArray(gl)
+		particlesMesh.updateVertexArray(gl, "vertices", "colors")
 		gl.checkErrors
 	}
 	

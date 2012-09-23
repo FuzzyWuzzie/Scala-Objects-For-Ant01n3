@@ -279,7 +279,7 @@ class TestSpatialHash extends SurfaceRenderer {
 		spaceHash.move(simuCube)
 		spaceHash.move(simuCube2)
 		
-		particlesMesh.updateVertexArray(gl)
+		particlesMesh.updateVertexArray(gl, "vertices", "colors")
 		gl.checkErrors
 	}
 	

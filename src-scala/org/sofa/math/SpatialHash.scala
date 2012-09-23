@@ -210,9 +210,10 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 	}
 	
 	/** All the neighbor objects in all the buckets intersecting
-	  * the cube area of `size` side, around the point (`x`,`y`,`z`).
+	  * the cube area of `size` side, around the object `thing`.
 	  * The returned objects may therefore be out of the cube defined
-	  * by the parameters. */
+	  * by the parameters. The neighbor set does not contain the
+	  * `thing` element. */
 	def neighborsInBox(thing:T, size:Double):Set[T] = {
 		val s2     = size/2
 		val p      = thing.from
@@ -224,6 +225,22 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 		}
 		
 		result -= thing
+		
+		result
+	}
+	
+	/** All the neighbor objects in all the buckets intersecting
+	  * the cube area of `size` side, around the point (`p`).
+	  * The returned objects may therefore be out of the cube defined
+	  * by the parameters. */
+	def neighborsInBox(p:Point3, size:Double):Set[T] = {
+		val s2     = size/2
+		val bucks  = getBuckets(p.x-s2, p.y-s2, p.z-s2, p.x+s2, p.y+s2, p.z+s2)
+		val result = new HashSet[T]
+		
+		bucks.foreach { bucket =>
+			result ++= bucket
+		}
 		
 		result
 	}

@@ -101,10 +101,10 @@ class NormalMap extends SurfaceRenderer {
 	    tubeMesh.setCylinderColor(Rgba.blue);
 	    planeMesh.setColor(Rgba.magenta)
 	    
-	    plane = new VertexArray(gl, planeMesh.indices, (p, 3, planeMesh.vertices), 
-    			(n, 3, planeMesh.normals), (t, 3, planeMesh.tangents), (u, 2, planeMesh.texCoords))
-    	tube  = new VertexArray(gl, tubeMesh.indices, (p, 3, tubeMesh.vertices),
-    			(n, 3, tubeMesh.normals), (t, 3, tubeMesh.tangents), (u, 2, tubeMesh.texCoords))
+	    plane = new VertexArray(gl, planeMesh.indices, ("vertices", p, 3, planeMesh.vertices), 
+    			("normals", n, 3, planeMesh.normals), ("tangents", t, 3, planeMesh.tangents), ("texcoords", u, 2, planeMesh.texCoords))
+    	tube  = new VertexArray(gl, tubeMesh.indices, ("vertices", p, 3, tubeMesh.vertices),
+    			("normals", n, 3, tubeMesh.normals), ("tangents", t, 3, tubeMesh.tangents), ("texcoords", u, 2, tubeMesh.texCoords))
 	    
 	    uvTex = new Texture(gl, "textures/stone_wall__.jpg", true)
 //	    uvTex = new Texture(gl, "textures/face.jpg", true)

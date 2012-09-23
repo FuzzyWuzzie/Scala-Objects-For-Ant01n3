@@ -111,7 +111,7 @@ class PixelFlow extends WindowAdapter with GLEventListener {
                 new VertexShader(gl, vertexShader),
                 new FragmentShader(gl, fragmentShader))
 
-        triangle = new VertexArray(gl, indices, (0, 4, vertices), (1, 4, colors))
+        triangle = new VertexArray(gl, indices, ("vertices", 0, 4, vertices), ("colors", 1, 4, colors))
     }
     
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {

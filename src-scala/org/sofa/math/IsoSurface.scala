@@ -3,7 +3,7 @@ package org.sofa.math
 import scala.collection.mutable.ArrayBuffer
 
 /** A triangle. */
-class Triangle(p0:Point3, p1:Point3, p2:Point3) {}
+class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {}
 
 /** Build a surface from an iso-surface provided by an evaluation function and an iso-level
   * parameter.
@@ -13,6 +13,14 @@ class Triangle(p0:Point3, p1:Point3, p2:Point3) {}
   * 
   * Most of the code and ideas for this come from the 
   * http://paulbourke.net/geometry/polygonise/  web page.
+  * 
+  * Lots of optimizations possible:
+  * 	- Each cube share a face with another and therefore points are shared. However
+  *       they are not merged in the triangle set returned. It could greatly improve
+  *       the memory consumption and exchanges between cpu and gpu when drawing the surface.
+  *     - The normals to the triangles are not given, and must be computed. This could be
+  *       done automatically with less computation.
+  *     - Knowing which points are shared, we could generate normals that smooth the surface.
   */
 class IsoSurface(val cellSize:Double) {
 	
@@ -30,7 +38,7 @@ class IsoSurface(val cellSize:Double) {
 		for(z <- 0 until count) {
 			for(y <- 0 until count) {
 				for(x <- 0 until count) {
-					addCubeAt(xx+count*cellSize, yy+count*cellSize, zz+count*cellSize, eval, isoLevel)
+					addCubeAt(xx+x*cellSize, yy+y*cellSize, zz+z*cellSize, eval, isoLevel)
 				}
 			}
 		}
@@ -69,14 +77,14 @@ class IsoSurface(val cellSize:Double) {
 		
 		var cubeIndex = 0
 		
-		if(v0>isoLevel) cubeIndex |=   1 	// p0
-		if(v1>isoLevel) cubeIndex |=   2	// p1
-		if(v2>isoLevel) cubeIndex |=   4	// p2
-		if(v3>isoLevel) cubeIndex |=   8	// p3
-		if(v4>isoLevel) cubeIndex |=  16	// p4
-		if(v5>isoLevel) cubeIndex |=  32	// p5
-		if(v6>isoLevel) cubeIndex |=  64	// p6
-		if(v7>isoLevel) cubeIndex |= 128	// p7
+		if(v0<isoLevel) cubeIndex |=   1 	// p0
+		if(v1<isoLevel) cubeIndex |=   2	// p1
+		if(v2<isoLevel) cubeIndex |=   4	// p2
+		if(v3<isoLevel) cubeIndex |=   8	// p3
+		if(v4<isoLevel) cubeIndex |=  16	// p4
+		if(v5<isoLevel) cubeIndex |=  32	// p5
+		if(v6<isoLevel) cubeIndex |=  64	// p6
+		if(v7<isoLevel) cubeIndex |= 128	// p7
 		
 		var vertList = new Array[Point3](12)	// 12 possible vertices
 		val idx = edgeTable(cubeIndex)
@@ -88,7 +96,7 @@ class IsoSurface(val cellSize:Double) {
 			if((idx&   1) != 0) vertList( 0) = vertexInterp(isoLevel, p0, p1, v0, v1)
 			if((idx&   2) != 0) vertList( 1) = vertexInterp(isoLevel, p1, p2, v1, v2)
 			if((idx&   4) != 0) vertList( 2) = vertexInterp(isoLevel, p2, p3, v2, v3)
-			if((idx&   8) != 0) vertList( 3) = vertexInterp(isoLevel, p3, p0, v2, v0)
+			if((idx&   8) != 0) vertList( 3) = vertexInterp(isoLevel, p3, p0, v3, v0)
 			
 			if((idx&  16) != 0) vertList( 4) = vertexInterp(isoLevel, p4, p5, v4, v5)
 			if((idx&  32) != 0) vertList( 5) = vertexInterp(isoLevel, p5, p6, v5, v6)
@@ -119,6 +127,10 @@ class IsoSurface(val cellSize:Double) {
 	  * respective points. */
 	protected def vertexInterp(isoLevel:Double, p0:Point3, p1:Point3, v0:Double, v1:Double):Point3 = {
 		import math._
+//		Point3(
+//			p0.x + (p1.x-p0.x)/2,
+//			p0.y + (p1.y-p0.y)/2,
+//			p0.z + (p1.z-p0.z)/2)
 		var p:Point3 = null
 		
 		if     (abs(isoLevel-v0) < 0.0001) { p = p0 }

@@ -145,16 +145,16 @@ trait Mesh {
       *    val v = newVertexArray(gl, (0, -1, 6, -1, 4, -1))  
       */
     def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
-    	val attribs = new Array[Tuple3[Int,Int,NioBuffer]](attributeCount)
+    	val attribs = new Array[Tuple4[String,Int,Int,NioBuffer]](attributeCount)
     	var i = 0
     	
-    	attribs(0) = (locations._1, verticeComponents,  vertices);  i+=1
+    	attribs(0) = ("vertices", locations._1, verticeComponents,  vertices);  i+=1
     	
-    	if(hasColors    && locations._2 >= 0) { attribs(i) = (locations._2, colorComponents,    colors);    i+=1 }
-    	if(hasNormals   && locations._3 >= 0) { attribs(i) = (locations._3, normalComponents,   normals);   i+=1 }
-    	if(hasTangents  && locations._4 >= 0) { attribs(i) = (locations._4, tangentComponents,  tangents);  i+=1 }
-    	if(hasTexCoords && locations._5 >= 0) { attribs(i) = (locations._5, texCoordComponents, texCoords); i+=1 }
-    	if(hasBones     && locations._6 >= 0) { attribs(i) = (locations._6, 1,                  bones);     i+=1 }
+    	if(hasColors    && locations._2 >= 0) { attribs(i) = ("colors",    locations._2, colorComponents,    colors);    i+=1 }
+    	if(hasNormals   && locations._3 >= 0) { attribs(i) = ("normals",   locations._3, normalComponents,   normals);   i+=1 }
+    	if(hasTangents  && locations._4 >= 0) { attribs(i) = ("tangents",  locations._4, tangentComponents,  tangents);  i+=1 }
+    	if(hasTexCoords && locations._5 >= 0) { attribs(i) = ("texcoords", locations._5, texCoordComponents, texCoords); i+=1 }
+    	if(hasBones     && locations._6 >= 0) { attribs(i) = ("bones",     locations._6, 1,                  bones);     i+=1 }
     	
     	new VertexArray(gl, attribs:_*)
     }
@@ -190,16 +190,16 @@ trait Mesh {
       *  - bones
       */
     def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple2[String,Int]*):VertexArray = {
-    	val locs = new Array[Tuple3[Int,Int,NioBuffer]](locations.size)
+    	val locs = new Array[Tuple4[String,Int,Int,NioBuffer]](locations.size)
     	var pos = 0
     	locations.foreach { value =>
     		locs(pos) = value._1.toLowerCase match {
-    			case "vertices"  => (value._2, verticeComponents, vertices)
-    			case "colors"    => (value._2, colorComponents, colors)
-    			case "normals"   => (value._2, normalComponents, normals)
-    			case "tangents"  => (value._2, tangentComponents, tangents)
-    			case "texcoords" => (value._2, texCoordComponents, texCoords)
-    			case "bones"     => (value._2, 1, bones)
+    			case "vertices"  => ("vertices",  value._2, verticeComponents, vertices)
+    			case "colors"    => ("colors",    value._2, colorComponents, colors)
+    			case "normals"   => ("normals",   value._2, normalComponents, normals)
+    			case "tangents"  => ("tangents",  value._2, tangentComponents, tangents)
+    			case "texcoords" => ("texcoords", value._2, texCoordComponents, texCoords)
+    			case "bones"     => ("bones",     value._2, 1, bones)
     			case _ => throw new RuntimeException("Unknown key %s (available: vertices, colors, normals, tangents, texCoords or texcoords, bones)".format(value._1))
     		}
     		pos += 1

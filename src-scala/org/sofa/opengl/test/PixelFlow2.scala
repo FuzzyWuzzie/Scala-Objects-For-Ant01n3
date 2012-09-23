@@ -170,7 +170,7 @@ class PixelFlow2 extends WindowAdapter with GLEventListener {
         val p = cubeShad.getAttribLocation("in_Position")
         val c = cubeShad.getAttribLocation("in_Color")
         
-        cube = new VertexArray(gl, cubeInd, (p, 3, cubeVert), (c, 4, cubeClr))
+        cube = new VertexArray(gl, cubeInd, ("vertices", p, 3, cubeVert), ("colors", c, 4, cubeClr))
     }
     
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {

@@ -76,33 +76,49 @@ class DynPointsMesh(val size:Int) extends Mesh with ColorableMesh {
 	def drawAs():Int = GL_POINTS
 	
     override def newVertexArray(gl:SGL, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+		cbeg = size; cend = 0; vbeg = size; vend = 0
 		vertexArray = super.newVertexArray(gl, locations)
 		vertexArray
 	}
 
     override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+		cbeg = size; cend = 0; vbeg = size; vend = 0
 		vertexArray = super.newVertexArray(gl, drawMode, locations)
 		vertexArray
 	}
     
 	override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple2[String,Int]*):VertexArray = {
+    	cbeg = size; cend = 0; vbeg = size; vend = 0
     	vertexArray = super.newVertexArray(gl, drawMode, locations:_*)
     	vertexArray
     }
     
     override def newVertexArray(gl:SGL, locations:Tuple2[String,Int]*):VertexArray = {
+    	cbeg = size; cend = 0; vbeg = size; vend = 0
     	vertexArray = super.newVertexArray(gl, locations:_*)
     	vertexArray
     }
 	
-	/** Update the last vertex array created with newVertexArray(). */
-	def updateVertexArray(gl:SGL) {
+    /** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
+	  * avoid moving data between the CPU and GPU. */
+	def updateVertexArray(gl:SGL, verticesName:String, colorsName:String) {
 		if(vertexArray ne null) {
 			if(vend > vbeg) {
-				vertexArray.buffer(0).update(vertices)
+				if(vbeg == 0 && vend == size)
+					 vertexArray.buffer(verticesName).update(vertices)
+				else vertexArray.buffer(verticesName).update(vbeg, vend, vertices)
 				
 				vbeg = size
 				vend = 0
+			}
+			
+			if(cend > cbeg) {
+				if(cbeg == 0 && cend == size)
+					 vertexArray.buffer(colorsName).update(colors)
+				else vertexArray.buffer(colorsName).update(cbeg, cend, colors)
+				
+				cbeg = size
+				cend = 0				
 			}
 		}
 	}

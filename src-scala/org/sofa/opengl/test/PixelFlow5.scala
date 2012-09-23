@@ -104,8 +104,8 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         val c = cubeShad.getAttribLocation("color")
         val n = cubeShad.getAttribLocation("normal")
         
-        cube = new VertexArray(gl, cubeMesh.indices, (p, 3, cubeMesh.vertices), (c, 4, cubeMesh.colors), (n, 3, cubeMesh.normals))
-        plane = new VertexArray(gl, planeMesh.indices, (p, 3, planeMesh.vertices), (c, 4, planeMesh.colors), (n, 3, planeMesh.normals))
+        cube = new VertexArray(gl, cubeMesh.indices, ("vertices", p, 3, cubeMesh.vertices), ("colors", c, 4, cubeMesh.colors), ("normals", n, 3, cubeMesh.normals))
+        plane = new VertexArray(gl, planeMesh.indices, ("vertices", p, 3, planeMesh.vertices), ("colors", c, 4, planeMesh.colors), ("normals", n, 3, planeMesh.normals))
     }
     
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {

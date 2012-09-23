@@ -8,7 +8,7 @@ uniform mat4 MVP;
 uniform mat4 MV;
 uniform mat3 MV3x3;
 
-uniform Light light;
+//uniform Light light;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
