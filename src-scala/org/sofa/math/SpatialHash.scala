@@ -8,9 +8,7 @@ import scala.collection.mutable.HashSet
 /** An integer position in "bucket" space that can be easily hashed with
   * a specific hash function. */
 class HashPoint3(val x:Int, val y:Int, val z:Int) {	
-	override def hashCode():Int = {
-		 (x*73856093)^(y*19349663)^(z*83492791)	
-	}
+	override def hashCode():Int = { (x*73856093)^(y*19349663)^(z*83492791) }
 	
 	override def equals(other:Any):Boolean = {
 		var result = false

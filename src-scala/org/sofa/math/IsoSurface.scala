@@ -1,9 +1,10 @@
 package org.sofa.math
 
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.HashMap
 
 /** A triangle. */
-class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {}
+class TriangleSimple(val p0:Point3, val p1:Point3, val p2:Point3) {}
 
 /** Build a surface from an iso-surface provided by an evaluation function and an iso-level
   * parameter.
@@ -22,13 +23,13 @@ class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {}
   *       done automatically with less computation.
   *     - Knowing which points are shared, we could generate normals that smooth the surface.
   */
-class IsoSurface(val cellSize:Double) {
+class IsoSurfaceSimple(val cellSize:Double) {
 	
 	/** Set of computed triangles. */
-	val tri = new ArrayBuffer[Triangle]()
+	val tri = new ArrayBuffer[TriangleSimple]()
 	
 	/** The triangles computed by the last calls to addCubesAT(). */
-	def triangles:Seq[Triangle] = tri
+	def triangles:Seq[TriangleSimple] = tri
 	
 	/** Compute triangles faces from marching cubes in the area defined by the origin point
 	  * (`xx`,`yy`,`zz`) and the number of cuves (in the three axe directions) provided
@@ -69,7 +70,7 @@ class IsoSurface(val cellSize:Double) {
 		val v3 = eval(p3)
 		val v4 = eval(p4)
 		val v5 = eval(p5)
-		val v6 = eval(p5)
+		val v6 = eval(p6)
 		val v7 = eval(p7)
 
 		// Determine the index in the edge table which tells
@@ -113,7 +114,7 @@ class IsoSurface(val cellSize:Double) {
 			var i = 0
 			
 			while(triTable(cubeIndex)(i) != -1) {
-				tri += new Triangle(
+				tri += new TriangleSimple(
 						vertList(triTable(cubeIndex)(i)), 
 						vertList(triTable(cubeIndex)(i+1)),
 						vertList(triTable(cubeIndex)(i+2)))
@@ -148,7 +149,329 @@ class IsoSurface(val cellSize:Double) {
 	}
 }
 
+//-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
+
+class IsoCube(val pos:HashPoint3, val surface:IsoSurface) {
+
+	/** Index in the points set of the surface of the points used to evaluate the iso-surface. */
+	val points = new Array[Int](8)
+	
+	/** Index in the triPoints set of the surface of the points used to build triangles. */
+	val triPoints = new Array[Int](12)
+	
+	/** The triangles inside this cube. */
+	val triangles:ArrayBuffer[IsoTriangle] = null
+
+	def this(x:Int, y:Int, z:Int, surface:IsoSurface) { this(HashPoint3(x,y,z),surface) }
+	
+	override def toString():String = "cube[%s, {%s}]".format(pos, points.mkString(","))
+	
+	def eval(nb:Array[IsoCube], eval:(Point3)=>Double, isoLevel:Double) {
+		import IsoSurface._
+		
+		// For the height points, we look at neighbor cubes to find if they have
+		// already been computed, to avoid a costly call to the eval() function.
+		// If not, the cubePoint() method will add the point in the surface,
+		// in this cube, and evaluate it and store this value in the surface.
+		
+		val p0 = cubePoint(0, nb, eval); val v0 = surface.values(p0)
+		val p1 = cubePoint(1, nb, eval); val v1 = surface.values(p1)
+		val p2 = cubePoint(2, nb, eval); val v2 = surface.values(p2)
+		val p3 = cubePoint(3, nb, eval); val v3 = surface.values(p3)
+		
+		val p4 = cubePoint(4, nb, eval); val v4 = surface.values(p4)
+		val p5 = cubePoint(5, nb, eval); val v5 = surface.values(p5)
+		val p6 = cubePoint(6, nb, eval); val v6 = surface.values(p6)
+		val p7 = cubePoint(7, nb, eval); val v7 = surface.values(p7)
+		
+		// We have the points and their values using the index returned in each pX and vX.
+		// Now, determine the index in the edge table which tells us which vertices
+		// are inside of the surface.
+		
+		var cubeIndex = 0
+		
+		if(v0<isoLevel) cubeIndex |=   1 	// p0
+		if(v1<isoLevel) cubeIndex |=   2	// p1
+		if(v2<isoLevel) cubeIndex |=   4	// p2
+		if(v3<isoLevel) cubeIndex |=   8	// p3
+		if(v4<isoLevel) cubeIndex |=  16	// p4
+		if(v5<isoLevel) cubeIndex |=  32	// p5
+		if(v6<isoLevel) cubeIndex |=  64	// p6
+		if(v7<isoLevel) cubeIndex |= 128	// p7
+
+		val idx = edgeTable(cubeIndex)
+		
+		if(idx != 0) {	// If the cube is not entirely out or in the surface.
+			
+			// Find the vertices where the surface intersects the cube.
+			
+			if((idx&   1) != 0) triPoints( 0) = vertexInterp(isoLevel, 0, p0, p1, v0, v1, nb)
+			if((idx&   2) != 0) triPoints( 1) = vertexInterp(isoLevel, 1, p1, p2, v1, v2, nb)
+			if((idx&   4) != 0) triPoints( 2) = vertexInterp(isoLevel, 2, p2, p3, v2, v3, nb)
+			if((idx&   8) != 0) triPoints( 3) = vertexInterp(isoLevel, 3, p3, p0, v3, v0, nb)
+			
+			if((idx&  16) != 0) triPoints( 4) = vertexInterp(isoLevel, 4, p4, p5, v4, v5, nb)
+			if((idx&  32) != 0) triPoints( 5) = vertexInterp(isoLevel, 5, p5, p6, v5, v6, nb)
+			if((idx&  64) != 0) triPoints( 6) = vertexInterp(isoLevel, 6, p6, p7, v6, v7, nb)
+			if((idx& 128) != 0) triPoints( 7) = vertexInterp(isoLevel, 7, p7, p4, v7, v4, nb)
+			
+			if((idx& 256) != 0) triPoints( 8) = vertexInterp(isoLevel, 8, p0, p4, v0, v4, nb)
+			if((idx& 512) != 0) triPoints( 9) = vertexInterp(isoLevel, 9, p1, p5, v1, v5, nb)
+			if((idx&1024) != 0) triPoints(10) = vertexInterp(isoLevel, 10, p2, p6, v2, v6, nb)
+			if((idx&2048) != 0) triPoints(11) = vertexInterp(isoLevel, 11, p3, p7, v3, v7, nb)
+			
+			// Create the triangle.
+			
+			var i = 0
+			
+			while(triTable(cubeIndex)(i) != -1) {
+				var a = triPoints(triTable(cubeIndex)(i))
+				var b = triPoints(triTable(cubeIndex)(i+1))
+				var c = triPoints(triTable(cubeIndex)(i+2))
+				
+				// Create the triangle
+				
+				val j = triangles.size
+				triangles += new IsoTriangle(a, b, c)
+
+				// Reference the triangle in the points to triangles set.
+				
+				// XX TODO for each point have a set of triangles that point to a cube and a triangle index in the cube
+				// triangle index j
+				
+				i += 3
+			}
+		}
+	}
+	
+	protected def cubePoint(p:Int, nb:Array[IsoCube], eval:(Point3)=>Double):Int = {
+		import IsoSurface._
+		
+		val neighbor = pointOverlap(p)
+		
+		if(nb(neighbor(0)._1) ne null) nb(neighbor(0)._1).points(neighbor(0)._2) else
+		if(nb(neighbor(1)._1) ne null) nb(neighbor(1)._1).points(neighbor(1)._2) else
+		if(nb(neighbor(2)._1) ne null) nb(neighbor(2)._1).points(neighbor(2)._2) else
+		if(nb(neighbor(3)._1) ne null) nb(neighbor(3)._1).points(neighbor(3)._2) else
+		if(nb(neighbor(4)._1) ne null) nb(neighbor(4)._1).points(neighbor(4)._2) else
+		if(nb(neighbor(5)._1) ne null) nb(neighbor(5)._1).points(neighbor(5)._2) else
+		if(nb(neighbor(6)._1) ne null) nb(neighbor(6)._1).points(neighbor(6)._2) else
+		if(nb(neighbor(7)._1) ne null) nb(neighbor(7)._1).points(neighbor(7)._2) else {
+			val i = surface.points.size
+			val np = Point3((pos.x+cubeCoos(p)._1)*surface.cellSize,
+					        (pos.y+cubeCoos(p)._2)*surface.cellSize,
+					        (pos.z+cubeCoos(p)._3)*surface.cellSize)
+			surface.points += np
+			surface.values += eval(surface.points(i))
+			points(p) = i
+			i
+		}
+	} 
+	
+	/** Interpolate the point position along a vertex of a marching cube defined by points
+	  * `p0` and `p1` using the values `v0` and `v1` for the iso-values at this two
+	  * respective points. */
+	protected def vertexInterp(isoLevel:Double, edge:Int, p0:Int, p1:Int, v0:Double, v1:Double, nb:Array[IsoCube]):Int = {
+		import math._
+		
+		// Find the neighbor cubes that may share the edge we evaluate.
+		
+		var i = cubeEdge(edge, nb)
+		
+		// If not found evaluate the edge, add the point.
+		
+		if(i < 0) {
+			var p:Point3 = null
+			val P0 = surface.points(p0)
+			val P1 = surface.points(p1)
+
+			if(IsoSurface.interpolation) {
+				// Interpolated on the edge.
+				
+				if     (abs(isoLevel-v0) < 0.0001) { p = P0 }
+				else if(abs(isoLevel-v1) < 0.0001) { p = P1 }
+				else if(abs(v0-v1)       < 0.0001) { p = P0 }
+				else {
+					var mu = (isoLevel - v0) / (v1 - v0)
+					p = Point3(
+						P0.x + mu * (P1.x - P0.x),
+						P0.y + mu * (P1.y - P0.y),
+						P0.z + mu * (P1.z - P0.z))
+				}
+			} else {
+				// In the middle of the edge.
+				
+				p = Point3(
+					P0.x + 0.5 * (P1.x-P0.x),
+					P0.y + 0.5 * (P1.y-P0.y),
+					P0.z + 0.5 * (P1.z-P0.z))
+			}
+			
+			// Add the point.
+			
+			i = surface.triPoints.size 
+			surface.triPoints += p
+		}
+		
+		i
+	}
+	
+	protected def cubeEdge(edge:Int, nb:Array[IsoCube]):Int = {
+		import IsoSurface._
+		
+		if(nb(edgeOverlap(edge)(0)._1) ne null) nb(edgeOverlap(edge)(0)._1).triPoints(edgeOverlap(edge)(0)._2) else
+		if(nb(edgeOverlap(edge)(0)._1) ne null) nb(edgeOverlap(edge)(0)._1).triPoints(edgeOverlap(edge)(0)._2) else
+		if(nb(edgeOverlap(edge)(0)._1) ne null) nb(edgeOverlap(edge)(0)._1).triPoints(edgeOverlap(edge)(0)._2) else {
+			-1			
+		}
+	}
+}
+
+class IsoTriangle(val a:Int, val b:Int, val c:Int) {
+	override def toString():String = "tri[%d, %d, %d]".format(a, b, c)
+}
+
+class IsoSurface(val cellSize:Double) {
+	/** Set of evaluation points, where the iso-surface values are taken. */
+	val points = new ArrayBuffer[Point3]()
+	
+	/** Values of the iso-surface, each value correspond to a point in `points`. */
+	val values = new ArrayBuffer[Double]()
+	
+	/** Set of interpolated triangle points, the points forming the triangles. */
+	val triPoints = new ArrayBuffer[Point3]()
+	
+	/** For each point in `triPoints` this list the triangles connected to this point. */
+	//val pointsTri = new ArrayBuffer[ArrayBuffer[Triangle]]()	// Maybe we can do without.
+	
+	/** The set of cubes used to evaluate the surface. */
+	val cubes = new ArrayBuffer[IsoCube]()
+	
+	/** The hash map of cubes indexed by their position in integer space. */
+	val spaceHash = new HashMap[HashPoint3,IsoCube]()
+	
+	def addCubeAt(x:Int, y:Int, z:Int, eval:(Point3)=>Double, isoLevel:Double):IsoCube = {
+		val p = HashPoint3(x,y,z)
+		spaceHash.get(p).getOrElse {
+			var cube = new IsoCube(p, this)
+			
+			// Find the potential 26 surrounding cubes
+			var neighbors = findNeighborCubes(p)
+			
+			cube.eval(neighbors, eval, isoLevel)
+			
+			spaceHash += ((p, cube))
+			
+			cube
+		}
+	}
+	
+	protected val nbCb = new Array[IsoCube](26)
+	
+	protected def findNeighborCubes(p:HashPoint3):Array[IsoCube] = {
+		import IsoSurface._
+		var i = 0
+		
+		while(i < neighborCubes.length) {
+			if(i != 13) {
+				val n = neighborCubes(i)
+				nbCb(i) = spaceHash.get(HashPoint3(p.x+n._1, p.y+n._2, p.z+n._3)).getOrElse(null)
+			} else {
+				nbCb(i) = null
+			}
+			i += 1
+		}
+		
+		nbCb
+	}
+}
+
 object IsoSurface {
+
+	val interpolation = true
+	
+	/** Coordinates of each cube point in the cube as multiples of cellSize. */
+	val cubeCoos = Array[Tuple3[Int,Int,Int]] (
+			(0,0,0),	// 0
+			(1,0,0),	// 1
+			(1,0,1),	// 2
+			(0,0,1),	// 3
+			(0,1,0),	// 4
+			(1,1,0),	// 5
+			(1,1,1),	// 6
+			(0,1,1)		// 7
+	)
+	
+	/** Fasten the search for neighbors. */
+	val neighborCubes = Array[Tuple3[Int,Int,Int]] (
+		(-1, -1, -1),		// 0
+		( 0, -1, -1),		// 1
+		( 1, -1, -1),		// 2
+		(-1,  0, -1),		// 3
+		( 0,  0, -1),		// 4
+		( 1,  0, -1),		// 5
+		(-1,  1, -1),		// 6
+		( 0,  1, -1),		// 7
+		( 1,  1, -1),		// 8
+		//--------------------------
+		(-1, -1,  0),		// 9 
+		( 0, -1,  0),		// 10
+		( 1, -1,  0),		// 11
+		(-1,  0,  0),		// 12
+		( 0,  0,  0),		// 13 XXX center
+		( 1,  0,  0),		// 14
+		(-1,  1,  0),		// 15
+		( 0,  1,  0),		// 16
+		( 1,  1,  0),		// 17
+		//--------------------------
+		(-1, -1,  1),		// 18
+		( 0, -1,  1),		// 19
+		( 1, -1,  1),		// 20
+		(-1,  0,  1),		// 21
+		( 0,  0,  1),		// 22
+		( 1,  0,  1),		// 23
+		(-1,  1,  1),		// 24
+		( 0,  1,  1),		// 25
+		( 1,  1,  1)		// 26
+	)
+	
+	/** Fasten the search for overlapping points of a given point for a cube.
+	  * Suppose you search the points of neighbor cubes that overlap point 0.
+	  * You look at the first cell of this array and find an array of 2-tuples.
+	  * Each of these tuples points at a neighbor cube, then at the point in this
+	  * neighbor cube that is overlapping point 0. */
+	val pointOverlap = Array[Array[Tuple2[Int,Int]]](
+		Array[Tuple2[Int,Int]]( ( 0, 6), ( 1, 7), ( 3, 2), ( 4, 3), ( 9, 5), (10, 4), (12, 1) ),	// p0
+		Array[Tuple2[Int,Int]]( ( 1, 6), ( 2, 7), ( 4, 2), ( 5, 3), (10, 5), (11, 4), (14, 0) ),	// p1
+		Array[Tuple2[Int,Int]]( (10, 6), (11, 7), (14, 3), (19, 5), (20, 4), (22, 1), (23, 0) ),	// p2
+		Array[Tuple2[Int,Int]]( ( 9, 6), (10, 7), (12, 2), (18, 5), (19, 4), (21, 1), (22, 0) ),	// p3
+		Array[Tuple2[Int,Int]]( ( 3, 6), ( 4, 7), ( 6, 2), ( 7, 3), (12, 5), (15, 1), (16, 0) ),	// p4
+		Array[Tuple2[Int,Int]]( ( 4, 6), ( 5, 7), ( 7, 2), ( 8, 3), (14, 4), (16, 1), (17, 0) ),	// p5
+		Array[Tuple2[Int,Int]]( (14, 7), (16, 2), (17, 3), (22, 5), (23, 4), (25, 1), (26, 0) ),	// p6
+		Array[Tuple2[Int,Int]]( (12, 6), (15, 2), (16, 3), (21, 5), (22, 4), (24, 1), (25, 0) )		// p7
+	)
+	
+	/** Fasten the search for overlapping edges of a given edge for a cube.
+	  * Suppose you search the edges of neighbor cubes that overlap edge 0.
+	  * You look a the first cell of this array and find an array of 2-tuples.
+	  * Each of these tuples points at a neighbor cube, then at the edge in this
+	  * neighbor cube that is overlapping edge 0. */
+	val edgeOverlap = Array[Array[Tuple2[Int,Int]]](
+		Array[Tuple2[Int,Int]]( ( 1, 6), ( 4, 2), (10, 4)),	// e0
+		Array[Tuple2[Int,Int]]( (10, 5), (11, 7), (14, 3)),	// e1
+		Array[Tuple2[Int,Int]]( (10, 6), (19, 4), (22, 0)),	// e2
+		Array[Tuple2[Int,Int]]( ( 9, 5), (10, 7), (12, 1)),	// e3
+		Array[Tuple2[Int,Int]]( ( 4, 6), ( 7, 2), (16, 0)),	// e4
+		Array[Tuple2[Int,Int]]( (14, 7), (16, 1), (17, 3)),	// e5
+		Array[Tuple2[Int,Int]]( (16, 2), (22, 4), (25, 0)),	// e6
+		Array[Tuple2[Int,Int]]( (12, 5), (15, 1), (16, 3)),	// e7
+		Array[Tuple2[Int,Int]]( ( 3,10), ( 4,11), (12, 9)),	// e8
+		Array[Tuple2[Int,Int]]( ( 4,10), ( 5,11), (14, 8)),	// e9
+		Array[Tuple2[Int,Int]]( (14,11), (22, 9), (23, 8)),	// e10
+		Array[Tuple2[Int,Int]]( (12,10), (21, 9), (22, 8))	// e11
+	)
 	
 	val edgeTable = Array[Int] (
 		0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
