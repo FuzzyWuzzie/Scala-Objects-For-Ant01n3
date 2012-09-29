@@ -12,7 +12,6 @@ import org.sofa.math.Rgba
 import org.sofa.math.Point3
 import org.sofa.math.Vector3
 
-// TODO XXX add Color
 class DynTriangleMesh(val size:Int) extends Mesh with SurfaceMesh with ColorableMesh {
 	
 	/** The mutable set of coordinates. */
@@ -120,6 +119,13 @@ class DynTriangleMesh(val size:Int) extends Mesh with SurfaceMesh with Colorable
 	def setNormal(i:Int, n:Vector3) { setNormal(i, n.x.toFloat, n.y.toFloat, n.z.toFloat) }
 
 	def setNormal(i:Int, x:Float, y:Float, z:Float) { setNormal(i, x, y, z, x, y, z, x, y, z) }
+	
+	def setNormal(i:Int, n0:Vector3, n1:Vector3, n2:Vector3) {
+		setNormal(i,
+			n0.x.toFloat, n0.y.toFloat, n0.z.toFloat,
+			n1.x.toFloat, n1.y.toFloat, n1.z.toFloat,
+			n2.x.toFloat, n2.y.toFloat, n2.z.toFloat)
+	}
 	
 	def setNormal(i:Int, x0:Float, y0:Float, z0:Float, x1:Float, y1:Float, z1:Float, x2:Float, y2:Float, z2:Float) {
 		val p = i*3*3

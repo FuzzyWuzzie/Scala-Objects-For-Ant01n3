@@ -534,6 +534,32 @@ trait NumberSeq extends IndexedSeq[Double] {
 			i += 1
 		}
 	}
+
+	/** Store in this number seq the maximum value component-wise with `other`. */
+	def maxBy(other:NumberSeq):ReturnType = {
+		checkSizes(other)
+	    val n = scala.math.min(size, other.size)
+	    var i = 0
+	    while(i<n) {
+	    	if(data(i) < other(i))
+	    		data(i) = other(i)
+	    	i += 1
+	    }
+	    this.asInstanceOf[ReturnType]
+	}
+	
+	/** Store in this number seq the minimum value component-wise with `other`. */
+	def minBy(other:NumberSeq):ReturnType = {
+		checkSizes(other)
+	    val n = scala.math.min(size, other.size)
+	    var i = 0
+	    while(i<n) {
+	    	if(data(i) > other(i))
+	    		data(i) = other(i)
+	    	i += 1
+	    }
+	    this.asInstanceOf[ReturnType]
+	}
 }
 
 //===================================================

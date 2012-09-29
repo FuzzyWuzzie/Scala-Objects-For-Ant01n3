@@ -218,6 +218,8 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
         draw(gl.TRIANGLES)
     }
 
+    def indices:ElementBuffer = elements
+    
     /** I-th stored buffer. Buffers are stored in the order they where first given at creation. */
     def buffer(i:Int):ArrayBuffer = buffers(i)._2
     

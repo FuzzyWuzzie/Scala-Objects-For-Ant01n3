@@ -40,6 +40,13 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
         bindBuffer(gl.ELEMENT_ARRAY_BUFFER, oid)
     }
     
+    def update(from:Int, to:Int, data:IntBuffer) {
+    	bind
+    	data.rewind
+    	bufferSubData(gl.ELEMENT_ARRAY_BUFFER, from, (to-from), data)
+    	checkErrors
+    }
+    
     override def dispose() {
         checkId
         bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
