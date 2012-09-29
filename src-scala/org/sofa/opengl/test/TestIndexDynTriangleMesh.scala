@@ -131,7 +131,6 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 	
 	def initThing() {
 		import math._
-
 		
 		thingMesh.setPoint(0, 0, 0, 0)
 		thingMesh.setPoint(1, 1, 0, 0)
@@ -208,6 +207,16 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 			thingMesh.setPoint(i, p)
 			//thingMesh.autoComputeNormal(i)
 		}
+		thingMesh.setPointNormal(0, 0, 0, 1)
+		thingMesh.setPointNormal(1, 0, 0, 1)
+		thingMesh.setPointNormal(2, 0, 0, 1)
+		thingMesh.setPointNormal(3, 0, 0, 1)
+		thingMesh.setPointNormal(4, 0, 0, 1)
+		thingMesh.setPointNormal(5, 0, 0, 1)
+		thingMesh.setPointNormal(6, 0, 0, 1)
+		thingMesh.setPointNormal(7, 0, 0, 1)
+		thingMesh.setPointNormal(8, 0, 0, 1)
+		thingMesh.setPointNormal(9, 0, 0, 1)
 		
 		thingMesh.updateVertexArray(gl, "vertices", "colors", "normals")
 	}

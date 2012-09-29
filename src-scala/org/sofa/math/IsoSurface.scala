@@ -397,6 +397,9 @@ class IsoSurface(val cellSize:Double) {
 	/** The set of cubes used to evaluate the surface. */
 	val cubes = new ArrayBuffer[IsoCube]()
 	
+	/** List of non-empty cubes. */
+	val nonEmptyCubes = new ArrayBuffer[IsoCube]()
+	
 	/** The hash map of cubes indexed by their position in integer space. */
 	val spaceHash = new HashMap[HashPoint3,IsoCube]()
 	
@@ -458,6 +461,10 @@ class IsoSurface(val cellSize:Double) {
 			
 			spaceHash += ((p, cube))
 			cubes += cube
+			
+			if(!cube.isEmpty) {
+				nonEmptyCubes += cube
+			}
 			
 			cube
 		}

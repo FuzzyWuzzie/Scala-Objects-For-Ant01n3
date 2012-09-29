@@ -24,25 +24,30 @@ class DynIndexedTriangleMesh(val size:Int) extends Mesh with IndexedMesh with Su
 	/** The mutable set of normals, changes with the triangles. */
 	protected lazy val N:FloatBuffer = allocateNormals
 	
+	/** The mutable set of elements to draw. */
 	protected lazy val I:IntBuffer = allocateIndices
 	
 	/** Start position of the last modification inside the index array. */
-	protected var ibeg = 0
+	protected var ibeg = size
 	
 	/** End position of the last modification inside the index array. */
 	protected var iend = 0
 	
     /** Start position of the last modification inside the coordinates array. */
-    protected var vbeg = 0
+    protected var vbeg = size
     
     /** End position of the last modification inside the coordinates array. */
-    protected var vend = size
+    protected var vend = 0
+    
+    protected var nbeg = size
+    
+    protected var nend = 0
     
     /** Start position of the last modification inside the color array. */
-    protected var cbeg = 0
+    protected var cbeg = size
     
     /** End position of the last modification inside the color array. */
-    protected var cend = size
+    protected var cend = 0
 
     /** Last vertex array created using newVertexArray(). */
     protected var vertexArray:VertexArray = null
@@ -69,13 +74,29 @@ class DynIndexedTriangleMesh(val size:Int) extends Mesh with IndexedMesh with Su
 	
 	override def hasIndices = true
 	
-	def setPointColor(i:Int, c:Rgba) {
+	def setPoint(i:Int, p:Point3) { setPoint(i, p.x.toFloat, p.y.toFloat, p.z.toFloat) }
+
+	def setPoint(i:Int, x:Float, y:Float, z:Float) {
+		val p = i*3
+		
+		V(p)   = x
+		V(p+1) = y
+		V(p+2) = z
+		
+		if(i < vbeg) vbeg = i
+		if(i+1 > vend) vend = i+1
+//Console.err.println("setPoint(%d -> %d)".format(vbeg, vend))
+	}
+	
+	def setPointColor(i:Int, c:Rgba) { setPointColor(i, c.red.toFloat, c.green.toFloat, c.blue.toFloat, c.alpha.toFloat) }
+	
+	def setPointColor(i:Int, red:Float, green:Float, blue:Float, alpha:Float) {
 		val p = i*4
 		
-		C(p  ) = c.red.toFloat
-		C(p+1) = c.green.toFloat
-		C(p+2) = c.blue.toFloat
-		C(p+3) = c.alpha.toFloat
+		C(p  ) = red
+		C(p+1) = green
+		C(p+2) = blue
+		C(p+3) = alpha
 		
 		if(i < cbeg) cbeg = i
 		if(i+1 > cend) cend = i + 1
@@ -90,21 +111,8 @@ class DynIndexedTriangleMesh(val size:Int) extends Mesh with IndexedMesh with Su
 		N(p+1) = y
 		N(p+2) = z
 		
-		if(i > vbeg) vbeg = i
-		if(i+1 < vend) vend = i+1
-	}
-	
-	def setPoint(i:Int, p:Point3) { setPoint(i, p.x.toFloat, p.y.toFloat, p.z.toFloat) }
-
-	def setPoint(i:Int, x:Float, y:Float, z:Float) {
-		val p = i*3
-		
-		V(p)   = x
-		V(p+1) = y
-		V(p+2) = z
-		
-		if(i < vbeg) vbeg = i
-		if(i+1 > vend) vend = i+1
+		if(i < nbeg) nbeg = i
+		if(i+1 > nend) nend = i+1
 	}
 	
 	def setTriangle(i:Int, a:Int, b:Int, c:Int) {
@@ -114,8 +122,9 @@ class DynIndexedTriangleMesh(val size:Int) extends Mesh with IndexedMesh with Su
 		I(p+1) = b
 		I(p+2) = c
 		
-		if(i < ibeg) ibeg = i
-		if(i+1 > iend) iend = i+1
+		if(p < ibeg) ibeg = p
+		if(p+3 > iend) iend = p+3
+//Console.err.println("#setTriangle(%d -> %d)".format(ibeg, iend))
 	}
 	
 	def getPoint(i:Int):Point3 = {
@@ -131,25 +140,25 @@ class DynIndexedTriangleMesh(val size:Int) extends Mesh with IndexedMesh with Su
 	def drawAs():Int = GL_TRIANGLES
 	
     override def newVertexArray(gl:SGL, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
-		cbeg = size; cend = 0; vbeg = size; vend = 0
+		cbeg = size; cend = 0; vbeg = size; vend = 0; ibeg = size; iend = 0
 		vertexArray = super.newVertexArray(gl, locations)
 		vertexArray
 	}
 
     override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
-		cbeg = size; cend = 0; vbeg = size; vend = 0
+		cbeg = size; cend = 0; vbeg = size; vend = 0; ibeg = size; iend = 0
 		vertexArray = super.newVertexArray(gl, drawMode, locations)
 		vertexArray
 	}
     
 	override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple2[String,Int]*):VertexArray = {
-		cbeg = size; cend = 0; vbeg = size; vend = 0
+		cbeg = size; cend = 0; vbeg = size; vend = 0; ibeg = size; iend = 0
     	vertexArray = super.newVertexArray(gl, drawMode, locations:_*)
     	vertexArray
     }
     
     override def newVertexArray(gl:SGL, locations:Tuple2[String,Int]*):VertexArray = {
-		cbeg = size; cend = 0; vbeg = size; vend = 0
+		cbeg = size; cend = 0; vbeg = size; vend = 0; ibeg = size; iend = 0
     	vertexArray = super.newVertexArray(gl, locations:_*)
     	vertexArray
     }
@@ -160,19 +169,24 @@ class DynIndexedTriangleMesh(val size:Int) extends Mesh with IndexedMesh with Su
 		if(vertexArray ne null) {
 			if(vend > vbeg) {
 				vertexArray.buffer(verticesName).update(vbeg, vend, vertices)
-				vertexArray.buffer(normalsName).update(vbeg, vend, normals)
 				
 				vbeg = size
 				vend = 0
 			}
-			if(cend > cbeg) {
+			if((normalsName ne null) && (nend > nbeg)) {
+				vertexArray.buffer(normalsName).update(nbeg, nend, normals)
+				
+				nbeg = size
+				nend = 0
+			}
+			if((colorsName ne null) && (cend > cbeg)) {
 				vertexArray.buffer(colorsName).update(cbeg, cend, colors)
 				
 				cbeg = size
 				cend = 0
 			}
 			if(iend > ibeg) {
-				vertexArray.indices.update(ibeg*3, iend*3, indices)
+				vertexArray.indices.update(ibeg, iend, indices)
 				
 				ibeg = size
 				iend = 0

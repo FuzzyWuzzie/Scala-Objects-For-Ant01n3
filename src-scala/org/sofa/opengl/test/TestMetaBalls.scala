@@ -101,6 +101,9 @@ class TestMetaBalls extends SurfaceRenderer {
 	var isoDiv = 6
 	val isoCellSize = 1.0 / isoDiv
 	val isoLimit = 10.0
+	var nTriangles = 0
+	var isoSurfaceComp:IsoSurface = null
+//	var isoSurfaceComp:IsoSurfaceSimple = null
 	
 	var spaceHash = new SpatialHash[MetaBall](bucketSize)
 	var balls:ArrayBuffer[MetaBall] = null
@@ -127,7 +130,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		scroll         = ctrl.scroll
 		close          = { surface => sys.exit }
 		surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
-							camera, "Test SPH", caps,
+							camera, "Metaballs !", caps,
 							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
 	}
 	
@@ -154,18 +157,20 @@ class TestMetaBalls extends SurfaceRenderer {
 //		gl.cullFace(gl.BACK)
 //		gl.frontFace(gl.CW)
 		gl.disable(gl.BLEND)
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-		gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
+//		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+//		gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
 	}
 	
 	def initShaders() {
-		phongShad = ShaderProgram(gl, "phong shader", "es2/phonghi.vert.glsl", "es2/phonghi.frag.glsl")
+		phongShad     = ShaderProgram(gl, "phong shader", "es2/phonghi.vert.glsl", "es2/phonghi.frag.glsl")
 		particlesShad = ShaderProgram(gl, "particles shader", "es2/particles.vert.glsl", "es2/particles.frag.glsl")
-		plainShad = ShaderProgram(gl, "plain shader", "es2/plainColor.vert.glsl", "es2/plainColor.frag.glsl")
+		plainShad     = ShaderProgram(gl, "plain shader", "es2/plainColor.vert.glsl", "es2/plainColor.frag.glsl")
 	}
 	
 	def initGeometry() {
 		initBalls(size)
+
+		initIsoSurface
 		
 		var v = phongShad.getAttribLocation("position")
 		var c = phongShad.getAttribLocation("color")
@@ -178,11 +183,14 @@ class TestMetaBalls extends SurfaceRenderer {
 		c = plainShad.getAttribLocation("color")
 		
 		wcubeMesh = new WireCube(bucketSize.toFloat)
+		wcube = wcubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		
 		wcubeMesh.setColor(Rgba(1, 1, 1, 0.1))
 		wcubeIsoMesh = new WireCube(isoCellSize.toFloat)
-		wcube = wcubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		
 		wcubeIsoMesh.setColor(Rgba(1, 1, 1, 0.2))
 		wcubeIso1 = wcubeIsoMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		
 		wcubeIsoMesh.setColor(Rgba(1, 1, 1, 0.1))
 		wcubeIso2 = wcubeIsoMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 		
@@ -193,12 +201,58 @@ class TestMetaBalls extends SurfaceRenderer {
 		
 		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("colors", c))
 
-//		for(i <- 0 until maxDynTriangles) {
-//			isoSurfaceMesh.setColor(i, Rgba.white)
-//		}
 		for(i <- 0 until maxDynTriangles*3) {
-			isoSurfaceMesh.setPointColor(i, Rgba.white)
-		}
+			isoSurfaceMesh.setPointColor(i, Rgba.red)
+		}		
+	}
+	
+	protected def initIsoSurface() {
+//		for(i <- 0 until maxDynTriangles*3) {
+//			isoSurfaceMesh.setPointColor(i, Rgba.white)
+//		}		
+		isoSurfaceMesh.setPoint(0, 0, 0, 0)
+		isoSurfaceMesh.setPoint(1, 1, 0, 0)
+		isoSurfaceMesh.setPoint(2, 0.5f, 1, 0)
+		isoSurfaceMesh.setPoint(3, -0.5f, 1, 0)
+		isoSurfaceMesh.setPoint(4, -1, 0, 0)
+		isoSurfaceMesh.setPoint(5, -0.5f, -1, 0)
+		isoSurfaceMesh.setPoint(6, 0.5f, -1, 0)
+		isoSurfaceMesh.setPoint(7, 1.5f, -1, 0)
+		isoSurfaceMesh.setPoint(8, 0, 2, 0)
+		isoSurfaceMesh.setPoint(9, -1.5f, -1, 0)
+		
+		isoSurfaceMesh.setPointColor(0, Rgba.white)
+		isoSurfaceMesh.setPointColor(1, Rgba.red)
+		isoSurfaceMesh.setPointColor(2, Rgba.green)
+		isoSurfaceMesh.setPointColor(3, Rgba.blue)
+		isoSurfaceMesh.setPointColor(4, Rgba.cyan)
+		isoSurfaceMesh.setPointColor(5, Rgba.magenta)
+		isoSurfaceMesh.setPointColor(6, Rgba.yellow)
+		isoSurfaceMesh.setPointColor(7, Rgba.grey20)
+		isoSurfaceMesh.setPointColor(8, Rgba.grey50)
+		isoSurfaceMesh.setPointColor(9, Rgba.grey80)
+		
+		isoSurfaceMesh.setPointNormal(0, 0, 0, 1)
+		isoSurfaceMesh.setPointNormal(1, 0, 0, 1)
+		isoSurfaceMesh.setPointNormal(2, 0, 0, 1)
+		isoSurfaceMesh.setPointNormal(3, 0, 0, 1)
+		isoSurfaceMesh.setPointNormal(4, 0, 0, 1)
+		isoSurfaceMesh.setPointNormal(5, 0, 0, 1)
+		isoSurfaceMesh.setPointNormal(6, 0, 0, 1)
+		isoSurfaceMesh.setPointNormal(7, 0, 0, 1)
+		isoSurfaceMesh.setPointNormal(8, 0, 0, 1)
+		isoSurfaceMesh.setPointNormal(9, 0, 0, 1)
+		
+		isoSurfaceMesh.setTriangle(0, 0, 1, 2)
+		isoSurfaceMesh.setTriangle(1, 0, 2, 3)
+		isoSurfaceMesh.setTriangle(2, 0, 3, 4)
+		isoSurfaceMesh.setTriangle(3, 0, 4, 5)
+		isoSurfaceMesh.setTriangle(4, 0, 5, 6)
+		isoSurfaceMesh.setTriangle(5, 0, 6, 1)
+		isoSurfaceMesh.setTriangle(6, 3, 2, 8)
+		isoSurfaceMesh.setTriangle(7, 4, 9, 5)
+		isoSurfaceMesh.setTriangle(8, 1, 6, 7)
+		nTriangles = 9
 	}
 	
 	protected def initBalls(n:Int) {
@@ -224,9 +278,8 @@ class TestMetaBalls extends SurfaceRenderer {
 	def display(surface:Surface) {
 
 		updateParticles
-
+		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-		gl.frontFace(gl.CW)
 		
 		camera.setupView
 
@@ -273,10 +326,6 @@ class TestMetaBalls extends SurfaceRenderer {
 		T1 = T
 	}
 
-	var nTriangles = 0
-	var isoSurfaceComp:IsoSurface = null
-//	var isoSurfaceComp:IsoSurfaceSimple = null
-
 	protected def drawSpaceHash() {
 		if(showSpaceHash) {
 			var cs = bucketSize
@@ -311,11 +360,11 @@ class TestMetaBalls extends SurfaceRenderer {
 
 	protected def drawIsoSurface() {
 		if(nTriangles > 0) {
+println("drawing %d triangles (%d points)".format(nTriangles, nTriangles*3))
 			phongShad.use
 			useLights(phongShad)
 			camera.uniformMVP(phongShad)
-//			isoSurface.draw(isoSurfaceMesh.drawAs, nTriangles*3)
-			isoSurface.draw(isoSurfaceMesh.drawAs, nTriangles)
+			isoSurface.draw(isoSurfaceMesh.drawAs, nTriangles*3)
 		}
 	}
 	
@@ -350,46 +399,34 @@ class TestMetaBalls extends SurfaceRenderer {
 
 		// Now build the mesh
 
-//		if(isoSurfaceComp.triangles.size > 0) {
 		if(isoSurfaceComp.triPoints.size > 0) {
+			
+			// Insert the parallel vertex, normal and color arrays.
+			
 			var i = 0
+			var n = isoSurfaceComp.triPoints.size
+			
+			while(i<n) {
+				isoSurfaceMesh.setPoint(i, isoSurfaceComp.triPoints(i))
+				isoSurfaceMesh.setPointNormal(i, isoSurfaceComp.normals(i))
+//				isoSurfaceMesh.setPointColor(i, Rgba.red)
+				i += 1
+			}
+			
+			// Insert the triangles as indices
+			
 			nTriangles = 0
-			var cubeCount = 0
-			
-			// Insert the points
-			
-//			var n = isoSurfaceComp.triPoints.size
-//
-//			// Insert the parallel vertex, normal and color arrays.
-//			
-//			while(i<n) {
-//				isoSurfaceMesh.setPoint(i, isoSurfaceComp.triPoints(i))
-//				isoSurfaceMesh.setPointNormal(i, isoSurfaceComp.normals(i))
-//				//isoSurfaceMesh.setPointColor(i, Rgba.red)
-//				i += 1
-//			}
-//			
-//			// Insert the triangles as indices
-//			
-//			i = 0
-//			isoSurfaceComp.cubes.foreach { cube =>
-//				if(cube.triangles ne null) {
-//					cubeCount += 1
-//					cube.triangles.foreach { triangle =>
-//						nTriangles += 1
-//						isoSurfaceMesh.setTriangle(i, triangle.a, triangle.b, triangle.c)
-//						i += 1
-//					}
-//				}
-//			}
+			isoSurfaceComp.nonEmptyCubes.foreach { cube =>
+				if(cube.triangles ne null) {
+					cube.triangles.foreach { triangle =>
+						if(nTriangles < maxDynTriangles) {
+							isoSurfaceMesh.setTriangle(nTriangles, triangle.a, triangle.b, triangle.c)
+							nTriangles += 1
+						}
+					}
+				}
+			}
 
-			isoSurfaceMesh.setPoint(0, -1, 0, 0); isoSurfaceMesh.setPointNormal(0, 0, 0, 1); isoSurfaceMesh.setPointColor(0, Rgba.red)
-			isoSurfaceMesh.setPoint(1,  1, 0, 0); isoSurfaceMesh.setPointNormal(1, 0, 0, 1); isoSurfaceMesh.setPointColor(1, Rgba.blue)
-			isoSurfaceMesh.setPoint(2,  0, 1, 0); isoSurfaceMesh.setPointNormal(2, 0, 0, 1); isoSurfaceMesh.setPointColor(2, Rgba.green)
-			
-			isoSurfaceMesh.setTriangle(0, 0, 1, 2)
-			nTriangles = 1
-			
 //			isoSurfaceComp.cubes.foreach { cube =>
 //				if(cube.triangles ne null) {
 //					cubeCount += 1
@@ -414,20 +451,11 @@ class TestMetaBalls extends SurfaceRenderer {
 //				}
 //			}
 			
-			Console.err.println("%s triangles < %d cubes !!".format(nTriangles, cubeCount))
-			
-//			isoSurfaceComp.triangles.foreach { triangle =>
-//				if(i < maxDynTriangles) {
-//					isoSurfaceMesh.setTriangle(i, triangle.p0, triangle.p1, triangle.p2)
-//					isoSurfaceMesh.autoComputeNormal(i)
-//				}
-//				i += 1
-//			}
-			
 			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals")
 		}
 	}
 
+	
 	protected def updateParticles() {
 		val potential = spaceHash.neighborsInBox(balls(0), 4)
 		
