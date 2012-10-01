@@ -240,18 +240,21 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 				
 				val j = triangles.size
 				triangles += new IsoTriangle(a, b, c)
+				
+				surface.triangleCount += 1
 
-				// Reference the triangle in the points to triangles set.
-				// XXX We may probably use a simple array, and not a hash set here XXX
+				if(surface.autoNormals) {
+					// Reference the triangle in the points to triangles set.
+					// XXX We may probably use a simple array, and not a hash set here XXX
 				
-				if(surface.pointsTri(a) eq null) surface.pointsTri(a) = new HashSet[(Int,Int)]()
-				if(surface.pointsTri(b) eq null) surface.pointsTri(b) = new HashSet[(Int,Int)]()
-				if(surface.pointsTri(c) eq null) surface.pointsTri(c) = new HashSet[(Int,Int)]()
+					if(surface.pointsTri(a) eq null) surface.pointsTri(a) = new HashSet[(Int,Int)]()
+					if(surface.pointsTri(b) eq null) surface.pointsTri(b) = new HashSet[(Int,Int)]()
+					if(surface.pointsTri(c) eq null) surface.pointsTri(c) = new HashSet[(Int,Int)]()
 				
-				surface.pointsTri(a) += ((index, j))
-				surface.pointsTri(b) += ((index, j))
-				surface.pointsTri(c) += ((index, j))
-				
+					surface.pointsTri(a) += ((index, j))
+					surface.pointsTri(b) += ((index, j))
+					surface.pointsTri(c) += ((index, j))
+				}
 				i += 3
 			}
 		}
@@ -297,11 +300,8 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 		
 		if(i < 0) {
 			var p:Point3 = null
-			val cs = surface.cellSize
-//			val P0 = Point3(surface.points(p0)); P0 *= cs
-//			val P1 = Point3(surface.points(p1)); P1 *= cs
-			val P0  = surface.points(p0)
-			val P1  = surface.points(p1)
+			val P0 = surface.points(p0)
+			val P1 = surface.points(p1)
 
 			if(IsoSurface.interpolation) {
 				// Interpolated on the edge.
@@ -315,9 +315,6 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 						P0.x + mu * (P1.x - P0.x),
 						P0.y + mu * (P1.y - P0.y),
 						P0.z + mu * (P1.z - P0.z))
-						
-//					surface.min.minBy(p)
-//					surface.max.maxBy(p)
 				}
 			} else {
 				// In the middle of the edge.
@@ -333,10 +330,14 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 			i = surface.triPoints.size
 			surface.triPoints += p
 			surface.pointsTri += null
-			surface.normals   += null
-			
+
 			assert(surface.triPoints.size == surface.pointsTri.size)
-			assert(surface.triPoints.size == surface.normals.size)
+			
+			if(surface.autoNormals) {
+				surface.normals   += null
+			
+				assert(surface.triPoints.size == surface.normals.size)
+			}			
 		}
 		
 		i
@@ -376,8 +377,7 @@ class IsoTriangle(val a:Int, val b:Int, val c:Int) {
 }
 
 class IsoSurface(val cellSize:Double) {
-//	val max = Point3(Double.MinValue, Double.MinValue, Double.MinValue)
-//	val min = Point3(Double.MaxValue, Double.MaxValue, Double.MaxValue)
+	var autoNormals = true
 	
 	/** Set of evaluation points, where the iso-surface values are taken. */
 	val points = new ArrayBuffer[Point3]()
@@ -403,17 +403,27 @@ class IsoSurface(val cellSize:Double) {
 	/** The hash map of cubes indexed by their position in integer space. */
 	val spaceHash = new HashMap[HashPoint3,IsoCube]()
 	
+	/** Number of triangles computed by adding cubes. */
+	var triangleCount = 0
+	
+	def autoComputeNormals(on:Boolean) {
+		autoNormals = on
+	}
+	
 	def addCubesAt(x:Int, y:Int, z:Int, countX:Int, countY:Int, countZ:Int, eval:(Point3)=>Double, isoLevel:Double) {
 		var zz = 0
 		var yy = 0
 		var xx = 0
 		
+//Console.err.println("adding cubes at (%d,%d,%d) count (%d,%d,%d):".format(x,y,z, countX, countY, countZ))
 		while(zz < countZ) {
 			yy = 0
 			while(yy < countY) {
 				xx = 0
 				while(xx < countX) {
-					addCubeAt(x+xx, y+yy, z+zz, eval, isoLevel)
+//Console.err.print("  + (%d,%d,%d)".format(x+xx, y+yy, z+zz) )
+					val cube = addCubeAt(x+xx, y+yy, z+zz, eval, isoLevel)
+//Console.err.println(" OK => %s".format(if(cube.isEmpty)"empty" else "%d triangles".format(cube.triangles.size)))
 					xx += 1
 				}
 				yy += 1
@@ -431,25 +441,40 @@ class IsoSurface(val cellSize:Double) {
 	}
 	
 	def computeNormals() {
-		var i = 0
+		if(autoNormals) {
+			var i = 0
 		
-		while(i < pointsTri.length) {
-			val normal = Vector3(0,0,0)
+			while(i < pointsTri.length) {
+				val normal = Vector3(0,0,0)
 			
-			pointsTri(i).foreach { item =>  
-				val triangle = cubes(item._1).triangles(item._2)
-				normal += triangle.getNormal(this)
+				pointsTri(i).foreach { item =>  
+					val triangle = cubes(item._1).triangles(item._2)
+					normal += triangle.getNormal(this)
+				}
+			
+				normal.normalize
+				normals(i) = normal
+			
+				i += 1
 			}
-			
-			normal.normalize
-			normals(i) = normal
-			
-			i += 1
 		}
+	}
+	
+	def nearestCubePos(x:Double, y:Double, z:Double):HashPoint3 = {
+		var xx = x/cellSize
+		var yy = y/cellSize
+		var zz = z/cellSize
+		
+//		if(xx < 0) xx -= 1
+//		if(yy < 0) yy -= 1
+//		if(zz < 0) zz -= 1
+		
+		HashPoint3(xx.toInt, yy.toInt, zz.toInt)
 	}
 	
 	def addCubeAt(x:Int, y:Int, z:Int, eval:(Point3)=>Double, isoLevel:Double):IsoCube = {
 		val p = HashPoint3(x,y,z)
+//if(spaceHash.contains(p)) Console.err.print (" => already present") else Console.err.print(" => ## creating ##")
 		spaceHash.get(p).getOrElse {
 			val i = cubes.size
 			var cube = new IsoCube(i, p, this)

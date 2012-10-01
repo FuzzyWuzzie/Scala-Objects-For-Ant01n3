@@ -31,14 +31,21 @@ import org.sofa.math.IsoSurfaceSimple
 import org.sofa.opengl.mesh.DynTriangleMesh
 import org.sofa.math.IsoSurface
 import org.sofa.opengl.mesh.DynIndexedTriangleMesh
+import org.sofa.opengl.surface.KeyEvent
 
 object TestMetaBalls {
 	def main(args:Array[String]) = (new TestMetaBalls).test
 }
 
+object MetaBall {
+	val speed = 0.01
+}
+
 class MetaBall(xx:Double, yy:Double, zz:Double) extends SpatialPoint {
 	val x = Point3(xx, yy, zz)
-	val v = Vector3((math.random*2-1)*0.01, (math.random*2-1)*0.01, (math.random*2-1)*0.01)
+	val v = Vector3((math.random*2-1)*MetaBall.speed,
+			        (math.random*2-1)*MetaBall.speed,
+			        (math.random*2-1)*MetaBall.speed)
 	def from:Point3 = x
 	def to:Point3 = x
 	def move() {
@@ -58,8 +65,38 @@ class MetaBall(xx:Double, yy:Double, zz:Double) extends SpatialPoint {
 }
 
 class TestMetaBalls extends SurfaceRenderer {
+	/** Show the space hash used to fasten particles retrieving ? */
+	val showSpaceHash  = true
+	
+	/** Show the cubes used to compute the iso-surface ? */
+	val showIsoCubes = true
+	
+	/** Max number of triangles to use to draw the iso-surface. */
+	val maxDynTriangles = 6000
+	
+	/** Number meta-balls. */
+	val metaBallCount = 2
+	
+	/** Size of a space-hash cube. */
+	val bucketSize = 0.5
+	
+	/** Number of iso-cubes inside a space hash cube. */
+	var isoDiv = 2.0
+	
+	val isoCellSize = bucketSize / isoDiv
+	
+	/** Limit of the iso-surface in the implicit function used to define the surface. */
+	val isoLimit = 10.0
+	
+	val clearColor = Rgba.grey20
+	val planeColor = Rgba.grey80
+	val light1 = Vector4(2, 2, 2, 1)
+
+	
 	var gl:SGL = null
 	var surface:Surface = null
+
+	val random = new scala.util.Random()
 	
 	val projection:Matrix4 = new ArrayMatrix4
 	val modelview = new MatrixStack(new ArrayMatrix4)
@@ -68,7 +105,6 @@ class TestMetaBalls extends SurfaceRenderer {
 	var particlesShad:ShaderProgram = null
 	var plainShad:ShaderProgram = null
 	
-	var plane:VertexArray = null
 	var axis:VertexArray = null
 	var particles:VertexArray = null	
 	var wcube:VertexArray = null
@@ -77,34 +113,16 @@ class TestMetaBalls extends SurfaceRenderer {
 	var isoSurface:VertexArray = null
 	
 	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 4, 4)
 	var particlesMesh:DynPointsMesh = null
 	var wcubeMesh:WireCube = null
 	var wcubeIsoMesh:WireCube = null
-	val maxDynTriangles = 6000
 	var isoSurfaceMesh:DynIndexedTriangleMesh = new DynIndexedTriangleMesh(maxDynTriangles)
-//	var isoSurfaceMesh:DynTriangleMesh = new DynTriangleMesh(maxDynTriangles)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.grey20
-	val planeColor = Rgba.grey80
-	val light1 = Vector4(2, 2, 2, 1)
-	
-	val showSpaceHash = false
-	val showIsoCubes = false
-	
-	val size = 10
-	val bucketSize = 0.5
-	val random = new scala.util.Random()
-	var isoDiv = 6
-	val isoCellSize = 1.0 / isoDiv
-	val isoLimit = 10.0
-	var nTriangles = 0
+	var play = true
 	var isoSurfaceComp:IsoSurface = null
-//	var isoSurfaceComp:IsoSurfaceSimple = null
-	
 	var spaceHash = new SpatialHash[MetaBall](bucketSize)
 	var balls:ArrayBuffer[MetaBall] = null
 	
@@ -121,7 +139,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		caps.setSampleBuffers(true)
 		
 		camera         = new Camera()
-		ctrl           = new MyCameraController(camera, light1)
+		ctrl           = new MetaBallsCameraController(camera, this)
 		initSurface    = initializeSurface
 		frame          = display
 		surfaceChanged = reshape
@@ -141,7 +159,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		initShaders
 		initGeometry
 		
-		camera.viewCartesian(5, 2, 5)
+		camera.viewCartesian(3, 3, 3)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -153,12 +171,13 @@ class TestMetaBalls extends SurfaceRenderer {
 		gl.clearDepth(1f)
 		gl.enable(gl.DEPTH_TEST)
 		gl.disable(gl.CULL_FACE)
-//		gl.enable(gl.CULL_FACE)
-//		gl.cullFace(gl.BACK)
-//		gl.frontFace(gl.CW)
 		gl.disable(gl.BLEND)
-//		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-//		gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+		gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
+	}
+	
+	def pausePlay() {
+		play = !play
 	}
 	
 	def initShaders() {
@@ -168,15 +187,12 @@ class TestMetaBalls extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
-		initBalls(size)
+		initBalls(metaBallCount)
 
-		initIsoSurface
-		
 		var v = phongShad.getAttribLocation("position")
 		var c = phongShad.getAttribLocation("color")
 		var n = phongShad.getAttribLocation("normal")
 		
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 
 		v = plainShad.getAttribLocation("position")
@@ -188,10 +204,10 @@ class TestMetaBalls extends SurfaceRenderer {
 		wcubeMesh.setColor(Rgba(1, 1, 1, 0.1))
 		wcubeIsoMesh = new WireCube(isoCellSize.toFloat)
 		
-		wcubeIsoMesh.setColor(Rgba(1, 1, 1, 0.2))
+		wcubeIsoMesh.setColor(Rgba(1, 0, 0, 0.2))
 		wcubeIso1 = wcubeIsoMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 		
-		wcubeIsoMesh.setColor(Rgba(1, 1, 1, 0.1))
+		wcubeIsoMesh.setColor(Rgba(1, 0, 0, 0.1))
 		wcubeIso2 = wcubeIsoMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 		
 		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
@@ -206,70 +222,16 @@ class TestMetaBalls extends SurfaceRenderer {
 		}		
 	}
 	
-	protected def initIsoSurface() {
-//		for(i <- 0 until maxDynTriangles*3) {
-//			isoSurfaceMesh.setPointColor(i, Rgba.white)
-//		}		
-		isoSurfaceMesh.setPoint(0, 0, 0, 0)
-		isoSurfaceMesh.setPoint(1, 1, 0, 0)
-		isoSurfaceMesh.setPoint(2, 0.5f, 1, 0)
-		isoSurfaceMesh.setPoint(3, -0.5f, 1, 0)
-		isoSurfaceMesh.setPoint(4, -1, 0, 0)
-		isoSurfaceMesh.setPoint(5, -0.5f, -1, 0)
-		isoSurfaceMesh.setPoint(6, 0.5f, -1, 0)
-		isoSurfaceMesh.setPoint(7, 1.5f, -1, 0)
-		isoSurfaceMesh.setPoint(8, 0, 2, 0)
-		isoSurfaceMesh.setPoint(9, -1.5f, -1, 0)
-		
-		isoSurfaceMesh.setPointColor(0, Rgba.white)
-		isoSurfaceMesh.setPointColor(1, Rgba.red)
-		isoSurfaceMesh.setPointColor(2, Rgba.green)
-		isoSurfaceMesh.setPointColor(3, Rgba.blue)
-		isoSurfaceMesh.setPointColor(4, Rgba.cyan)
-		isoSurfaceMesh.setPointColor(5, Rgba.magenta)
-		isoSurfaceMesh.setPointColor(6, Rgba.yellow)
-		isoSurfaceMesh.setPointColor(7, Rgba.grey20)
-		isoSurfaceMesh.setPointColor(8, Rgba.grey50)
-		isoSurfaceMesh.setPointColor(9, Rgba.grey80)
-		
-		isoSurfaceMesh.setPointNormal(0, 0, 0, 1)
-		isoSurfaceMesh.setPointNormal(1, 0, 0, 1)
-		isoSurfaceMesh.setPointNormal(2, 0, 0, 1)
-		isoSurfaceMesh.setPointNormal(3, 0, 0, 1)
-		isoSurfaceMesh.setPointNormal(4, 0, 0, 1)
-		isoSurfaceMesh.setPointNormal(5, 0, 0, 1)
-		isoSurfaceMesh.setPointNormal(6, 0, 0, 1)
-		isoSurfaceMesh.setPointNormal(7, 0, 0, 1)
-		isoSurfaceMesh.setPointNormal(8, 0, 0, 1)
-		isoSurfaceMesh.setPointNormal(9, 0, 0, 1)
-		
-		isoSurfaceMesh.setTriangle(0, 0, 1, 2)
-		isoSurfaceMesh.setTriangle(1, 0, 2, 3)
-		isoSurfaceMesh.setTriangle(2, 0, 3, 4)
-		isoSurfaceMesh.setTriangle(3, 0, 4, 5)
-		isoSurfaceMesh.setTriangle(4, 0, 5, 6)
-		isoSurfaceMesh.setTriangle(5, 0, 6, 1)
-		isoSurfaceMesh.setTriangle(6, 3, 2, 8)
-		isoSurfaceMesh.setTriangle(7, 4, 9, 5)
-		isoSurfaceMesh.setTriangle(8, 1, 6, 7)
-		nTriangles = 9
-	}
-	
 	protected def initBalls(n:Int) {
-		balls = new ArrayBuffer[MetaBall](size)
+		balls = new ArrayBuffer[MetaBall](n)
 		particlesMesh = new DynPointsMesh(n) 
 		
-		var p = new MetaBall(0, 0, 0); balls += p; spaceHash.add(p); particlesMesh.setPoint(0, p.x); particlesMesh.setColor(0, Rgba.red)
-		val angle = (math.Pi*2) / (n-1)
-		var a = 0.0
-		
-		for(i <- 1 until n) {
-			p = new MetaBall(math.cos(a), 0, math.sin(a))
-			a += angle
+		for(i <- 0 until n) {
+			val p = new MetaBall(random.nextDouble*2-1, random.nextDouble*2-1, random.nextDouble*2-1)
 			balls += p
 			spaceHash.add(p)
 			particlesMesh.setPoint(i, p.x)
-			particlesMesh.setColor(i, Rgba.white)
+			particlesMesh.setColor(i, Rgba.magenta)
 		}
 	}
 	
@@ -277,19 +239,13 @@ class TestMetaBalls extends SurfaceRenderer {
 	
 	def display(surface:Surface) {
 
-		updateParticles
+		if(play)
+			updateParticles
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
 		camera.setupView
 
-		// Plane
-		
-//		phongShad.use
-//		useLights(phongShad)
-//		camera.uniformMVP(phongShad)
-//		plane.draw(planeMesh.drawAs)
-		
 		// Axis
 		
 		gl.enable(gl.BLEND)
@@ -321,9 +277,9 @@ class TestMetaBalls extends SurfaceRenderer {
 		surface.swapBuffers
 		gl.checkErrors
 		
-		val T = scala.compat.Platform.currentTime
-		println("%f fps".format( 1000.0 / (T-T1)))
-		T1 = T
+//		val T = scala.compat.Platform.currentTime
+//		println("%f fps".format( 1000.0 / (T-T1)))
+//		T1 = T
 	}
 
 	protected def drawSpaceHash() {
@@ -352,19 +308,19 @@ class TestMetaBalls extends SurfaceRenderer {
 					camera.setUniformMVP(plainShad)
 					if(!cube.isEmpty)
 						wcubeIso1.draw(wcubeIsoMesh.drawAs)
-					//	else wcubeIso2.draw(wcubeIsoMesh.drawAs)
+						else wcubeIso2.draw(wcubeIsoMesh.drawAs)
 				}
 			}
 		}
 	}
 
 	protected def drawIsoSurface() {
-		if(nTriangles > 0) {
-println("drawing %d triangles (%d points)".format(nTriangles, nTriangles*3))
+		if(isoSurfaceComp.triangleCount > 0) {
+//println("drawing %d triangles (%d points)".format(nTriangles, nTriangles*3))
 			phongShad.use
 			useLights(phongShad)
 			camera.uniformMVP(phongShad)
-			isoSurface.draw(isoSurfaceMesh.drawAs, nTriangles*3)
+			isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
 		}
 	}
 	
@@ -374,29 +330,12 @@ println("drawing %d triangles (%d points)".format(nTriangles, nTriangles*3))
 		// marching cubes never overlap a bucket boundary, their size is
 		// a multiple of the bucket size.
 		
-//		val cubesByBucket = 3
-//		val bucketSize = spaceHash.bucketSize
-//		var cubesSize = bucketSize / cubesByBucket
-//		isoSurfaceComp = new IsoSurfaceSimple(cubesSize)
-//		
-//		spaceHash.buckets.foreach { bucket =>
-//			val x = bucket._1.x * bucketSize
-//			val y = bucket._1.y * bucketSize
-//			val z = bucket._1.z * bucketSize
-//			
-//			isoSurfaceComp.addCubesAt(x, y, z, cubesByBucket, eval, 20)
-//		}
-		
-	
-//		isoSurfaceComp = new IsoSurfaceSimple(isoCellSize)
-//		isoSurfaceComp.addCubesAt(-2*isoDiv, -2*isoDiv, -2*isoDiv, 4*isoDiv, eval, isoLimit)
 		isoSurfaceComp = new IsoSurface(isoCellSize)
-		isoSurfaceComp.addCubesAt(-2*isoDiv, -2*isoDiv, -2*isoDiv, 4*isoDiv, 4*isoDiv, 4*isoDiv, eval, isoLimit)
-		isoSurfaceComp.computeNormals
-		
-//print("built %s tri-points, %s cubes, ".format(isoSurfaceComp.triPoints.size, isoSurfaceComp.cubes.size))
-//println("built %d triangles".format(isoSurfaceComp.triangles.size))
 
+		exploreSpaceHash
+
+//		exploreSpaceCube
+		
 		// Now build the mesh
 
 		if(isoSurfaceComp.triPoints.size > 0) {
@@ -408,53 +347,52 @@ println("drawing %d triangles (%d points)".format(nTriangles, nTriangles*3))
 			
 			while(i<n) {
 				isoSurfaceMesh.setPoint(i, isoSurfaceComp.triPoints(i))
-				isoSurfaceMesh.setPointNormal(i, isoSurfaceComp.normals(i))
+				isoSurfaceMesh.setPointNormal(i, evalNormal(isoSurfaceComp.triPoints(i))) //isoSurfaceComp.normals(i))
 //				isoSurfaceMesh.setPointColor(i, Rgba.red)
 				i += 1
 			}
 			
 			// Insert the triangles as indices
 			
-			nTriangles = 0
+			i = 0
 			isoSurfaceComp.nonEmptyCubes.foreach { cube =>
 				if(cube.triangles ne null) {
 					cube.triangles.foreach { triangle =>
-						if(nTriangles < maxDynTriangles) {
-							isoSurfaceMesh.setTriangle(nTriangles, triangle.a, triangle.b, triangle.c)
-							nTriangles += 1
+						if(i < maxDynTriangles) {
+							isoSurfaceMesh.setTriangle(i, triangle.a, triangle.b, triangle.c)
+							i += 1
 						}
 					}
 				}
 			}
-
-//			isoSurfaceComp.cubes.foreach { cube =>
-//				if(cube.triangles ne null) {
-//					cubeCount += 1
-//					cube.triangles.foreach { triangle =>
-//						if(i < maxDynTriangles) {
-//							nTriangles += 1
-//							val p0 = isoSurfaceComp.triPoints(triangle.a)
-//							val p1 = isoSurfaceComp.triPoints(triangle.b)
-//							val p2 = isoSurfaceComp.triPoints(triangle.c)
-//							isoSurfaceMesh.setTriangle(i, p0, p1, p2)
-//							val n0 = isoSurfaceComp.normals(triangle.a)
-//							val n1 = isoSurfaceComp.normals(triangle.b)
-//							val n2 = isoSurfaceComp.normals(triangle.c)
-//							isoSurfaceMesh.setNormal(i, n0, n1, n2)
-//							//isoSurfaceMesh.autoComputeNormal(i)
-//							//println("=> %s [%s, %s, %s]".format(triangle, p0, p1, p2))
-//						} else {
-//							println("HAHAHAHAHAHA!!!")
-//						}
-//						i += 1
-//					}
-//				}
-//			}
 			
+			assert(i == isoSurfaceComp.triangleCount)
+
 			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals")
 		}
 	}
+	
+	protected def exploreSpaceCube() {
+		isoSurfaceComp.autoComputeNormals(false)
+//		isoSurfaceComp.addCubesAt(-2*isoDiv, -2*isoDiv, -2*isoDiv, 4*isoDiv, 4*isoDiv, 4*isoDiv, eval, isoLimit)
+		isoSurfaceComp.addCubesAt((-2*isoDiv).toInt, (-2*isoDiv).toInt, (-2*isoDiv).toInt, (2*isoDiv).toInt, (4*isoDiv).toInt, (4*isoDiv).toInt, eval, isoLimit)
+		isoSurfaceComp.addCubesAt((-1*isoDiv).toInt, (-2*isoDiv).toInt, (-2*isoDiv).toInt, (2*isoDiv).toInt, (4*isoDiv).toInt, (4*isoDiv).toInt, eval, isoLimit)
+//		isoSurfaceComp.computeNormals
+	}
 
+	protected def exploreSpaceHash() {
+		spaceHash.buckets.foreach { bucket =>
+			val x = (bucket._1.x-1) * bucketSize
+			val y = (bucket._1.y-1) * bucketSize
+			val z = (bucket._1.z-1) * bucketSize
+			
+			val p = isoSurfaceComp.nearestCubePos(x, y, z)
+
+Console.err.println("-------------------------------")
+Console.err.println("# bucket %s start %s (count %f)".format(bucket._1, p, isoDiv*3))
+			isoSurfaceComp.addCubesAt(p.x, p.y, p.z, (isoDiv*3).toInt, (isoDiv*3).toInt, (isoDiv*3).toInt, eval, isoLimit)
+		}
+	}
 	
 	protected def updateParticles() {
 		val potential = spaceHash.neighborsInBox(balls(0), 4)
@@ -489,6 +427,20 @@ println("drawing %d triangles (%d points)".format(nTriangles, nTriangles*3))
 		value
 	}
 	
+	def evalNormal(x:Point3):Vector3 = {
+		val n = Vector3()
+		
+		balls.foreach { i =>
+			val d = Vector3(i.from, x)
+			val l = d.normalize
+			d /= l*l
+			n += d
+		}
+		
+		n.normalize
+		n
+	}
+	
 	def reshape(surface:Surface) {
 		camera.viewportPx(surface.width, surface.height)
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
@@ -501,4 +453,17 @@ println("drawing %d triangles (%d points)".format(nTriangles, nTriangles*3))
 		shader.uniform("light.ambient", 0.1f)
 		shader.uniform("light.specular", 100f)
 	}
+}
+
+class MetaBallsCameraController(camera:Camera, val mb:TestMetaBalls) extends BasicCameraController(camera) {
+    override def key(surface:Surface, keyEvent:KeyEvent) {
+        import keyEvent.ActionChar._
+        if(keyEvent.isPrintable) {
+        	keyEvent.unicodeChar match {
+            	case ' ' => { mb.pausePlay }
+            }
+        } else {
+            super.key(surface, keyEvent)
+        }
+    }
 }
