@@ -403,15 +403,9 @@ class TestMetaBalls extends SurfaceRenderer {
 	protected def updateParticles() {
 		val potential = spaceHash.neighborsInBox(balls(0), 4)
 
-//balls(0).x.set(0.010210481527350428, 0.8162143248174041, 0.9913406882369337)
-//particlesMesh.setPoint(0, balls(0).x); spaceHash.move(balls(0))
-//balls(1).x.set(0.7484864570409342, -0.06501707601608192, -0.6221358445399839)
-//particlesMesh.setPoint(1, balls(1).x); spaceHash.move(balls(1))
-
 		var i = 0
 		balls.foreach { particle => 
 			particle.move()
-//Console.err.println("particle at %s".format(particle.x))
 			particlesMesh.setPoint(i, particle.x)
 			spaceHash.move(particle)
 			i += 1
@@ -438,7 +432,8 @@ class TestMetaBalls extends SurfaceRenderer {
 
 		value
 	}
-	
+
+	/** Evaluate the meta-balls iso-surface normal at x. */
 	def evalNormal(x:Point3):Vector3 = {
 		val n = Vector3()
 		
