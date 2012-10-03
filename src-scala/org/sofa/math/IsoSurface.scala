@@ -4,156 +4,14 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 
-/** A triangle. */
-class TriangleSimple(val p0:Point3, val p1:Point3, val p2:Point3) {}
-
-/** Build a surface from an iso-surface provided by an evaluation function and an iso-level
-  * parameter.
+/** One iso-cube of the marching cubes algorithm used by the `IsoSurface`.
   * 
-  * The technique used is the "marching cubes" algorithm, as described here:
-  * http://en.wikipedia.org/wiki/Marching_cubes.
-  * 
-  * Most of the code and ideas for this come from the 
-  * http://paulbourke.net/geometry/polygonise/  web page.
-  * 
-  * Lots of optimizations possible:
-  * 	- Each cube share a face with another and therefore points are shared. However
-  *       they are not merged in the triangle set returned. It could greatly improve
-  *       the memory consumption and exchanges between cpu and gpu when drawing the surface.
-  *     - The normals to the triangles are not given, and must be computed. This could be
-  *       done automatically with less computation.
-  *     - Knowing which points are shared, we could generate normals that smooth the surface.
-  */
-class IsoSurfaceSimple(val cellSize:Double) {
-	
-	/** Set of computed triangles. */
-	val tri = new ArrayBuffer[TriangleSimple]()
-	
-	/** The triangles computed by the last calls to addCubesAT(). */
-	def triangles:Seq[TriangleSimple] = tri
-	
-	/** Compute triangles faces from marching cubes in the area defined by the origin point
-	  * (`xx`,`yy`,`zz`) and the number of cuves (in the three axe directions) provided
-	  * by `count`. The `eval()` function allows to evaluate the iso-surface. A point is considered
-	  * above the iso-surface if the `eval()` function returns a value greater than `isoLevel`. */
-	def addCubesAt(xx:Double, yy:Double, zz:Double, count:Int, eval:(Point3)=>Double, isoLevel:Double) {
-		for(z <- 0 until count) {
-			for(y <- 0 until count) {
-				for(x <- 0 until count) {
-					addCubeAt(xx+x*cellSize, yy+y*cellSize, zz+z*cellSize, eval, isoLevel)
-				}
-			}
-		}
-	}
-	
-	/** Compute triangles faces from a single cube in the area defined by the origin point
-	  * the `cellSize`. The `eval()` function allows to evaluate the iso-surface. A point is considered
-	  * above the iso-surface if the `eval()` function returns a value greater than `isoLevel`. */
-	def addCubeAt(xx:Double, yy:Double, zz:Double, eval:(Point3)=>Double, isoLevel:Double) {
-		import IsoSurface._
-		
-		val xxx = xx+cellSize
-		val yyy = yy+cellSize
-		val zzz = zz+cellSize
-		
-		val p0 = Point3(xx,  yy,  zz )
-		val p1 = Point3(xxx, yy,  zz )
-		val p2 = Point3(xxx, yy,  zzz)
-		val p3 = Point3(xx,  yy,  zzz)
-		val p4 = Point3(xx,  yyy, zz )
-		val p5 = Point3(xxx, yyy, zz )
-		val p6 = Point3(xxx, yyy, zzz)
-		val p7 = Point3(xx,  yyy, zzz)
-		
-		val v0 = eval(p0)
-		val v1 = eval(p1)
-		val v2 = eval(p2)
-		val v3 = eval(p3)
-		val v4 = eval(p4)
-		val v5 = eval(p5)
-		val v6 = eval(p6)
-		val v7 = eval(p7)
-
-		// Determine the index in the edge table which tells
-		// us which vertices are inside of the surface.
-		
-		var cubeIndex = 0
-		
-		if(v0<isoLevel) cubeIndex |=   1 	// p0
-		if(v1<isoLevel) cubeIndex |=   2	// p1
-		if(v2<isoLevel) cubeIndex |=   4	// p2
-		if(v3<isoLevel) cubeIndex |=   8	// p3
-		if(v4<isoLevel) cubeIndex |=  16	// p4
-		if(v5<isoLevel) cubeIndex |=  32	// p5
-		if(v6<isoLevel) cubeIndex |=  64	// p6
-		if(v7<isoLevel) cubeIndex |= 128	// p7
-		
-		var vertList = new Array[Point3](12)	// 12 possible vertices
-		val idx = edgeTable(cubeIndex)
-		
-		if(idx != 0) {	// If the cube is not entirely out or in the surface.
-			
-			// Find the vertices where the surface intersects the cube.
-			
-			if((idx&   1) != 0) vertList( 0) = vertexInterp(isoLevel, p0, p1, v0, v1)
-			if((idx&   2) != 0) vertList( 1) = vertexInterp(isoLevel, p1, p2, v1, v2)
-			if((idx&   4) != 0) vertList( 2) = vertexInterp(isoLevel, p2, p3, v2, v3)
-			if((idx&   8) != 0) vertList( 3) = vertexInterp(isoLevel, p3, p0, v3, v0)
-			
-			if((idx&  16) != 0) vertList( 4) = vertexInterp(isoLevel, p4, p5, v4, v5)
-			if((idx&  32) != 0) vertList( 5) = vertexInterp(isoLevel, p5, p6, v5, v6)
-			if((idx&  64) != 0) vertList( 6) = vertexInterp(isoLevel, p6, p7, v6, v7)
-			if((idx& 128) != 0) vertList( 7) = vertexInterp(isoLevel, p7, p4, v7, v4)
-			
-			if((idx& 256) != 0) vertList( 8) = vertexInterp(isoLevel, p0, p4, v0, v4)
-			if((idx& 512) != 0) vertList( 9) = vertexInterp(isoLevel, p1, p5, v1, v5)
-			if((idx&1024) != 0) vertList(10) = vertexInterp(isoLevel, p2, p6, v2, v6)
-			if((idx&2048) != 0) vertList(11) = vertexInterp(isoLevel, p3, p7, v3, v7)
-			
-			// Create the triangle.
-			
-			var i = 0
-			
-			while(triTable(cubeIndex)(i) != -1) {
-				tri += new TriangleSimple(
-						vertList(triTable(cubeIndex)(i)), 
-						vertList(triTable(cubeIndex)(i+1)),
-						vertList(triTable(cubeIndex)(i+2)))
-				i += 3
-			}
-		}
-	}
-	
-	/** Interpolate the point position along a vertex of a marching cube defined by points
-	  * `p0` and `p1` using the values `v0` and `v1` for the iso-values at this two
-	  * respective points. */
-	protected def vertexInterp(isoLevel:Double, p0:Point3, p1:Point3, v0:Double, v1:Double):Point3 = {
-		import math._
-//		Point3(
-//			p0.x + (p1.x-p0.x)/2,
-//			p0.y + (p1.y-p0.y)/2,
-//			p0.z + (p1.z-p0.z)/2)
-		var p:Point3 = null
-		
-		if     (abs(isoLevel-v0) < 0.0001) { p = p0 }
-		else if(abs(isoLevel-v1) < 0.0001) { p = p1 }
-		else if(abs(v0-v1)       < 0.0001) { p = p0 }
-		else {
-			var mu = (isoLevel - v0) / (v1 - v0)
-			p = Point3(
-					p0.x + mu * (p1.x - p0.x),
-					p0.y + mu * (p1.y - p0.y),
-					p0.z + mu * (p1.z - p0.z))
-		}
-		
-		p
-	}
-}
-
-//-----------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------
-
+  * An iso-cube evaluates the surface implicit function at its height vertices
+  * and compute from his one or more triangles that intersect it. To do this
+  * this implementation uses a set of neighbor cubes. If the neighbors are
+  * present, it will not re-evaluate the implicit function (often costly) and
+  * will also avoid recomputing the interpolation of triangles points onto its
+  * edges. */
 class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 
 	/** Index in the points set of the surface of the points used to evaluate the iso-surface. */
@@ -167,6 +25,7 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 	
 	def this(index:Int, x:Int, y:Int, z:Int, surface:IsoSurface) { this(index,HashPoint3(x,y,z),surface) }
 	
+	/** True if this cube is completely inside or outside the surface, and therefore contains no triangle. */
 	def isEmpty:Boolean = (triangles == null || triangles.isEmpty)
 	
 	override def toString():String = {
@@ -177,6 +36,11 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 				if(isEmpty)" (empty)" else "")
 	}
 	
+	/** Evaluate this cube and compute its triangles (intersection by the surface).
+	  * The `nb` array is an array of 26 potential neighbors that may already have
+	  * been computed. The `eval` function allows to evaluate the surface implicit
+	  * function. The `isoLevel` value allow to know at which point the surface
+	  * passes in the cube. */
 	def eval(nb:Array[IsoCube], eval:(Point3)=>Double, isoLevel:Double) {
 		import IsoSurface._
 		
@@ -359,9 +223,15 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 	}
 }
 
+/** A simple triangle in the iso-surface, it references points in the `triPoints`
+  * field of the `IsoSurface`. It can compute its normal if enabled in the
+  * `IsoSurface` but this is probably a better idea to compute the normal
+  * using the derivative of the surface implicit function. See the
+  * `IsoSurface.autoComputeNormals()` method. */
 class IsoTriangle(val a:Int, val b:Int, val c:Int) {
 	var normal:Vector3 = null
 	
+	/** The normal of the triangle. */
 	def getNormal(surface:IsoSurface):Vector3 = {
 		if(normal eq null) {
 			val p0 = surface.triPoints(a)
@@ -383,6 +253,47 @@ class IsoTriangle(val a:Int, val b:Int, val c:Int) {
 	def toString(surface:IsoSurface):String = "tri[%d,%d,%d][%s, %s, %s]".format(a,b,c,surface.triPoints(a), surface.triPoints(b), surface.triPoints(c))
 }
 
+/** Build a surface from an iso-surface provided by an evaluation function and an iso-level
+  * parameter.
+  * 
+  * The technique used is the "marching cubes" algorithm, as described here:
+  * http://en.wikipedia.org/wiki/Marching_cubes.
+  * 
+  * Most of the code and ideas for this come from the 
+  * http://paulbourke.net/geometry/polygonise/  web page.
+  * 
+  * This implementation uses a space-hash to locate the marching cubes already computed.
+  * Each marching cube is associated with a position in a spatial space where coordinates
+  * are integers (the indices of the cubes in all of the three axes). The `cellSize`
+  * parameter gives the side of a cube. Therefore the real coordinates of each cube are
+  * given by multiplying its coordinates by `cellSize`.   
+  * 
+  * The implementation tries to ensure that no cube will be computed twice using this spacehash.
+  * This allows the addCubesAt() method to take as argument an area of space to explore, but
+  * avoiding to compute several times zones that may already have been computed by a previous
+  * call, if they intersect.
+  * 
+  * Furthermore, as most often in these algorithms, the evaluation function for the surface is
+  * quite costly, we store in each cube the height evaluations (for each vertex of the cube)
+  * and use the space hash to find the neighbors of a cube that would already have been computed
+  * to avoid calling too often the evaluation function. As each cube share its vertices with 26
+  * neighbors the economy is important.
+  * 
+  * Using these points, the marching cubes algorithm will need to compute triangles inside cubes.
+  * These triangles uses vertices interpolated on the edges of the cube. We can also reuse the
+  * computation of the neighbor cubes if already computed.
+  * 
+  * The result of the algorithm is a set of triangles that share points (in the `triPoints`
+  * field).
+  * 
+  * Lots of optimizations possible:
+  * 	- Each cube share a face with another and therefore points are shared. However
+  *       they are not merged in the triangle set returned. It could greatly improve
+  *       the memory consumption and exchanges between cpu and gpu when drawing the surface.
+  *     - The normals to the triangles are not given, and must be computed. This could be
+  *       done automatically with less computation.
+  *     - Knowing which points are shared, we could generate normals that smooth the surface.
+  */
 class IsoSurface(val cellSize:Double) {
 	var autoNormals = false
 	
@@ -412,49 +323,88 @@ class IsoSurface(val cellSize:Double) {
 	
 	/** Number of triangles computed by adding cubes. */
 	var triangleCount = 0
+
+	/** The neighbor cubes array, to avoid creating it at each new cube insertion. */
+	protected val nbCb = new Array[IsoCube](27)
 	
+	/** Activate the computation of normals from the triangles. Be careful, this
+	  * computation will merely use the normals of triangles that share a point to
+	  * average the normal on this point. As some triangles are very large and
+	  * other small, the reconstructed normals will nor probably be very good,
+	  * it is far better to try to evaluate the normal to the surface using
+	  * the derivative of you surface implicit function (furthermore the
+	  * normal computation takes more space and time). It is off by default. */
 	def autoComputeNormals(on:Boolean) {
 		autoNormals = on
 	}
-	
-	def foreachTriangle(code:(IsoCube,IsoTriangle)=>Unit) {
-		nonEmptyCubes.foreach { cube =>
-			cube.triangles.foreach { triangle =>
-				code(cube, triangle)
-			}
+
+	/** Browse each point used by triangles. The indices are important as triangles
+	  * reference these indices and neighbor triangles share the points. */
+	def foreachTrianglePoint(code:(Int, Point3)=>Unit) {
+		var i = 0
+		val n = triPoints.size
+		while(i<n) {
+			code(i, triPoints(i))
+			i += 1
 		}
 	}
 	
+	/** Browse each triangle computed to reconstruct the surface. Each triangle pertains
+	  * to a cube (but a cube can own several triangles), and each triangle has a unique
+	  * index. Each triangle is a set of tree integer indices that reference the points
+	  * given by `foreachTrianglePoint()` */
+	def foreachTriangle(code:(Int,IsoCube,IsoTriangle)=>Unit) {
+		var i = 0
+		var c = 0
+		var nc = nonEmptyCubes.size
+		while(c<nc) {
+			val cube = nonEmptyCubes(c)
+			var t = 0
+			var nt = cube.triangles.size
+			while(t<nt) {
+				code(i, cube, cube.triangles(t))
+				t += 1
+				i += 1
+			} 
+			c += 1
+		}
+//		nonEmptyCubes.foreach { cube =>
+//			var j = 
+//			cube.triangles.foreach { triangle =>
+//				code(i, cube, triangle)
+//				i += 1
+//			}
+//		}
+	}
+	
+ 	/** Add a set of cubes in a given portion of space. The portion of space is given in
+	  * marching cubes space, where (0,0,0) is the origin that describe a cube between
+	  * points (0,0,0) and (1,1,1). The cubes have a side whose length is `cellSize`.
+	  * The start position is given by `x`, `y`, `z`. from this position `countX` cubes
+	  * are added along X, `countY` cubes along Y and `countZ` cube along the Z axis.
+	  * If this portion of space already contains cubes computed by a previous call
+	  * to this method, they are not computed anew. */
 	def addCubesAt(x:Int, y:Int, z:Int, countX:Int, countY:Int, countZ:Int, eval:(Point3)=>Double, isoLevel:Double) {
 		var zz = 0
 		var yy = 0
 		var xx = 0
 		
-//Console.err.println("adding cubes at (%d,%d,%d) count (%d,%d,%d):".format(x,y,z, countX, countY, countZ))
 		while(zz < countZ) {
 			yy = 0
 			while(yy < countY) {
 				xx = 0
 				while(xx < countX) {
-//Console.err.print("  + (%d,%d,%d)".format(x+xx, y+yy, z+zz) )
 					val cube = addCubeAt(x+xx, y+yy, z+zz, eval, isoLevel)
-//Console.err.println(" OK => %s".format(if(cube.isEmpty)"empty" else "%d triangles".format(cube.triangles.size)))
 					xx += 1
 				}
 				yy += 1
 			}
 			zz += 1
 		}
-		
-//		for(zz<-0 until countZ) {
-//			for(yy<-0 until countY) {
-//				for(xx<-0 until countX) {
-//					addCubeAt(x+xx, y+yy, z+zz, eval, isoLevel)
-//				}
-//			}
-//		}
 	}
 	
+	/** If autoComputeNormals is on, this allows to compute the normals from the data collected
+	  * by adding cubes. This muse be done only when all the cubes have been added. */
 	def computeNormals() {
 		if(autoNormals) {
 			var i = 0
@@ -475,6 +425,7 @@ class IsoSurface(val cellSize:Double) {
 		}
 	}
 	
+	/** The nearest cube position fromt the real coordinates. */
 	def nearestCubePos(x:Double, y:Double, z:Double):HashPoint3 = {
 		var xx = x/cellSize
 		var yy = y/cellSize
@@ -486,7 +437,20 @@ class IsoSurface(val cellSize:Double) {
 		
 		HashPoint3(xx.toInt, yy.toInt, zz.toInt)
 	}
-	
+
+	/** Add a single marching-cube at the given location in iso-cube space.
+	  * 
+	  * The iso-cube
+	  * space is a discretization of the user space where coordinates are integers in
+	  * all three dimensions, each at `cellSize` of each other. For example a cube at
+	  * (1,0,0) will occupy be at (cellSize,0,0) in user space and occupy the iso-cube
+	  * space between coordinates (1,0,0) and (2,1,1). The cube will use the `eval`
+	  * function to compute the iso-surface value at each of its height vertices. If
+	  * the surface is above the `isoLevel` given for some points but not others, the
+	  * cube will contain some triangles that describe the intersection of the surface
+	  * with its space.
+	  * 
+	  * Calling several times this function on the same cube computes it only once. */
 	def addCubeAt(x:Int, y:Int, z:Int, eval:(Point3)=>Double, isoLevel:Double):IsoCube = {
 		val p = HashPoint3(x,y,z)
 
@@ -509,8 +473,9 @@ class IsoSurface(val cellSize:Double) {
 		}
 	}
 	
-	protected val nbCb = new Array[IsoCube](27)
-	
+	/** Find the 26 potential neighbors of a cube, if already present. This fills
+	  * the `nb` array and returns it. Each neighbor in this array is either null
+	  * or present. */
 	protected def findNeighborCubes(p:HashPoint3):Array[IsoCube] = {
 		import IsoSurface._
 		var i = 0
@@ -533,6 +498,7 @@ class IsoSurface(val cellSize:Double) {
 	}
 }
 
+/** IsoSurface companion object. */
 object IsoSurface {
 
 	val interpolation = true
@@ -910,4 +876,158 @@ object IsoSurface {
 		Array[Int](0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
 		Array[Int](-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
 	)
+}
+
+//-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
+
+// And old a very inefficient implementation of the IsoSurface.
+
+/** A triangle. */
+class TriangleSimple(val p0:Point3, val p1:Point3, val p2:Point3) {}
+
+/** Old and inefficient implementation of the IsoSurface.
+  *   
+  * Build a surface from an iso-surface provided by an evaluation function and an iso-level
+  * parameter.
+  * 
+  * The technique used is the "marching cubes" algorithm, as described here:
+  * http://en.wikipedia.org/wiki/Marching_cubes.
+  * 
+  * Most of the code and ideas for this come from the 
+  * http://paulbourke.net/geometry/polygonise/  web page.
+  * 
+  * Lots of optimizations possible:
+  * 	- Each cube share a face with another and therefore points are shared. However
+  *       they are not merged in the triangle set returned. It could greatly improve
+  *       the memory consumption and exchanges between cpu and gpu when drawing the surface.
+  *     - The normals to the triangles are not given, and must be computed. This could be
+  *       done automatically with less computation.
+  *     - Knowing which points are shared, we could generate normals that smooth the surface.
+  */
+class IsoSurfaceSimple(val cellSize:Double) {
+	
+	/** Set of computed triangles. */
+	val tri = new ArrayBuffer[TriangleSimple]()
+	
+	/** The triangles computed by the last calls to addCubesAT(). */
+	def triangles:Seq[TriangleSimple] = tri
+	
+	/** Compute triangles faces from marching cubes in the area defined by the origin point
+	  * (`xx`,`yy`,`zz`) and the number of cuves (in the three axe directions) provided
+	  * by `count`. The `eval()` function allows to evaluate the iso-surface. A point is considered
+	  * above the iso-surface if the `eval()` function returns a value greater than `isoLevel`. */
+	def addCubesAt(xx:Double, yy:Double, zz:Double, count:Int, eval:(Point3)=>Double, isoLevel:Double) {
+		for(z <- 0 until count) {
+			for(y <- 0 until count) {
+				for(x <- 0 until count) {
+					addCubeAt(xx+x*cellSize, yy+y*cellSize, zz+z*cellSize, eval, isoLevel)
+				}
+			}
+		}
+	}
+	
+	/** Compute triangles faces from a single cube in the area defined by the origin point
+	  * the `cellSize`. The `eval()` function allows to evaluate the iso-surface. A point is considered
+	  * above the iso-surface if the `eval()` function returns a value greater than `isoLevel`. */
+	def addCubeAt(xx:Double, yy:Double, zz:Double, eval:(Point3)=>Double, isoLevel:Double) {
+		import IsoSurface._
+		
+		val xxx = xx+cellSize
+		val yyy = yy+cellSize
+		val zzz = zz+cellSize
+		
+		val p0 = Point3(xx,  yy,  zz )
+		val p1 = Point3(xxx, yy,  zz )
+		val p2 = Point3(xxx, yy,  zzz)
+		val p3 = Point3(xx,  yy,  zzz)
+		val p4 = Point3(xx,  yyy, zz )
+		val p5 = Point3(xxx, yyy, zz )
+		val p6 = Point3(xxx, yyy, zzz)
+		val p7 = Point3(xx,  yyy, zzz)
+		
+		val v0 = eval(p0)
+		val v1 = eval(p1)
+		val v2 = eval(p2)
+		val v3 = eval(p3)
+		val v4 = eval(p4)
+		val v5 = eval(p5)
+		val v6 = eval(p6)
+		val v7 = eval(p7)
+
+		// Determine the index in the edge table which tells
+		// us which vertices are inside of the surface.
+		
+		var cubeIndex = 0
+		
+		if(v0<isoLevel) cubeIndex |=   1 	// p0
+		if(v1<isoLevel) cubeIndex |=   2	// p1
+		if(v2<isoLevel) cubeIndex |=   4	// p2
+		if(v3<isoLevel) cubeIndex |=   8	// p3
+		if(v4<isoLevel) cubeIndex |=  16	// p4
+		if(v5<isoLevel) cubeIndex |=  32	// p5
+		if(v6<isoLevel) cubeIndex |=  64	// p6
+		if(v7<isoLevel) cubeIndex |= 128	// p7
+		
+		var vertList = new Array[Point3](12)	// 12 possible vertices
+		val idx = edgeTable(cubeIndex)
+		
+		if(idx != 0) {	// If the cube is not entirely out or in the surface.
+			
+			// Find the vertices where the surface intersects the cube.
+			
+			if((idx&   1) != 0) vertList( 0) = vertexInterp(isoLevel, p0, p1, v0, v1)
+			if((idx&   2) != 0) vertList( 1) = vertexInterp(isoLevel, p1, p2, v1, v2)
+			if((idx&   4) != 0) vertList( 2) = vertexInterp(isoLevel, p2, p3, v2, v3)
+			if((idx&   8) != 0) vertList( 3) = vertexInterp(isoLevel, p3, p0, v3, v0)
+			
+			if((idx&  16) != 0) vertList( 4) = vertexInterp(isoLevel, p4, p5, v4, v5)
+			if((idx&  32) != 0) vertList( 5) = vertexInterp(isoLevel, p5, p6, v5, v6)
+			if((idx&  64) != 0) vertList( 6) = vertexInterp(isoLevel, p6, p7, v6, v7)
+			if((idx& 128) != 0) vertList( 7) = vertexInterp(isoLevel, p7, p4, v7, v4)
+			
+			if((idx& 256) != 0) vertList( 8) = vertexInterp(isoLevel, p0, p4, v0, v4)
+			if((idx& 512) != 0) vertList( 9) = vertexInterp(isoLevel, p1, p5, v1, v5)
+			if((idx&1024) != 0) vertList(10) = vertexInterp(isoLevel, p2, p6, v2, v6)
+			if((idx&2048) != 0) vertList(11) = vertexInterp(isoLevel, p3, p7, v3, v7)
+			
+			// Create the triangle.
+			
+			var i = 0
+			
+			while(triTable(cubeIndex)(i) != -1) {
+				tri += new TriangleSimple(
+						vertList(triTable(cubeIndex)(i)), 
+						vertList(triTable(cubeIndex)(i+1)),
+						vertList(triTable(cubeIndex)(i+2)))
+				i += 3
+			}
+		}
+	}
+	
+	/** Interpolate the point position along a vertex of a marching cube defined by points
+	  * `p0` and `p1` using the values `v0` and `v1` for the iso-values at this two
+	  * respective points. */
+	protected def vertexInterp(isoLevel:Double, p0:Point3, p1:Point3, v0:Double, v1:Double):Point3 = {
+		import math._
+//		Point3(
+//			p0.x + (p1.x-p0.x)/2,
+//			p0.y + (p1.y-p0.y)/2,
+//			p0.z + (p1.z-p0.z)/2)
+		var p:Point3 = null
+		
+		if     (abs(isoLevel-v0) < 0.0001) { p = p0 }
+		else if(abs(isoLevel-v1) < 0.0001) { p = p1 }
+		else if(abs(v0-v1)       < 0.0001) { p = p0 }
+		else {
+			var mu = (isoLevel - v0) / (v1 - v0)
+			p = Point3(
+					p0.x + mu * (p1.x - p0.x),
+					p0.y + mu * (p1.y - p0.y),
+					p0.z + mu * (p1.z - p0.z))
+		}
+		
+		p
+	}
 }

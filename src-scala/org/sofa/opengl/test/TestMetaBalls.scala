@@ -356,32 +356,23 @@ class TestMetaBalls extends SurfaceRenderer {
 		
 		// Now build the mesh
 
-		if(isoSurfaceComp.triPoints.size > 0) {
+		if(isoSurfaceComp.triangleCount > 0) {
 			
-			// Insert the parallel vertex, normal and color arrays.
+			// Insert the parallel vertex and normal arrays.
 			
-			var i = 0
-			var n = isoSurfaceComp.triPoints.size
-			
-			while(i<n) {
-				isoSurfaceMesh.setPoint(i, isoSurfaceComp.triPoints(i))
-				isoSurfaceMesh.setPointNormal(i, evalNormal(isoSurfaceComp.triPoints(i))) //isoSurfaceComp.normals(i))
-//				isoSurfaceMesh.setPointColor(i, Rgba.red)
-				i += 1
+			isoSurfaceComp.foreachTrianglePoint{ (i, p) =>
+				isoSurfaceMesh.setPoint(i, p)
+				isoSurfaceMesh.setPointNormal(i, evalNormal(p))				
 			}
 			
-			// Insert the triangles as indices
+			// Insert the triangles as indices into the vertex and normal arrays.
 			
-			i = 0
-			isoSurfaceComp.foreachTriangle { (cube, triangle) =>
+			isoSurfaceComp.foreachTriangle { (i, cube, triangle) =>
 				if(i < maxDynTriangles) {
 					isoSurfaceMesh.setTriangle(i, triangle.a, triangle.b, triangle.c)
 				}
-				i += 1
 			}
 			
-			assert(i == isoSurfaceComp.triangleCount)
-
 			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals")
 		}
 	}
