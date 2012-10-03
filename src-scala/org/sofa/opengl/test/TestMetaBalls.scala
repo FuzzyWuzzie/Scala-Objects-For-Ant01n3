@@ -32,13 +32,15 @@ import org.sofa.opengl.mesh.DynTriangleMesh
 import org.sofa.math.IsoSurface
 import org.sofa.opengl.mesh.DynIndexedTriangleMesh
 import org.sofa.opengl.surface.KeyEvent
+import org.sofa.math.IsoCube
 
 object TestMetaBalls {
 	def main(args:Array[String]) = (new TestMetaBalls).test
 }
 
 object MetaBall {
-	val speed = 0.01
+	/** Speed factor of meta balls. */
+	val speed = 0.05
 }
 
 class MetaBall(xx:Double, yy:Double, zz:Double) extends SpatialPoint {
@@ -65,33 +67,45 @@ class MetaBall(xx:Double, yy:Double, zz:Double) extends SpatialPoint {
 }
 
 class TestMetaBalls extends SurfaceRenderer {
+	
+	// --------------------------------------------------------------
+	// Settings
+	
 	/** Show the space hash used to fasten particles retrieving ? */
-	val showSpaceHash  = true
+	var showSpaceHash  = false
 	
 	/** Show the cubes used to compute the iso-surface ? */
-	val showIsoCubes = true
+	var showIsoCubes = false
+	
+	/** Show the particles used as centers for the meta balls. */
+	var showParticles = false
 	
 	/** Max number of triangles to use to draw the iso-surface. */
 	val maxDynTriangles = 6000
 	
 	/** Number meta-balls. */
-	val metaBallCount = 2
+	val metaBallCount = 10
 	
 	/** Size of a space-hash cube. */
 	val bucketSize = 0.5
 	
 	/** Number of iso-cubes inside a space hash cube. */
-	var isoDiv = 2.0
+	var isoDiv = 3.0
 	
 	val isoCellSize = bucketSize / isoDiv
 	
 	/** Limit of the iso-surface in the implicit function used to define the surface. */
-	val isoLimit = 10.0
+	val isoLimit = 13.0
+	
+	/** Size of the particles on screen. */
+	val pointSize = 30f
 	
 	val clearColor = Rgba.grey20
 	val planeColor = Rgba.grey80
 	val light1 = Vector4(2, 2, 2, 1)
 
+	// --------------------------------------------------------------
+	// Values	
 	
 	var gl:SGL = null
 	var surface:Surface = null
@@ -125,6 +139,9 @@ class TestMetaBalls extends SurfaceRenderer {
 	var isoSurfaceComp:IsoSurface = null
 	var spaceHash = new SpatialHash[MetaBall](bucketSize)
 	var balls:ArrayBuffer[MetaBall] = null
+	
+	// --------------------------------------------------------------
+	// Commands
 	
 	def test() {
 		val caps = new GLCapabilities(GLProfile.getGL2ES2)
@@ -207,7 +224,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		wcubeIsoMesh.setColor(Rgba(1, 0, 0, 0.2))
 		wcubeIso1 = wcubeIsoMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 		
-		wcubeIsoMesh.setColor(Rgba(1, 0, 0, 0.1))
+		wcubeIsoMesh.setColor(Rgba(0, 0, 1, 0.2))
 		wcubeIso2 = wcubeIsoMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 		
 		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
@@ -246,33 +263,11 @@ class TestMetaBalls extends SurfaceRenderer {
 		
 		camera.setupView
 
-		// Axis
-		
-		gl.enable(gl.BLEND)
-		plainShad.use
-		camera.setUniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
-		
-		// Space hash
-
-		drawSpaceHash
-		
-		// Iso-cubes
-
-		drawIsoCubes
-		
-		gl.disable(gl.BLEND)
-		
-		// Particles
-		
-		particlesShad.use
-		camera.setUniformMVP(particlesShad)
-		particlesShad.uniform("pointSize", 30f)
-		particles.draw(particlesMesh.drawAs)
-		
-		// Iso-Surface
-		
 		drawIsoSurface
+		drawAxis
+		drawSpaceHash
+		drawIsoCubes
+		drawParticles
 
 		surface.swapBuffers
 		gl.checkErrors
@@ -282,8 +277,17 @@ class TestMetaBalls extends SurfaceRenderer {
 //		T1 = T
 	}
 
+	protected def drawAxis() {
+		gl.enable(gl.BLEND)
+		plainShad.use
+		camera.setUniformMVP(plainShad)
+		axis.draw(axisMesh.drawAs)
+		gl.disable(gl.BLEND)
+	}
+	
 	protected def drawSpaceHash() {
 		if(showSpaceHash) {
+			gl.enable(gl.BLEND)
 			var cs = bucketSize
 			var cs2 = cs/2
 			spaceHash.buckets.foreach { bucket =>
@@ -294,11 +298,13 @@ class TestMetaBalls extends SurfaceRenderer {
 					wcube.draw(wcubeMesh.drawAs)
 				}
 			}
+			gl.disable(gl.BLEND)
 		}
 	}
 	
 	protected def drawIsoCubes() {
 		if(showIsoCubes) {
+			gl.enable(gl.BLEND)
 			var cs = isoSurfaceComp.cellSize
 			var cs2 = cs/2
 			isoSurfaceComp.cubes.foreach { cube=>
@@ -306,11 +312,11 @@ class TestMetaBalls extends SurfaceRenderer {
 					val p = cube.pos
 					camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.setUniformMVP(plainShad)
-					if(!cube.isEmpty)
-						wcubeIso1.draw(wcubeIsoMesh.drawAs)
-						else wcubeIso2.draw(wcubeIsoMesh.drawAs)
+					if(!cube.isEmpty) { wcubeIso1.draw(wcubeIsoMesh.drawAs) }
+//				    else { wcubeIso2.draw(wcubeIsoMesh.drawAs) }
 				}
 			}
+			gl.disable(gl.BLEND)
 		}
 	}
 
@@ -323,6 +329,17 @@ class TestMetaBalls extends SurfaceRenderer {
 			isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
 		}
 	}
+
+	protected def drawParticles() {
+		if(showParticles) {
+			gl.disable(gl.DEPTH_TEST)
+			particlesShad.use
+			camera.setUniformMVP(particlesShad)
+			particlesShad.uniform("pointSize", pointSize)
+			particles.draw(particlesMesh.drawAs)
+			gl.enable(gl.DEPTH_TEST)
+		}
+	}
 	
 	protected def buildIsoSurface() {
 		// We use the buckets to locate areas where there exist particles.
@@ -332,8 +349,9 @@ class TestMetaBalls extends SurfaceRenderer {
 		
 		isoSurfaceComp = new IsoSurface(isoCellSize)
 
-		exploreSpaceHash
+		isoSurfaceComp.autoComputeNormals(false)
 
+		exploreSpaceHash
 //		exploreSpaceCube
 		
 		// Now build the mesh
@@ -355,15 +373,11 @@ class TestMetaBalls extends SurfaceRenderer {
 			// Insert the triangles as indices
 			
 			i = 0
-			isoSurfaceComp.nonEmptyCubes.foreach { cube =>
-				if(cube.triangles ne null) {
-					cube.triangles.foreach { triangle =>
-						if(i < maxDynTriangles) {
-							isoSurfaceMesh.setTriangle(i, triangle.a, triangle.b, triangle.c)
-							i += 1
-						}
-					}
+			isoSurfaceComp.foreachTriangle { (cube, triangle) =>
+				if(i < maxDynTriangles) {
+					isoSurfaceMesh.setTriangle(i, triangle.a, triangle.b, triangle.c)
 				}
+				i += 1
 			}
 			
 			assert(i == isoSurfaceComp.triangleCount)
@@ -373,14 +387,13 @@ class TestMetaBalls extends SurfaceRenderer {
 	}
 	
 	protected def exploreSpaceCube() {
-		isoSurfaceComp.autoComputeNormals(false)
-//		isoSurfaceComp.addCubesAt(-2*isoDiv, -2*isoDiv, -2*isoDiv, 4*isoDiv, 4*isoDiv, 4*isoDiv, eval, isoLimit)
-		isoSurfaceComp.addCubesAt((-2*isoDiv).toInt, (-2*isoDiv).toInt, (-2*isoDiv).toInt, (2*isoDiv).toInt, (4*isoDiv).toInt, (4*isoDiv).toInt, eval, isoLimit)
-		isoSurfaceComp.addCubesAt((-1*isoDiv).toInt, (-2*isoDiv).toInt, (-2*isoDiv).toInt, (2*isoDiv).toInt, (4*isoDiv).toInt, (4*isoDiv).toInt, eval, isoLimit)
-//		isoSurfaceComp.computeNormals
+		isoSurfaceComp.addCubesAt((-2.0*isoDiv).toInt, (-2*isoDiv).toInt, (-2*isoDiv).toInt, (4*isoDiv).toInt, (4*isoDiv).toInt, (4*isoDiv).toInt, eval, isoLimit)
 	}
 
 	protected def exploreSpaceHash() {
+		
+		var i = 0
+		
 		spaceHash.buckets.foreach { bucket =>
 			val x = (bucket._1.x-1) * bucketSize
 			val y = (bucket._1.y-1) * bucketSize
@@ -388,18 +401,26 @@ class TestMetaBalls extends SurfaceRenderer {
 			
 			val p = isoSurfaceComp.nearestCubePos(x, y, z)
 
-Console.err.println("-------------------------------")
-Console.err.println("# bucket %s start %s (count %f)".format(bucket._1, p, isoDiv*3))
-			isoSurfaceComp.addCubesAt(p.x, p.y, p.z, (isoDiv*3).toInt, (isoDiv*3).toInt, (isoDiv*3).toInt, eval, isoLimit)
+			isoSurfaceComp.addCubesAt(
+					p.x.toInt,        p.y.toInt,        p.z.toInt,
+					(3*isoDiv).toInt, (3*isoDiv).toInt, (3*isoDiv).toInt,
+					eval, isoLimit)
+			i+=1
 		}
 	}
 	
 	protected def updateParticles() {
 		val potential = spaceHash.neighborsInBox(balls(0), 4)
-		
+
+//balls(0).x.set(0.010210481527350428, 0.8162143248174041, 0.9913406882369337)
+//particlesMesh.setPoint(0, balls(0).x); spaceHash.move(balls(0))
+//balls(1).x.set(0.7484864570409342, -0.06501707601608192, -0.6221358445399839)
+//particlesMesh.setPoint(1, balls(1).x); spaceHash.move(balls(1))
+
 		var i = 0
 		balls.foreach { particle => 
 			particle.move()
+//Console.err.println("particle at %s".format(particle.x))
 			particlesMesh.setPoint(i, particle.x)
 			spaceHash.move(particle)
 			i += 1
@@ -461,6 +482,10 @@ class MetaBallsCameraController(camera:Camera, val mb:TestMetaBalls) extends Bas
         if(keyEvent.isPrintable) {
         	keyEvent.unicodeChar match {
             	case ' ' => { mb.pausePlay }
+            	case 'p' => { mb.showParticles = !mb.showParticles }
+            	case 's' => { mb.showSpaceHash = !mb.showSpaceHash }
+            	case 'c' => { mb.showIsoCubes = !mb.showIsoCubes }
+            	case _ => super.key(surface, keyEvent)
             }
         } else {
             super.key(surface, keyEvent)

@@ -167,9 +167,15 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 	
 	def this(index:Int, x:Int, y:Int, z:Int, surface:IsoSurface) { this(index,HashPoint3(x,y,z),surface) }
 	
-	override def toString():String = "cube[%s, {%s}]".format(pos, points.mkString(","))
-	
 	def isEmpty:Boolean = (triangles == null || triangles.isEmpty)
+	
+	override def toString():String = {
+		val vals = points.map { i => "%5.2f".format(surface.values(i)) }
+		var ref = super.toString
+		ref = ref.substring(ref.lastIndexOf('@')+1, ref.length)
+		"cube[% d % d % d { %s } %10s]%s".format(pos.x, pos.y, pos.z, vals.mkString(" | "), ref,
+				if(isEmpty)" (empty)" else "")
+	}
 	
 	def eval(nb:Array[IsoCube], eval:(Point3)=>Double, isoLevel:Double) {
 		import IsoSurface._
@@ -220,8 +226,8 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 			if((idx&  64) != 0) triPoints( 6) = vertexInterp(isoLevel, 6, p6, p7, v6, v7, nb)
 			if((idx& 128) != 0) triPoints( 7) = vertexInterp(isoLevel, 7, p7, p4, v7, v4, nb)
 			
-			if((idx& 256) != 0) triPoints( 8) = vertexInterp(isoLevel, 8, p0, p4, v0, v4, nb)
-			if((idx& 512) != 0) triPoints( 9) = vertexInterp(isoLevel, 9, p1, p5, v1, v5, nb)
+			if((idx& 256) != 0) triPoints( 8) = vertexInterp(isoLevel,  8, p0, p4, v0, v4, nb)
+			if((idx& 512) != 0) triPoints( 9) = vertexInterp(isoLevel,  9, p1, p5, v1, v5, nb)
 			if((idx&1024) != 0) triPoints(10) = vertexInterp(isoLevel, 10, p2, p6, v2, v6, nb)
 			if((idx&2048) != 0) triPoints(11) = vertexInterp(isoLevel, 11, p3, p7, v3, v7, nb)
 			
@@ -265,13 +271,13 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 		
 		val neighbor = pointOverlap(p)
 		
-		if(nb(neighbor(0)._1) ne null) nb(neighbor(0)._1).points(neighbor(0)._2) else
-		if(nb(neighbor(1)._1) ne null) nb(neighbor(1)._1).points(neighbor(1)._2) else
-		if(nb(neighbor(2)._1) ne null) nb(neighbor(2)._1).points(neighbor(2)._2) else
-		if(nb(neighbor(3)._1) ne null) nb(neighbor(3)._1).points(neighbor(3)._2) else
-		if(nb(neighbor(4)._1) ne null) nb(neighbor(4)._1).points(neighbor(4)._2) else
-		if(nb(neighbor(5)._1) ne null) nb(neighbor(5)._1).points(neighbor(5)._2) else
-		if(nb(neighbor(6)._1) ne null) nb(neighbor(6)._1).points(neighbor(6)._2) else {
+		if(nb(neighbor(0)._1) ne null) points(p) = nb(neighbor(0)._1).points(neighbor(0)._2) else
+		if(nb(neighbor(1)._1) ne null) points(p) = nb(neighbor(1)._1).points(neighbor(1)._2) else
+		if(nb(neighbor(2)._1) ne null) points(p) = nb(neighbor(2)._1).points(neighbor(2)._2) else
+		if(nb(neighbor(3)._1) ne null) points(p) = nb(neighbor(3)._1).points(neighbor(3)._2) else
+		if(nb(neighbor(4)._1) ne null) points(p) = nb(neighbor(4)._1).points(neighbor(4)._2) else
+		if(nb(neighbor(5)._1) ne null) points(p) = nb(neighbor(5)._1).points(neighbor(5)._2) else
+		if(nb(neighbor(6)._1) ne null) points(p) = nb(neighbor(6)._1).points(neighbor(6)._2) else {
 			val i = surface.points.size
 			val np = Point3((pos.x+cubeCoos(p)._1)*surface.cellSize,
 					        (pos.y+cubeCoos(p)._2)*surface.cellSize,
@@ -281,9 +287,9 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 			points(p) = i
 			
 			assert(surface.points.size == surface.values.size)
-			
-			i
 		}
+		
+		points(p)
 	} 
 	
 	/** Interpolate the point position along a vertex of a marching cube defined by points
@@ -299,19 +305,18 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 		// If not found evaluate the edge, add the point.
 		
 		if(i < 0) {
-			var p:Point3 = null
 			val P0 = surface.points(p0)
 			val P1 = surface.points(p1)
-
-			if(IsoSurface.interpolation) {
+			val p  = if(IsoSurface.interpolation) {
 				// Interpolated on the edge.
 				
-				if     (abs(isoLevel-v0) < 0.0001) { p = P0 }
-				else if(abs(isoLevel-v1) < 0.0001) { p = P1 }
-				else if(abs(v0-v1)       < 0.0001) { p = P0 }
+				if     (abs(isoLevel-v0) < 0.0001) { P0 }
+				else if(abs(isoLevel-v1) < 0.0001) { P1 }
+				else if(abs(v0-v1)       < 0.0001) { P0 }
 				else {
 					var mu = (isoLevel - v0) / (v1 - v0)
-					p = Point3(
+					assert(mu >= 0  && mu <= 1)
+					Point3(
 						P0.x + mu * (P1.x - P0.x),
 						P0.y + mu * (P1.y - P0.y),
 						P0.z + mu * (P1.z - P0.z))
@@ -319,7 +324,7 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 			} else {
 				// In the middle of the edge.
 				
-				p = Point3(
+				Point3(
 					P0.x + 0.5 * (P1.x-P0.x),
 					P0.y + 0.5 * (P1.y-P0.y),
 					P0.z + 0.5 * (P1.z-P0.z))
@@ -374,10 +379,12 @@ class IsoTriangle(val a:Int, val b:Int, val c:Int) {
 	}
 	
 	override def toString():String = "tri[%d, %d, %d]".format(a, b, c)
+	
+	def toString(surface:IsoSurface):String = "tri[%d,%d,%d][%s, %s, %s]".format(a,b,c,surface.triPoints(a), surface.triPoints(b), surface.triPoints(c))
 }
 
 class IsoSurface(val cellSize:Double) {
-	var autoNormals = true
+	var autoNormals = false
 	
 	/** Set of evaluation points, where the iso-surface values are taken. */
 	val points = new ArrayBuffer[Point3]()
@@ -408,6 +415,14 @@ class IsoSurface(val cellSize:Double) {
 	
 	def autoComputeNormals(on:Boolean) {
 		autoNormals = on
+	}
+	
+	def foreachTriangle(code:(IsoCube,IsoTriangle)=>Unit) {
+		nonEmptyCubes.foreach { cube =>
+			cube.triangles.foreach { triangle =>
+				code(cube, triangle)
+			}
+		}
 	}
 	
 	def addCubesAt(x:Int, y:Int, z:Int, countX:Int, countY:Int, countZ:Int, eval:(Point3)=>Double, isoLevel:Double) {
@@ -474,7 +489,7 @@ class IsoSurface(val cellSize:Double) {
 	
 	def addCubeAt(x:Int, y:Int, z:Int, eval:(Point3)=>Double, isoLevel:Double):IsoCube = {
 		val p = HashPoint3(x,y,z)
-//if(spaceHash.contains(p)) Console.err.print (" => already present") else Console.err.print(" => ## creating ##")
+
 		spaceHash.get(p).getOrElse {
 			val i = cubes.size
 			var cube = new IsoCube(i, p, this)
@@ -490,7 +505,6 @@ class IsoSurface(val cellSize:Double) {
 			if(!cube.isEmpty) {
 				nonEmptyCubes += cube
 			}
-			
 			cube
 		}
 	}
@@ -509,6 +523,8 @@ class IsoSurface(val cellSize:Double) {
 				nbCb(i) = spaceHash.get(pp).getOrElse(null)
 				if(nbCb(i) ne null) nn += 1
 			} else {
+//				val pp = HashPoint3(p.x, p.y, p.z)
+//				assert(!spaceHash.contains(pp)) 
 				nbCb(i) = null
 			}
 			i += 1
