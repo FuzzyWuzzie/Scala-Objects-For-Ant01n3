@@ -7,79 +7,90 @@ import org.sofa.math.SpatialHash
 import org.sofa.math.SpatialPoint
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
+import org.sofa.math.SpatialObject
+import org.sofa.math.SpatialCube
+import scala.util.Random
 
-// XXX Amélioration possible:
+// XXX Améliorations possibles:
+
 // Le test de collision des murs est fait pour toutes les particules à tout moment, mais il n'est besoin de le faire que pour les
-// cubes du spaceHash qui sont le long de ces murs !
+// cubes du spaceHash qui sont le long de ces murs ! Il reste à inserer les murs dans le space hash, ainsi que
+// d'autres objets !
+
+// Ajouter un mode 2D
+
+// Permettre de retirer des particules.
+
+// Allow to easily configure the parameters
 
 object Particle {
-	val g       = 9.81				// Assuming we use meters as units, g = 9.81 m/s^2
-	val h       = 0.9				// 50 cm
-	val spacialHashBucketSize = 1	// 1 m
+	var g       = 9.81				// Assuming we use meters as units, g = 9.81 m/s^2
+	var h       = 0.9				// 90 cm
+	var spacialHashBucketSize = 1	// 1 m
 
 	// Appear in doubleDensityRelaxation():
-	val k       = 1.0				// Pressure stiffness ???
-	val kNear   = k * 10			// Near-pressure stiffness ??? Seems to be 10 times k
-	val rhoZero = h/2				// Rest density (4.1), the larger then denser, less than 1 == gaz ??? seems to be half of h
+	var k       = 1.0				// Pressure stiffness ???
+	var kNear   = k * 10			// Near-pressure stiffness ??? Seems to be 10 times k
+	var rhoZero = h/2				// Rest density (4.1), the larger the denser, less than 1 == gaz ??? seems to be half of h
 
 	// Appear in applyViscosity():
-	val sigma   = 3.0				// Viscosity linear dependency on velocity (between 0 and +inf), augment for highly viscous (lava, sperm).
-	val beta    = 5.0				// Viscosity quadratic dependency on velocity (between 0 and +inf), only this one for less viscous fluids (water).
+	var sigma   = 2.0				// Viscosity linear dependency on velocity (between 0 and +inf), augment for highly viscous (lava, sperm).
+	var beta    = 6.0				// Viscosity quadratic dependency on velocity (between 0 and +inf), only this one for less viscous fluids (water).
 
 	// Appear in adjustSprings() and applySpringDisplacements():
-	val plasticity = false
-	val L       = h					// Spring rest length ??? Should be smaller than h.
-	val kspring = 0.3				// Spring stiffness (5.1) ???
-	val gamma   = 0.1				// Spring yield ratio, typically between 0 and 0.2
-	val alpha   = 0.1				// Plasticity constant ???
+	var plasticity = false
+	var L       = h					// Spring rest length ??? Should be smaller than h.
+	var kspring = 0.3				// Spring stiffness (5.1) ???
+	var gamma   = 0.1				// Spring yield ratio, typically between 0 and 0.2
+	var alpha   = 0.1				// Plasticity constant ???
 		
 	// Appear in resolveCollions():
-	val umicron = 0.1				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
-	val wallsX  = 5.0
-	val wallsZ  = 0.4
-	val ground  = 0.1
+	var umicron = 0.1				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
+	var wallsX  = 5.0
+	var wallsZ  = 2.0
+	var ground  = 0.1
 	
 	// Stickiness:
-	val stickiness = false
-	val kStick  = 1.0
-	val dStick  = h/3				// Smaller than h
+	var stickiness = false
+	var kStick  = 1.0
+	var dStick  = h/3				// Smaller than h
 }
 /*
 object Particle {
-	val g       = 9.81				// Assuming we use meters as units, g = 9.81 m/s^2
-	val h       = 0.5				// 50 cm
-	val spacialHashBucketSize = 1	// 1 m
+	var g       = 9.81				// Assuming we use meters as units, g = 9.81 m/s^2
+	var h       = 0.5				// 50 cm
+	var spacialHashBucketSize = 1	// 1 m
 
 	// Appear in doubleDensityRelaxation():
-	val k       = 1					// Pressure stiffness ???
-	val kNear   = k * 10			// Near-pressure stiffness ??? Seems to be 10 times k
-	val rhoZero = h/2				// Rest density (4.1), the larger then denser, less than 1 == gaz ??? seems to be half of h
+	var k       = 1					// Pressure stiffness ???
+	var kNear   = k * 10			// Near-pressure stiffness ??? Seems to be 10 times k
+	var rhoZero = h/2				// Rest density (4.1), the larger then denser, less than 1 == gaz ??? seems to be half of h
 
 	// Appear in applyViscosity():
-	val sigma   = 0					// Viscosity linear dependency on velocity (between 0 and +inf), augment for highly viscous (lava, sperm).
-	val beta    = 0.1				// Viscosity quadratic dependency on velocity (between 0 and +inf), only this one for less viscous fluids (water).
+	var sigma   = 0					// Viscosity linear dependency on velocity (between 0 and +inf), augment for highly viscous (lava, sperm).
+	var beta    = 0.1				// Viscosity quadratic dependency on velocity (between 0 and +inf), only this one for less viscous fluids (water).
 
 	// Appear in adjustSprings() and applySpringDisplacements():
-	val plasticity = false
-	val L       = h					// Spring rest length ??? Should be smaller than h.
-	val kspring = 0.3				// Spring stiffness (5.1) ???
-	val gamma   = 0.1				// Spring yield ratio, typically between 0 and 0.2
-	val alpha   = 0.1				// Plasticity constant ???
+	var plasticity = false
+	var L       = h					// Spring rest length ??? Should be smaller than h.
+	var kspring = 0.3				// Spring stiffness (5.1) ???
+	var gamma   = 0.1				// Spring yield ratio, typically between 0 and 0.2
+	var alpha   = 0.1				// Plasticity constant ???
 		
 	// Appear in resolveCollions():
-	val umicron = 0.0				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
-	val wallsX  = 5.0
-	val wallsZ  = 0.4
-	val ground  = 0.1
+	var umicron = 0.0				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
+	var wallsX  = 5.0
+	var wallsZ  = 0.4
+	var ground  = 0.1
 	
 	// Stickiness:
-	val stickiness = false
-	val kStick  = 1.0
-	val dStick  = h/3				// Smaller than h
+	var stickiness = false
+	var kStick  = 1.0
+	var dStick  = h/3				// Smaller than h
 }
 */
-//class Neigbor(val p:Particle, val r:Vector3, val distance:Double) {}
 
+/** A single spring between two particles. */
 class Spring(val i:Particle, val j:Particle, var L:Double) {
 	// At construction, the spring registers in its two particles.
 	j.springs += ((i.index, this))
@@ -91,7 +102,30 @@ class Spring(val i:Particle, val j:Particle, var L:Double) {
 	}
 }
 
-class Particle(val index:Int) extends SpatialPoint {
+trait VESObject extends SpatialObject {
+	
+}
+
+trait Obstacle extends VESObject with SpatialCube {
+	/** Return a double that represents the distance from the particle to the obstacle closest surface polygon. */
+	def isNear(p:Particle):Double
+}
+
+class Wall(val axis:Int, val position:Double) extends Obstacle {
+	def from:Point3 = null
+	
+	def to:Point3 = null
+	
+	def isNear(p:Particle):Double = {
+		100000
+	}
+}
+
+/** A single SPH particle in the visco-elastic simulation.
+  * 
+  * A particle is a spatial point, that is a location in space
+  * that can be hashed and inserted in the spatial hash. */
+class Particle(val index:Int) extends VESObject with SpatialPoint {
 	/** Actual position. */
 	val x = Point3()
 	
@@ -104,6 +138,9 @@ class Particle(val index:Int) extends SpatialPoint {
 	/** Set of visible neighbor (distance < h). */
 	var neighbors:ArrayBuffer[Particle] = null
 
+	/** Set of visible obstacles. */
+	var obstacles:ArrayBuffer[Obstacle] = null
+	
 	/** Map of springs toward other particles. The particles
 	  * are mapped to their index in the simulation. */
 	var springs = new HashMap[Int,Spring]()
@@ -113,11 +150,14 @@ class Particle(val index:Int) extends SpatialPoint {
 	
 	/** As this is a non volumic object, this is equal to position. */
 	def to:Point3 = x
-	
+
+	/** Apply gravity to the velocity. */
 	def applyGravity(dt:Double) {
 		v.y -= dt * Particle.g
 	}
 	
+	/** Move the particle using its velocity.
+	  * The old position is stored in the xprev field. */
 	def move(dt:Double) {
 		xprev.copy(x)
 		x.x += v.x * dt
@@ -125,6 +165,7 @@ class Particle(val index:Int) extends SpatialPoint {
 		x.z += v.z * dt
 	}
 	
+	/** Compute the new velocity from the current position and the previous one. */
 	def computeVelocity(dt:Double) {
 		v.x = (x.x - xprev.x) / dt
 		v.y = (x.y - xprev.y) / dt
@@ -132,15 +173,29 @@ class Particle(val index:Int) extends SpatialPoint {
 	}
 }
 
+/** A viscoelastic fluid simulator. 
+  * 
+  * This is entirely based on the very good article "Particle-based viscoelastic
+  * fluid simulation" by Simon Clavet, Philippe Beaudoin and Pierre Poulin. As well as
+  * on the nonetheless very good PhD thesis "Animation de fluides visco élastiques à
+  * base de particules" by Simon Clavet.
+  */
 class ViscoElasticSimulation extends ArrayBuffer[Particle] {
-
+	/** Used to allocate indices for particles. */
 	protected var particlesIndexMax = 0
 	
-	val spaceHash = new SpatialHash[Particle](Particle.spacialHashBucketSize) 
+	/** Allow to quickly retrieve the particles in space without browsing all
+	  * particles (avoids the O(n^2) complexity). */
+	val spaceHash = new SpatialHash[VESObject](Particle.spacialHashBucketSize) 
 	
+	/** All the springs actually active between two particles. */
 	val springs = new HashSet[Spring]()
 	
+	/** The simulation stops as soon as this is false. */
 	var running = true
+	
+	/** A particle at random in the simulation. */
+	def randomParticle(random:Random):Particle = this(random.nextInt(size))
 	
 	/** Evaluate the iso-surface at the given point `x`. */
 	def evalIsoSurface(x:Point3):Double = {
@@ -148,7 +203,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		val neighbors = spaceHash.neighborsInBox(x, Particle.h)
 		
 		neighbors.foreach { i =>
-			val R = Vector3(x, i.x)
+			val R = Vector3(x, i.from)
 			val r = R.norm
 			val q = r/Particle.h
 			if(q < 1) {
@@ -157,20 +212,19 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 			}
 		}
 		
-		val v = math.sqrt(value)
-//println("%s with %d neighbors = %f".format(x, neighbors.size, v))
-		v
+		math.sqrt(value)
 	}
-	
+
+	/** Evaluate the normal to the iso-surface at point `x`. */
 	def evalIsoNormal(x:Point3):Vector3 = {
 		val n = Vector3(0, 0, 0)
 		val neighbors = spaceHash.neighborsInBox(x, Particle.h)
 		
 		neighbors.foreach { i =>
-			val R = Vector3(i.x, x)
+			val R = Vector3(i.from, x)
 			val l = R.normalize
 			val q = l/Particle.h
-			if(q<1) {
+			if(q < 1) {
 				R /= l*l
 				n += R
 			}
@@ -180,6 +234,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		n
 	}
 	
+	/** Add a particle at a given location (`x`,`y`,`z`) with given velocity (`vx`,`vy`,`vz`). */
 	def addParticle(x:Double, y:Double, z:Double, vx:Double, vy:Double, vz:Double):Particle = {
 		val p = new Particle(particlesIndexMax) 
 		
@@ -194,26 +249,40 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		p		
 	}
 	
-	def addParticle(x:Double, y:Double, z:Double):Particle = addParticle(x,y,z, 0, 0, 0)
-	
-	def simulation() {
-		var dt = 0.1	// In seconds
-		while(running) {
-			simulationStep(dt)
+	/** Remove a particle from the simulation. */
+	def removeParticle(p:Particle) {
+		this -= p
+		spaceHash.remove(p)
+		
+		// find springs that may reference this particle
+		if(Particle.plasticity) {			
+			val s = p.springs.map { item => item._2 }
+			
+			s.foreach { spring =>
+				spring.removed
+				springs.remove(spring)
+			}
 		}
 	}
 	
+	/** Add a particle at a given location (`x`,`y`,`z`) with zero velocity. */
+	def addParticle(x:Double, y:Double, z:Double):Particle = addParticle(x,y,z, 0, 0, 0)
+	
+	/** Apply one simulaton step during time range `dt`. */
 	def simulationStep(dt:Double) {
+		
 		// Compute neighbors
-		var n = 0.0
-		foreach { p => p.neighbors = computeNeighbors(p); n += p.neighbors.size }
-//println("%f neighbors in average".format(n/size))
+		foreach { p => val (n,o) = computeNeighbors(p); p.neighbors = n; p.obstacles = o }
+
 		// Gravity
 		foreach { _.applyGravity(dt) }
+		
 		// Viscosity
 		applyViscosity(dt)
+		
 		// Move
 		foreach { _.move(dt) }
+		
 		// Add and remove springs, change rest lengths
 		if(Particle.plasticity) {
 			adjustSprings(dt)
@@ -221,31 +290,46 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 			// double density relaxation, and collisions
 			applySpringDisplacements(dt)
 		}
+		
 		doubleDensityRelaxation(dt)
 		resolveCollions(dt)
 		foreach { _.computeVelocity(dt) }
+		
 		// Update the space hash
 		foreach { spaceHash.move(_) }
 	}
 	
-	def computeNeighbors(i:Particle):ArrayBuffer[Particle] = {
+	/** Set of neighbors of a given particle `i`. 
+	  * The set of neighbors depends on the viewing distance `Particle.h`. */
+	def computeNeighbors(i:Particle):(ArrayBuffer[Particle], ArrayBuffer[Obstacle]) = {
 		val potential = spaceHash.neighborsInBox(i, Particle.h*2)
 		val neighbors = new ArrayBuffer[Particle]()
+		val obstactles = new ArrayBuffer[Obstacle]()
 		
 		potential.foreach { j =>
-			if(j ne i) {
-				val r = Vector3(i.x, j.x)
-				val l = r.norm
+			if(j.isInstanceOf[Particle]) {
+				if(j ne i) {
+					val r = Vector3(i.x, j.from)
+					val l = r.norm
+				
+					if(l < Particle.h) {
+						neighbors += j.asInstanceOf[Particle]
+					}
+				}
+			} else {
+				val o = j.asInstanceOf[Obstacle]
+				val l = o.isNear(i)
 				
 				if(l < Particle.h) {
-					neighbors += j
+					obstactles += o
 				}
 			}
 		}
 		
-		neighbors
+		(neighbors, obstactles)
 	}
 	
+	/** The viscosity step during `dt` time. */
 	def applyViscosity(dt:Double) {
 		foreach { i =>
 			i.neighbors.foreach { j =>
@@ -267,6 +351,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		}
 	}
 	
+	/** Add new springs, adjust existing ones, and remove old ones during `dt` time. */
 	def adjustSprings(dt:Double) {
 		// Add and adjust springs.
 		foreach { i =>
@@ -294,9 +379,9 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		springs.retain { spring =>
 			if(spring.L > Particle.h) { spring.removed; false } else { true }
 		}
-//println("springs: %d".format(springs.size))
 	}
 	
+	/** Apply the springs displacements to the particles during `dt` time. */
 	def applySpringDisplacements(dt:Double) {
 		val dt2 = dt * dt
 		springs.foreach { spring =>
@@ -309,6 +394,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		}
 	}
 	
+	/** The main feature of the algorithm (see paper). */
 	def doubleDensityRelaxation(dt:Double) {
 		// Algorithm 2
 		val dt2 = dt*dt
@@ -348,6 +434,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		}
 	}
 	
+	/** Apply displacements from collisions with objects. */
 	def resolveCollions(dt:Double) {
 		val ground = Vector3( 0, 1, 0)
 		val wallX1 = Vector3(-1, 0, 0)

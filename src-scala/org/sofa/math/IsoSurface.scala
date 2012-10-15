@@ -7,7 +7,7 @@ import scala.collection.mutable.HashSet
 /** One iso-cube of the marching cubes algorithm used by the `IsoSurface`.
   * 
   * An iso-cube evaluates the surface implicit function at its height vertices
-  * and compute from his one or more triangles that intersect it. To do this
+  * and compute from this one or more triangles that intersect it. To do this
   * this implementation uses a set of neighbor cubes. If the neighbors are
   * present, it will not re-evaluate the implicit function (often costly) and
   * will also avoid recomputing the interpolation of triangles points onto its

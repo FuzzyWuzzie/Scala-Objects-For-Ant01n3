@@ -49,6 +49,10 @@ trait SpatialObject {
 		if(buckets eq null)
 			buckets = new HashSet[Bucket[SpatialObject]]()
 		
+		if(isVolume)
+		     bucket.volumes += 1
+		else bucket.points += 1
+			
 		buckets += bucket 
 	}
 	
@@ -58,6 +62,11 @@ trait SpatialObject {
 	def removeBuckets():Set[Bucket[SpatialObject]] = {
 		assert(buckets ne null)
 		assert(!buckets.isEmpty)
+		buckets.foreach { bucket =>
+			if(isVolume)
+				 bucket.volumes -= 1
+			else bucket.points -= 1
+		}
 		val b = buckets
 		buckets = null
 		b
@@ -79,6 +88,12 @@ trait SpatialCube extends SpatialObject {
   * can appear in several spatial areas if it is larger or overlaps
   * spatial areas. */
 class Bucket[T<:SpatialObject](val position:HashPoint3) extends HashSet[T] {
+	/** Number of points in the bucket. */
+	var points:Int = 0
+	
+	/** Number of volume objects in the bucket. */
+	var volumes:Int = 0
+	
 	override def hashCode():Int = {
 		 (position.x*73856093)^(position.y*19349663)^(position.z*83492791)	
 	}
