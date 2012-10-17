@@ -123,6 +123,7 @@ class Bucket[T<:SpatialObject](val position:HashPoint3) extends HashSet[T] {
   * between (bucketSize,0,0) and (bucketSize*2,bucketSize,bucketSize) "user" coordinates are
   * at "bucket" coordinates (1,0,0). In the same way, all objects in between "user" coordinates
   * (-1,-1,-1) and (0,0,0) are at "bucket" coordinates (-1,-1,-1). Etc.
+  * Bucket space coordinates are integers.
   *  
   * Object added to the spatial hash must inherit the `SpatialObject`
   * trait, and be either a `SpatialPoint`, an infinitely small point,
@@ -143,7 +144,13 @@ class Bucket[T<:SpatialObject](val position:HashPoint3) extends HashSet[T] {
   * code function for the triplets of coordinates). Therefore there
   * are no limits in the space that you can index, objects can
   * be arbitrarily distant from one another, without consuming much
-  * space. */
+  * space.
+  * 
+  * Specific methods allow to retrieve objects around a point or another
+  * object. They work both in 3D or in 2D in the XY plane. Therefore,
+  * although this class is made for 3D, it can easily be used in 2D
+  * without speed loss (since, most of the time, this is the search
+  * for neighbors that is the most time consuming). */
 class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 
 	/** Set of buckets. */
@@ -258,11 +265,50 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 		result
 	}
 	
+	/** All the neighbor objects in all the buckets intersecting
+	  * a 2D cube along the axes X and Y of `size` side around
+	  * the object `thing`. The returned objects may therefore
+	  * be out of the cube defined by the parameters. The neighbor
+	  * set does not contain the `thing` element. */
+	def neighborsInBoxXY(thing:T, size:Double):Set[T] = {
+		val s2     = size/2
+		val p      = thing.from
+//		val bucks  = getBuckets(p.x-s2, p.y - s2, p.z, p.x+s2, p.y+s2, p.z)
+		val result = new HashSet[T]
+	
+		getThings(result, p.x-s2, p.y - s2, p.z, p.x+s2, p.y+s2, p.z)
+		
+//		bucks.foreach { bucket => result ++= bucket }
+		
+		result
+	}
+	
 	/** Get the bucket which contains "user" coordinates (`x`,`y`,`z`).
 	  * Buckets have their own coordinates and have indices at
 	  * integer positions in a 3D space, where each integer
 	  * position is a multiple of `cellSize`. */
 	def getBucket(x:Double, y:Double, z:Double):Bucket[T] = buckets.get(hash(x,y,z)).getOrElse(null)
+
+	
+	/** All the objects in all the buckets containing or intersecting the bounding box defined by point
+	  * (`x0`,`y0`,`z0`)  and point (`x1`,`y1`,`z1`). The first point must be
+	  * the lower-left-front point and the second point must be the top-right-back
+	  * point (in other words, the coordinates of the second point must be
+	  * greater than the coordinates of the first point). */
+	def getThings(things:HashSet[T], x0:Double, y0:Double, z0:Double, x1:Double, y1:Double, z1:Double) {
+		val from = hash(x0, y0, z0)
+		val to   = hash(x1, y1, z1)
+
+		for(z <- from.z to to.z) {
+			for(y <- from.y to to.y) {
+				for(x <- from.x to to.x) {
+					val b = buckets.get(HashPoint3(x,y,z)).getOrElse(null)
+					if(b ne null)
+						things ++= b
+				}
+			}
+		}
+	}
 
 	/** All the buckets containing or intersecting the bounding box defined by point
 	  * (`x0`,`y0`,`z0`)  and point (`x1`,`y1`,`z1`). The first point must be

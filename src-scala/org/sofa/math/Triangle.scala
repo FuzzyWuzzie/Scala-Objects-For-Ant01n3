@@ -10,6 +10,16 @@ class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {
 	/** Computes the normal form of a triangle, that is a base point,
 	  * and two vectors to locate the two other points from the base point. */
 	def normalForm():(Point3,Vector3,Vector3) = { (Point3(p0),Vector3(p0, p1),Vector3(p0, p2)) }
+
+	/** Compute the triangle normal. */
+	def normal():Vector3 = {
+		val v0 = Vector3(p0, p1)
+		val v1 = Vector3(p0, p2)
+			
+		val normal = v1 X v0
+		normal.normalize
+		normal
+	}
 	
 	/** Compute the distance from the given point `p` to this triangle.
 	  * Return the distance, and a point on the triangle where the distance

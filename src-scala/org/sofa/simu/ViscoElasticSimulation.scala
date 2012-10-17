@@ -10,6 +10,7 @@ import scala.collection.mutable.HashSet
 import org.sofa.math.SpatialObject
 import org.sofa.math.SpatialCube
 import scala.util.Random
+import org.sofa.math.Triangle
 
 // XXX Améliorations possibles:
 
@@ -107,17 +108,27 @@ trait VESObject extends SpatialObject {
 }
 
 trait Obstacle extends VESObject with SpatialCube {
-	/** Return a double that represents the distance from the particle to the obstacle closest surface polygon. */
-	def isNear(p:Particle):Double
+	/** Return a double that represents the distance from the particle
+	  * to the obstacle closest surface polygon as well as the nearest point on
+	  * the obstacle, and finally the normal of the face of the obstacle the point
+	  * lies in. If the distance is negative, the particle is inside the
+	  * obstacle. */
+	def isNear(p:Particle):(Double,Point3,Vector3)
 }
 
-class Wall(val axis:Int, val position:Double) extends Obstacle {
-	def from:Point3 = null
+class QuadWall(p:Point3, v0:Vector3, v1:Vector3) extends Obstacle {
+	val tri1 = Triangle(p,Point3(p.x+v0.x,p.y+v0.y,p.z+v0.z),Point3(p.x+v1.x,p.y+v1.y,p.z+v1.z))
+	val tri2 = Triangle(Point3(p.x+v0.x+v1.x,p.y+v0.y+v1.y,p.z+v0.z+v1.z),tri1.p2,tri1.p1)
 	
-	def to:Point3 = null
+	def from:Point3 = tri1.p0
 	
-	def isNear(p:Particle):Double = {
-		100000
+	def to:Point3 = tri2.p0
+	
+	def isNear(p:Particle):(Double,Point3,Vector3) = {
+		val (d0,p0) = tri1.distanceFrom(p.x)
+		val (d1,p1) = tri2.distanceFrom(p.x)
+		
+		if(d0 < d1) (d0,p0,tri1.normal) else (d1,p1,tri1.normal)
 	}
 }
 
@@ -138,8 +149,8 @@ class Particle(val index:Int) extends VESObject with SpatialPoint {
 	/** Set of visible neighbor (distance < h). */
 	var neighbors:ArrayBuffer[Particle] = null
 
-	/** Set of visible obstacles. */
-	var obstacles:ArrayBuffer[Obstacle] = null
+	/** The nearest obstacle. */
+	var collision:Collision = null
 	
 	/** Map of springs toward other particles. The particles
 	  * are mapped to their index in the simulation. */
@@ -173,6 +184,9 @@ class Particle(val index:Int) extends VESObject with SpatialPoint {
 	}
 }
 
+/** Represents a collision of a particle with an obstacle. */
+case class Collision(val distance:Double, val hit:Point3, val normal:Vector3, val obstacle:Obstacle) {}
+
 /** A viscoelastic fluid simulator. 
   * 
   * This is entirely based on the very good article "Particle-based viscoelastic
@@ -194,6 +208,9 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	/** The simulation stops as soon as this is false. */
 	var running = true
 	
+	/** All the obstacles. */
+	val obstacles = new ArrayBuffer[Obstacle]()
+	
 	/** A particle at random in the simulation. */
 	def randomParticle(random:Random):Particle = this(random.nextInt(size))
 	
@@ -203,12 +220,14 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		val neighbors = spaceHash.neighborsInBox(x, Particle.h)
 		
 		neighbors.foreach { i =>
-			val R = Vector3(x, i.from)
-			val r = R.norm
-			val q = r/Particle.h
-			if(q < 1) {
-				val v = (1 - q)
-				value += (v*v)
+			if(! i.isVolume) {
+				val R = Vector3(x, i.from)
+				val r = R.norm
+				val q = r/Particle.h
+				if(q < 1) {
+					val v = (1 - q)
+					value += (v*v)
+				}
 			}
 		}
 		
@@ -221,12 +240,14 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		val neighbors = spaceHash.neighborsInBox(x, Particle.h)
 		
 		neighbors.foreach { i =>
-			val R = Vector3(i.from, x)
-			val l = R.normalize
-			val q = l/Particle.h
-			if(q < 1) {
-				R /= l*l
-				n += R
+			if(! i.isVolume) {
+				val R = Vector3(i.from, x)
+					val l = R.normalize
+				val q = l/Particle.h
+				if(q < 1) {
+					R /= l*l
+					n += R
+				}
 			}
 		}
 		
@@ -268,11 +289,19 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	/** Add a particle at a given location (`x`,`y`,`z`) with zero velocity. */
 	def addParticle(x:Double, y:Double, z:Double):Particle = addParticle(x,y,z, 0, 0, 0)
 	
+	/** Add an obstacle. The obstacle is inserted in the obstacles list
+	  * and tested for collision with particles in the computeNeighbors()
+	  * step. */
+	def addObstacle(o:Obstacle) {
+		obstacles += o
+		spaceHash.add(o)
+	}
+	
 	/** Apply one simulaton step during time range `dt`. */
 	def simulationStep(dt:Double) {
 		
 		// Compute neighbors
-		foreach { p => val (n,o) = computeNeighbors(p); p.neighbors = n; p.obstacles = o }
+		foreach { p => val (n,c) = computeNeighbors(p); p.neighbors = n; p.collision = c }
 
 		// Gravity
 		foreach { _.applyGravity(dt) }
@@ -300,11 +329,13 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	}
 	
 	/** Set of neighbors of a given particle `i`. 
-	  * The set of neighbors depends on the viewing distance `Particle.h`. */
-	def computeNeighbors(i:Particle):(ArrayBuffer[Particle], ArrayBuffer[Obstacle]) = {
+	  * The set of neighbors depends on the viewing distance `Particle.h`. If
+	  * amongst the neighbors there are some non-particles objects, they are
+	  * treated as obstacles and the closest one is returned. */
+	def computeNeighbors(i:Particle):(ArrayBuffer[Particle], Collision) = {
 		val potential = spaceHash.neighborsInBox(i, Particle.h*2)
 		val neighbors = new ArrayBuffer[Particle]()
-		val obstactles = new ArrayBuffer[Obstacle]()
+		var collision:Collision = null
 		
 		potential.foreach { j =>
 			if(j.isInstanceOf[Particle]) {
@@ -318,15 +349,17 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 				}
 			} else {
 				val o = j.asInstanceOf[Obstacle]
-				val l = o.isNear(i)
+				val (l,p,n) = o.isNear(i)
 				
 				if(l < Particle.h) {
-					obstactles += o
+					if((collision eq null) || (l < collision.distance)) { 
+						collision = Collision(l,p,n,o) 
+					}
 				}
 			}
 		}
 		
-		(neighbors, obstactles)
+		(neighbors, collision)
 	}
 	
 	/** The viscosity step during `dt` time. */
@@ -449,6 +482,10 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 			if(i.x.x < -Particle.wallsX) { handleCollisionWithAxisPlane(dt, i, wallX2, Particle.wallsX) }
 			if(i.x.z >  Particle.wallsZ) { handleCollisionWithAxisPlane(dt, i, wallZ1, Particle.wallsZ) } else  
 			if(i.x.z < -Particle.wallsZ) { handleCollisionWithAxisPlane(dt, i, wallZ2, Particle.wallsZ) }
+			
+			if(i.collision ne null) {
+				handleCollisionWithObstacle(dt, i)
+			}
 		}
 		
 		if(Particle.stickiness) {
@@ -459,7 +496,28 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 			}
 		}
 	}
-
+	
+	protected def handleCollisionWithObstacle(dt:Double, i:Particle) {
+		val c = i.collision
+		
+		if(c.distance < Particle.h/2) {
+			val v = Vector3(i.x, i.xprev)
+			
+			// Objects have no velocity, therefore we do not subtract it.
+			// v.subBy(object.v)
+			
+			val vnormal = c.normal * (v.dot(c.normal))			// vector projection (v.dot(n) = scalar projection), this is the normal vector scaled by the length of the projection of v on it.
+		
+			if(Particle.umicron > 0) {
+				val vtangent = v.subBy(vnormal)
+				vtangent.multBy(Particle.umicron)
+				i.x.addBy(vnormal.addBy(vtangent))	// vnormal + vtangent = I
+			} else {
+				i.x.addBy(vnormal)
+			}		
+		}
+	}
+	
 	protected def handleCollisionWithAxisPlane(dt:Double, i:Particle, n:Vector3, p:Double) {
 		//      ^
 		//      |

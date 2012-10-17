@@ -35,6 +35,10 @@ import org.sofa.math.IsoSurface
 import org.sofa.opengl.mesh.DynIndexedTriangleMesh
 import org.sofa.simu.ViscoElasticSimulation
 import org.sofa.simu.Particle
+import org.sofa.simu.QuadWall
+import org.sofa.opengl.mesh.TriangleSet
+import org.sofa.opengl.mesh.ColoredTriangleSet
+import org.sofa.opengl.mesh.ColoredSurfaceTriangleSet
 
 object TestViscoElasticSimulation {
 	def main(args:Array[String]) = (new TestViscoElasticSimulation).test
@@ -58,12 +62,12 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	/** Limit of the iso-surface in the implicit function used to define the surface. */
 	val isoLimit = 0.65
 
-	var drawParticlesFlag = false
+	var drawParticlesFlag = true
 	var drawSpaceHashFlag = false
 	var drawIsoCubesFlag = false
-	var drawIsoSurfaceFlag = true
+	var drawIsoSurfaceFlag = false
 	
-	val isoSurfaceColor = Rgba.white
+	val isoSurfaceColor = Rgba.cyan
 	val particleColor = Rgba(0.7, 0.7, 1, 0.3)
 	val clearColor = Rgba.grey10
 	val planeColor = Rgba.grey80
@@ -96,6 +100,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	var wcube:VertexArray = null
 	var wcube2:VertexArray = null
 	var isoSurface:VertexArray = null
+	var obstacles:VertexArray = null
 	
 	var axisMesh = new Axis(10)
 	var planeMesh = new Plane(2, 2, 10, 10)
@@ -103,6 +108,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	var wcubeMesh:WireCube = null
 	var wcubeMesh2:WireCube = null
 	var isoSurfaceMesh = new DynIndexedTriangleMesh(maxDynTriangles)
+	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -181,7 +187,10 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	}
 	
 	protected def initGeometry() {
-		initParticles
+		initParticles		
+		initSimu
+
+		// Phong shader
 		
 		var v = phongShad.getAttribLocation("position")
 		var c = phongShad.getAttribLocation("color")
@@ -191,6 +200,9 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		
 		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		obstacles = obstaclesMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		
+		// Plain shader
 		
 		v = plainShad.getAttribLocation("position")
 		c = plainShad.getAttribLocation("color")
@@ -203,6 +215,8 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		wcube2 = wcubeMesh2.newVertexArray(gl, ("vertices", v), ("colors", c))
 		
 		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		
+		// Particles shader
 		
 		v = particlesShad.getAttribLocation("position")
 		c = particlesShad.getAttribLocation("color") 
@@ -223,6 +237,23 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		}
 	}
 	
+	protected def initSimu() {
+		addObstacle(0, new QuadWall(Point3(2,5,-1), Vector3(1,2,0), Vector3(0,0,2)))
+		addObstacle(2, new QuadWall(Point3(4,2,-1), Vector3(2,2,0), Vector3(0,0,2)))
+	}
+	
+	protected def addObstacle(i:Int, wall:QuadWall) {
+		obstaclesMesh.setTriangle(i, wall.tri1)
+		obstaclesMesh.setNormal(i, wall.tri1.normal)
+		obstaclesMesh.setColor(i, Rgba.blue)
+
+		obstaclesMesh.setTriangle(i+1, wall.tri2)
+		obstaclesMesh.setNormal(i+1, wall.tri2.normal)
+		obstaclesMesh.setColor(i+1, Rgba.blue)
+		
+		simu.addObstacle(wall)
+	}
+	
 	// ----------------------------------------------------------------------------------
 	// Rendering
 	
@@ -237,6 +268,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		camera.setupView
 
 		drawPlane
+		drawObstacles
 		drawIsoSurface
 		drawAxis
 		drawSpaceHash
@@ -281,7 +313,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			var p = simu.randomParticle(random)
 			var i = 0
 			
-			while(p.x.y > 0.2 && i<10) {
+			while(p.x.y > 0.2 && i < 10) {
 				p = simu.randomParticle(random)
 				i += 1
 			}
@@ -298,6 +330,15 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		useLights(phongShad)
 		camera.uniformMVP(phongShad)
 		plane.draw(planeMesh.drawAs)
+	}
+	
+	protected def drawObstacles() {
+		gl.disable(gl.CULL_FACE)
+		phongShad.use
+		useLights(phongShad)
+		camera.uniformMVP(phongShad)
+		obstacles.draw(obstaclesMesh.drawAs)
+		gl.enable(gl.CULL_FACE)
 	}
 	
 	protected def drawAxis() {
@@ -326,12 +367,14 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			val cs = simu.spaceHash.bucketSize
 			val cs2 = cs/2
 			simu.spaceHash.buckets.foreach { bucket =>
+				//if(bucket._2.points > 0) {
 				camera.pushpop {
 					val p = bucket._2.position
 					camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.setUniformMVP(plainShad)
 					wcube.draw(wcubeMesh.drawAs)
 				}
+				//}
 			}
 			gl.disable(gl.BLEND)
 		}
@@ -409,17 +452,20 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	protected def exploreSpaceHash() {
 		var i = 0
 		simu.spaceHash.buckets.foreach { bucket =>
-			val x = (bucket._1.x-1) * simu.spaceHash.bucketSize
-			val y = (bucket._1.y-1) * simu.spaceHash.bucketSize
-			val z = (bucket._1.z-1) * simu.spaceHash.bucketSize
+			if(bucket._2.points > 0) {
+				val x = (bucket._1.x-1) * simu.spaceHash.bucketSize
+				val y = (bucket._1.y-1) * simu.spaceHash.bucketSize
+				val z = (bucket._1.z-1) * simu.spaceHash.bucketSize
 			
-			val p = isoSurfaceComp.nearestCubePos(x, y, z)
+				val p = isoSurfaceComp.nearestCubePos(x, y, z)
 
-			isoSurfaceComp.addCubesAt(
+				isoSurfaceComp.addCubesAt(
 					p.x.toInt,        p.y.toInt,        p.z.toInt,
 					(3*isoDiv).toInt, (3*isoDiv).toInt, (3*isoDiv).toInt,
 					simu.evalIsoSurface, isoLimit)
-			i+=1
+				
+				i+=1
+			}
 		}
 	}
 
