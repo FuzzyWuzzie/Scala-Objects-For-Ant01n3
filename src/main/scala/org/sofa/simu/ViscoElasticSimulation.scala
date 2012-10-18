@@ -42,7 +42,7 @@ object Particle {
 	var plasticity = false
 	var L       = h					// Spring rest length ??? Should be smaller than h.
 	var kspring = 0.3				// Spring stiffness (5.1) ???
-	var gamma   = 0.1				// Spring yield ratio, typically between 0 and 0.2
+	var gamma   = 0.1				// Spring yield ratio, typically between 0 and 0.2 and < 1
 	var alpha   = 0.1				// Plasticity constant ???
 		
 	// Appear in resolveCollions():
@@ -93,6 +93,7 @@ object Particle {
 
 /** A single spring between two particles. */
 class Spring(val i:Particle, val j:Particle, var L:Double) {
+	var step = -1
 	// At construction, the spring registers in its two particles.
 	j.springs += ((i.index, this))
 	i.springs += ((j.index, this))
@@ -207,6 +208,9 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	
 	/** The simulation stops as soon as this is false. */
 	var running = true
+
+	/** The current step. */
+	var step = 0
 	
 	/** All the obstacles. */
 	val obstacles = new ArrayBuffer[Obstacle]()
@@ -326,6 +330,9 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		
 		// Update the space hash
 		foreach { spaceHash.move(_) }
+
+		// One step finished.
+		step += 1
 	}
 	
 	/** Set of neighbors of a given particle `i`. 
@@ -387,6 +394,16 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	/** Add new springs, adjust existing ones, and remove old ones during `dt` time. */
 	def adjustSprings(dt:Double) {
 		// Add and adjust springs.
+		// XXX this method is bad, it considers every particle
+		// but it should only consider particle-pairs. It works
+		// since springs have a current step indicator allowing to
+		// know if they were already processed at the current step.
+		// XXX could we do better ?
+
+		var count = springs.size
+		var strech = 0
+		var compress = 0
+		var removedAsAdded = 0
 		foreach { i =>
 			i.neighbors.foreach { j =>
 				val L = Particle.L
@@ -394,29 +411,47 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 				val rij = r.norm
 				val q = rij / Particle.h
 				if(q < 1) {
+					var isNew=false
 					var spring = i.springs.get(j.index).getOrElse {
-						val s = new Spring(i, j, Particle.h)
+						val s = new Spring(i, j, rij);//Particle.h)
 						springs += s
+						isNew = true
 						s
 					}
-					val d = Particle.gamma * spring.L
-					if(rij > L+d) {
-						spring.L += dt * Particle.alpha * (rij-L-d)
-					} else if(rij < L-d) {
-						spring.L -= dt * Particle.alpha * (L-d-rij) 
+					if(spring.step < step) {
+						val d = Particle.gamma * spring.L
+						if(rij > L+d) {	// Strech
+							spring.L += dt * Particle.alpha * (rij-L-d)
+							strech += 1
+						} else if(rij < L-d) {	// Compress
+							spring.L -= dt * Particle.alpha * (L-d-rij) 
+							compress += 1
+						} else {
+							//Console.err.println("do nothing")
+						}
+
+						if(isNew && spring.L > Particle.h)
+							removedAsAdded += 1
+
+						spring.step = step
 					}
 				}
 			}
 		}
+		Console.err.println("added %d (%d added, %d to remove) springs".format(springs.size-count-removedAsAdded, springs.size-count, removedAsAdded))
+		Console.err.println("%d strech, %d compress".format(strech,compress))
 		// Remove springs
+		count = springs.size
 		springs.retain { spring =>
 			if(spring.L > Particle.h) { spring.removed; false } else { true }
 		}
+		Console.err.println("removed %d springs (%d springs)".format(count-springs.size, springs.size))
 	}
 	
 	/** Apply the springs displacements to the particles during `dt` time. */
 	def applySpringDisplacements(dt:Double) {
 		val dt2 = dt * dt
+Console.err.println("-> applying %d springs".format(springs.size))
 		springs.foreach { spring =>
 			var r = Vector3(spring.i.x, spring.j.x)
 			val rij = r.normalize
@@ -487,14 +522,6 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 				handleCollisionWithObstacle(dt, i)
 			}
 		}
-		
-		if(Particle.stickiness) {
-			val wallXplus = Particle.wallsX - Particle.h/2
-			
-			foreach { i =>
-				if(i.x.x > wallXplus) { handleStickiness(dt, wallX1, i, wallXplus, Particle.wallsX - i.x.x) }
-			}
-		}
 	}
 	
 	protected def handleCollisionWithObstacle(dt:Double, i:Particle) {
@@ -515,6 +542,10 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 			} else {
 				i.x.addBy(vnormal)
 			}		
+
+			if(Particle.stickiness) {
+				handleStickiness(dt, i, c)// c.normal, i, wallXplus, c.distance)
+			}
 		}
 	}
 	
@@ -541,9 +572,11 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		}
 	}
 	
-	protected def handleStickiness(dt:Double, n:Vector3, i:Particle, p:Double, di:Double) {
-		// XXX BUG does not seems to work actually... 
-		val Istick = n.multBy(-dt * Particle.kStick * di * (1 - (di/Particle.dStick)) )
+	protected def handleStickiness(dt:Double, i:Particle, c:Collision) {// n:Vector3, i:Particle, di:Double) {
+		// XXX BUG does not seems to work actually...
+		val Istick = c.normal * (-dt * Particle.kStick * c.distance * (1 - (c.distance/Particle.dStick)) )
+Console.err.print("stickiness %.4f (x=%.4f ->".format(Istick(0), i.x.x))
 		i.x.addBy(Istick)
+Console.err.println(" %.4f)".format(i.x.x))
 	}
 }

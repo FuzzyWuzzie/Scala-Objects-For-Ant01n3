@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.sofa.math.Point3
 import org.sofa.opengl.mesh.Cube
 import org.sofa.opengl.mesh.WireCube
-import org.sofa.opengl.mesh.WireCube
+import org.sofa.opengl.mesh.ColoredLineSet
 import org.sofa.opengl.mesh.Axis
 import org.sofa.math.SpatialPoint
 import org.sofa.math.SpatialCube
@@ -39,6 +39,7 @@ import org.sofa.simu.QuadWall
 import org.sofa.opengl.mesh.TriangleSet
 import org.sofa.opengl.mesh.ColoredTriangleSet
 import org.sofa.opengl.mesh.ColoredSurfaceTriangleSet
+import org.sofa.Environment
 
 object TestViscoElasticSimulation {
 	def main(args:Array[String]) = (new TestViscoElasticSimulation).test
@@ -49,6 +50,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	// Parameters
 	
 	val maxDynTriangles = 6000
+	val maxSprings = 2000
 	val size = 1000
 	val emitPoint = Point3(-5, 5, 0)
 	val emitVelocity1 = Vector3(15, 6, 0)
@@ -63,6 +65,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	val isoLimit = 0.65
 
 	var drawParticlesFlag = true
+	var drawSpringsFlag = true
 	var drawSpaceHashFlag = false
 	var drawIsoCubesFlag = false
 	var drawIsoSurfaceFlag = false
@@ -101,6 +104,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	var wcube2:VertexArray = null
 	var isoSurface:VertexArray = null
 	var obstacles:VertexArray = null
+	var springs:VertexArray = null
 	
 	var axisMesh = new Axis(10)
 	var planeMesh = new Plane(2, 2, 10, 10)
@@ -109,6 +113,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	var wcubeMesh2:WireCube = null
 	var isoSurfaceMesh = new DynIndexedTriangleMesh(maxDynTriangles)
 	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
+	var springsMesh = new ColoredLineSet(maxSprings)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -154,9 +159,10 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src-scala/org/sofa/opengl/shaders/"
+		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 		Shader.includePath += "src/com/chouquette/tests"
 			
+		initSimuParams
 		initGL(sgl)
 		initShaders
 		initGeometry
@@ -164,6 +170,12 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		camera.viewCartesian(0, 5, 14)
 		camera.setFocus(0, 4, 0)
 		reshape(surface)
+	}
+
+	protected def initSimuParams() {
+		Environment.readConfigFile("/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/simu/test/config1.txt")
+		Environment.initializeFieldsOf(Particle)
+		Environment.printParameters(Console.out)
 	}
 	
 	protected def initGL(sgl:SGL) {
@@ -216,6 +228,8 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		
 		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 		
+		springs = springsMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+
 		// Particles shader
 		
 		v = particlesShad.getAttribLocation("position")
@@ -225,6 +239,10 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 
 		for(i <- 0 until maxDynTriangles*3) {
 			isoSurfaceMesh.setPointColor(i, isoSurfaceColor)
+		}
+
+		for(i <- 0 until maxSprings) {
+			springsMesh.setColor(i, Rgba.red)
 		}
 	}
 	
@@ -274,6 +292,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		drawSpaceHash
 		drawIsoCubes
 		drawParticles
+		drawSprings
 		
 		surface.swapBuffers
 		gl.checkErrors
@@ -319,7 +338,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			}
 			
 			if(p.x.y <= 0.2) {
-				Console.err.println("removing particle %d".format(p.index))
+//				Console.err.println("removing particle %d".format(p.index))
 				simu.removeParticle(p)
 			}
 		}
@@ -356,6 +375,16 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			camera.setUniformMVP(particlesShad)
 			particlesShad.uniform("pointSize", particleSizePx)
 			particles.draw(particlesMesh.drawAs, simu.size)
+			gl.disable(gl.BLEND)
+		}
+	}
+
+	protected def drawSprings() {
+		if(drawSpringsFlag) {
+			gl.enable(gl.BLEND)
+			plainShad.use
+			camera.setUniformMVP(plainShad)
+			springs.draw(springsMesh.drawAs, simu.springs.size*2)
 			gl.disable(gl.BLEND)
 		}
 	}
@@ -419,6 +448,18 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			}
 		
 			particlesMesh.updateVertexArray(gl, "vertices", "colors")
+			gl.checkErrors
+		}
+
+		if(drawSpringsFlag) {
+			var i = 0
+			simu.springs.foreach { spring =>
+				springsMesh.setLine(i, spring.i.x, spring.j.x)
+				//springsMesh.setColor(i, Rgba.red)
+				i += 1
+			}
+
+			springsMesh.updateVertexArray(gl, "vertices", "colors")
 			gl.checkErrors
 		}
 		
