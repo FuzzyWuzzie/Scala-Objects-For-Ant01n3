@@ -29,18 +29,18 @@
 # Appear in adjustSprings() and applySpringDisplacements():
 	
 	plasticity = true
-	
-	# Spring rest length ??? Should be smaller than h.
-	L = 0.1
+
+	# XXX Just forget this.
+	#L = 0.05
 
 	# Spring stiffness (5.1) ???
-	kspring = 0.1
+	kspring = 100.0
 
 	# Spring yield ratio, typically between 0 and 0.2 an < 1
 	gamma = 0.2
 
 	# Plasticity constant ???
-	alpha = 0.001
+	alpha = 0.01
 
 # Appear in resolveCollions():
 

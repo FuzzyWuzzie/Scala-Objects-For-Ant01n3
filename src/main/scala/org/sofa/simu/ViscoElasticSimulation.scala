@@ -400,66 +400,72 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		// know if they were already processed at the current step.
 		// XXX could we do better ?
 
-		var count = springs.size
-		var strech = 0
-		var compress = 0
-		var removedAsAdded = 0
+var count = springs.size
+var strech = 0
+var compress = 0
 		foreach { i =>
 			i.neighbors.foreach { j =>
-				val L = Particle.L
+				//val L = Particle.L
+				var spring = i.springs.get(j.index).getOrElse(null)
 				val r = Vector3(i.x, j.x)
 				val rij = r.norm
 				val q = rij / Particle.h
+
 				if(q < 1) {
-					var isNew=false
-					var spring = i.springs.get(j.index).getOrElse {
+					if(spring eq null) {
+					//var spring = i.springs.get(j.index).getOrElse {
 						val s = new Spring(i, j, rij);//Particle.h)
+//						val s = new Spring(i, j, Particle.h)
+//						val s = new Spring(i, j, Particle.L)
 						springs += s
-						isNew = true
-						s
+						spring = s
 					}
-					if(spring.step < step) {
-						val d = Particle.gamma * spring.L
-						if(rij > L+d) {	// Strech
-							spring.L += dt * Particle.alpha * (rij-L-d)
-							strech += 1
-						} else if(rij < L-d) {	// Compress
-							spring.L -= dt * Particle.alpha * (L-d-rij) 
-							compress += 1
-						} else {
-							//Console.err.println("do nothing")
-						}
-
-						if(isNew && spring.L > Particle.h)
-							removedAsAdded += 1
-
-						spring.step = step
+				}
+									
+				if((spring ne null) && spring.step < step) {
+					var L = spring.L
+					val d = Particle.gamma * spring.L
+					
+					if(rij > L+d) {	// Strech
+						spring.L += dt * Particle.alpha * (rij-L-d)
+strech += 1
+					} else if(rij < L-d) {	// Compress
+						spring.L -= dt * Particle.alpha * (L-d-rij) 
+compress += 1
 					}
+
+					spring.step = step
 				}
 			}
 		}
-		Console.err.println("added %d (%d added, %d to remove) springs".format(springs.size-count-removedAsAdded, springs.size-count, removedAsAdded))
+		Console.err.println("added %d springs".format(springs.size-count))
 		Console.err.println("%d strech, %d compress".format(strech,compress))
 		// Remove springs
 		count = springs.size
 		springs.retain { spring =>
-			if(spring.L > Particle.h) { spring.removed; false } else { true }
+			if(spring.L > Particle.h*0.9) { spring.removed; false } else { true }
 		}
-		Console.err.println("removed %d springs (%d springs)".format(count-springs.size, springs.size))
+		if(count-springs.size > 0)
+			Console.err.println("####### removed %d springs (%d springs)".format(count-springs.size, springs.size))
 	}
 	
 	/** Apply the springs displacements to the particles during `dt` time. */
 	def applySpringDisplacements(dt:Double) {
 		val dt2 = dt * dt
-Console.err.println("-> applying %d springs".format(springs.size))
+var avgL = 0.0
 		springs.foreach { spring =>
+avgL += spring.L
 			var r = Vector3(spring.i.x, spring.j.x)
 			val rij = r.normalize
-			val D = r.multBy(dt2 * Particle.kspring * (1-spring.L/Particle.h)*(spring.L-rij))
+			val factor = dt2 * Particle.kspring * (1-spring.L/Particle.h)*(spring.L-rij)
+			val D = r.multBy(factor)
 			D /= 2
+//Console.err.println("spring L=%.4f factor=%.4f D=%s".format(spring.L, factor, D))
 			spring.i.x -= D
 			spring.j.x += D
 		}
+avgL /= springs.size
+Console.err.println("-> applying %d springs (avg length %.4f".format(springs.size,avgL))
 	}
 	
 	/** The main feature of the algorithm (see paper). */
