@@ -7,7 +7,7 @@ import scala.collection.mutable.HashSet
 /** One iso-cube of the marching cubes algorithm used by the `IsoSurface`.
   * 
   * An iso-cube evaluates the surface implicit function at its height vertices
-  * and compute from this one or more triangles that intersect it. To do this
+  * and computes from this one or more triangles that intersect it. To do so,
   * this implementation uses a set of neighbor cubes. If the neighbors are
   * present, it will not re-evaluate the implicit function (often costly) and
   * will also avoid recomputing the interpolation of triangles points onto its
@@ -26,20 +26,20 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 	def this(index:Int, x:Int, y:Int, z:Int, surface:IsoSurface) { this(index,HashPoint3(x,y,z),surface) }
 	
 	/** True if this cube is completely inside or outside the surface, and therefore contains no triangle. */
-	def isEmpty:Boolean = (triangles == null || triangles.isEmpty)
+	def isEmpty:Boolean = ((triangles eq null) || triangles.isEmpty)
 	
 	override def toString():String = {
 		val vals = points.map { i => "%5.2f".format(surface.values(i)) }
 		var ref = super.toString
 		ref = ref.substring(ref.lastIndexOf('@')+1, ref.length)
-		"cube[% d % d % d { %s } %10s]%s".format(pos.x, pos.y, pos.z, vals.mkString(" | "), ref,
+		"cube[%d %d %d { %s } %10s]%s".format(pos.x, pos.y, pos.z, vals.mkString(" | "), ref,
 				if(isEmpty)" (empty)" else "")
 	}
 	
 	/** Evaluate this cube and compute its triangles (intersection by the surface).
 	  * The `nb` array is an array of 26 potential neighbors that may already have
 	  * been computed. The `eval` function allows to evaluate the surface implicit
-	  * function. The `isoLevel` value allow to know at which point the surface
+	  * function. The `isoLevel` value allows to know at which point the surface
 	  * passes in the cube. */
 	def eval(nb:Array[IsoCube], eval:(Point3)=>Double, isoLevel:Double) {
 		import IsoSurface._
@@ -65,14 +65,14 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 		
 		var cubeIndex = 0
 		
-		if(v0<isoLevel) cubeIndex |=   1 	// p0
-		if(v1<isoLevel) cubeIndex |=   2	// p1
-		if(v2<isoLevel) cubeIndex |=   4	// p2
-		if(v3<isoLevel) cubeIndex |=   8	// p3
-		if(v4<isoLevel) cubeIndex |=  16	// p4
-		if(v5<isoLevel) cubeIndex |=  32	// p5
-		if(v6<isoLevel) cubeIndex |=  64	// p6
-		if(v7<isoLevel) cubeIndex |= 128	// p7
+		if(v0 < isoLevel) cubeIndex |=   1 	// p0
+		if(v1 < isoLevel) cubeIndex |=   2	// p1
+		if(v2 < isoLevel) cubeIndex |=   4	// p2
+		if(v3 < isoLevel) cubeIndex |=   8	// p3
+		if(v4 < isoLevel) cubeIndex |=  16	// p4
+		if(v5 < isoLevel) cubeIndex |=  32	// p5
+		if(v6 < isoLevel) cubeIndex |=  64	// p6
+		if(v7 < isoLevel) cubeIndex |= 128	// p7
 
 		val idx = edgeTable(cubeIndex)
 		
@@ -95,7 +95,7 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 			if((idx&1024) != 0) triPoints(10) = vertexInterp(isoLevel, 10, p2, p6, v2, v6, nb)
 			if((idx&2048) != 0) triPoints(11) = vertexInterp(isoLevel, 11, p3, p7, v3, v7, nb)
 			
-			// Create the triangle.
+			// Create the triangles.
 			
 			var i = 0
 			
@@ -284,16 +284,7 @@ class IsoTriangle(val a:Int, val b:Int, val c:Int) {
   * computation of the neighbor cubes if already computed.
   * 
   * The result of the algorithm is a set of triangles that share points (in the `triPoints`
-  * field).
-  * 
-  * Lots of optimizations possible:
-  * 	- Each cube share a face with another and therefore points are shared. However
-  *       they are not merged in the triangle set returned. It could greatly improve
-  *       the memory consumption and exchanges between cpu and gpu when drawing the surface.
-  *     - The normals to the triangles are not given, and must be computed. This could be
-  *       done automatically with less computation.
-  *     - Knowing which points are shared, we could generate normals that smooth the surface.
-  */
+  * field). */
 class IsoSurface(val cellSize:Double) {
 	var autoNormals = false
 	
@@ -303,7 +294,7 @@ class IsoSurface(val cellSize:Double) {
 	/** Values of the iso-surface, each value correspond to a point in `points`. */
 	val values = new ArrayBuffer[Double]()
 	
-	/** Set of interpolated triangle points, the points forming the triangles. */
+	/** Set of interpolated triangle points, the points forming the triangles of the surface. */
 	val triPoints = new ArrayBuffer[Point3]()
 	
 	/** For each point in `triPoints` this lists the pairs (cube,triangle) connected to this point. */
@@ -321,7 +312,8 @@ class IsoSurface(val cellSize:Double) {
 	/** The hash map of cubes indexed by their position in integer space. */
 	val spaceHash = new HashMap[HashPoint3,IsoCube]()
 	
-	/** Number of triangles computed by adding cubes. */
+	/** Number of triangles computed by adding cubes (triangles are stored
+	  * independently in cubes). */
 	var triangleCount = 0
 
 	/** The neighbor cubes array, to avoid creating it at each new cube insertion. */
@@ -961,14 +953,14 @@ class IsoSurfaceSimple(val cellSize:Double) {
 		
 		var cubeIndex = 0
 		
-		if(v0<isoLevel) cubeIndex |=   1 	// p0
-		if(v1<isoLevel) cubeIndex |=   2	// p1
-		if(v2<isoLevel) cubeIndex |=   4	// p2
-		if(v3<isoLevel) cubeIndex |=   8	// p3
-		if(v4<isoLevel) cubeIndex |=  16	// p4
-		if(v5<isoLevel) cubeIndex |=  32	// p5
-		if(v6<isoLevel) cubeIndex |=  64	// p6
-		if(v7<isoLevel) cubeIndex |= 128	// p7
+		if(v0 < isoLevel) cubeIndex |=   1 	// p0
+		if(v1 < isoLevel) cubeIndex |=   2	// p1
+		if(v2 < isoLevel) cubeIndex |=   4	// p2
+		if(v3 < isoLevel) cubeIndex |=   8	// p3
+		if(v4 < isoLevel) cubeIndex |=  16	// p4
+		if(v5 < isoLevel) cubeIndex |=  32	// p5
+		if(v6 < isoLevel) cubeIndex |=  64	// p6
+		if(v7 < isoLevel) cubeIndex |= 128	// p7
 		
 		var vertList = new Array[Point3](12)	// 12 possible vertices
 		val idx = edgeTable(cubeIndex)

@@ -58,3 +58,7 @@
 	
 	# Smaller than h (h/2?)
 	dStick  = 0.45
+
+# 2D mode:
+
+	is2D = true
