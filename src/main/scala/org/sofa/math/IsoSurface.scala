@@ -156,8 +156,8 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 		points(p)
 	} 
 	
-	/** Interpolate the point position along a vertex of a marching cube defined by points
-	  * `p0` and `p1` using the values `v0` and `v1` for the iso-values at this two
+	/** Interpolate the point position along a edge of a marching cube defined by points
+	  * `p0` and `p1` using the values `v0` and `v1` for the iso-values at these two
 	  * respective points. */
 	protected def vertexInterp(isoLevel:Double, edge:Int, p0:Int, p1:Int, v0:Double, v1:Double, nb:Array[IsoCube]):Int = {
 		import math._
@@ -178,7 +178,7 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 				else if(abs(isoLevel-v1) < 0.0001) { P1 }
 				else if(abs(v0-v1)       < 0.0001) { P0 }
 				else {
-					var mu = (isoLevel - v0) / (v1 - v0)
+					val mu = (isoLevel - v0) / (v1 - v0)
 					assert(mu >= 0  && mu <= 1)
 					Point3(
 						P0.x + mu * (P1.x - P0.x),
@@ -216,8 +216,8 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 		import IsoSurface._
 		
 		if(nb(edgeOverlap(edge)(0)._1) ne null) nb(edgeOverlap(edge)(0)._1).triPoints(edgeOverlap(edge)(0)._2) else
-		if(nb(edgeOverlap(edge)(0)._1) ne null) nb(edgeOverlap(edge)(0)._1).triPoints(edgeOverlap(edge)(0)._2) else
-		if(nb(edgeOverlap(edge)(0)._1) ne null) nb(edgeOverlap(edge)(0)._1).triPoints(edgeOverlap(edge)(0)._2) else {
+		if(nb(edgeOverlap(edge)(1)._1) ne null) nb(edgeOverlap(edge)(1)._1).triPoints(edgeOverlap(edge)(1)._2) else
+		if(nb(edgeOverlap(edge)(2)._1) ne null) nb(edgeOverlap(edge)(2)._1).triPoints(edgeOverlap(edge)(2)._2) else {
 			-1			
 		}
 	}

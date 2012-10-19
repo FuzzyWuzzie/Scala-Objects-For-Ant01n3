@@ -103,8 +103,44 @@ class IsoSquare(val index:Int, val pos:HashPoint3, val contour:IsoContour) {
 		points(p)
 	}
 
+	/** Interpolate the point position along a edge of a marching square defined by points
+	  * `p0` and `p1` using the values `v0` and `v1` for the iso-values at these two
+	  * respective points. */
 	protected def vertexInterp(isoLevel:Double, edge:Int, p0:Int, p1:Int, v0:Double, v1:Double, nb:Array[IsoSquare]):Int = {
-		0
+		import math._
+
+		var i = squareEdge(edge, nb)
+
+		if(i < 0) {
+			val P0 = contour.points(p0)
+			val P1 = contour.points(p1)
+			val p  = if(IsoContour.interpolation) {
+				if     (abs(isoLevel-v0) < 0.0001) { P0 }
+				else if(abs(isoLevel-v1) < 0.0001) { P1 }
+				else if(abs(v0-v1)       < 0.0001) { P0 }
+				else {
+					val mu = (isoLevel - v0) / (v1 - v0)
+					assert(mu >= 0 && mu <= 1)
+					Point2(P0.x + mu * (P1.x - P0.x),
+						   P0.y + mu * (P1.y - P0.y))
+				}
+			} else {
+				Point2(P0.x + 0.5 * (P1.x-P0.x),
+					   P0.y + 0.5 * (P1.y-P0.y))
+			}
+		}
+
+		i
+	}
+
+	protected def squareEdge(edge:Int, nb:Array[IsoSquare]):Int = {
+		import IsoContour._
+
+		if(nb(edgeOverlap(edge)._1) ne null) {
+			nb(edgeOverlap(edge)._1).segPoints(edgeOverlap(edge)._2) 
+		} else {
+			-1
+		}
 	}
 }
 
