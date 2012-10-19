@@ -3,7 +3,7 @@
 	# Assuming we use meters as units, g = 9.81 m/s^2
 	g = 9.81				
     
-	h = 0.9
+	h = 0.8
     
     spacialHashBucketSize = 1
 
@@ -13,10 +13,10 @@
 	k       = 1.0
     
 	# Near-pressure stiffness ??? Seems to be 10 times k
-	kNear   = 10.0
+	kNear   = 8.0
     
 	# Rest density (4.1), h/2, the larger the denser, less than 1 == gaz ??? seems to be half of h
-	rhoZero = 0.45
+	rhoZero = 0.4
 
 # Appear in applyViscosity():
 
@@ -30,9 +30,6 @@
 	
 	plasticity = true
 
-	# XXX Just forget this.
-	#L = 0.05
-
 	# Spring stiffness (5.1) ???
 	kspring = 100.0
 
@@ -40,12 +37,12 @@
 	gamma = 0.2
 
 	# Plasticity constant ???
-	alpha = 0.01
+	alpha = 0.1
 
 # Appear in resolveCollions():
 
 	# Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
-	umicron = 0.1
+	umicron = 0.5
 
 	wallsX  = 5.0
 	

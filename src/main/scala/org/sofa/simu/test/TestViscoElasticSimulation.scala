@@ -241,8 +241,9 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			isoSurfaceMesh.setPointColor(i, isoSurfaceColor)
 		}
 
+		var springColor = Rgba(1, 0, 0, 0.3)
 		for(i <- 0 until maxSprings) {
-			springsMesh.setColor(i, Rgba.red)
+			springsMesh.setColor(i, springColor)
 		}
 	}
 	
@@ -291,8 +292,8 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		drawAxis
 		drawSpaceHash
 		drawIsoCubes
-		drawParticles
 		drawSprings
+		drawParticles
 		
 		surface.swapBuffers
 		gl.checkErrors

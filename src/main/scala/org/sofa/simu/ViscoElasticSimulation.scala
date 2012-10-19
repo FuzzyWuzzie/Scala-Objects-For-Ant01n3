@@ -26,7 +26,7 @@ import org.sofa.math.Triangle
 
 object Particle {
 	var g       = 9.81				// Assuming we use meters as units, g = 9.81 m/s^2
-	var h       = 0.9				// 90 cm
+	var h       = 0.8				// 90 cm
 	var spacialHashBucketSize = 1	// 1 m
 
 	// Appear in doubleDensityRelaxation():
@@ -40,13 +40,12 @@ object Particle {
 
 	// Appear in adjustSprings() and applySpringDisplacements():
 	var plasticity = false
-	var L       = h					// Spring rest length ??? Should be smaller than h.
-	var kspring = 0.3				// Spring stiffness (5.1) ???
-	var gamma   = 0.1				// Spring yield ratio, typically between 0 and 0.2 and < 1
+	var kspring = 100.0				// Spring stiffness (5.1) ???
+	var gamma   = 0.2				// Spring yield ratio, typically between 0 and 0.2 and < 1
 	var alpha   = 0.1				// Plasticity constant ???
 		
 	// Appear in resolveCollions():
-	var umicron = 0.1				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
+	var umicron = 0.5				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
 	var wallsX  = 5.0
 	var wallsZ  = 2.0
 	var ground  = 0.1
@@ -73,7 +72,6 @@ object Particle {
 
 	// Appear in adjustSprings() and applySpringDisplacements():
 	var plasticity = false
-	var L       = h					// Spring rest length ??? Should be smaller than h.
 	var kspring = 0.3				// Spring stiffness (5.1) ???
 	var gamma   = 0.1				// Spring yield ratio, typically between 0 and 0.2
 	var alpha   = 0.1				// Plasticity constant ???
@@ -394,78 +392,66 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	/** Add new springs, adjust existing ones, and remove old ones during `dt` time. */
 	def adjustSprings(dt:Double) {
 		// Add and adjust springs.
-		// XXX this method is bad, it considers every particle
-		// but it should only consider particle-pairs. It works
-		// since springs have a current step indicator allowing to
-		// know if they were already processed at the current step.
-		// XXX could we do better ?
 
-var count = springs.size
-var strech = 0
-var compress = 0
 		foreach { i =>
 			i.neighbors.foreach { j =>
-				//val L = Particle.L
 				var spring = i.springs.get(j.index).getOrElse(null)
-				val r = Vector3(i.x, j.x)
-				val rij = r.norm
-				val q = rij / Particle.h
+				val r      = Vector3(i.x, j.x)
+				val rij    = r.norm
+				val q      = rij / Particle.h
 
 				if(q < 1) {
 					if(spring eq null) {
-					//var spring = i.springs.get(j.index).getOrElse {
-						val s = new Spring(i, j, rij);//Particle.h)
-//						val s = new Spring(i, j, Particle.h)
-//						val s = new Spring(i, j, Particle.L)
-						springs += s
-						spring = s
+						// Contrary to the original algorithm we do
+						// not initialize the rest length L to h but to
+						// the actual length separating the particles.
+						spring = new Spring(i, j, rij);//Particle.h)
+						springs += spring
 					}
 				}
-									
+				
+				// At the contrary of the original algoritm we do this
+				// event if q >= 1, since I do not see how we can augment L
+				// above h if we only do this when rij is under h !		
 				if((spring ne null) && spring.step < step) {
-					var L = spring.L
-					val d = Particle.gamma * spring.L
+					val L = spring.L
+					val d = Particle.gamma * L
 					
 					if(rij > L+d) {	// Strech
 						spring.L += dt * Particle.alpha * (rij-L-d)
-strech += 1
 					} else if(rij < L-d) {	// Compress
 						spring.L -= dt * Particle.alpha * (L-d-rij) 
-compress += 1
 					}
 
 					spring.step = step
 				}
 			}
 		}
-		Console.err.println("added %d springs".format(springs.size-count))
-		Console.err.println("%d strech, %d compress".format(strech,compress))
+		
 		// Remove springs
-		count = springs.size
+		
 		springs.retain { spring =>
+			// Contrary to the original algorithm we remove the spring under the h
+			// distance to avoid building too much springs and fastening the simulation.
+			// This incurs a lost of precision, however.
+			// if(spring.L > Particle.h) ...
 			if(spring.L > Particle.h*0.9) { spring.removed; false } else { true }
 		}
-		if(count-springs.size > 0)
-			Console.err.println("####### removed %d springs (%d springs)".format(count-springs.size, springs.size))
 	}
 	
 	/** Apply the springs displacements to the particles during `dt` time. */
 	def applySpringDisplacements(dt:Double) {
 		val dt2 = dt * dt
-var avgL = 0.0
+		
 		springs.foreach { spring =>
-avgL += spring.L
-			var r = Vector3(spring.i.x, spring.j.x)
+			var r   = Vector3(spring.i.x, spring.j.x)
 			val rij = r.normalize
-			val factor = dt2 * Particle.kspring * (1-spring.L/Particle.h)*(spring.L-rij)
-			val D = r.multBy(factor)
-			D /= 2
-//Console.err.println("spring L=%.4f factor=%.4f D=%s".format(spring.L, factor, D))
+			val D   = r.multBy(dt2 * Particle.kspring * (1-spring.L/Particle.h)*(spring.L-rij))
+			D      /= 2
+			
 			spring.i.x -= D
 			spring.j.x += D
 		}
-avgL /= springs.size
-Console.err.println("-> applying %d springs (avg length %.4f".format(springs.size,avgL))
 	}
 	
 	/** The main feature of the algorithm (see paper). */
