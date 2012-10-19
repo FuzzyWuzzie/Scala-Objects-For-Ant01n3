@@ -5,6 +5,7 @@ import org.sofa.math.Vector3
 import org.sofa.math.Point3
 import org.sofa.math.SpatialHash
 import org.sofa.math.SpatialPoint
+import scala.collection.mutable.Set
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 import org.sofa.math.SpatialObject
@@ -12,18 +13,9 @@ import org.sofa.math.SpatialCube
 import scala.util.Random
 import org.sofa.math.Triangle
 
-// XXX Améliorations possibles:
-
-// Le test de collision des murs est fait pour toutes les particules à tout moment, mais il n'est besoin de le faire que pour les
-// cubes du spaceHash qui sont le long de ces murs ! Il reste à inserer les murs dans le space hash, ainsi que
-// d'autres objets !
-
-// Ajouter un mode 2D
-
-// Permettre de retirer des particules.
-
-// Allow to easily configure the parameters
-
+/** This allows to configure the ViscoElasticSimulation. It contains all the parameters
+  * needed to change the fluid behavior. This is not the best way to setup the VES, since
+  * any instance of the VES will be changed by this. But shoudl evolve in the future. */
 object Particle {
 	var g       = 9.81				// Assuming we use meters as units, g = 9.81 m/s^2
 	var h       = 0.8				// 90 cm
@@ -54,47 +46,20 @@ object Particle {
 	var stickiness = false
 	var kStick  = 1.0
 	var dStick  = h/3				// Smaller than h
+
+	// 2D Mode ?
+	var is2D = false
 }
-/*
-object Particle {
-	var g       = 9.81				// Assuming we use meters as units, g = 9.81 m/s^2
-	var h       = 0.5				// 50 cm
-	var spacialHashBucketSize = 1	// 1 m
-
-	// Appear in doubleDensityRelaxation():
-	var k       = 1					// Pressure stiffness ???
-	var kNear   = k * 10			// Near-pressure stiffness ??? Seems to be 10 times k
-	var rhoZero = h/2				// Rest density (4.1), the larger then denser, less than 1 == gaz ??? seems to be half of h
-
-	// Appear in applyViscosity():
-	var sigma   = 0					// Viscosity linear dependency on velocity (between 0 and +inf), augment for highly viscous (lava, sperm).
-	var beta    = 0.1				// Viscosity quadratic dependency on velocity (between 0 and +inf), only this one for less viscous fluids (water).
-
-	// Appear in adjustSprings() and applySpringDisplacements():
-	var plasticity = false
-	var kspring = 0.3				// Spring stiffness (5.1) ???
-	var gamma   = 0.1				// Spring yield ratio, typically between 0 and 0.2
-	var alpha   = 0.1				// Plasticity constant ???
-		
-	// Appear in resolveCollions():
-	var umicron = 0.0				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
-	var wallsX  = 5.0
-	var wallsZ  = 0.4
-	var ground  = 0.1
-	
-	// Stickiness:
-	var stickiness = false
-	var kStick  = 1.0
-	var dStick  = h/3				// Smaller than h
-}
-*/
 
 /** A single spring between two particles. */
 class Spring(val i:Particle, val j:Particle, var L:Double) {
+	/** Current step of the spring (the last time it was modified). */
 	var step = -1
+	
 	// At construction, the spring registers in its two particles.
 	j.springs += ((i.index, this))
 	i.springs += ((j.index, this))
+	
 	/** Called when the spring disappears, it un-registers from its two particles. */
 	def removed() {
 		i.springs.remove(j.index)
@@ -102,10 +67,12 @@ class Spring(val i:Particle, val j:Particle, var L:Double) {
 	}
 }
 
-trait VESObject extends SpatialObject {
-	
-}
+/** A VESObject is an element that represents any object that occurs in the
+  * visco-elastic fluid simulation, be it a fluid particle, or an obstacle
+  * object. */
+trait VESObject extends SpatialObject {}
 
+/** An abstract obstacle in the VES simulaton. */
 trait Obstacle extends VESObject with SpatialCube {
 	/** Return a double that represents the distance from the particle
 	  * to the obstacle closest surface polygon as well as the nearest point on
@@ -115,8 +82,12 @@ trait Obstacle extends VESObject with SpatialCube {
 	def isNear(p:Particle):(Double,Point3,Vector3)
 }
 
+/** A rectangular wall obstacle made of two triangles. */
 class QuadWall(p:Point3, v0:Vector3, v1:Vector3) extends Obstacle {
+	/** The first (lower) triangle of the wall. */
 	val tri1 = Triangle(p,Point3(p.x+v0.x,p.y+v0.y,p.z+v0.z),Point3(p.x+v1.x,p.y+v1.y,p.z+v1.z))
+
+	/** The second (higher) triangle of the wall. */
 	val tri2 = Triangle(Point3(p.x+v0.x+v1.x,p.y+v0.y+v1.y,p.z+v0.z+v1.z),tri1.p2,tri1.p1)
 	
 	def from:Point3 = tri1.p0
@@ -131,28 +102,37 @@ class QuadWall(p:Point3, v0:Vector3, v1:Vector3) extends Obstacle {
 	}
 }
 
-/** A single SPH particle in the visco-elastic simulation.
+/** A single SPH particle in the visco-elastic simulation, representing the fluid.
   * 
+  * The particle is not a real physical particle, but represents the state of the
+  * fluid at its position in a given smoothing area.
+  *
   * A particle is a spatial point, that is a location in space
   * that can be hashed and inserted in the spatial hash. */
 class Particle(val index:Int) extends VESObject with SpatialPoint {
 	/** Actual position. */
 	val x = Point3()
 	
-	/** Previous position. */
+	/** Previous position, at the previous step. */
 	val xprev = Point3()
 	
 	/** Velocity. */
 	val v = Vector3()
 	
-	/** Set of visible neighbor (distance < h). */
+	/** Set of visible neighbor (distance < h). This field
+	  * is updated by the simulation at the begining of each step. */
 	var neighbors:ArrayBuffer[Particle] = null
 
-	/** The nearest obstacle. */
+	/** The nearest obstacle. This field is updated by the simulation
+	  * at the begining of each step. */
 	var collision:Collision = null
 	
 	/** Map of springs toward other particles. The particles
-	  * are mapped to their index in the simulation. */
+	  * are mapped to their index in the simulation (the particles
+	  * index is invariant). When a particle is removed, the springs
+	  * it references are removed from the global spring list in the
+	  * simulation, and from other particles it is tied to by the
+	  * Spring.removed() method. */
 	var springs = new HashMap[Int,Spring]()
 	
 	/** Position. */
@@ -183,14 +163,18 @@ class Particle(val index:Int) extends VESObject with SpatialPoint {
 	}
 }
 
-/** Represents a collision of a particle with an obstacle. */
+/** Represents a collision of a particle with an obstacle.
+  * This contains the distance at wich the particle is from the obstacle,
+  * (under the minimum distance to consider it is an impact), the
+  * closest point of impact on the surface, the normal vector to the
+  * surface, and the obstacle reference. */
 case class Collision(val distance:Double, val hit:Point3, val normal:Vector3, val obstacle:Obstacle) {}
 
 /** A viscoelastic fluid simulator. 
   * 
   * This is entirely based on the very good article "Particle-based viscoelastic
   * fluid simulation" by Simon Clavet, Philippe Beaudoin and Pierre Poulin. As well as
-  * on the nonetheless very good PhD thesis "Animation de fluides visco élastiques à
+  * on its nonetheless very good PhD thesis "Animation de fluides visco élastiques à
   * base de particules" by Simon Clavet.
   */
 class ViscoElasticSimulation extends ArrayBuffer[Particle] {
@@ -216,10 +200,22 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	/** A particle at random in the simulation. */
 	def randomParticle(random:Random):Particle = this(random.nextInt(size))
 	
+	protected def neighborsAround(x:Point3):Set[VESObject] = {
+		if(Particle.is2D)
+			 spaceHash.neighborsInBoxXY(x, Particle.h*2)
+		else spaceHash.neighborsInBox(x, Particle.h*2)
+	}
+
+	protected def neighborsAround(p:Particle):Set[VESObject] = {
+		if(Particle.is2D)
+			 spaceHash.neighborsInBoxXY(p, Particle.h*2)
+		else spaceHash.neighborsInBox(p, Particle.h*2)		
+	}
+
 	/** Evaluate the iso-surface at the given point `x`. */
 	def evalIsoSurface(x:Point3):Double = {
 		var value = 0.0
-		val neighbors = spaceHash.neighborsInBox(x, Particle.h)
+		val neighbors = neighborsAround(x)
 		
 		neighbors.foreach { i =>
 			if(! i.isVolume) {
@@ -239,7 +235,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	/** Evaluate the normal to the iso-surface at point `x`. */
 	def evalIsoNormal(x:Point3):Vector3 = {
 		val n = Vector3(0, 0, 0)
-		val neighbors = spaceHash.neighborsInBox(x, Particle.h)
+		val neighbors = neighborsAround(x)
 		
 		neighbors.foreach { i =>
 			if(! i.isVolume) {
@@ -338,7 +334,8 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	  * amongst the neighbors there are some non-particles objects, they are
 	  * treated as obstacles and the closest one is returned. */
 	def computeNeighbors(i:Particle):(ArrayBuffer[Particle], Collision) = {
-		val potential = spaceHash.neighborsInBox(i, Particle.h*2)
+//		val potential = spaceHash.neighborsInBox(i, Particle.h*2)
+		val potential = neighborsAround(i)
 		val neighbors = new ArrayBuffer[Particle]()
 		var collision:Collision = null
 		
