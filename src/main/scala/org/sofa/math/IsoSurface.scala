@@ -80,29 +80,29 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 			
 			// Find the vertices where the surface intersects the cube.
 			
-			if((idx&   1) != 0) triPoints( 0) = vertexInterp(isoLevel, 0, p0, p1, v0, v1, nb)
-			if((idx&   2) != 0) triPoints( 1) = vertexInterp(isoLevel, 1, p1, p2, v1, v2, nb)
-			if((idx&   4) != 0) triPoints( 2) = vertexInterp(isoLevel, 2, p2, p3, v2, v3, nb)
-			if((idx&   8) != 0) triPoints( 3) = vertexInterp(isoLevel, 3, p3, p0, v3, v0, nb)
+			if((idx &    1) != 0) triPoints( 0) = vertexInterp(isoLevel, 0, p0, p1, v0, v1, nb)
+			if((idx &    2) != 0) triPoints( 1) = vertexInterp(isoLevel, 1, p1, p2, v1, v2, nb)
+			if((idx &    4) != 0) triPoints( 2) = vertexInterp(isoLevel, 2, p2, p3, v2, v3, nb)
+			if((idx &    8) != 0) triPoints( 3) = vertexInterp(isoLevel, 3, p3, p0, v3, v0, nb)
 			
-			if((idx&  16) != 0) triPoints( 4) = vertexInterp(isoLevel, 4, p4, p5, v4, v5, nb)
-			if((idx&  32) != 0) triPoints( 5) = vertexInterp(isoLevel, 5, p5, p6, v5, v6, nb)
-			if((idx&  64) != 0) triPoints( 6) = vertexInterp(isoLevel, 6, p6, p7, v6, v7, nb)
-			if((idx& 128) != 0) triPoints( 7) = vertexInterp(isoLevel, 7, p7, p4, v7, v4, nb)
+			if((idx &   16) != 0) triPoints( 4) = vertexInterp(isoLevel, 4, p4, p5, v4, v5, nb)
+			if((idx &   32) != 0) triPoints( 5) = vertexInterp(isoLevel, 5, p5, p6, v5, v6, nb)
+			if((idx &   64) != 0) triPoints( 6) = vertexInterp(isoLevel, 6, p6, p7, v6, v7, nb)
+			if((idx &  128) != 0) triPoints( 7) = vertexInterp(isoLevel, 7, p7, p4, v7, v4, nb)
 			
-			if((idx& 256) != 0) triPoints( 8) = vertexInterp(isoLevel,  8, p0, p4, v0, v4, nb)
-			if((idx& 512) != 0) triPoints( 9) = vertexInterp(isoLevel,  9, p1, p5, v1, v5, nb)
-			if((idx&1024) != 0) triPoints(10) = vertexInterp(isoLevel, 10, p2, p6, v2, v6, nb)
-			if((idx&2048) != 0) triPoints(11) = vertexInterp(isoLevel, 11, p3, p7, v3, v7, nb)
+			if((idx &  256) != 0) triPoints( 8) = vertexInterp(isoLevel,  8, p0, p4, v0, v4, nb)
+			if((idx &  512) != 0) triPoints( 9) = vertexInterp(isoLevel,  9, p1, p5, v1, v5, nb)
+			if((idx & 1024) != 0) triPoints(10) = vertexInterp(isoLevel, 10, p2, p6, v2, v6, nb)
+			if((idx & 2048) != 0) triPoints(11) = vertexInterp(isoLevel, 11, p3, p7, v3, v7, nb)
 			
 			// Create the triangles.
 			
 			var i = 0
 			
 			while(triTable(cubeIndex)(i) != -1) {
-				var a = triPoints(triTable(cubeIndex)(i))
-				var b = triPoints(triTable(cubeIndex)(i+1))
-				var c = triPoints(triTable(cubeIndex)(i+2))
+				val a = triPoints(triTable(cubeIndex)(i))
+				val b = triPoints(triTable(cubeIndex)(i+1))
+				val c = triPoints(triTable(cubeIndex)(i+2))
 				
 				// Create the triangle
 				
@@ -335,7 +335,7 @@ class IsoSurface(val cellSize:Double) {
 	def foreachTrianglePoint(code:(Int, Point3)=>Unit) {
 		var i = 0
 		val n = triPoints.size
-		while(i<n) {
+		while(i < n) {
 			code(i, triPoints(i))
 			i += 1
 		}
@@ -349,11 +349,11 @@ class IsoSurface(val cellSize:Double) {
 		var i = 0
 		var c = 0
 		var nc = nonEmptyCubes.size
-		while(c<nc) {
+		while(c < nc) {
 			val cube = nonEmptyCubes(c)
 			var t = 0
 			var nt = cube.triangles.size
-			while(t<nt) {
+			while(t < nt) {
 				code(i, cube, cube.triangles(t))
 				t += 1
 				i += 1
@@ -471,17 +471,13 @@ class IsoSurface(val cellSize:Double) {
 	protected def findNeighborCubes(p:HashPoint3):Array[IsoCube] = {
 		import IsoSurface._
 		var i = 0
-		var nn = 0
 
 		while(i < neighborCubes.length) {
 			if(i != 13) {
 				val n = neighborCubes(i)
 				val pp= HashPoint3(p.x+n._1, p.y+n._2, p.z+n._3)
 				nbCb(i) = spaceHash.get(pp).getOrElse(null)
-				if(nbCb(i) ne null) nn += 1
 			} else {
-//				val pp = HashPoint3(p.x, p.y, p.z)
-//				assert(!spaceHash.contains(pp)) 
 				nbCb(i) = null
 			}
 			i += 1

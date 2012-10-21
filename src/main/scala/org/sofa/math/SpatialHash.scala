@@ -1,9 +1,6 @@
 package org.sofa.math
 
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.Set
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.HashSet
+import scala.collection.mutable.{Set, ArrayBuffer, HashMap, HashSet}
 
 /** An integer position in "bucket" space that can be easily hashed with
   * a specific hash function. */
@@ -282,6 +279,19 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 		val result = new HashSet[T]
 	
 		getThings(result, p.x-s2, p.y - s2, p.z, p.x+s2, p.y+s2, p.z)
+		
+		result
+	}
+	
+	/** All the neighbor objects in all the buckets intersecting
+	  * a 2D cube along the axes X and Y of `size` side around
+	  * the object `thing`. The returned objects may therefore
+	  * be out of the cube defined by the parameters. */
+	def neighborsInBoxXY(p:Point2, size:Double):Set[T] = {
+		val s2     = size/2
+		val result = new HashSet[T]
+	
+		getThings(result, p.x-s2, p.y - s2, 0, p.x+s2, p.y+s2, 0)
 		
 		result
 	}

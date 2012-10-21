@@ -40,9 +40,9 @@ class IsoSquare(val index:Int, val pos:HashPoint3, val contour:IsoContour) {
 		import IsoContour._
 
 		val p0 = squarePoint(0, nb, eval); val v0 = contour.values(p0)
-		val p1 = squarePoint(1, nb, eval); val v1 = contour.values(p0)
-		val p2 = squarePoint(2, nb, eval); val v2 = contour.values(p0)
-		val p3 = squarePoint(3, nb, eval); val v3 = contour.values(p0)
+		val p1 = squarePoint(1, nb, eval); val v1 = contour.values(p1)
+		val p2 = squarePoint(2, nb, eval); val v2 = contour.values(p2)
+		val p3 = squarePoint(3, nb, eval); val v3 = contour.values(p3)
 
 		var squareIndex = 0
 
@@ -56,18 +56,18 @@ class IsoSquare(val index:Int, val pos:HashPoint3, val contour:IsoContour) {
         if(idx != 0) {
         	// Find the vertices where the contour intersects the square.
 
-        	if((idx& 1) != 0) segPoints(0) = vertexInterp(isoLevel, 0, p0, p1, v0, v1, nb)
-        	if((idx& 2) != 0) segPoints(1) = vertexInterp(isoLevel, 1, p1, p2, v1, v2, nb)
-        	if((idx& 4) != 0) segPoints(2) = vertexInterp(isoLevel, 2, p2, p3, v2, v3, nb)
-        	if((idx& 8) != 0) segPoints(3) = vertexInterp(isoLevel, 3, p3, p0, v3, v0, nb)
+        	if((idx & 1) != 0) segPoints(0) = vertexInterp(isoLevel, 0, p0, p1, v0, v1, nb)
+        	if((idx & 2) != 0) segPoints(1) = vertexInterp(isoLevel, 1, p1, p2, v1, v2, nb)
+        	if((idx & 4) != 0) segPoints(2) = vertexInterp(isoLevel, 2, p2, p3, v2, v3, nb)
+        	if((idx & 8) != 0) segPoints(3) = vertexInterp(isoLevel, 3, p3, p0, v3, v0, nb)
 
         	// Create the segments.
 
         	var i = 0
 
         	while(segmentTable(squareIndex)(i) != -1) {
-        		var a = segPoints(segmentTable(squareIndex)(i))
-        		var b = segPoints(segmentTable(squareIndex)(i+1))
+        		val a = segPoints(segmentTable(squareIndex)(i))
+        		val b = segPoints(segmentTable(squareIndex)(i+1))
 
         		// Create the segment.
 
@@ -128,6 +128,11 @@ class IsoSquare(val index:Int, val pos:HashPoint3, val contour:IsoContour) {
 				Point2(P0.x + 0.5 * (P1.x-P0.x),
 					   P0.y + 0.5 * (P1.y-P0.y))
 			}
+
+			// Add the point.
+
+			i = contour.segPoints.size
+			contour.segPoints += p
 		}
 
 		i
@@ -190,9 +195,146 @@ class IsoContour(val cellSize:Double) {
 	/** Set of interpolated segment points, the points forming the segments of the contour. */
 	val segPoints = new ArrayBuffer[Point2]()
 
+	/** The set of squares used to evaluate the surface. */
+	val squares = new ArrayBuffer[IsoSquare]()
+	
+	/** List of non-empty squares. */
+	val nonEmptySquares = new ArrayBuffer[IsoSquare]()
+	
+	/** The hash map of squares indexed by their position in integer space. */
+	val spaceHash = new HashMap[HashPoint3,IsoSquare]()
+
 	/** Number of segments computed by adding squares (segments are stored
 	  * independently in squares). */	
 	var segmentCount = 0
+
+	/** The neighbor squares array, to avoid creating it at each new square insertion. */
+	protected val nbSq = new Array[IsoSquare](9)
+
+	/** Browse each point used by segments. The indices are important as segments
+	  * reference these indices and neighbor segments share the points. */
+	def foreachSegmentPoint(code:(Int, Point2)=>Unit) {
+		var i = 0
+		val n = segPoints.size
+		while(i < n) {
+			code(i, segPoints(i))
+			i += 1
+		}
+	}
+	
+	/** Browse each segment computed to reconstruct the surface. Each segment pertains
+	  * to a square (but a square can own several segments), and each segment has a unique
+	  * index. Each segment is a set of two integer indices that reference the points
+	  * given by `foreachSegmentPoint()` */
+	def foreachSegment(code:(Int,IsoSquare,IsoSegment)=>Unit) {
+		var i = 0
+		var c = 0
+		var nc = nonEmptySquares.size
+		while(c < nc) {
+			val square = nonEmptySquares(c)
+			var t = 0
+			var nt = square.segments.size
+			while(t < nt) {
+				code(i, square, square.segments(t))
+				t += 1
+				i += 1
+			} 
+			c += 1
+		}
+//		nonEmptyCubes.foreach { square =>
+//			var j = 
+//			square.segments.foreach { triangle =>
+//				code(i, square, triangle)
+//				i += 1
+//			}
+//		}
+	}
+
+	/** Add a set of squares in a given portion of space. The portion of space is given in
+	  * marching squares space, where (0,0) is the origin that describe a square between
+	  * points (0,0) and (1,1). The squares have a side whose length is `cellSize`.
+	  * The start position is given by `x`, `y`. from this position `countX` squares
+	  * are added along X and `countY` squares along the Y axis.
+	  * If this portion of space already contains squares computed by a previous call
+	  * to this method, they are not computed anew. */
+	def addSquaresAt(x:Int, y:Int, countX:Int, countY:Int, eval:(Point2)=>Double, isoLevel:Double) {
+		var xx = 0
+		var yy = 0
+		
+		while(yy < countY) {
+			xx = 0
+			while(xx < countX) {
+				val square = addSquareAt(x+xx, y+yy, eval, isoLevel)
+				xx += 1
+			}
+			yy += 1
+		}
+	}
+
+	/** The nearest square position fromt the real coordinates. */
+	def nearestSquarePos(x:Double, y:Double):HashPoint3 = {
+		var xx = x/cellSize
+		var yy = y/cellSize
+		
+		HashPoint3(xx.toInt, yy.toInt, 0)
+	}
+
+	/** Add a single marching-square at the given location in iso-square space.
+	  * 
+	  * The iso-square
+	  * space is a discretization of the user space where coordinates are integers in
+	  * the two dimensions, each at `cellSize` of each other. For example a square at
+	  * (1,0) will occupy be at (cellSize,0) in user space and occupy the iso-square
+	  * space between coordinates (1,0) and (2,1). The square will use the `eval`
+	  * function to compute the iso-contour value at each of its four vertices. If
+	  * the surface is above the `isoLevel` given for some points but not others, the
+	  * square will contain some segments that describe the intersection of the surface
+	  * with its space.
+	  * 
+	  * Calling several times this function on the same square computes it only once. */
+	def addSquareAt(x:Int, y:Int, eval:(Point2)=>Double, isoLevel:Double):IsoSquare = {
+		val p = HashPoint3(x,y,0)
+
+		spaceHash.get(p).getOrElse {
+			val i = squares.size
+			var square = new IsoSquare(i, p, this)
+
+			// Find the potential 8 surrounding squares
+			var neighbors = findNeighborSquares(p)
+			
+			square.eval(neighbors, eval, isoLevel)
+			
+			spaceHash += ((p, square))
+			squares += square
+			
+			if(!square.isEmpty) {
+				nonEmptySquares += square
+			}
+
+			square
+		}
+	}
+	
+	/** Find the 8 potential neighbors of a square, if already present. This fills
+	  * the `nb` array and returns it. Each neighbor in this array is either null
+	  * or present. */
+	protected def findNeighborSquares(p:HashPoint3):Array[IsoSquare] = {
+		import IsoContour._
+		var i = 0
+
+		while(i < neighborSquares.length) {
+			if(i != 4) {
+				val n = neighborSquares(i)
+				val pp= HashPoint3(p.x+n._1, p.y+n._2, 0)
+				nbSq(i) = spaceHash.get(pp).getOrElse(null)
+			} else {
+				nbSq(i) = null
+			}
+			i += 1
+		}
+
+		nbSq
+	}
 }
 
 object IsoContour {
@@ -246,40 +388,50 @@ object IsoContour {
 	)
 
 	val edgeTable = Array[Int] (
-		0x0,     //0000,
-        0x9,     //1001,
-        0x3,     //0011
-        0xa,     //1010
-        0x6,     //0110, 
-        0xf,     //1111,
-        0x5,     //0101
-        0xc,     //1100
-        0xc,     //1100
-        0x5,     //0101
-        0xf,     //1111,
-        0x6,     //0110,
-        0xa,     //1010
-        0x3,     //0011
-        0x9,     //1001,
-        0x0	     //0000
+		0x0,     // 0000
+        0x9,     // 1001
+        0x3,     // 0011
+        0xa,     // 1010
+        0x6,     // 0110 
+        0xf,     // 1111
+        0x5,     // 0101
+        0xc,     // 1100
+        0xc,     // 1100
+        0x5,     // 0101
+        0xf,     // 1111
+        0x6,     // 0110
+        0xa,     // 1010
+        0x3,     // 0011
+        0x9,     // 1001
+        0x0	     // 0000
 	)
 
 	val segmentTable = Array[Array[Int]] (
-		Array[Int](-1,-1,-1,-1,-1),
-        Array[Int](0,3,-1,-1,-1),
-        Array[Int](1,0,-1,-1,-1),
-        Array[Int](1,3,-1,-1,-1),
-        Array[Int](2,1,-1,-1,-1),
-        Array[Int](2,1,0,3,-1),
-        Array[Int](2,0,-1,-1,-1),
-        Array[Int](2,3,-1,-1,-1),
-        Array[Int](3,2,-1,-1,-1),
-        Array[Int](0,2,-1,-1,-1),
-        Array[Int](1,0,3,2,-1),
-        Array[Int](1,2,-1,-1,-1),
-        Array[Int](3,1,-1,-1,-1),
-        Array[Int](0,1,-1,-1,-1),
-    	Array[Int](3,0,-1,-1,-1),
-        Array[Int](-1,-1,-1,-1,-1)
+		Array[Int](-1,-1,-1,-1,-1),		// 0x0
+        Array[Int]( 0, 3,-1,-1,-1),		// 0x1
+        Array[Int]( 1, 0,-1,-1,-1),		// 0x2
+        Array[Int]( 1, 3,-1,-1,-1),		// 0x3
+        Array[Int]( 2, 1,-1,-1,-1),		// 0x4
+        Array[Int]( 2, 1, 0, 3,-1),		// 0x5
+        Array[Int]( 2, 0,-1,-1,-1),		// 0x6
+        Array[Int]( 2, 3,-1,-1,-1),		// 0x7
+        Array[Int]( 3, 2,-1,-1,-1),		// 0x8
+        Array[Int]( 0, 2,-1,-1,-1),		// 0x9
+        Array[Int]( 1, 0, 3, 2,-1),		// 0xa
+        Array[Int]( 1, 2,-1,-1,-1),		// 0xb
+        Array[Int]( 3, 1,-1,-1,-1),		// 0xc
+        Array[Int]( 0, 1,-1,-1,-1),		// 0xd
+    	Array[Int]( 3, 0,-1,-1,-1),		// 0xe
+        Array[Int](-1,-1,-1,-1,-1)		// 0xf
+	)
+
+	/** Triangles are described by an edge index, a point index and another edge index !
+	  * There are a max two triangles per square. */
+	val triangleTable = Array[Array[Int]] (
+		Array[Int](-1,-1,-1, -1,-1,-1, -1),	// 0x0
+		Array[Int]( 0, 0, 3, -1,-1,-1, -1),	// 0x1
+		Array[Int]( 1, 1, 0, -1,-1,-1, -1),	// 0x2
+		//Array[Int]( 1, 2, 2,  ,-1,-1, -1),
+		Array[Int](-1,-1,-1, -1,-1,-1, -1)	// 0xf	// How to handle this ??
 	)
 }

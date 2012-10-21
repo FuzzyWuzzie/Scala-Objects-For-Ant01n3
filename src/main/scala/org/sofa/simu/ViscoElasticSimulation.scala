@@ -1,17 +1,8 @@
 package org.sofa.simu
 
-import scala.collection.mutable.ArrayBuffer
-import org.sofa.math.Vector3
-import org.sofa.math.Point3
-import org.sofa.math.SpatialHash
-import org.sofa.math.SpatialPoint
-import scala.collection.mutable.Set
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.HashSet
-import org.sofa.math.SpatialObject
-import org.sofa.math.SpatialCube
+import org.sofa.math.{Point3, Point2, Vector3, SpatialHash, SpatialPoint, SpatialObject, SpatialCube, Triangle}
+import scala.collection.mutable.{Set, HashMap, HashSet, ArrayBuffer}
 import scala.util.Random
-import org.sofa.math.Triangle
 
 /** This allows to configure the ViscoElasticSimulation. It contains all the parameters
   * needed to change the fluid behavior. This is not the best way to setup the VES, since
@@ -206,13 +197,17 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		else spaceHash.neighborsInBox(x, Particle.h*2)
 	}
 
+	protected def neighborsAround(x:Point2):Set[VESObject] = {
+		 spaceHash.neighborsInBoxXY(x, Particle.h*2)
+	}
+
 	protected def neighborsAround(p:Particle):Set[VESObject] = {
 		if(Particle.is2D)
 			 spaceHash.neighborsInBoxXY(p, Particle.h*2)
 		else spaceHash.neighborsInBox(p, Particle.h*2)		
 	}
 
-	/** Evaluate the iso-surface at the given point `x`. */
+	/** Evaluate the iso-surface in 3D at the given point `x`. */
 	def evalIsoSurface(x:Point3):Double = {
 		var value = 0.0
 		val neighbors = neighborsAround(x)
@@ -232,7 +227,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		math.sqrt(value)
 	}
 
-	/** Evaluate the normal to the iso-surface at point `x`. */
+	/** Evaluate the normal to the iso-surface in 3D at point `x`. */
 	def evalIsoNormal(x:Point3):Vector3 = {
 		val n = Vector3(0, 0, 0)
 		val neighbors = neighborsAround(x)
@@ -252,7 +247,10 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		n.normalize
 		n
 	}
-	
+
+	/** Evaluate the iso-surface in 2D at the given point `x`. */
+	def evalIsoSurface(x:Point2):Double = { evalIsoSurface(Point3(x.x, x.y, 0)) }
+
 	/** Add a particle at a given location (`x`,`y`,`z`) with given velocity (`vx`,`vy`,`vz`). */
 	def addParticle(x:Double, y:Double, z:Double, vx:Double, vy:Double, vz:Double):Particle = {
 		val p = new Particle(particlesIndexMax) 
