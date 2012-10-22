@@ -81,8 +81,9 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 	var drawIsoSurfaceFlag = false
 	var drawIsoContourFlag = true
 	var drawIsoSquaresFlag = true
+	var drawIsoPlaneFlag = true
 	
-	val isoSurfaceColor = Rgba.cyan
+	val isoSurfaceColor = Rgba(1,1,1,0.9)
 	val particleColor = Rgba(0.7, 0.7, 1, 0.3)
 	val clearColor = Rgba.grey10
 	val planeColor = Rgba.grey80
@@ -116,6 +117,7 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 	var wcube2:VertexArray = null
 	var wcube3:VertexArray = null
 	var isoSurface:VertexArray = null
+	var isoPlane:VertexArray = null
 	var isoContour:VertexArray = null
 	var obstacles:VertexArray = null
 	var springs:VertexArray = null
@@ -127,6 +129,7 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 	var wcubeMesh2:WireCube = null
 	var wcubeMesh3:WireCube = null
 	var isoSurfaceMesh = new DynIndexedTriangleMesh(maxDynTriangles)
+	var isoPlaneMesh = new DynIndexedTriangleMesh(maxDynTriangles)
 	var isoContourMesh = new ColoredLineSet(maxDynLines)
 	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
 	var springsMesh = new ColoredLineSet(maxSprings)
@@ -227,9 +230,10 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 		
 		planeMesh.setColor(Rgba.red)
 		
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		plane      = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		obstacles = obstaclesMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		isoPlane   = isoPlaneMesh.newVertexArray(gl, ("vertices",v), ("colors", c), ("normals", n))
+		obstacles  = obstaclesMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		
 		// Plain shader
 		
@@ -259,6 +263,8 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 
 		for(i <- 0 until maxDynTriangles*3) {
 			isoSurfaceMesh.setPointColor(i, isoSurfaceColor)
+			isoPlaneMesh.setPointColor(i, isoSurfaceColor)
+			isoPlaneMesh.setPointNormal(i, 0, 0, 1)
 		}
 
 		var springColor = Rgba(1, 0, 0, 0.3)
@@ -315,6 +321,7 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 		drawIsoSquares
 		drawSprings
 		drawParticles
+		drawIsoPlane
 		drawIsoContour
 		
 		surface.swapBuffers
@@ -439,12 +446,11 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 			var cs = isoSurfaceComp.cellSize
 			var cs2 = cs/2
 			isoSurfaceComp.cubes.foreach { cube=>
-				camera.pushpop {
+				if(!cube.isEmpty) camera.pushpop {
 					val p = cube.pos
 					camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.setUniformMVP(plainShad)
-					if(!cube.isEmpty)
-						wcube2.draw(wcubeMesh.drawAs)
+					wcube2.draw(wcubeMesh.drawAs)
 				}
 			}
 			gl.disable(gl.BLEND)
@@ -453,12 +459,13 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 
 	protected def drawIsoSquares() {
 		if(drawIsoSquaresFlag) {
+			var empty = 0
 			gl.enable(gl.BLEND)
 			plainShad.use
 			var cs = isoContourComp.cellSize
 			var cs2 = cs/2
 			isoContourComp.squares.foreach { square =>
-				camera.pushpop {
+				if(! square.isEmpty) camera.pushpop {
 					val p = square.pos
 					camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.setUniformMVP(plainShad)
@@ -478,8 +485,21 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 		}
 	}
 
+	protected def drawIsoPlane() {
+		if(drawIsoPlaneFlag && isoContourComp.triangleCount > 0) {
+			gl.enable(gl.BLEND)
+//Console.err.println("Drawing iso plane %d triangles".format(isoContourComp.triangleCount))
+			phongShad.use
+			useLights(phongShad)
+			camera.uniformMVP(phongShad)
+//			isoPlane.draw(isoPlaneMesh.drawAs, isoContourComp.triangleCount*3)
+			isoPlane.draw(isoPlaneMesh.drawAs, triangleCount*3)
+			gl.disable(gl.BLEND)
+		}
+	}
+
 	protected def drawIsoContour() {
-		if(drawIsoContourFlag) {
+		if(drawIsoContourFlag && isoContourComp.segmentCount > 0) {
 			gl.enable(gl.BLEND)
 			plainShad.use
 			camera.setUniformMVP(plainShad)
@@ -488,6 +508,9 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 			gl.disable(gl.BLEND)
 		}
 	}
+
+	// --------------------------------------------------------------------------------
+	// Simulation updating.
 
 	protected def updateParticles() {
 		simu.simulationStep(0.044)
@@ -531,8 +554,10 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 
 	protected def buildIsoContour() {
 		isoContourComp = new IsoContour(isoCellSize)
+		isoContourComp.computeSurface(true)
 		exploreSpaceHashForIsoContour
 		updateIsoContourRepresentation
+		updateIsoPlaneRepresentation
 	}
 	
 	protected def updateIsoSurfaceRepresentation() {
@@ -564,6 +589,48 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 			}
 
 			isoContourMesh.updateVertexArray(gl, "vertices", "colors")
+		}
+	}
+
+	var triangleCount = 0
+
+	protected def updateIsoPlaneRepresentation() {
+		if(isoContourComp.triangleCount > 0 && drawIsoPlaneFlag) {
+			var i = 0
+			
+			isoContourComp.segPoints.foreach { p =>
+				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, 0)
+//				isoPlaneMesh.setPointNormal(i, 0, 0, 1)
+				i += 1
+			}
+			
+			val segCount = i
+			
+			isoContourComp.points.foreach { p => 
+				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, 0)
+//				isoPlaneMesh.setPointNormal(i, 0, 0, 1)
+				i += 1
+			}
+			
+			val ptCount = i
+
+			i = 0
+
+triangleCount = 0
+			isoContourComp.nonEmptySquares.foreach { square =>
+				square.triangles.foreach { triangle =>
+					var a = if(triangle.a < 0) ((-triangle.a)-1)+segCount else triangle.a
+					var b = if(triangle.b < 0) ((-triangle.b)-1)+segCount else triangle.b
+					var c = if(triangle.c < 0) ((-triangle.c)-1)+segCount else triangle.c
+					isoPlaneMesh.setTriangle(i, a, b, c)
+					i += 1
+					triangleCount += 1
+				}
+			}
+
+//			assert(i == isoContourComp.triangleCount)
+
+			isoPlaneMesh.updateVertexArray(gl, "vertices", "colors", "normals")
 		}
 	}
 	
@@ -602,6 +669,9 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 		}
 	}
 
+	// --------------------------------------------------------------------------------------
+	// Utility
+
 	def reshape(surface:Surface) {
 		camera.viewportPx(surface.width, surface.height)
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
@@ -638,8 +708,8 @@ class TVESCameraController2D(camera:Camera, val ves:TestViscoElasticSimulation2D
             		println("    h        toggle draw the space hash.")
             		println("    c        toggle draw the iso surface cubes.")
             		println("    s        toggle draw the iso surface.")
-            		println("    S        toggle draw the iso contour.")
-            		println("    C        toogle draw the iso squares.")
+            		println("    O        toggle draw the iso contour.")
+            		println("    S        toogle draw the iso squares.")
             		println("    i        toogle draw the springs.")
             		println("    q        quit (no questions, it quits!).")
             	}

@@ -22,9 +22,16 @@ class IsoSquare(val index:Int, val pos:HashPoint3, val contour:IsoContour) {
 	/** The segments inside this square. */
 	var segments:ArrayBuffer[IsoSegment] = null
 
+	/** The triangles inside this square. */
+	var triangles:ArrayBuffer[IsoContourTriangle] = null
+
 	def this(index:Int, x:Int, y:Int, contour:IsoContour) { this(index,HashPoint3(x,y,0),contour) }
 
-	def isEmpty:Boolean = ((segments eq null) || segments.isEmpty)
+	def isEmpty:Boolean = ((!hasSegments) && (!hasTriangles))
+
+	def hasSegments:Boolean = ((segments ne null) && segments.size > 0)
+
+	def hasTriangles:Boolean = ((triangles ne null) && triangles.size > 0)
 
 	override def toString():String = {
 		val vals = points.map { i => "%5.2f".format(contour.values(i)) }
@@ -53,7 +60,7 @@ class IsoSquare(val index:Int, val pos:HashPoint3, val contour:IsoContour) {
 
         val idx = edgeTable(squareIndex)
 
-        if(idx != 0) {
+        if(idx > 0 && idx < 16) {
         	// Find the vertices where the contour intersects the square.
 
         	if((idx & 1) != 0) segPoints(0) = vertexInterp(isoLevel, 0, p0, p1, v0, v1, nb)
@@ -79,6 +86,41 @@ class IsoSquare(val index:Int, val pos:HashPoint3, val contour:IsoContour) {
 
         		i += 2
         	}
+
+        	if(contour.computeSurfaceFlag) {
+        		i = 0
+        		while(triangleTable(squareIndex)(i) != -1) {
+        			var a = triangleTable(squareIndex)(i)
+        			var b = triangleTable(squareIndex)(i+1)
+        			var c = triangleTable(squareIndex)(i+2)
+
+        			if(a >= 10) { a = -(points(a-10)+1) } else { a = segPoints(a) }
+        			if(b >= 10) { b = -(points(b-10)+1) } else { b = segPoints(b) }
+        			if(c >= 10) { c = -(points(c-10)+1) } else { c = segPoints(c) }
+
+        			if(triangles eq null) triangles = new ArrayBuffer[IsoContourTriangle]()
+
+        			triangles += new IsoContourTriangle(a, b, c)
+
+        			contour.triangleCount += 1
+
+        			i += 3
+        		}
+        	}
+        } else if(contour.computeSurfaceFlag && idx == 0) {
+        	// It should not be needed to add this code, the general code
+        	// above should work.
+        	var a = -(points(0)+1)
+        	var b = -(points(1)+1)
+        	var c = -(points(2)+1)
+        	var d = -(points(3)+1)
+
+        	if(triangles eq null) triangles = new ArrayBuffer[IsoContourTriangle]()
+
+        	triangles += new IsoContourTriangle(a, c, b)
+        	triangles += new IsoContourTriangle(a, d, c)
+
+        	contour.triangleCount += 2
         }
 	}
 
@@ -149,6 +191,8 @@ class IsoSquare(val index:Int, val pos:HashPoint3, val contour:IsoContour) {
 	}
 }
 
+class IsoContourTriangle(val a:Int, val b:Int, val c:Int) {}
+
 /** A simple segment in the iso-contour, it references points in the `segPoints`field of
   * the `IsoContour`. */
 class IsoSegment(val a:Int, val b:Int) {}
@@ -208,6 +252,14 @@ class IsoContour(val cellSize:Double) {
 	  * independently in squares). */	
 	var segmentCount = 0
 
+	/** Number of triangles computed by adding squares (triangles are stored
+	  * independently in squares). */
+	var triangleCount = 0
+
+	/** If true, triangles are also computed from segments. They create a surface
+	  * that fills the iso-contour. */
+	var computeSurfaceFlag = false
+
 	/** The neighbor squares array, to avoid creating it at each new square insertion. */
 	protected val nbSq = new Array[IsoSquare](9)
 
@@ -232,22 +284,23 @@ class IsoContour(val cellSize:Double) {
 		var nc = nonEmptySquares.size
 		while(c < nc) {
 			val square = nonEmptySquares(c)
-			var t = 0
-			var nt = square.segments.size
-			while(t < nt) {
-				code(i, square, square.segments(t))
-				t += 1
-				i += 1
-			} 
+			if(square.hasSegments) {
+				var t = 0
+				var nt = square.segments.size
+				while(t < nt) {
+					code(i, square, square.segments(t))
+					t += 1
+					i += 1
+				} 
+			}
 			c += 1
 		}
-//		nonEmptyCubes.foreach { square =>
-//			var j = 
-//			square.segments.foreach { triangle =>
-//				code(i, square, triangle)
-//				i += 1
-//			}
-//		}
+	}
+
+	/** Enable the computation of the surface or disable it. The surface is a set of
+	  * triangles that fill the iso-contour. */
+	def computeSurface(on:Boolean) {
+		computeSurfaceFlag = on
 	}
 
 	/** Add a set of squares in a given portion of space. The portion of space is given in
@@ -387,6 +440,11 @@ object IsoContour {
 		(3,1)		// e3
 	)
 
+	/** Knowing the value of the points that are above the isoLevel, map
+	  * the indices of the edges that are used to build the segments.
+	  * For example if only point 0 is above isoLevel we have
+	  * an index of 0001. In this case the two segments to look at are
+	  * given by 0x9 that is 1001, the segment 3 and 0 (around point 0). */
 	val edgeTable = Array[Int] (
 		0x0,     // 0000
         0x9,     // 1001
@@ -403,35 +461,52 @@ object IsoContour {
         0xa,     // 1010
         0x3,     // 0011
         0x9,     // 1001
-        0x0	     // 0000
+        16	     // 1111
 	)
 
+	/**  */
 	val segmentTable = Array[Array[Int]] (
-		Array[Int](-1,-1,-1,-1,-1),		// 0x0
-        Array[Int]( 0, 3,-1,-1,-1),		// 0x1
-        Array[Int]( 1, 0,-1,-1,-1),		// 0x2
-        Array[Int]( 1, 3,-1,-1,-1),		// 0x3
-        Array[Int]( 2, 1,-1,-1,-1),		// 0x4
-        Array[Int]( 2, 1, 0, 3,-1),		// 0x5
-        Array[Int]( 2, 0,-1,-1,-1),		// 0x6
-        Array[Int]( 2, 3,-1,-1,-1),		// 0x7
-        Array[Int]( 3, 2,-1,-1,-1),		// 0x8
-        Array[Int]( 0, 2,-1,-1,-1),		// 0x9
-        Array[Int]( 1, 0, 3, 2,-1),		// 0xa
-        Array[Int]( 1, 2,-1,-1,-1),		// 0xb
-        Array[Int]( 3, 1,-1,-1,-1),		// 0xc
-        Array[Int]( 0, 1,-1,-1,-1),		// 0xd
-    	Array[Int]( 3, 0,-1,-1,-1),		// 0xe
-        Array[Int](-1,-1,-1,-1,-1)		// 0xf
+		Array[Int](-1,-1,-1,-1,-1),		// 0 0000
+        Array[Int]( 0, 3,-1,-1,-1),		// 1 0001
+        Array[Int]( 1, 0,-1,-1,-1),		// 2 0010
+        Array[Int]( 1, 3,-1,-1,-1),		// 3 0011
+        Array[Int]( 2, 1,-1,-1,-1),		// 4 0100
+        Array[Int]( 2, 1, 0, 3,-1),		// 5 0101
+        Array[Int]( 2, 0,-1,-1,-1),		// 6 0110
+        Array[Int]( 2, 3,-1,-1,-1),		// 7 0111
+        Array[Int]( 3, 2,-1,-1,-1),		// 8 1000
+        Array[Int]( 0, 2,-1,-1,-1),		// 9 1001
+        Array[Int]( 1, 0, 3, 2,-1),		// A 1010
+        Array[Int]( 1, 2,-1,-1,-1),		// B 1011
+        Array[Int]( 3, 1,-1,-1,-1),		// C 1100
+        Array[Int]( 0, 1,-1,-1,-1),		// D 1101
+    	Array[Int]( 3, 0,-1,-1,-1),		// E 1110
+        Array[Int](-1,-1,-1,-1,-1)		// F 1111
 	)
 
-	/** Triangles are described by an edge index, a point index and another edge index !
-	  * There are a max two triangles per square. */
+	/** Triangles. Numbers less than 10 are segments. Number greater or
+	  * equal to 10 are points index minus 10. */
 	val triangleTable = Array[Array[Int]] (
-		Array[Int](-1,-1,-1, -1,-1,-1, -1),	// 0x0
-		Array[Int]( 0, 0, 3, -1,-1,-1, -1),	// 0x1
-		Array[Int]( 1, 1, 0, -1,-1,-1, -1),	// 0x2
-		//Array[Int]( 1, 2, 2,  ,-1,-1, -1),
-		Array[Int](-1,-1,-1, -1,-1,-1, -1)	// 0xf	// How to handle this ??
+		Array[Int](-1,-1,-1, -1,-1,-1, -1,-1,-1, -1,-1,-1, -1),	// 0000 0
+		
+		Array[Int]( 0,12,11,  0, 3,12,  3,13,12, -1,-1,-1, -1),	// 1110 10
+		Array[Int](10,13, 0,  0,13, 1,  1,13,12, -1,-1,-1, -1),	// 1101	11	
+		Array[Int]( 3,13, 1,  1,13,12, -1,-1,-1, -1,-1,-1, -1),	// 1100 7
+		Array[Int](10, 1,11, 10, 2, 1, 10,13, 2, -1,-1,-1, -1),	// 1011 12
+
+		Array[Int](10, 3, 0,  1, 2,12, -1,        0, 3, 1,  1, 3, 2, -1),	// 0101 14
+		Array[Int](10, 2, 0, 10,13, 2, -1,-1,-1, -1,-1,-1, -1),	// 1001 8
+		Array[Int]( 2, 3,13, -1,-1,-1, -1,-1,-1, -1,-1,-1, -1),	// 1000 4
+		Array[Int]( 3,11,10,  3, 2,11,  2,12,11, -1,-1,-1, -1),	// 0111 9
+
+		Array[Int]( 0,12,11,  0, 2,12, -1,-1,-1, -1,-1,-1, -1),	// 0110	6
+		Array[Int]( 3,13, 2,  0, 1,11, -1,        0, 3, 2,  0, 2, 1, -1),	// 1010 13
+		Array[Int]( 1, 2,12, -1,-1,-1, -1,-1,-1, -1,-1,-1, -1),	// 0100 3
+		Array[Int]( 3,11,10,  3, 1,11, -1,-1,-1, -1,-1,-1, -1),	// 0011	5
+
+		Array[Int]( 0, 1,11, -1,-1,-1, -1,-1,-1, -1,-1,-1, -1),	// 0010 2
+		Array[Int]( 3, 0,10, -1,-1,-1, -1,-1,-1, -1,-1,-1, -1),	// 0001 1
+		
+		Array[Int](10,13,11, 11,13,12, -1,-1,-1, -1,-1,-1, -1)	// 1111 15
 	)
 }
