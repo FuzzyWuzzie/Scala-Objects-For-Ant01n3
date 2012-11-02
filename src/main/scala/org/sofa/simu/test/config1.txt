@@ -1,3 +1,9 @@
+# Visco elastic simu config
+
+	# Number of division of each space hash cube.
+	# Useful to specify how fine is the iso surface/plane mesh.
+	isoDiv = 3
+
 # General settings:
 
 	# Assuming we use meters as units, g = 9.81 m/s^2

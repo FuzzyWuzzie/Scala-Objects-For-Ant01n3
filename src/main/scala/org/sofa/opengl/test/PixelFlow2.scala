@@ -159,8 +159,8 @@ class PixelFlow2 extends WindowAdapter with GLEventListener {
         gl.frontFace(gl.CCW)
         
         cubeShad = new ShaderProgram(gl, "basic shader",
-                new VertexShader(gl, vertexShader),
-                new FragmentShader(gl, fragmentShader))
+                new VertexShader(gl, "basic", vertexShader),
+                new FragmentShader(gl, "basic", fragmentShader))
 
         projection.setIdentity
         projection.frustum(-1, 1, -1, 1, 1, 20)

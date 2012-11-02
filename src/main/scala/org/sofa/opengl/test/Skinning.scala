@@ -123,18 +123,18 @@ class Skinning extends SurfaceRenderer {
 	protected def initShaders() {
 Console.err.println("A")
 	    nmapShader = new ShaderProgram(gl, "phong n-map",
-	            new VertexShader(gl, "stock/phongNmap.vert.glsl"),
-	            new FragmentShader(gl, "stock/phongNmap.frag.glsl"))
+	            new VertexShader(gl, "nmap", "stock/phongNmap.vert.glsl"),
+	            new FragmentShader(gl, "nmap", "stock/phongNmap.frag.glsl"))
 	    
 Console.err.println("B")
 	    plainShader = new ShaderProgram(gl, "plain", 
-	            new VertexShader(gl, "uniformColor.vert"),
-	            new FragmentShader(gl, "uniformColor.frag"))
+	            new VertexShader(gl, "uniform", "uniformColor.vert"),
+	            new FragmentShader(gl, "uniform", "uniformColor.frag"))
 	    
 Console.err.println("C") // The error seems to appear in the vertex shader at compilation.
 	    boneShader = new ShaderProgram(gl, "phong n-map with bones",
-	            new VertexShader(gl, "bonePhong.vert.glsl"),
-	            new FragmentShader(gl, "bonePhong.frag.glsl"))
+	            new VertexShader(gl, "bone", "bonePhong.vert.glsl"),
+	            new FragmentShader(gl, "bone", "bonePhong.frag.glsl"))
 Console.err.println("D")
 
 	    boneShader.uniform("bone[0].color", skeleton.color)

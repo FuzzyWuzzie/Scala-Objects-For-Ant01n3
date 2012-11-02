@@ -83,8 +83,8 @@ class NormalMap extends SurfaceRenderer {
 	    camera.viewCartesian(2, 2, 2)
 	    
 	    nmapShader = new ShaderProgram(gl, "normal map phong",
-	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.vert"),
-	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.frag"))
+	            new VertexShader(gl, "nmap phong", "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.vert"),
+	            new FragmentShader(gl, "nmap phong", "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.frag"))
 //	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
 //	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
 

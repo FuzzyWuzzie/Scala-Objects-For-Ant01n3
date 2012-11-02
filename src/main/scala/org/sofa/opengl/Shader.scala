@@ -1,19 +1,24 @@
 package org.sofa.opengl
 
-import java.io.{File, InputStream, FileInputStream}
+import java.io.{File, InputStream, FileInputStream, IOException}
 import scala.collection.mutable._
 import org.sofa.math._
 import org.sofa.nio._
 
 /** Shader companion object. */
 object Shader {
+    /** A regular expression that matches any line that contains an include. */
     val includeMatcher = "#include\\s+<([^>]+)>\\s*".r
 
+    /** The set of paths to try to load a shader. */
     val includePath = scala.collection.mutable.ArrayBuffer[String]()
+
+    /** A way to load a shader source. */
+    var loader:ShaderLoader = new DefaultShaderLoader()
     
     /** Transform a text file into an array of strings. */
     def fileToArrayOfStrings(file:String):Array[String] = {
-        streamToArrayOfStrings(locateFileName(file))
+        streamToArrayOfStrings(loader.open(file))
     }
     /** Transform a text file from a stream into an array of strings. */
     def streamToArrayOfStrings(in:InputStream):Array[String] = {
@@ -25,7 +30,7 @@ object Shader {
         	        case includeMatcher(file) => file 
         	        case _                    => throw new RuntimeException("invalid include statement '%s'".format(line))
         	    }
-        	    buf ++= streamToArrayOfStrings(locateFileName(fileName))
+        	    buf ++= streamToArrayOfStrings(loader.open(fileName))
         	} else {
         		buf += "%s%n".format(line)
         	}
@@ -33,94 +38,40 @@ object Shader {
 
         buf.toArray
     }
-
-    def locateFileName(fileName:String):InputStream = {
-        var stream:InputStream = null
-
-        getCurrentShaderLoader match {
-            case None => stream = null
-            case x:Some[ShaderLoader] => {
-                val loader = x.get 
-
-                if(! loader.exists(fileName)) {
-                    val sep = sys.props.get("file.separator").get
-
-                    includePath.foreach { path => 
-                        val name = "%s%s%s".format(path, sep, fileName)
-
-                        if(loader.exists(name)) {
-                            stream = loader.open(name)
-                        }
-                    }
-                } else {
-                    stream = loader.open(fileName)
-                }
-            }
-        }
-
-        if(stream eq null) {
-            stream = locateFileNameFile(fileName)
-        }
-
-        stream
-    }
-    
-    /** Try to open the given filename, and if this is not possible, try to
-      * open it from a repository of shaders in each of the paths listed
-      * in the `includePath` variable. Throw an exception if the file cannot
-      * be open, else returns an input stream on it. */
-    def locateFileNameFile(fileName:String):InputStream = {
-        var file = new File(fileName)
-        if(! file.exists) {
-            val sep = sys.props.get("file.separator").get
-
-            includePath.foreach { path =>
-                val f = new File("%s%s%s".format(path, sep, fileName))
-                if(f.exists) file = f
-            }
-        }
-        
-        if(! file.exists) throw new RuntimeException("cannot locate include file %s".format(fileName))
-        
-        new FileInputStream(file)
-    }
-
-    protected def getCurrentShaderLoader():Option[ShaderLoader] = {
-        sys.props.get("org.sofa.opengl.shader.loader") match {
-            case None => { None }
-            case loader:Some[String] => try {
-                val c = Class.forName(loader.get)
-
-                if(c ne null) {
-                    val o = c.newInstance()
-
-                    if(o.isInstanceOf[ShaderLoader]) {
-                        Some(o.asInstanceOf[ShaderLoader])
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            } catch {
-                case e:Exception => { e.printStackTrace; None }
-                case _ => { None }
-            }
-        }
-    }
 }
 
+/** Pluggable loader for shader sources. */
 trait ShaderLoader {
-    def exists(fileName:String):Boolean 
-    def open(fileName:String):InputStream
+    /** Try to open a resource, or throw an IOException if not available. */
+    def open(resource:String):InputStream
+}
+
+/** Default loader for shaders, based on files and the include path.
+  * This loader tries to open the given resource directly, then if not
+  * found, tries to find it in each of the pathes provided by the include
+  * path. If not found it throws an IOException. */
+class DefaultShaderLoader extends ShaderLoader {
+    def open(resource:String):InputStream = {
+        var file = new File(resource)
+        if(file.exists) {
+            new FileInputStream(file)
+        } else {
+            val sep = sys.props.get("file.separator").get
+
+            Shader.includePath.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
+                case path:Some[String] => {new FileInputStream(new File("%s%s%s".format(path.get,sep,resource))) }
+                case None => { throw new IOException("cannot locate shader %s".format(resource)) }
+            }
+        }
+    }
 }
 
 object ShaderProgram {
     /** Create a new shader program from a vertex shader and a fragment shader. */
     def apply(gl:SGL, name:String, vertexShaderFileName:String, fragmentShaderFileName:String):ShaderProgram = {
     	new ShaderProgram(gl, name,
-                new VertexShader(gl, vertexShaderFileName),
-    			new FragmentShader(gl, fragmentShaderFileName))
+                new VertexShader(gl, name, vertexShaderFileName),
+    			new FragmentShader(gl, name, fragmentShaderFileName))
     }
 }
 
@@ -129,20 +80,21 @@ object ShaderProgram {
  * @param gl The SGL instance.
  * @param source An array of lines of code. 
  */
-abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl) {
+abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends OpenGLObject(gl) {
     import gl._
 
     /** Try to open the given `sourceFile` on the file system and compile it. */
-    def this(gl:SGL, sourceFile:String) = this(gl, Shader.fileToArrayOfStrings(sourceFile))
+    def this(gl:SGL, name:String, sourceFile:String) = this(gl, name, Shader.fileToArrayOfStrings(sourceFile))
 
     /** Try to read a shader source from the given input `stream` and compile it. */
-    def this(gl:SGL, stream:java.io.InputStream) = this(gl, Shader.streamToArrayOfStrings(stream))
+    def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(stream))
     
     /** Kind of shader, vertex, fragment or geometry ? */
     protected val shaderType:Int
     
     /** Upload the source, compile it and check errors. */
     protected def init() {
+        checkErrors
         super.init(createShader(shaderType))
         checkErrors
         shaderSource(oid, source)
@@ -153,7 +105,7 @@ abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl)
         if(!getShaderCompileStatus(oid)) {
             val log = getShaderInfoLog(oid)
         	Console.err.println(log)
-        	throw new RuntimeException("Cannot compile shader:%n%s".format(log))
+        	throw new RuntimeException("Cannot compile shader %s:%n%s".format(name, log))
         }
     }
     
@@ -166,29 +118,29 @@ abstract class Shader(gl:SGL, val source:Array[String]) extends OpenGLObject(gl)
 }
 
 /** A vertex shader/ */
-class VertexShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
+class VertexShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl, name, source) {
     protected val shaderType = gl.VERTEX_SHADER
     
     init
     
     /** Try to open the given `sourceFile` on the file system and compile it. */
-    def this(gl:SGL, fileSource:String) = this(gl, Shader.fileToArrayOfStrings(fileSource))
+    def this(gl:SGL, name:String, fileSource:String) = this(gl, name, Shader.fileToArrayOfStrings(fileSource))
     
     /** Try to read a shader source from the given input `stream` and compile it. */
-    def this(gl:SGL, stream:java.io.InputStream) = this(gl, Shader.streamToArrayOfStrings(stream))
+    def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(stream))
 }
 
 /** A fragment shader. */
-class FragmentShader(gl:SGL, source:Array[String]) extends Shader(gl, source) {
+class FragmentShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl, name, source) {
     protected val shaderType = gl.FRAGMENT_SHADER
     
     init
     
     /** Try to open the given `sourceFile` on the file system and compile it. */
-    def this(gl:SGL, fileSource:String) = this(gl, Shader.fileToArrayOfStrings(fileSource))
+    def this(gl:SGL, name:String, fileSource:String) = this(gl, name, Shader.fileToArrayOfStrings(fileSource))
 
     /** Try to read a shader source from the given input `stream` and compile it. */
-    def this(gl:SGL, stream:java.io.InputStream) = this(gl, Shader.streamToArrayOfStrings(stream))
+    def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(stream))
 }
 
 /** Composition of several shaders into a program. */
@@ -215,7 +167,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
             val log = "error"
             //val log = getProgramInfoLog(oid)
             //Console.err.println(log)
-            throw new RuntimeException("Cannot link shaders program:%n%s".format(log))
+            throw new RuntimeException("Cannot link shaders program %s:%n%s".format(name, log))
         }
         
         checkErrors

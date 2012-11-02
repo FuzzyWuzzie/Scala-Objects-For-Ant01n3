@@ -64,8 +64,12 @@ class TestViscoElasticSimulation2D {
 		caps.setHardwareAccelerated(true)
 		caps.setSampleBuffers(true)
 		
-		camera         = new Camera()
-		ctrl           = new TVESCameraController2D(camera, simu)
+		Environment.readConfigFile("/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/simu/test/config1.txt")
+		Environment.initializeFieldsOf(Particle)
+		Environment.initializeFieldsOf(simu)
+		Environment.printParameters(Console.out)
+
+		ctrl                = new TVESCameraController2D(camera, simu)
 		simu.initSurface    = simu.initializeSurface
 		simu.frame          = simu.display
 		simu.surfaceChanged = simu.reshape
@@ -195,9 +199,8 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	}
 
 	protected def initSimuParams() {
-		Environment.readConfigFile("/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/simu/test/config1.txt")
-		Environment.initializeFieldsOf(Particle)
-		Environment.printParameters(Console.out)
+		// Adapt parameters dependent of others, and eventually changed by Environment.
+		isoCellSize = Particle.spacialHashBucketSize / isoDiv
 	}
 	
 	protected def initGL(sgl:SGL) {
@@ -211,7 +214,8 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		gl.frontFace(gl.CW)
 		gl.disable(gl.BLEND)
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-		gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
+		//gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
+		gl.checkErrors
 	}
 	
 	protected def initShaders() {
@@ -613,7 +617,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 				if(density > densityMax) densityMax = density
 				val d = math.min(1,(density/120))
 
-				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, d.toFloat)
+				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, 0)//d.toFloat)
 //				isoPlaneMesh.setPointNormal(i, 0, 1, 0)
 				isoPlaneMesh.setPointColor(i, Rgba(d, 1, 1, 1))
 				i += 1
@@ -627,13 +631,13 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 				if(density > densityMax) densityMax = density
 				val d = math.min(1,(density/120))
 
-				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, d.toFloat)
+				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, 0)//d.toFloat)
 //				isoPlaneMesh.setPointNormal(i, 0, 0, 1)
 				isoPlaneMesh.setPointColor(i, Rgba(d, 1, 1, 1))
 				i += 1
 			}
 avgDensity/=i
-Console.err.println("avg density = %.4f max=%.4f".format(avgDensity, densityMax))
+//Console.err.println("avg density = %.4f (count=%d) max=%.4f".format(avgDensity, i, densityMax))
 			val ptCount = i
 
 //			createNormals(segCount, ptCount)
@@ -741,9 +745,11 @@ class TVESCameraController2D(camera:Camera, val ves:ViscoElasticSimulationViewer
     override def key(surface:Surface, keyEvent:KeyEvent) {
         import keyEvent.ActionChar._
         if(keyEvent.isPrintable) {
+        	Console.err.println("KEY=%c".format(keyEvent.unicodeChar))
         	keyEvent.unicodeChar match {
             	case ' ' => { ves.pausePlay }
             	case 'p' => { ves.drawParticlesFlag = !ves.drawParticlesFlag }
+            	case 'P' => { ves.drawIsoPlaneFlag = !ves.drawIsoPlaneFlag }
             	case 'h' => { ves.drawSpaceHashFlag = !ves.drawSpaceHashFlag }
             	case 'c' => { ves.drawIsoCubesFlag = !ves.drawIsoCubesFlag }
             	case 's' => { ves.drawIsoSurfaceFlag = !ves.drawIsoSurfaceFlag }
@@ -755,6 +761,7 @@ class TVESCameraController2D(camera:Camera, val ves:ViscoElasticSimulationViewer
             		println("Keys:")
             		println("    <space>  pause/play the simulation.")
             		println("    p        toggle draw particles.")
+            		println("    P        toggle draw the iso plane.")
             		println("    h        toggle draw the space hash.")
             		println("    c        toggle draw the iso surface cubes.")
             		println("    s        toggle draw the iso surface.")
@@ -766,6 +773,7 @@ class TVESCameraController2D(camera:Camera, val ves:ViscoElasticSimulationViewer
             	case _ => { super.key(surface, keyEvent) }
             }
         } else {
+        	//Console.err.println("KEYCODE=%d".format(keyEvent.key))
             super.key(surface, keyEvent)
         }
     }

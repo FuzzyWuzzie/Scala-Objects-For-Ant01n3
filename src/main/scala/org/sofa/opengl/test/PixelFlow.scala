@@ -108,8 +108,8 @@ class PixelFlow extends WindowAdapter with GLEventListener {
         gl.enable(gl.DEPTH_TEST)
     
         shadProg = new ShaderProgram(gl, "basic shader",
-                new VertexShader(gl, vertexShader),
-                new FragmentShader(gl, fragmentShader))
+                new VertexShader(gl, "basic", vertexShader),
+                new FragmentShader(gl, "basic", fragmentShader))
 
         triangle = new VertexArray(gl, indices, ("vertices", 0, 4, vertices), ("colors", 1, 4, colors))
     }

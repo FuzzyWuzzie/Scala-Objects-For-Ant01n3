@@ -201,8 +201,8 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
         gl.frontFace(gl.CCW)
     
         cubeShad = new ShaderProgram(gl, "gouraud shader",
-                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3VertexShader.glsl"),
-                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
+                new VertexShader(gl, "gouraud", "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3VertexShader.glsl"),
+                new FragmentShader(gl, "gouraud", "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
 //                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3VertexShader.glsl"),
 //                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3FragmentShader.glsl"))
 

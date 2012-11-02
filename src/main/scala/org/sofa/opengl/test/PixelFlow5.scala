@@ -91,8 +91,8 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         gl.frontFace(gl.CW)
     
         cubeShad = new ShaderProgram(gl, "phong shader",
-                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow4VertexShader.glsl"),
-                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
+                new VertexShader(gl, "phong", "src-scala/org/sofa/opengl/shaders/es2/pixelFlow4VertexShader.glsl"),
+                new FragmentShader(gl, "phong", "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
 //                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow4VertexShader.glsl"),
 //                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3FragmentShader.glsl"))
 
