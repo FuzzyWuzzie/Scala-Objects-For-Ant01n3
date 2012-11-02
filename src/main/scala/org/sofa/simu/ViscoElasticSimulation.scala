@@ -109,6 +109,9 @@ class Particle(val index:Int) extends VESObject with SpatialPoint {
 	
 	/** Velocity. */
 	val v = Vector3()
+
+	/** Particle density, as computed in ViscoElasticSimulation.doubleDensityRelaxation(). */
+	var rho = 0.0
 	
 	/** Set of visible neighbor (distance < h). This field
 	  * is updated by the simulation at the begining of each step. */
@@ -247,6 +250,29 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		n.normalize
 		n
 	}
+
+	/** TODO */
+	def evalIsoDensity(x:Point3):Double = { 
+		var rho = 0.0
+		var n = 0
+		val neighbors = neighborsAround(x)
+		
+		neighbors.foreach { i =>
+			if(! i.isVolume) {
+				val R = Vector3(i.from, x)
+				val l = R.norm
+				val q = l/Particle.h
+				if(q < 1) {
+					rho += (i.asInstanceOf[Particle].rho / (l*l))  
+				}
+				n += 1
+			}
+		}
+		
+		rho / n
+	}
+
+	def evalIsoDensity(x:Point2):Double = evalIsoDensity(Point3(x.x, x.y, 0))
 
 	/** Evaluate the iso-surface in 2D at the given point `x`. */
 	def evalIsoSurface(x:Point2):Double = { evalIsoSurface(Point3(x.x, x.y, 0)) }
@@ -468,6 +494,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 				}
 			}
 			// Compute pressure and near-pressure
+			i.rho = rho
 			var P = Particle.k * (rho - Particle.rhoZero)
 			var Pnear = Particle.kNear * rhoNear
 			var dx = Vector3(0,0,0)

@@ -1,4 +1,4 @@
-package org.sofa.opengl.test
+package org.sofa.simu.test
 
 import org.sofa.opengl.surface.SurfaceRenderer
 import org.sofa.opengl.SGL
@@ -46,62 +46,93 @@ object TestViscoElasticSimulation2D {
 	def main(args:Array[String]) = (new TestViscoElasticSimulation2D).test
 }
 
-class TestViscoElasticSimulation2D extends SurfaceRenderer {
-	// ----------------------------------------------------------------------------------
-	// Parameters
-	
+class TestViscoElasticSimulation2D {
+	var camera = new Camera()
+	var ctrl:BasicCameraController = null
+	var surface:Surface = null
+	var simu = new ViscoElasticSimulationViewer2D(camera)
+
+	def test() {
+		val caps = new GLCapabilities(GLProfile.getGL2ES2)
+		
+		caps.setRedBits(8)
+		caps.setGreenBits(8)
+		caps.setBlueBits(8)
+		caps.setAlphaBits(8)
+		caps.setNumSamples(4)
+		caps.setDoubleBuffered(true)
+		caps.setHardwareAccelerated(true)
+		caps.setSampleBuffers(true)
+		
+		camera         = new Camera()
+		ctrl           = new TVESCameraController2D(camera, simu)
+		simu.initSurface    = simu.initializeSurface
+		simu.frame          = simu.display
+		simu.surfaceChanged = simu.reshape
+		simu.key            = ctrl.key
+		simu.motion         = ctrl.motion
+		simu.scroll         = ctrl.scroll
+		simu.close          = { surface => sys.exit }
+		surface             = new org.sofa.opengl.backend.SurfaceNewt(simu,
+							camera, "P'tit jet !", caps,
+							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
+	}
+}
+
+class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer {	
+
+// Settings --------------------------------------------------
+
 	/** max number of triangles for the iso-surface. */
-	val maxDynTriangles = 6000
+	var maxDynTriangles = 6000
 
 	/** max number of lines for the iso-contour. */
-	val maxDynLines = 6000
+	var maxDynLines = 6000
 
 	/** max number of springs to draw. */
-	val maxSprings = 2000
+	var maxSprings = 2000
 
 	/** max number of particles in the simulation. */
-	val size = 1000
+	var size = 1000
 
-	val emitPoint = Point3(-5, 5, 0)
-	val emitVelocity1 = Vector3(15, 6, 0)
-	val emitVelocity2 = Vector3(15, 8, 0)
+	var emitPoint = Point3(-5, 5, 0)
+	var emitVelocity1 = Vector3(15, 6, 0)
+	var emitVelocity2 = Vector3(15, 8, 0)
 	
 	/** Number of iso-cubes inside a space hash cube. */
 	var isoDiv = 4.0
 	
-	val isoCellSize = Particle.spacialHashBucketSize / isoDiv
+	var isoCellSize = Particle.spacialHashBucketSize / isoDiv
 	
 	/** Limit of the iso-surface in the implicit function used to define the surface. */
-	val isoLimit = 0.65
+	var isoLimit = 0.65
 
-	var drawParticlesFlag = true
-	var drawSpringsFlag = true
+	var drawParticlesFlag = false
+	var drawSpringsFlag = false
 	var drawSpaceHashFlag = false
 	var drawIsoCubesFlag = false
 	var drawIsoSurfaceFlag = false
-	var drawIsoContourFlag = true
-	var drawIsoSquaresFlag = true
+	var drawIsoContourFlag = false
+	var drawIsoSquaresFlag = false
 	var drawIsoPlaneFlag = true
 	
-	val isoSurfaceColor = Rgba(1,1,1,0.9)
-	val particleColor = Rgba(0.7, 0.7, 1, 0.3)
-	val clearColor = Rgba.grey10
-	val planeColor = Rgba.grey80
-	val light1 = Vector4(4, 4, 4, 1)	
-	val particleSizePx = 160f // 160f
+	var isoSurfaceColor = Rgba(1,1,1,0.9)
+	var particleColor = Rgba(0.7, 0.7, 1, 0.3)
+	var clearColor = Rgba.grey10
+	var planeColor = Rgba.grey80
+	val light1 = Vector4(0, 7, 3, 1)	
+	var particleSizePx = 160f // 160f
 	
-	protected val timeToWait = 20
-	protected val timeToEmit =  7
-	protected var curParticle = 0
-	protected var waiting = timeToEmit
-	protected var emiting = true
-	protected var velocityMode = true
-	
-	// ----------------------------------------------------------------------------------
-	// Fields
-	
+	val timeToWait = 20
+	val timeToEmit =  7
+	var curParticle = 0
+	var waiting = timeToEmit
+	var emiting = true
+	var velocityMode = true	
+
+// Fields --------------------------------------------------
+
 	var gl:SGL = null
-	var surface:Surface = null
 	
 	val projection:Matrix4 = new ArrayMatrix4
 	val modelview = new MatrixStack(new ArrayMatrix4)
@@ -133,10 +164,7 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 	var isoContourMesh = new ColoredLineSet(maxDynLines)
 	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
 	var springsMesh = new ColoredLineSet(maxSprings)
-	
-	var camera:Camera = null
-	var ctrl:BasicCameraController = null
-	
+		
 	val random = new scala.util.Random()
 	var step = 0
 	var running = true
@@ -151,32 +179,6 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 
 	// ----------------------------------------------------------------------------------
 	// Init.
-	
-	def test() {
-		val caps = new GLCapabilities(GLProfile.getGL2ES2)
-		
-		caps.setRedBits(8)
-		caps.setGreenBits(8)
-		caps.setBlueBits(8)
-		caps.setAlphaBits(8)
-		caps.setNumSamples(4)
-		caps.setDoubleBuffered(true)
-		caps.setHardwareAccelerated(true)
-		caps.setSampleBuffers(true)
-		
-		camera         = new Camera()
-		ctrl           = new TVESCameraController2D(camera, this)
-		initSurface    = initializeSurface
-		frame          = display
-		surfaceChanged = reshape
-		key            = ctrl.key
-		motion         = ctrl.motion
-		scroll         = ctrl.scroll
-		close          = { surface => sys.exit }
-		surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
-							camera, "P'tit jet !", caps,
-							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
-	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
 		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
@@ -477,24 +479,28 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 	}
 	
 	protected def drawIsoSurface() {
-		if(drawIsoSurfaceFlag && isoSurfaceComp.triangleCount > 0) {
-			phongShad.use
-			useLights(phongShad)
-			camera.uniformMVP(phongShad)
-			isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
+		if(drawIsoSurfaceFlag) {
+			if((isoSurfaceComp ne null) && isoSurfaceComp.triangleCount > 0) {
+				gl.enable(gl.BLEND)
+				phongShad.use
+				useLights(phongShad)
+				camera.uniformMVP(phongShad)
+				isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
+				gl.disable(gl.BLEND)
+			}
 		}
 	}
 
 	protected def drawIsoPlane() {
 		if(drawIsoPlaneFlag && isoContourComp.triangleCount > 0) {
-			gl.enable(gl.BLEND)
+//			gl.enable(gl.BLEND)
 //Console.err.println("Drawing iso plane %d triangles".format(isoContourComp.triangleCount))
 			phongShad.use
 			useLights(phongShad)
 			camera.uniformMVP(phongShad)
 //			isoPlane.draw(isoPlaneMesh.drawAs, isoContourComp.triangleCount*3)
 			isoPlane.draw(isoPlaneMesh.drawAs, triangleCount*3)
-			gl.disable(gl.BLEND)
+//			gl.disable(gl.BLEND)
 		}
 	}
 
@@ -541,7 +547,7 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 		if(drawIsoSurfaceFlag)
 			buildIsoSurface
 
-		if(drawIsoContourFlag)
+		if(drawIsoContourFlag || drawIsoPlaneFlag)
 			buildIsoContour
 	}
 	
@@ -593,26 +599,44 @@ class TestViscoElasticSimulation2D extends SurfaceRenderer {
 	}
 
 	var triangleCount = 0
+	var densityMax = 0.0
+	var avgDensity = 0.0
 
 	protected def updateIsoPlaneRepresentation() {
 		if(isoContourComp.triangleCount > 0 && drawIsoPlaneFlag) {
 			var i = 0
+			avgDensity = 0.0
 			
 			isoContourComp.segPoints.foreach { p =>
-				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, 0)
-//				isoPlaneMesh.setPointNormal(i, 0, 0, 1)
+				val density = simu.evalIsoDensity(p)
+				avgDensity += density
+				if(density > densityMax) densityMax = density
+				val d = math.min(1,(density/120))
+
+				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, d.toFloat)
+//				isoPlaneMesh.setPointNormal(i, 0, 1, 0)
+				isoPlaneMesh.setPointColor(i, Rgba(d, 1, 1, 1))
 				i += 1
 			}
-			
+
 			val segCount = i
 			
 			isoContourComp.points.foreach { p => 
-				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, 0)
+				val density = simu.evalIsoDensity(p)
+				avgDensity += density
+				if(density > densityMax) densityMax = density
+				val d = math.min(1,(density/120))
+
+				isoPlaneMesh.setPoint(i, p.x.toFloat, p.y.toFloat, d.toFloat)
 //				isoPlaneMesh.setPointNormal(i, 0, 0, 1)
+				isoPlaneMesh.setPointColor(i, Rgba(d, 1, 1, 1))
 				i += 1
 			}
-			
+avgDensity/=i
+Console.err.println("avg density = %.4f max=%.4f".format(avgDensity, densityMax))
 			val ptCount = i
+
+//			createNormals(segCount, ptCount)
 
 			i = 0
 
@@ -631,6 +655,32 @@ triangleCount = 0
 //			assert(i == isoContourComp.triangleCount)
 
 			isoPlaneMesh.updateVertexArray(gl, "vertices", "colors", "normals")
+		}
+	}
+
+	class Normal() {
+		val normal = Vector3(0,0,1)
+		var count = 0
+	}
+
+	protected def createNormals(segCount:Int, ptCount:Int) {
+		val normals = 
+
+		isoContourComp.nonEmptySquares.foreach { square =>
+			if(square.hasSegments) {
+				// Pour tous les segments
+				//  - pour les points du segment (x,y,0)
+				//     - ajouter la normale au segment (-y,x,0)
+				//     - incrémenter le normal count des points
+				// Pour tous les triangles,
+				//  - pour les points qui ne sont pas sur des segments:
+				//     - ajouter la normale du segment (-y,x,0.5)
+				//     - incrémenter le normal count du point.
+				//     XXX comment connaître les segments correspondants aux triangles.
+			} else if(square.hasTriangles) {
+				// pour tous les triangles retrouver les points.
+				// incrémenter leur normal count et ajouter (0,0,1) à la normale.
+			}
 		}
 	}
 	
@@ -687,7 +737,7 @@ triangleCount = 0
 }
 
 /** A simple mouse/key controller for the camera and simulation. */
-class TVESCameraController2D(camera:Camera, val ves:TestViscoElasticSimulation2D) extends BasicCameraController(camera) {
+class TVESCameraController2D(camera:Camera, val ves:ViscoElasticSimulationViewer2D) extends BasicCameraController(camera) {
     override def key(surface:Surface, keyEvent:KeyEvent) {
         import keyEvent.ActionChar._
         if(keyEvent.isPrintable) {

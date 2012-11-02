@@ -78,7 +78,7 @@ class Skinning extends SurfaceRenderer {
 // Rendering
     
 	def initializeSuface(gl:SGL, surface:Surface) {
-	    Shader.includePath += "src-scala/org/sofa/opengl/shaders/"
+	    Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 	    
 	    initGL(gl)
 	    initSkeleton
@@ -121,18 +121,22 @@ class Skinning extends SurfaceRenderer {
 	}
 	
 	protected def initShaders() {
+Console.err.println("A")
 	    nmapShader = new ShaderProgram(gl, "phong n-map",
 	            new VertexShader(gl, "stock/phongNmap.vert.glsl"),
 	            new FragmentShader(gl, "stock/phongNmap.frag.glsl"))
 	    
+Console.err.println("B")
 	    plainShader = new ShaderProgram(gl, "plain", 
-	            new VertexShader(gl, "uniformColor.vert.glsl"),
-	            new FragmentShader(gl, "uniformColor.frag.glsl"))
+	            new VertexShader(gl, "uniformColor.vert"),
+	            new FragmentShader(gl, "uniformColor.frag"))
 	    
+Console.err.println("C") // The error seems to appear in the vertex shader at compilation.
 	    boneShader = new ShaderProgram(gl, "phong n-map with bones",
 	            new VertexShader(gl, "bonePhong.vert.glsl"),
 	            new FragmentShader(gl, "bonePhong.frag.glsl"))
-	
+Console.err.println("D")
+
 	    boneShader.uniform("bone[0].color", skeleton.color)
 	    boneShader.uniform("bone[1].color", skeleton(0).color)
 	    boneShader.uniform("bone[2].color", (skeleton(0))(0).color)

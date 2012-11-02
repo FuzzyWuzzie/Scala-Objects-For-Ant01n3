@@ -1,7 +1,7 @@
 package org.sofa
 
 import java.lang.reflect.Method
-import java.io.{File, FileNotFoundException}
+import java.io.{File, FileNotFoundException, InputStream}
 import _root_.scala.collection.mutable.HashMap
 import _root_.scala.io.Source
 
@@ -61,22 +61,39 @@ class Environment {
 	}
  
 // Commands
+
+	/** Read a configuration file from an existing input stream and process each field trying to store them as parameters.
+      * If a line cannot be read, it is merely ignored, no exception is thrown. This behaviour has
+      * been chosen to be as error tolerant as possible. */
+	def readConfigFile(input:InputStream) { readConfigFile(Source.fromInputStream(input)) }
  
-	/** Read a configuration file and process each field trying to store them as parameters.
+	/** Read a configuration file from a file name and process each field trying to store them as parameters.
       * If a line cannot be read, it is merely ignored, no exception is thrown. This behaviour has
       * been chosen to be as error tolerant as possible. */
 	def readConfigFile(fileName:String) {
 		try {
-			Source.fromFile(new File(fileName)).getLines.foreach {
+			readConfigFile(Source.fromFile(new File(fileName))) 
+		} catch {
+			case e:FileNotFoundException => { printf("Environment: command file %s not found%n", fileName) }
+		}
+	}
+
+	/** Read a configuration file from an existing source and process each field trying to store them as parameters.
+      * If a line cannot be read, it is merely ignored, no exception is thrown. This behaviour has
+      * been chosen to be as error tolerant as possible. */
+	def readConfigFile(source:Source) {
+		try {
+			source.getLines.foreach {
 				case fileEqualParamRE(key,value) => parameters.put(key, value)
 				case fileCommentRE(value)        => { /* ignore */ }
 				case fileEmptyRE(value)          => { /* ignore */ }
 				case value:String                => printf("Environment: line %s cannot be parsed%n", value)
 			}
 		} catch {
-			case e:FileNotFoundException => { printf("Environment: command file %s not found%n", fileName) }
 			case e:Exception => { printf("Environment: %s%n", e.getMessage); e.printStackTrace }
+			case e:AnyRef => { throw e }
 		}
+
 	}
  
 	/** Read the command line and process each field, trying to store them as parameters. */

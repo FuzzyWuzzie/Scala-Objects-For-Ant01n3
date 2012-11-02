@@ -33,16 +33,49 @@ object Shader {
 
         buf.toArray
     }
+
+    def locateFileName(fileName:String):InputStream = {
+        var stream:InputStream = null
+
+        getCurrentShaderLoader match {
+            case None => stream = null
+            case x:Some[ShaderLoader] => {
+                val loader = x.get 
+
+                if(! loader.exists(fileName)) {
+                    val sep = sys.props.get("file.separator").get
+
+                    includePath.foreach { path => 
+                        val name = "%s%s%s".format(path, sep, fileName)
+
+                        if(loader.exists(name)) {
+                            stream = loader.open(name)
+                        }
+                    }
+                } else {
+                    stream = loader.open(fileName)
+                }
+            }
+        }
+
+        if(stream eq null) {
+            stream = locateFileNameFile(fileName)
+        }
+
+        stream
+    }
     
     /** Try to open the given filename, and if this is not possible, try to
       * open it from a repository of shaders in each of the paths listed
       * in the `includePath` variable. Throw an exception if the file cannot
       * be open, else returns an input stream on it. */
-    def locateFileName(fileName:String):InputStream = {
+    def locateFileNameFile(fileName:String):InputStream = {
         var file = new File(fileName)
         if(! file.exists) {
+            val sep = sys.props.get("file.separator").get
+
             includePath.foreach { path =>
-                val f = new File("%s/%s".format(path, fileName))
+                val f = new File("%s%s%s".format(path, sep, fileName))
                 if(f.exists) file = f
             }
         }
@@ -51,13 +84,43 @@ object Shader {
         
         new FileInputStream(file)
     }
+
+    protected def getCurrentShaderLoader():Option[ShaderLoader] = {
+        sys.props.get("org.sofa.opengl.shader.loader") match {
+            case None => { None }
+            case loader:Some[String] => try {
+                val c = Class.forName(loader.get)
+
+                if(c ne null) {
+                    val o = c.newInstance()
+
+                    if(o.isInstanceOf[ShaderLoader]) {
+                        Some(o.asInstanceOf[ShaderLoader])
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } catch {
+                case e:Exception => { e.printStackTrace; None }
+                case _ => { None }
+            }
+        }
+    }
+}
+
+trait ShaderLoader {
+    def exists(fileName:String):Boolean 
+    def open(fileName:String):InputStream
 }
 
 object ShaderProgram {
     /** Create a new shader program from a vertex shader and a fragment shader. */
-    def apply(gl:SGL, name:String, vertexShaderFileName:String, fragementShaderFileName:String):ShaderProgram = {
-    	new ShaderProgram(gl, name, new VertexShader(gl, vertexShaderFileName),
-    			new FragmentShader(gl, fragementShaderFileName))
+    def apply(gl:SGL, name:String, vertexShaderFileName:String, fragmentShaderFileName:String):ShaderProgram = {
+    	new ShaderProgram(gl, name,
+                new VertexShader(gl, vertexShaderFileName),
+    			new FragmentShader(gl, fragmentShaderFileName))
     }
 }
 
