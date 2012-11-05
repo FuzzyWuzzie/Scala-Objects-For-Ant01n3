@@ -45,9 +45,6 @@ class Point2(xInit:Double, yInit:Double) extends NumberSeq2 {
 		abs(sqrt((xx * xx) + (yy * yy)))
 	}
 
-
-    override final def size:Int = 2
-
     type ReturnType = Point2
     
     val data = Array[Double](xInit, yInit)
@@ -61,6 +58,7 @@ class Point2(xInit:Double, yInit:Double) extends NumberSeq2 {
       */
 	def -->(other:Point2):Vector2 = new Vector2(other.x-x, other.y-y)
     override def toDoubleArray = data
+    override final def size:Int = 2
 }
 
 //===================================================
@@ -115,7 +113,53 @@ class Point3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
 		abs(sqrt((xx * xx) + (yy * yy) + (zz * zz)))
 	}
 
-    override final def size:Int = 3
+    def +(other:Point3):ReturnType = {
+        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
+        result.addBy(other)
+        result
+    }
+    
+    override def +(value:Double):ReturnType = {
+        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
+        result.addBy(value)
+        result
+    }
+
+    def -(other:Point3):ReturnType = {
+        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
+        result.subBy(other)
+        result
+    }
+    
+    override def -(value:Double):ReturnType = {
+        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
+        result.subBy(value)
+        result
+    }
+
+    def *(other:Point3):ReturnType = {
+        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
+        result.multBy(other)
+        result
+    }
+    
+    override def *(value:Double):ReturnType = {
+        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
+        result.multBy(value)
+        result
+    }
+
+    def /(other:Point3):ReturnType = {
+        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
+        result.divBy(other)
+        result
+    }
+    
+    override def /(value:Double):ReturnType = {
+        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
+        result.divBy(value)
+        result
+    }
 
     type ReturnType = Point3
     
@@ -130,4 +174,5 @@ class Point3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
       */
     def -->(other:Point3):Vector3 = new Vector3(other.x-x, other.y-y, other.z-z)
     override def toDoubleArray = data
+    override final def size:Int = 3
 }

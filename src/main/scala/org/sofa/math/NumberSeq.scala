@@ -613,6 +613,112 @@ trait NumberSeq3 extends NumberSeq2 {
     final def xyz_=(value:(Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(2) = value._3 }
     
     def set(x:Double, y:Double, z:Double):ReturnType = { data(0) = x; data(1) = y; data(2) = z; this.asInstanceOf[ReturnType] }
+        
+    def copy(other:NumberSeq3) {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) = o(0)
+        data(1) = o(1)
+        data(2) = o(2)
+    }
+
+    override def norm:Double = {
+        // Much faster than original on n elements.
+        math.sqrt(data(0)*data(0) + data(1)*data(1) + data(2)*data(2))
+    }
+    
+    override def normalize():Double = {
+        // Much faster than original on n elements.
+        val len = norm
+        data(0) /= len
+        data(1) /= len
+        data(2) /= len
+        len
+    }
+
+    def +=(other:NumberSeq3):ReturnType = addBy(other)
+
+    override def +=(value:Double):ReturnType = addBy(value)
+
+    def addBy(other:NumberSeq3):ReturnType = {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) += o(0)
+        data(1) += o(1)
+        data(2) += o(2)
+        this.asInstanceOf[ReturnType]
+    }
+
+    override def addBy(value:Double):ReturnType = {
+        // Much faster than original on n elements.
+        data(0) += value
+        data(1) += value
+        data(2) += value
+        this.asInstanceOf[ReturnType]
+    }
+
+    def -=(other:NumberSeq3):ReturnType = subBy(other)
+
+    override def -=(value:Double):ReturnType = subBy(value)
+
+    def subBy(other:NumberSeq3):ReturnType = {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) -= o(0)
+        data(1) -= o(1)
+        data(2) -= o(2)
+        this.asInstanceOf[ReturnType]
+    }
+
+    override def subBy(value:Double):ReturnType = {
+        // Much faster than original on n elements.
+        data(0) -= value
+        data(1) -= value
+        data(2) -= value
+        this.asInstanceOf[ReturnType]
+    }
+
+    def *=(other:NumberSeq3):ReturnType = multBy(other)
+
+    override def *=(value:Double):ReturnType = multBy(value)
+
+    def multBy(other:NumberSeq3):ReturnType = {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) *= o(0)
+        data(1) *= o(1)
+        data(2) *= o(2)
+        this.asInstanceOf[ReturnType]
+    }
+
+    override def multBy(value:Double):ReturnType = {
+        // Much faster than original on n elements.
+        data(0) *= value
+        data(1) *= value
+        data(2) *= value
+        this.asInstanceOf[ReturnType]
+    }
+
+    def /=(other:NumberSeq3):ReturnType = divBy(other)
+
+    override def /=(value:Double):ReturnType = divBy(value)
+
+    def divBy(other:NumberSeq3):ReturnType = {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) /= o(0)
+        data(1) /= o(1)
+        data(2) /= o(2)
+        this.asInstanceOf[ReturnType]
+    }
+
+    override def divBy(value:Double):ReturnType = {
+        // Much faster than original on n elements.
+        data(0) /= value
+        data(1) /= value
+        data(2) /= value
+        this.asInstanceOf[ReturnType]
+    }
 }
 
 //===================================================

@@ -466,11 +466,14 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	/** Add new springs, adjust existing ones, and remove old ones during `dt` time. */
 	def adjustSprings(dt:Double) {
 		// Add and adjust springs.
+		val r = Vector3()
 
 		foreach { i =>
 			i.neighbors.foreach { j =>
+				r.set(i.x, j.x)
+
 				var spring = i.springs.get(j.index).getOrElse(null)
-				val r      = Vector3(i.x, j.x)
+				//val r      = Vector3(i.x, j.x)
 				val rij    = r.norm
 				val q      = rij / Particle.h
 
@@ -533,13 +536,15 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	/** The main feature of the algorithm (see paper). */
 	def doubleDensityRelaxation(dt:Double) {
 		// Algorithm 2
+		val r = Vector3()
 		val dt2 = dt*dt
 		foreach { i =>
 			var rho = 0.0
 			var rhoNear = 0.0
 			// Compute density and near density
 			i.neighbors.foreach { j =>
-				val r = Vector3(i.x, j.x)
+				//val r = Vector3(i.x, j.x)
+				r.set(i.x, j.x)
 				val q = r.norm / Particle.h
 				if(q < 1) {
 					val q1 = (1-q)
@@ -554,7 +559,8 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 			var Pnear = Particle.kNear * rhoNear
 			var dx = Vector3(0,0,0)
 			i.neighbors.foreach { j =>
-				val r = Vector3(i.x, j.x)
+				//val r = Vector3(i.x, j.x)
+				r.set(i.x, j.x)
 				val d = r.norm
 				val q = d / Particle.h
 				if(q < 1) {

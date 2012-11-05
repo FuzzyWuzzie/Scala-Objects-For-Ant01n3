@@ -71,6 +71,7 @@ object Vector3 {
              new Vector3(other.data(0), other.data(1), 0)
         else new Vector3(other.data(0), other.data(1), other.data(2))
     }
+    def apply(other:Vector3) = new Vector3(other.data(0), other.data(1), other.data(2))
     def apply(xyz:(Double, Double, Double)) = new Vector3(xyz._1, xyz._2, xyz._3)
     def apply(xy:(Double, Double), z:Double) = new Vector3(xy._1, xy._2, z)
     def apply(x:Double, yz:(Double, Double)) = new Vector3(x, yz._1, yz._2)
@@ -151,72 +152,52 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
         len
     }
 
-    def addBy(other:Vector3):ReturnType = {
-        // Much faster than original on n elements.
-        val o = other.data
-        data(0) += o(0)
-        data(1) += o(1)
-        data(2) += o(2)
-        this.asInstanceOf[ReturnType]
+    def +(other:Vector3):ReturnType = {
+        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
+        result.addBy(other)
+        result
+    }
+    
+    override def +(value:Double):ReturnType = {
+        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
+        result.addBy(value)
+        result
     }
 
-    override def addBy(value:Double):ReturnType = {
-        // Much faster than original on n elements.
-        data(0) += value
-        data(1) += value
-        data(2) += value
-        this.asInstanceOf[ReturnType]
+    def -(other:Vector3):ReturnType = {
+        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
+        result.subBy(other)
+        result
+    }
+    
+    override def -(value:Double):ReturnType = {
+        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
+        result.subBy(value)
+        result
     }
 
-    def subBy(other:Vector3):ReturnType = {
-        // Much faster than original on n elements.
-        val o = other.data
-        data(0) -= o(0)
-        data(1) -= o(1)
-        data(2) -= o(2)
-        this.asInstanceOf[ReturnType]
+    def *(other:Vector3):ReturnType = {
+        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
+        result.multBy(other)
+        result
+    }
+    
+    override def *(value:Double):ReturnType = {
+        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
+        result.multBy(value)
+        result
     }
 
-    override def subBy(value:Double):ReturnType = {
-        // Much faster than original on n elements.
-        data(0) -= value
-        data(1) -= value
-        data(2) -= value
-        this.asInstanceOf[ReturnType]
+    def /(other:Vector3):ReturnType = {
+        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
+        result.divBy(other)
+        result
     }
-
-    def multBy(other:Vector3):ReturnType = {
-        // Much faster than original on n elements.
-        val o = other.data
-        data(0) *= o(0)
-        data(1) *= o(1)
-        data(2) *= o(2)
-        this.asInstanceOf[ReturnType]
-    }
-
-    override def multBy(value:Double):ReturnType = {
-        // Much faster than original on n elements.
-        data(0) *= value
-        data(1) *= value
-        data(2) *= value
-        this.asInstanceOf[ReturnType]
-    }
-
-    def divBy(other:Vector3):ReturnType = {
-        // Much faster than original on n elements.
-        val o = other.data
-        data(0) /= o(0)
-        data(1) /= o(1)
-        data(2) /= o(2)
-        this.asInstanceOf[ReturnType]
-    }
-
-    override def divBy(value:Double):ReturnType = {
-        // Much faster than original on n elements.
-        data(0) /= value
-        data(1) /= value
-        data(2) /= value
-        this.asInstanceOf[ReturnType]
+    
+    override def /(value:Double):ReturnType = {
+        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
+        result.divBy(value)
+        result
     }
     
     def dot(other:Vector3):Double = {
@@ -225,8 +206,6 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
         data(0)*o(0) + data(1)*o(1) + data(2)*o(2)
     }
 
-    override final def size:Int = 3	
-
     type ReturnType = Vector3
     
     protected[math] final val data = Array[Double](xInit, yInit, zInit)
@@ -234,6 +213,7 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
     def this() = this(0, 0, 0)
     def newInstance = new Vector3
     override def toDoubleArray = data
+    override final def size:Int = 3
 }
 
 
@@ -263,8 +243,6 @@ object Vector4 {
 }
 
 class Vector4(xInit:Double, yInit:Double, zInit:Double, wInit:Double) extends NumberSeq4 {
-    override final def size:Int = 4
-
     type ReturnType = Vector4
     
     protected[math] final val data = Array[Double](xInit, yInit, zInit, wInit)
@@ -272,4 +250,5 @@ class Vector4(xInit:Double, yInit:Double, zInit:Double, wInit:Double) extends Nu
     def this() = this(0, 0, 0, 0)
     def newInstance = new Vector4
     override def toDoubleArray = data
+    override final def size:Int = 4
 }
