@@ -21,7 +21,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 // Attribute
     
     /** Type of content. */
-    type ArrayLike <: { def apply(i:Int):Double; def update(i:Int, f:Double); def length:Int; }
+    //type ArrayLike <: { def apply(i:Int):Double; def update(i:Int, f:Double); def length:Int; }
     
     /** The return type of operations that generate a new NumberSeq.
       *
@@ -33,7 +33,7 @@ trait NumberSeq extends IndexedSeq[Double] {
     type ReturnType <: NumberSeq
     
     /** Real content. */
-    val data:ArrayLike
+    protected[math] val data:Array[Double]
  
 // Access
     
@@ -48,7 +48,7 @@ trait NumberSeq extends IndexedSeq[Double] {
         var ok = true
         var i  = 0
         val n  = size
-        while(i<n) {
+        while(i < n) {
             if(data(i) != 0) {
                 i = n
                 ok = false
@@ -82,7 +82,7 @@ trait NumberSeq extends IndexedSeq[Double] {
         val n     = data.length
         var i     = 0
         val array = new Array[Double](n)
-        while(i<n) {
+        while(i < n) {
             array(i) = data(i).toDouble
             i += 1
         }
@@ -97,7 +97,7 @@ trait NumberSeq extends IndexedSeq[Double] {
         val n     = data.length
         var i     = 0
         val array = new Array[Float](n)
-        while(i<n) {
+        while(i < n) {
             array(i) = data(i).toFloat
             i += 1
         }
@@ -112,7 +112,7 @@ trait NumberSeq extends IndexedSeq[Double] {
         val n   = data.length
         var i   = 0
         val buf = new DoubleBuffer(n)
-        while(i<n) {
+        while(i < n) {
             buf(i) = data(i).toDouble
             i += 1
         }
@@ -128,7 +128,7 @@ trait NumberSeq extends IndexedSeq[Double] {
         val n   = data.length
         var i   = 0
         val buf = new FloatBuffer(n)
-        while(i<n) {
+        while(i < n) {
             buf(i) = data(i).toFloat
             i += 1
         }
@@ -148,25 +148,39 @@ trait NumberSeq extends IndexedSeq[Double] {
     
     /** Copy the content of `data` in this.
       * 
-      * The size of the smallest sequence determine the number of elements copied.
-      */
+      * The size of the smallest sequence determine the number of elements copied. */
     def copy(data:Traversable[Double]) {
-        val n = scala.math.min(size, data.size) 
+        val n = math.min(size, data.size) 
         var i = 0
         
         data.foreach { item =>
-            if(i<n) {
+            if(i < n) {
             	this.data(i) = item
             }
             i += 1
         }
     }
-    
+
+    /** Copy the content of `other` in this.
+      *
+      * The size of the smallest sequence determine the number of elements copied. */
+    def copy(other:NumberSeq) {
+    	// Much faster than the general copy(Traversable), no foreach.
+    	val n = math.min(size, other.size)
+    	var i = 0
+    	var o = other.data
+
+    	while(i < n) {
+    		this.data(i) = o(i)
+    		i += 1
+    	}
+    }
+
 	/** Copy `value` in each component. */
 	def fill(value:Double) {
 	    val n = size
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	data(i) = value
 	    	i += 1
 	    }
@@ -178,9 +192,9 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * number of elements to be added, starting at 0.
 	  */
 	def addBy(other:NumberSeq):ReturnType = {
-	    val n = scala.math.min(size, other.size)
+	    val n = math.min(size, other.size)
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	data(i) += other(i)
 	    	i += 1
 	    }
@@ -194,7 +208,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	def addBy(value:Double):ReturnType = {
 	    val n = size
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	data(i) += value
 	    	i += 1
 	    }
@@ -246,9 +260,9 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * number of elements to be added, starting at 0.
 	  */
 	def subBy(other:NumberSeq):ReturnType = {
-	    val n = scala.math.min(size, other.size)
+	    val n = math.min(size, other.size)
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	data(i) -= other(i)
 	    	i += 1
 	    }
@@ -262,7 +276,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	def subBy(value:Double):ReturnType = {
 	    val n = size
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	data(i) -= value
 	    	i += 1
 	    }
@@ -316,9 +330,9 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * number of elements to be multiplied, starting at 0.
 	  */
 	def multBy(other:NumberSeq):ReturnType = {
-	    val n = scala.math.min(size, other.size)
+	    val n = math.min(size, other.size)
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	data(i) *= other(i)
 	    	i += 1
 	    }
@@ -332,7 +346,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	def multBy(value:Double):ReturnType = {
 	    val n = size
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	data(i) *= value
 	    	i += 1
 	    }
@@ -389,9 +403,9 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  */
 	def divBy(other:NumberSeq):ReturnType = {
 	    checkSizes(other)
-	    val n = scala.math.min(size, other.size)
+	    val n = math.min(size, other.size)
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	data(i) /= other(i)
 	    	i += 1
 	    }
@@ -405,7 +419,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	def divBy(value:Double):ReturnType = {
 	    val n = size
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	data(i) /= value
 	    	i += 1
 	    }
@@ -459,7 +473,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * else the dot product is made on the minimum number of elements. 
 	  */
 	def dot(values:Double*):Double = {
-	    val n =  scala.math.min(values.length, size)
+	    val n = math.min(values.length, size)
 	    var i = 0
 	    var result = 0.0
 	    while(i < n) {
@@ -478,7 +492,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	    val n = size
 	    var i = 0
 		var result = 0.0
-		while(i<n) {
+		while(i < n) {
 		    result += data(i) * other.data(i)
 		    i += 1
 		}
@@ -493,9 +507,18 @@ trait NumberSeq extends IndexedSeq[Double] {
 	
 	/** Magnitude of this (length in terms of distance). */
 	def norm:Double = {
-	    var result = 0.0
-	    foreach { item => result += item * item }
-	    scala.math.sqrt(result)
+		var result = 0.0
+		var i = 0
+		val n = size
+		while(i < n) {
+			result += data(i) * data(i)
+			i += 1
+		}
+		math.sqrt(result)
+
+	    // var result = 0.0
+	    // foreach { item => result += item * item }
+	    // scala.math.sqrt(result)
 	}
 	
 	/** Multiply each element of this by the norm of this.
@@ -506,7 +529,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	    val len = norm
 	    var i   = 0
 	    val n   = size
-	    while(i<n) {
+	    while(i < n) {
 	        data(i) /= len
 	        i += 1
 	    }
@@ -529,8 +552,8 @@ trait NumberSeq extends IndexedSeq[Double] {
 	def brownianMotion(factor:Double) {
 		var i = 0
 		val n = size
-		while(i<n) {
-			data(i) += (scala.math.random-0.5) * factor
+		while(i < n) {
+			data(i) += (math.random-0.5) * factor
 			i += 1
 		}
 	}
@@ -538,9 +561,9 @@ trait NumberSeq extends IndexedSeq[Double] {
 	/** Store in this number seq the maximum value component-wise with `other`. */
 	def maxBy(other:NumberSeq):ReturnType = {
 		checkSizes(other)
-	    val n = scala.math.min(size, other.size)
+	    val n = math.min(size, other.size)
 	    var i = 0
-	    while(i<n) {
+	    while(i < n) {
 	    	if(data(i) < other(i))
 	    		data(i) = other(i)
 	    	i += 1
@@ -551,7 +574,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	/** Store in this number seq the minimum value component-wise with `other`. */
 	def minBy(other:NumberSeq):ReturnType = {
 		checkSizes(other)
-	    val n = scala.math.min(size, other.size)
+	    val n = math.min(size, other.size)
 	    var i = 0
 	    while(i<n) {
 	    	if(data(i) > other(i))
@@ -565,13 +588,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 //===================================================
 
 trait NumberSeq2 extends NumberSeq {
-    def x:Double = data(0)
-    def y:Double = data(1)
-    def xy:(Double, Double) = (data(0), data(1))
+    final def x:Double = data(0)
+    final def y:Double = data(1)
+    final def xy:(Double, Double) = (data(0), data(1))
     
-    def x_=(value:Double) = data(0) = value
-    def y_=(value:Double) = data(1) = value
-    def xy_=(value:(Double, Double)) = { data(0) = value._1; data(1) = value._2 }
+    final def x_=(value:Double) = data(0) = value
+    final def y_=(value:Double) = data(1) = value
+    final def xy_=(value:(Double, Double)) = { data(0) = value._1; data(1) = value._2 }
     
     def set(x:Double, y:Double):ReturnType = { data(0) = x; data(1) = y; this.asInstanceOf[ReturnType] }
 }
@@ -579,15 +602,15 @@ trait NumberSeq2 extends NumberSeq {
 //===================================================
 
 trait NumberSeq3 extends NumberSeq2 {
-	def z:Double = data(2)
-    def yz:(Double, Double) = (data(1), data(2))
-    def xz:(Double, Double) = (data(0), data(2))
-    def xyz:(Double, Double, Double) = (data(0), data(1), data(2))
+	final def z:Double = data(2)
+    final def yz:(Double, Double) = (data(1), data(2))
+    final def xz:(Double, Double) = (data(0), data(2))
+    final def xyz:(Double, Double, Double) = (data(0), data(1), data(2))
     
-    def z_=(value:Double) = data(2) = value
-    def yz_=(value:(Double, Double)) = { data(1) = value._1; data(2) = value._2 }
-    def xz_=(value:(Double, Double)) = { data(0) = value._1; data(2) = value._2 }
-    def xyz_=(value:(Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(2) = value._3 }
+    final def z_=(value:Double) = data(2) = value
+    final def yz_=(value:(Double, Double)) = { data(1) = value._1; data(2) = value._2 }
+    final def xz_=(value:(Double, Double)) = { data(0) = value._1; data(2) = value._2 }
+    final def xyz_=(value:(Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(2) = value._3 }
     
     def set(x:Double, y:Double, z:Double):ReturnType = { data(0) = x; data(1) = y; data(2) = z; this.asInstanceOf[ReturnType] }
 }
@@ -595,23 +618,23 @@ trait NumberSeq3 extends NumberSeq2 {
 //===================================================
 
 trait NumberSeq4 extends NumberSeq3 {
-	def w:Double = data(3)
-    def xw:(Double, Double) = (data(0), data(3))
-    def yw:(Double, Double) = (data(1), data(3))
-    def zw:(Double, Double) = (data(2), data(3))
-    def xyw:(Double, Double, Double) = (data(0), data(1), data(3))
-    def xzw:(Double, Double, Double) = (data(0), data(2), data(3))
-    def yzw:(Double, Double, Double) = (data(1), data(2), data(3))
-    def xyzw:(Double, Double, Double, Double) = (data(0), data(1), data(2), data(3))
+	final def w:Double = data(3)
+    final def xw:(Double, Double) = (data(0), data(3))
+    final def yw:(Double, Double) = (data(1), data(3))
+    final def zw:(Double, Double) = (data(2), data(3))
+    final def xyw:(Double, Double, Double) = (data(0), data(1), data(3))
+    final def xzw:(Double, Double, Double) = (data(0), data(2), data(3))
+    final def yzw:(Double, Double, Double) = (data(1), data(2), data(3))
+    final def xyzw:(Double, Double, Double, Double) = (data(0), data(1), data(2), data(3))
     
-    def w_=(value:Double) = data(3) = value
-    def xw_=(value:(Double, Double)) = { data(0) = value._1; data(3) = value._2 }
-    def yw_=(value:(Double, Double)) = { data(1) = value._1; data(3) = value._2 }
-    def zw_=(value:(Double, Double)) = { data(2) = value._1; data(3) = value._2 }
-    def xyw_=(value:(Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(3) = value._3 }
-    def xzw_=(value:(Double, Double, Double)) = { data(0) = value._1; data(2) = value._2; data(3) = value._3 }
-    def yzw_=(value:(Double, Double, Double)) = { data(1) = value._1; data(2) = value._2; data(3) = value._3 }
-    def xyzw_=(value:(Double, Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(2) = value._3; data(3) = value._4 }
+    final def w_=(value:Double) = data(3) = value
+    final def xw_=(value:(Double, Double)) = { data(0) = value._1; data(3) = value._2 }
+    final def yw_=(value:(Double, Double)) = { data(1) = value._1; data(3) = value._2 }
+    final def zw_=(value:(Double, Double)) = { data(2) = value._1; data(3) = value._2 }
+    final def xyw_=(value:(Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(3) = value._3 }
+    final def xzw_=(value:(Double, Double, Double)) = { data(0) = value._1; data(2) = value._2; data(3) = value._3 }
+    final def yzw_=(value:(Double, Double, Double)) = { data(1) = value._1; data(2) = value._2; data(3) = value._3 }
+    final def xyzw_=(value:(Double, Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(2) = value._3; data(3) = value._4 }
 
     def set(x:Double, y:Double, z:Double, w:Double):ReturnType = { data(0) = x; data(1) = y; data(2) = z; data(3) = w; this.asInstanceOf[ReturnType] }
 }

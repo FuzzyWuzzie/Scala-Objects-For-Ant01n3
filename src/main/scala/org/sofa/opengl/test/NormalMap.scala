@@ -41,6 +41,8 @@ class NormalMap extends SurfaceRenderer {
 //	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.get(GLProfile.GL3))
 	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.getGL2ES2)
 	    
+		Shader.includePath += "src/main/scala/org/sofa/opengl/shaders/"
+
 	    caps.setDoubleBuffered(true)
 	    caps.setHardwareAccelerated(true)
 	    caps.setSampleBuffers(true)
@@ -83,8 +85,8 @@ class NormalMap extends SurfaceRenderer {
 	    camera.viewCartesian(2, 2, 2)
 	    
 	    nmapShader = new ShaderProgram(gl, "normal map phong",
-	            new VertexShader(gl, "nmap phong", "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.vert"),
-	            new FragmentShader(gl, "nmap phong", "src-scala/org/sofa/opengl/shaders/es2/nmapPhong.frag"))
+	            new VertexShader(gl, "nmap phong", "es2/nmapPhong.vert"),
+	            new FragmentShader(gl, "nmap phong", "es2/nmapPhong.frag"))
 //	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
 //	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
 

@@ -40,6 +40,28 @@ object Particle {
 
 	// 2D Mode ?
 	var is2D = false
+
+	/** Print the values of all the parameters. */
+	def printConfig() {
+		println("Particle settings:")
+		println("    g ................. %.4f".format(g))
+		println("    h ................. %.4f".format(h))
+		println("  Dentity / Pressure:")
+		println("    k / kNear ......... %.4f / %.4f".format(k, kNear))
+		println("    rhoZero ........... %.4f".format(rhoZero))
+		println("  Viscosity:")
+		println("    sigma ............. %.4f".format(sigma))
+		println("    beta .............. %.4f".format(beta))
+		println("  Plasticity (%b):".format(plasticity))
+		println("    kspring ........... %.4f".format(kspring))
+		println("    gamma ............. %.4f".format(gamma))
+		println("    alpha ............. %.4f".format(alpha))
+		println("  Collisions:")
+		println("    umicron ........... %.4f".format(umicron))
+		println("  Stickiness (%b):".format(stickiness))
+		println("    kStick ............ %.4f".format(kStick))
+		println("    dStick ............ %.4f".format(dStick))
+	}
 }
 
 /** A single spring between two particles. */
@@ -323,16 +345,16 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	def simulationStep(dt:Double) {
 		
 		// Compute neighbors
-		foreach { p => val (n,c) = computeNeighbors(p); p.neighbors = n; p.collision = c }
+		computeNeighbors
 
 		// Gravity
-		foreach { _.applyGravity(dt) }
+		applyGravity(dt)
 		
 		// Viscosity
 		applyViscosity(dt)
 		
 		// Move
-		foreach { _.move(dt) }
+		move(dt)
 		
 		// Add and remove springs, change rest lengths
 		if(Particle.plasticity) {
@@ -344,13 +366,37 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		
 		doubleDensityRelaxation(dt)
 		resolveCollions(dt)
-		foreach { _.computeVelocity(dt) }
+		computeVelocity(dt)
 		
 		// Update the space hash
-		foreach { spaceHash.move(_) }
+		updateSpaceHash
 
 		// One step finished.
 		step += 1
+	}
+
+	def computeNeighbors() {
+		foreach { p =>
+			val (n,c) = computeNeighbors(p)
+			p.neighbors = n
+			p.collision = c
+		}
+	}
+
+	def applyGravity(dt:Double) {
+		foreach { _.applyGravity(dt) }
+	}
+
+	def move(dt:Double) {
+		foreach { _.move(dt) }
+	}
+
+	def computeVelocity(dt:Double) {
+		foreach { _.computeVelocity(dt) }
+	}
+
+	def updateSpaceHash() {
+		foreach { spaceHash.move(_) }		
 	}
 	
 	/** Set of neighbors of a given particle `i`. 
@@ -362,12 +408,14 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		val potential = neighborsAround(i)
 		val neighbors = new ArrayBuffer[Particle]()
 		var collision:Collision = null
-		
+		val v = Vector3()
+
 		potential.foreach { j =>
 			if(j.isInstanceOf[Particle]) {
 				if(j ne i) {
-					val r = Vector3(i.x, j.from)
-					val l = r.norm
+					v.set(i.x, j.from)
+					
+					val l = v.norm
 				
 					if(l < Particle.h) {
 						neighbors += j.asInstanceOf[Particle]
@@ -390,15 +438,20 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	
 	/** The viscosity step during `dt` time. */
 	def applyViscosity(dt:Double) {
+		val r = Vector3()
+
 		foreach { i =>
 			i.neighbors.foreach { j =>
-				val r = Vector3(i.x, j.x)
+				r.set(i.x, j.x)
+				
 				val d = r.norm
 				val q = d / Particle.h
+				
 				if(q < 1) {
 					val R = r.divBy(d) // normalized (but we already computed the norm)
 					val vv = i.v - j.v
 					val u = vv.dot(R)
+					
 					if(u > 0) {
 						val I = R.multBy(dt * (1-q) * (Particle.sigma*u + Particle.beta*(u*u)))
 						I.divBy(2)
@@ -463,9 +516,11 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	/** Apply the springs displacements to the particles during `dt` time. */
 	def applySpringDisplacements(dt:Double) {
 		val dt2 = dt * dt
+		val r = Vector3()
 		
 		springs.foreach { spring =>
-			var r   = Vector3(spring.i.x, spring.j.x)
+			r.set(spring.i.x, spring.j.x)
+
 			val rij = r.normalize
 			val D   = r.multBy(dt2 * Particle.kspring * (1-spring.L/Particle.h)*(spring.L-rij))
 			D      /= 2

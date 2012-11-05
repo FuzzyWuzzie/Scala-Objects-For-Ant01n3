@@ -2,7 +2,7 @@
 
 	# Number of division of each space hash cube.
 	# Useful to specify how fine is the iso surface/plane mesh.
-	isoDiv = 3
+	isoDiv = 4
 
 # General settings:
 

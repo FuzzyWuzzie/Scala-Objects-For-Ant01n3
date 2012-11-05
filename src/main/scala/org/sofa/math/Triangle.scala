@@ -29,7 +29,7 @@ class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {
 	def distanceFrom(pp:Point3):(Double,Point3) = {
 		val (bb,e0,e1) = normalForm()
 		var dist = 0.0
-		var pp0:Point3 = null
+		//var pp0:Point3 = null
 		
 		val dd = Vector3(pp, bb)
 		val a = e0 dot e0
@@ -208,7 +208,14 @@ class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {
 
 		dist = math.sqrt(sqrDistance)
 
-		pp0 = (bb + e0*s + e1*t).asInstanceOf[Point3]
+		// pp0 = (bb + e0*s + e1*t).asInstanceOf[Point3]
+		// Optimization to avoid two point3 creation.
+		var pp0 = Point3(bb)
+
+		e0  *= s
+		e1  *= t
+		pp0 += e0
+		pp0 += e1
 
 		(dist,pp0)
 	}

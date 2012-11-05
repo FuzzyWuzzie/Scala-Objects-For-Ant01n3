@@ -236,7 +236,7 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
         modelview.setIdentity
         modelview.lookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0)
 
-        cubeShad.uniform("lightDir", (modelview.top * new ArrayVector4(0, -0.2, 1, 0)))
+        cubeShad.uniform("lightDir", (modelview.top * new Vector4(0, -0.2, 1, 0)))
         cubeShad.uniform("lightIntensity", 1.0f)
         cubeShad.uniform("ambientIntensity", 0.05f)
         

@@ -88,37 +88,37 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 // Settings --------------------------------------------------
 
 	/** max number of triangles for the iso-surface. */
-	var maxDynTriangles = 6000
+	var maxDynTriangles = 3000
 
 	/** max number of lines for the iso-contour. */
-	var maxDynLines = 6000
+	var maxDynLines = 3000
 
 	/** max number of springs to draw. */
-	var maxSprings = 2000
+	var maxSprings = 1000
 
 	/** max number of particles in the simulation. */
-	var size = 1000
+	var size = 500
 
 	var emitPoint = Point3(-5, 5, 0)
 	var emitVelocity1 = Vector3(15, 6, 0)
 	var emitVelocity2 = Vector3(15, 8, 0)
 	
 	/** Number of iso-cubes inside a space hash cube. */
-	var isoDiv = 4.0
+	var isoDiv = 3.0
 	
 	var isoCellSize = Particle.spacialHashBucketSize / isoDiv
 	
 	/** Limit of the iso-surface in the implicit function used to define the surface. */
 	var isoLimit = 0.65
 
-	var drawParticlesFlag = false
+	var drawParticlesFlag = true
 	var drawSpringsFlag = false
 	var drawSpaceHashFlag = false
 	var drawIsoCubesFlag = false
 	var drawIsoSurfaceFlag = false
 	var drawIsoContourFlag = false
 	var drawIsoSquaresFlag = false
-	var drawIsoPlaneFlag = true
+	var drawIsoPlaneFlag = false
 	
 	var isoSurfaceColor = Rgba(1,1,1,0.9)
 	var particleColor = Rgba(0.7, 0.7, 1, 0.3)
@@ -133,6 +133,22 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var waiting = timeToEmit
 	var emiting = true
 	var velocityMode = true	
+
+	def printConfig() {
+		println("VES config:")
+		println("  Visibility:")
+		println("    draw particles ............ %b".format(drawParticlesFlag))
+		println("    draw springs .............. %b".format(drawSpringsFlag))
+		println("    draw space hash ........... %b".format(drawSpaceHashFlag))
+		println("    draw iso cubes ............ %b".format(drawIsoCubesFlag))
+		println("    draw iso contour .......... %b".format(drawIsoContourFlag))
+		println("    draw iso squares .......... %b".format(drawIsoSquaresFlag))
+		println("    draw iso plane ............ %b".format(drawIsoPlaneFlag))
+		println("  Iso surface:")
+		println("    isoDiv .................... %.4f".format(isoDiv))
+		println("    isoCellSize ............... %.4f".format(isoCellSize))
+		println("    isoLimit .................. %.4f".format(isoLimit))
+	}
 
 // Fields --------------------------------------------------
 
@@ -198,9 +214,12 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		reshape(surface)
 	}
 
-	protected def initSimuParams() {
+	def initSimuParams() {
 		// Adapt parameters dependent of others, and eventually changed by Environment.
 		isoCellSize = Particle.spacialHashBucketSize / isoDiv
+
+		printConfig
+		Particle.printConfig
 	}
 	
 	protected def initGL(sgl:SGL) {

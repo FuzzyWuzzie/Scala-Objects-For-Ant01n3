@@ -935,9 +935,9 @@ trait NumberGrid4 extends NumberGrid {
 		// quaternions ?).
 	
 		val mm = newInstance(4, 4).asInstanceOf[NumberGrid4]
-		var x:ArrayVector3 = null
-		var y  = new ArrayVector3(upvX, upvY, upvZ)
-		var z  = new ArrayVector3((eyeX - ctrX), (eyeY - ctrY), (eyeZ - ctrZ))
+		var x:Vector3 = null
+		var y  = new Vector3(upvX, upvY, upvZ)
+		var z  = new Vector3((eyeX - ctrX), (eyeY - ctrY), (eyeZ - ctrZ))
 
 		z.normalize
 		x = y X z

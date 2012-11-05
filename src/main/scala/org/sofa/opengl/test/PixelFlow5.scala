@@ -130,7 +130,7 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         modelview.setIdentity
         modelview.lookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0)
         
-        val lp1 = new ArrayVector4(0, 1, -2, 1)
+        val lp1 = new Vector4(0, 1, -2, 1)
         val lp2 = modelview.top * lp1
 //        val lp3 = modelview.top.inverse * lp2 
         

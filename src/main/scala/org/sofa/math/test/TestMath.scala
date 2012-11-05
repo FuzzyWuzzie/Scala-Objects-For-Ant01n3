@@ -8,18 +8,18 @@ import scala.math._
 class TestMath {
     @Test
 	def testConstructors() {
-        testConstructor2(new ArrayVector2(1, 2))
-        testConstructor2(new NioBufferVector2(1, 2))
-        testConstructor2(new ArrayPoint2(1, 2))
-        testConstructor2(new NioBufferPoint2(1, 2))
+        testConstructor2(new Vector2(1, 2))
+        //testConstructor2(new NioBufferVector2(1, 2))
+        testConstructor2(new Point2(1, 2))
+        //testConstructor2(new NioBufferPoint2(1, 2))
         
-        testConstructor3(new ArrayVector3(1, 2, 3))
-        testConstructor3(new NioBufferVector3(1, 2, 3))
-        testConstructor3(new ArrayPoint3(1, 2, 3))
-        testConstructor3(new NioBufferPoint3(1, 2, 3))
+        testConstructor3(new Vector3(1, 2, 3))
+        //testConstructor3(new NioBufferVector3(1, 2, 3))
+        testConstructor3(new Point3(1, 2, 3))
+        //testConstructor3(new NioBufferPoint3(1, 2, 3))
 
-        testConstructor4(new ArrayVector4(1, 2, 3, 4))
-        testConstructor4(new NioBufferVector4(1, 2, 3, 4))
+        testConstructor4(new Vector4(1, 2, 3, 4))
+        //testConstructor4(new NioBufferVector4(1, 2, 3, 4))
     }
     
     def testConstructor2(v:NumberSeq2) {
@@ -55,9 +55,9 @@ class TestMath {
     
     @Test
 	def testVectorSizling() {
-	    val a = ArrayVector2(1, 2)
-	    val b = NioBufferVector2(3, 4)
-	    val v4 = ArrayVector4(a.xy, b.xy)
+	    val a = Vector2(1, 2)
+	    val b = Vector2(3, 4)
+	    val v4 = Vector4(a.xy, b.xy)
 	    
 	    assertEquals(1, a.x, 0)
 	    assertEquals(2, a.y, 0)
@@ -241,7 +241,7 @@ class TestMath {
                              List(11., 12., 13., 14., 15.),
                              List(16., 17., 18., 19., 20.),
                              List(21., 22., 23., 24., 25.))
-        val V1 = ArrayVector(1., 2., 3., 4., 5.)
+        val V1 = Vector(1., 2., 3., 4., 5.)
         val R1 = M1 * V1
         
         assertEquals( 55, R1(0), 0)
@@ -251,10 +251,10 @@ class TestMath {
         assertEquals(355, R1(4), 0)
         
         val M2 = ArrayMatrix4((1, 2, 3, 4), (5, 6, 7, 8), (9, 10, 11, 12), (13, 14, 15, 16))
-        val V2 = ArrayVector4(1, 2, 3, 4)
+        val V2 = Vector4(1, 2, 3, 4)
         val R2 = M2 * V2
         
-        assertEquals((30, 70, 110, 150), R2.asInstanceOf[ArrayVector4].xyzw)
+        assertEquals((30, 70, 110, 150), R2.asInstanceOf[Vector4].xyzw)
     }
     
     @Test
