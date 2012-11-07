@@ -5,6 +5,19 @@ object Triangle {
 	def unapply(t:Triangle):(Point3,Point3,Point3) = (Point3(t.p0),Point3(t.p1),Point3(t.p2))
 }
 
+object ConstTriangle {
+	def apply(p0:Point3, p1:Point3, p2:Point3):ConstTriangle = new ConstTriangle(p0, p1, p2)
+	def unapply(t:ConstTriangle):(Point3,Point3,Point3) = (Point3(t.p0),Point3(t.p1),Point3(t.p2))	
+}
+
+/** A simple triangle class that allows to easily compute
+  * a normal form, a normal and a distance from the triangle, with the calculus of
+  * the nearest point on the triangle surface.
+  *
+  * This class is made for triangles whose points can be changed at any time. If
+  * the triangle is not to be modified, you can improve performance by using the
+  * ConstTriangle class that will pre-compute the normal and the normal form, and
+  * avoid calculus during collision and distance tests. */
 class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {
 
 	/** Computes the normal form of a triangle, that is a base point,
@@ -219,4 +232,30 @@ class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {
 
 		(dist,pp0)
 	}
+}
+
+/** A triangle that will not be moved.
+  * 
+  * The use of such a triangle allows to ensure we can compute the normal to the triangle and the
+  * normal form of the triangle once and forall. Then the computation of distanceFrom is far more
+  * efficient. As such triangles are often used in collision tests, this can greatly improve things. */
+class ConstTriangle(p0:Point3, p1:Point3, p2:Point3) extends Triangle(p0, p1, p2) {
+
+	/** Vector between point 0 and 1. */
+	val v0 = Vector3(p0, p1)
+
+	/** Vector between point 0 and 2. */
+	val v1 = Vector3(p0, p2)
+
+	/** The normal to the triangle face. */
+	protected[this] val v2 = (v1 X v0)
+
+	v2.normalize
+
+	/** Computes the normal form of a triangle, that is a base point,
+	  * and two vectors to locate the two other points from the base point. */
+	override def normalForm():(Point3,Vector3,Vector3) = { (Point3(p0),Vector3(v0),Vector3(v1)) }
+
+	/** Compute the triangle normal. */
+	override def normal():Vector3 = v2
 }

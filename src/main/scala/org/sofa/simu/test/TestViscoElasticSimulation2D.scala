@@ -313,12 +313,12 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	}
 	
 	protected def addObstacle(i:Int, wall:QuadWall) {
-		obstaclesMesh.setTriangle(i, wall.tri1)
-		obstaclesMesh.setNormal(i, wall.tri1.normal)
+		obstaclesMesh.setTriangle(i, wall.tri0)
+		obstaclesMesh.setNormal(i, wall.tri0.normal)
 		obstaclesMesh.setColor(i, Rgba.blue)
 
-		obstaclesMesh.setTriangle(i+1, wall.tri2)
-		obstaclesMesh.setNormal(i+1, wall.tri2.normal)
+		obstaclesMesh.setTriangle(i+1, wall.tri1)
+		obstaclesMesh.setNormal(i+1, wall.tri1.normal)
 		obstaclesMesh.setColor(i+1, Rgba.blue)
 		
 		simu.addObstacle(wall)

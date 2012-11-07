@@ -18,6 +18,19 @@ object Point2 {
 }
 
 class Point2(xInit:Double, yInit:Double) extends NumberSeq2 {
+
+    type ReturnType = Point2
+    
+    protected[math] final val data = Array[Double](xInit, yInit)
+    
+    def this(other:Point2) = this(other.x, other.y)
+    
+    def this() = this(0, 0)
+    
+    def newInstance = new Point2
+    
+    override final def size:Int = 2
+
     /** Create a new point linear interpolation of this and `other`.
       * 
 	  * The new point is located between this and `other` if
@@ -45,20 +58,12 @@ class Point2(xInit:Double, yInit:Double) extends NumberSeq2 {
 		abs(sqrt((xx * xx) + (yy * yy)))
 	}
 
-    type ReturnType = Point2
-    
-    val data = Array[Double](xInit, yInit)
-    def this(other:Point2) = this(other.x, other.y)
-    def this() = this(0, 0)
-    def newInstance = new Point2
     /** Vector between this and an `other` point. 
       *
       * The direction goes from this to `other`. The length of the vector is
       * the distance between the two points.
       */
-	def -->(other:Point2):Vector2 = new Vector2(other.x-x, other.y-y)
-    override def toDoubleArray = data
-    override final def size:Int = 2
+    def -->(other:Point2):Vector2 = new Vector2(other.x-x, other.y-y)
 }
 
 //===================================================
@@ -83,6 +88,19 @@ object Point3 {
 }
 
 class Point3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
+
+    type ReturnType = Point3
+    
+    protected[math] final val data = Array[Double](xInit, yInit, zInit)
+
+    def this(other:Point3) = this(other.x, other.y, other.z)
+
+    def this() = this(0, 0, 0)
+
+    def newInstance = new Point3
+
+    override final def size:Int = 3
+
     /** Create a new point linear interpolation of this and `other`.
       * 
 	  * The new point is located between this and `other` if
@@ -161,18 +179,10 @@ class Point3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
         result
     }
 
-    type ReturnType = Point3
-    
-    val data = Array[Double](xInit, yInit, zInit)
-    def this(other:Point3) = this(other.x, other.y, other.z)
-    def this() = this(0, 0, 0)
-    def newInstance = new Point3
     /** Vector between this and an `other` point. 
       *
       * The direction goes from this to `other`. The length of the vector is
       * the distance between the two points.
       */
     def -->(other:Point3):Vector3 = new Vector3(other.x-x, other.y-y, other.z-z)
-    override def toDoubleArray = data
-    override final def size:Int = 3
 }

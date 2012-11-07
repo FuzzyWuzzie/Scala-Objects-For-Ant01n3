@@ -3,10 +3,9 @@ package org.sofa.math
 import org.sofa.nio._
 import scala.math._
 
-/**
-  * Simple sequence of numbers.
+/** Simple sequence of numbers.
   * 
-  * This is the basis for vectors or any size, matrices, points or any kind of set of
+  * This is the basis for vectors or any size, points or any kind of set of
   * numbers.
   * 
   * ==A note on the design of the math library==
@@ -14,22 +13,17 @@ import scala.math._
   * The choice in designing the math library was to always use double real numbers instead of
   * creating a version of each class for floats or doubles, or using type parameters. This
   * design choice  implies that sometimes one will have to copy an array in a given format to
-  * another. 
-  */
+  * another. */
 trait NumberSeq extends IndexedSeq[Double] {
     
 // Attribute
-    
-    /** Type of content. */
-    //type ArrayLike <: { def apply(i:Int):Double; def update(i:Int, f:Double); def length:Int; }
     
     /** The return type of operations that generate a new NumberSeq.
       *
       * As +, -, * and / must return a NumberSeq as this trait is
       * specialized as a Vector or Point, such operations should instead
       * return a Vector or a Point not a NumberSeq. This type is therefore
-      * specialized in the concrete classes that use it.
-      */
+      * specialized in the concrete classes that use it. */
     type ReturnType <: NumberSeq
     
     /** Real content. */
@@ -69,25 +63,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	    buf.toString
 	}
 	
-	/** New number sequence of the same size as this. */
+	/** New number sequence of the same size as this. This is not a copy of the element of this. */
 	protected[math] def newInstance():ReturnType
 
 // Conversion
 
-    /** This sequence converted as an array of doubles.
-      *
-      * If the sequence is not backed by a double array, a conversion occurs.
-      */
-    def toDoubleArray:Array[Double] = {
-        val n     = data.length
-        var i     = 0
-        val array = new Array[Double](n)
-        while(i < n) {
-            array(i) = data(i).toDouble
-            i += 1
-        }
-        array
-    }
+    /** This sequence as an array of doubles. There is no convertion, since this is the native format. */
+    def toDoubleArray:Array[Double] = data
     
     /** This sequence converted as an array of floats.
       *
@@ -597,6 +579,102 @@ trait NumberSeq2 extends NumberSeq {
     final def xy_=(value:(Double, Double)) = { data(0) = value._1; data(1) = value._2 }
     
     def set(x:Double, y:Double):ReturnType = { data(0) = x; data(1) = y; this.asInstanceOf[ReturnType] }
+    
+    def copy(other:NumberSeq2) {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) = o(0)
+        data(1) = o(1)
+    }
+
+    override def norm:Double = {
+        // Much faster than original on n elements.
+        math.sqrt(data(0)*data(0) + data(1)*data(1))
+    }
+    
+    override def normalize():Double = {
+        // Much faster than original on n elements.
+        val len = norm
+        data(0) /= len
+        data(1) /= len
+        len
+    }
+
+    def +=(other:NumberSeq2):ReturnType = addBy(other)
+
+    override def +=(value:Double):ReturnType = addBy(value)
+
+    def addBy(other:NumberSeq2):ReturnType = {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) += o(0)
+        data(1) += o(1)
+        this.asInstanceOf[ReturnType]
+    }
+
+    override def addBy(value:Double):ReturnType = {
+        // Much faster than original on n elements.
+        data(0) += value
+        data(1) += value
+        this.asInstanceOf[ReturnType]
+    }
+
+    def -=(other:NumberSeq2):ReturnType = subBy(other)
+
+    override def -=(value:Double):ReturnType = subBy(value)
+
+    def subBy(other:NumberSeq2):ReturnType = {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) -= o(0)
+        data(1) -= o(1)
+        this.asInstanceOf[ReturnType]
+    }
+
+    override def subBy(value:Double):ReturnType = {
+        // Much faster than original on n elements.
+        data(0) -= value
+        data(1) -= value
+        this.asInstanceOf[ReturnType]
+    }
+
+    def *=(other:NumberSeq2):ReturnType = multBy(other)
+
+    override def *=(value:Double):ReturnType = multBy(value)
+
+    def multBy(other:NumberSeq2):ReturnType = {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) *= o(0)
+        data(1) *= o(1)
+        this.asInstanceOf[ReturnType]
+    }
+
+    override def multBy(value:Double):ReturnType = {
+        // Much faster than original on n elements.
+        data(0) *= value
+        data(1) *= value
+        this.asInstanceOf[ReturnType]
+    }
+
+    def /=(other:NumberSeq2):ReturnType = divBy(other)
+
+    override def /=(value:Double):ReturnType = divBy(value)
+
+    def divBy(other:NumberSeq2):ReturnType = {
+        // Much faster than original on n elements.
+        val o = other.data
+        data(0) /= o(0)
+        data(1) /= o(1)
+        this.asInstanceOf[ReturnType]
+    }
+
+    override def divBy(value:Double):ReturnType = {
+        // Much faster than original on n elements.
+        data(0) /= value
+        data(1) /= value
+        this.asInstanceOf[ReturnType]
+    }
 }
 
 //===================================================

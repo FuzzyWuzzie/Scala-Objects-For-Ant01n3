@@ -1,7 +1,8 @@
 package org.sofa.simu
 
-import org.sofa.math.{Point3, Point2, Vector3, SpatialHash, SpatialPoint, SpatialObject, SpatialCube, Triangle}
-import scala.collection.mutable.{Set, HashMap, HashSet, ArrayBuffer}
+import org.sofa.Timer
+import org.sofa.math.{Point3, Point2, Vector3, SpatialHash, SpatialPoint, SpatialObject, SpatialCube, Triangle, ConstTriangle}
+import scala.collection.mutable.{Set, HashMap, HashSet, ArrayBuffer, ArrayStack}
 import scala.util.Random
 
 /** This allows to configure the ViscoElasticSimulation. It contains all the parameters
@@ -26,7 +27,8 @@ object Particle {
 	var kspring = 100.0				// Spring stiffness (5.1) ???
 	var gamma   = 0.2				// Spring yield ratio, typically between 0 and 0.2 and < 1
 	var alpha   = 0.1				// Plasticity constant ???
-		
+	var springRemoveFactor = 0.9	// Normally, springs are removed as soon as their rest length
+									// equals h. This factor modifies h, to select when to remove a spring.
 	// Appear in resolveCollions():
 	var umicron = 0.5				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
 	var wallsX  = 5.0
@@ -93,25 +95,49 @@ trait Obstacle extends VESObject with SpatialCube {
 	  * lies in. If the distance is negative, the particle is inside the
 	  * obstacle. */
 	def isNear(p:Particle):(Double,Point3,Vector3)
+
+	def collision(p:Particle):Collision
 }
 
 /** A rectangular wall obstacle made of two triangles. */
 class QuadWall(p:Point3, v0:Vector3, v1:Vector3) extends Obstacle {
 	/** The first (lower) triangle of the wall. */
-	val tri1 = Triangle(p,Point3(p.x+v0.x,p.y+v0.y,p.z+v0.z),Point3(p.x+v1.x,p.y+v1.y,p.z+v1.z))
+	val tri0 = ConstTriangle(p,Point3(p.x+v0.x,p.y+v0.y,p.z+v0.z),Point3(p.x+v1.x,p.y+v1.y,p.z+v1.z))
 
 	/** The second (higher) triangle of the wall. */
-	val tri2 = Triangle(Point3(p.x+v0.x+v1.x,p.y+v0.y+v1.y,p.z+v0.z+v1.z),tri1.p2,tri1.p1)
+	val tri1 = ConstTriangle(Point3(p.x+v0.x+v1.x,p.y+v0.y+v1.y,p.z+v0.z+v1.z),tri0.p2,tri0.p1)
 	
-	def from:Point3 = tri1.p0
+	def from:Point3 = tri0.p0
 	
-	def to:Point3 = tri2.p0
+	def to:Point3 = tri1.p0
 	
 	def isNear(p:Particle):(Double,Point3,Vector3) = {
-		val (d0,p0) = tri1.distanceFrom(p.x)
-		val (d1,p1) = tri2.distanceFrom(p.x)
+		val (d0,p0) = tri0.distanceFrom(p.x)
+		val (d1,p1) = tri1.distanceFrom(p.x)
 		
-		if(d0 < d1) (d0,p0,tri1.normal) else (d1,p1,tri1.normal)
+		if(d0 < d1) (d0,p0,tri0.normal) else (d1,p1,tri1.normal)
+	}
+
+	def collision(p:Particle):Collision = {
+		var (d0,p0) = tri0.distanceFrom(p.x)
+		var (d1,p1) = tri1.distanceFrom(p.x)
+		var tri:ConstTriangle = tri0
+
+		if(d1 < d0) {
+			d0  = d1
+			p0  = p1
+			tri = tri1
+		}
+
+		if(d0 < Particle.h) {
+			if((p.collision eq null) || ((p.collision ne null) && d0 < p.collision.distance)) {
+				new Collision(d0,p0,tri.normal,this)
+			} else {
+				p.collision
+			}
+		} else {
+			p.collision
+		}
 	}
 }
 
@@ -212,6 +238,8 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	
 	/** All the obstacles. */
 	val obstacles = new ArrayBuffer[Obstacle]()
+	
+	protected val timer = new Timer(Console.out)
 	
 	/** A particle at random in the simulation. */
 	def randomParticle(random:Random):Particle = this(random.nextInt(size))
@@ -340,32 +368,44 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		obstacles += o
 		spaceHash.add(o)
 	}
-	
+
 	/** Apply one simulaton step during time range `dt`. */
 	def simulationStep(dt:Double) {
 		
 		// Compute neighbors
-		computeNeighbors
+		timer.measure("neighbors") {
+			computeNeighbors
+		}
 
 		// Gravity
-		applyGravity(dt)
+		applyGravity(dt)							// Changes V
 		
 		// Viscosity
-		applyViscosity(dt)
+		timer.measure("viscosity") {
+			applyViscosity(dt)						// Changes V
+		}
 		
 		// Move
-		move(dt)
+		move(dt)									// Changes X
 		
 		// Add and remove springs, change rest lengths
 		if(Particle.plasticity) {
-			adjustSprings(dt)
-			// Modify positions according to springs
-			// double density relaxation, and collisions
-			applySpringDisplacements(dt)
+			timer.measure("adjustSprings") {
+				adjustSprings(dt)					// Does not changes X nor V
+			}
+			timer.measure("applySprings") {
+				// Modify positions according to springs
+				// double density relaxation, and collisions
+				applySpringDisplacements(dt)		// Changes X
+			}
 		}
 		
-		doubleDensityRelaxation(dt)
-		resolveCollions(dt)
+		timer.measure("dblDstRelax") {
+			doubleDensityRelaxation(dt)				// Changes X
+		}
+		timer.measure("collisions") {
+			resolveCollions(dt)						// Changes X
+		}
 		computeVelocity(dt)
 		
 		// Update the space hash
@@ -373,14 +413,14 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 
 		// One step finished.
 		step += 1
+
+		if(step % 10 == 0) {
+			timer.printAvgs("-- Times --------")
+		}
 	}
 
 	def computeNeighbors() {
-		foreach { p =>
-			val (n,c) = computeNeighbors(p)
-			p.neighbors = n
-			p.collision = c
-		}
+		foreach { computeNeighbors(_) }
 	}
 
 	def applyGravity(dt:Double) {
@@ -403,13 +443,26 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	  * The set of neighbors depends on the viewing distance `Particle.h`. If
 	  * amongst the neighbors there are some non-particles objects, they are
 	  * treated as obstacles and the closest one is returned. */
-	def computeNeighbors(i:Particle):(ArrayBuffer[Particle], Collision) = {
-//		val potential = spaceHash.neighborsInBox(i, Particle.h*2)
+	def computeNeighbors(i:Particle) {
 		val potential = neighborsAround(i)
-		val neighbors = new ArrayBuffer[Particle]()
-		var collision:Collision = null
 		val v = Vector3()
 
+		if(i.neighbors eq null) {
+			i.neighbors = new ArrayBuffer[Particle]()
+		} else {
+			i.neighbors.clear
+		}
+
+		// TODO We need to compute the distance between the particle and its neighbors
+		// almost at each sub-step. This is a necessity since the particle x change during
+		// a whole simulation step. As soon as applyViscoity, this is done. We could therefore
+		// avoid to do it here in computeNeighbors ?
+
+		i.collision = null
+
+		// A "match" would be so much cleaner... But again, after some micro bench,
+		// on an so important method, that is applied to all particles, this is
+		// much slower than "if instanceOf".
 		potential.foreach { j =>
 			if(j.isInstanceOf[Particle]) {
 				if(j ne i) {
@@ -418,30 +471,67 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 					val l = v.norm
 				
 					if(l < Particle.h) {
-						neighbors += j.asInstanceOf[Particle]
+						i.neighbors += j.asInstanceOf[Particle]
 					}
 				}
 			} else {
 				val o = j.asInstanceOf[Obstacle]
-				val (l,p,n) = o.isNear(i)
 				
-				if(l < Particle.h) {
-					if((collision eq null) || (l < collision.distance)) { 
-						collision = Collision(l,p,n,o) 
-					}
-				}
+				i.collision = o.collision(i)
 			}
 		}
-		
-		(neighbors, collision)
 	}
 	
+	// /** Set of neighbors of a given particle `i`. 
+	//   * The set of neighbors depends on the viewing distance `Particle.h`. If
+	//   * amongst the neighbors there are some non-particles objects, they are
+	//   * treated as obstacles and the closest one is returned. */
+	// def computeNeighbors(i:Particle) {
+	// 	val potential = neighborsAround(i)
+	// 	val v = Vector3()
+
+	// 	if(i.neighbors eq null) {
+	// 		i.neighbors = new ArrayBuffer[Particle]()
+	// 	} else {
+	// 		i.neighbors.clear
+	// 	}
+
+	// 	i.collision = null
+
+	// 	potential.foreach { j =>
+	// 		if(j.isInstanceOf[Particle]) {
+	// 			if(j ne i) {
+	// 				i.neighbors += j.asInstanceOf[Particle]
+	// 			}
+	// 		} else {
+	// 			val o = j.asInstanceOf[Obstacle]
+				
+	// 			i.collision = o.collision(i)
+	// 		}
+	// 	}
+	// }
+		
 	/** The viscosity step during `dt` time. */
 	def applyViscosity(dt:Double) {
-		val r = Vector3()
+		// We use "while" instead of beautiful foreach since it is much more 
+		// efficient (no function call).
 
-		foreach { i =>
-			i.neighbors.foreach { j =>
+		val r  = Vector3()
+		val vv = Vector3()
+		var I  = 0
+		val N  = size
+		
+		while(I < N) {
+			val i = this(I)
+			var J = 0
+			val M = i.neighbors.size
+
+			while(J < M) {
+				// Not sure yet, but in theory, i.x and j.x did not changed since computeNeighbors
+				// and Therefore j is still at the same distance. Hence, we do not need to recompute
+				// d and q, we could reuse them.
+				val j = i.neighbors(J)
+				
 				r.set(i.x, j.x)
 				
 				val d = r.norm
@@ -449,7 +539,8 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 				
 				if(q < 1) {
 					val R = r.divBy(d) // normalized (but we already computed the norm)
-					val vv = i.v - j.v
+					//val vv = i.v - j.v   // This hides the creation of a vector that multiply times by more than 2 (we are in O(n^2)) !
+					vv.copy(i.v); vv.subBy(j.v)
 					val u = vv.dot(R)
 					
 					if(u > 0) {
@@ -458,8 +549,12 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 						i.v.subBy(I)
 						j.v.addBy(I)
 					}
-				}
+				}				
+
+				J += 1
 			}
+
+			I += 1
 		}
 	}
 	
@@ -470,50 +565,61 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 
 		foreach { i =>
 			i.neighbors.foreach { j =>
-				r.set(i.x, j.x)
-
 				var spring = i.springs.get(j.index).getOrElse(null)
-				//val r      = Vector3(i.x, j.x)
-				val rij    = r.norm
-				val q      = rij / Particle.h
 
-				if(q < 1) {
-					if(spring eq null) {
-						// Contrary to the original algorithm we do
-						// not initialize the rest length L to h but to
-						// the actual length separating the particles.
-						spring = new Spring(i, j, rij);//Particle.h)
-						springs += spring
-					}
-				}
-				
-				// At the contrary of the original algoritm we do this
-				// event if q >= 1, since I do not see how we can augment L
-				// above h if we only do this when rij is under h !		
-				if((spring ne null) && spring.step < step) {
-					val L = spring.L
-					val d = Particle.gamma * L
+				if((spring eq null) || spring.step < step) {
+					r.set(i.x, j.x)
 					
-					if(rij > L+d) {	// Strech
-						spring.L += dt * Particle.alpha * (rij-L-d)
-					} else if(rij < L-d) {	// Compress
-						spring.L -= dt * Particle.alpha * (L-d-rij) 
-					}
+					val rij = r.norm
+					val q   = rij / Particle.h
 
-					spring.step = step
+					if(q < 1) {
+						if(spring eq null) {
+							// Contrary to the original algorithm we do
+							// not initialize the rest length L to h but to
+							// the actual length separating the particles.
+							spring = new Spring(i, j, rij);//Particle.h)
+							springs += spring
+						}
+					}
+					
+					// At the contrary of the original algoritm we do this
+					// event if q >= 1, since I do not see how we can augment L
+					// above h if we only do this when rij is under h !		
+					if(spring ne null) {
+						val L = spring.L
+						val d = Particle.gamma * L
+						
+						if(rij > L+d) {	// Strech
+							spring.L += dt * Particle.alpha * (rij-L-d)
+						} else if(rij < L-d) {	// Compress
+							spring.L -= dt * Particle.alpha * (L-d-rij) 
+						}
+
+						// Contrary to the original algorithm we remove the spring under the h
+						// distance to avoid building too much springs and fastening the simulation.
+						// This incurs a lost of precision, however.
+						// if(spring.L > Particle.h) ...
+						if(spring.L > Particle.h*Particle.springRemoveFactor) {
+							spring.removed
+							springs.remove(spring)
+						} else {
+							spring.step = step
+						}
+					}
 				}
 			}
 		}
 		
 		// Remove springs
-		
-		springs.retain { spring =>
-			// Contrary to the original algorithm we remove the spring under the h
-			// distance to avoid building too much springs and fastening the simulation.
-			// This incurs a lost of precision, however.
-			// if(spring.L > Particle.h) ...
-			if(spring.L > Particle.h*0.9) { spring.removed; false } else { true }
-		}
+
+// 		springs.retain { spring =>
+// 			// Contrary to the original algorithm we remove the spring under the h
+// 			// distance to avoid building too much springs and fastening the simulation.
+// 			// This incurs a lost of precision, however.
+// 			// if(spring.L > Particle.h) ...
+// 			if(spring.L > Particle.h*0.9) { spring.removed; false } else { true }
+// 		}
 	}
 	
 	/** Apply the springs displacements to the particles during `dt` time. */
@@ -535,45 +641,69 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	
 	/** The main feature of the algorithm (see paper). */
 	def doubleDensityRelaxation(dt:Double) {
-		// Algorithm 2
-		val r = Vector3()
+		// Algorithm 2, forget "foreach", beautiful but so slow.
+		var dx  = Vector3()
+		val r   = Vector3()
 		val dt2 = dt*dt
-		foreach { i =>
-			var rho = 0.0
+		var I   = 0
+		val N   = size
+
+		while(I < N) {
+			val i       = this(I)
+			var rho     = 0.0
 			var rhoNear = 0.0
+			var J       = 0
+			val M       = i.neighbors.size
+
 			// Compute density and near density
-			i.neighbors.foreach { j =>
-				//val r = Vector3(i.x, j.x)
+			while(J < M) {
+				val j = i.neighbors(J)
 				r.set(i.x, j.x)
 				val q = r.norm / Particle.h
+				
 				if(q < 1) {
 					val q1 = (1-q)
 					val q2 = q1*q1
-					rho += q2
+					rho     += q2
 					rhoNear += q2*q1
 				}
+
+				J += 1
 			}
+
 			// Compute pressure and near-pressure
-			i.rho = rho
-			var P = Particle.k * (rho - Particle.rhoZero)
+			i.rho     = rho
+			var P     = Particle.k * (rho - Particle.rhoZero)
 			var Pnear = Particle.kNear * rhoNear
-			var dx = Vector3(0,0,0)
-			i.neighbors.foreach { j =>
-				//val r = Vector3(i.x, j.x)
+
+			dx.set(0, 0, 0)
+			
+			J = 0
+
+			while(J < M) {
+				val j = i.neighbors(J)
 				r.set(i.x, j.x)
 				val d = r.norm
 				val q = d / Particle.h
+				
 				if(q < 1) {
 					val q1 = (1-q)
 					// Apply displacements
 					val R = r.divBy(d) //j.r.normalized
 					val D = R.multBy(dt2 * ((P * q1) + (Pnear * (q1*q1))))
+					
 					D.divBy(2)
+					
 					j.x += D
-					dx -= D
+					dx  -= D
 				}
+
+				J += 1
 			}
+			
 			i.x += dx
+
+			I += 1
 		}
 	}
 	

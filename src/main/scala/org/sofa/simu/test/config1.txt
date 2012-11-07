@@ -45,6 +45,11 @@
 	# Plasticity constant ???
 	alpha = 0.1
 
+	# Normally, springs are removed as soon as their rest length
+	# equals h. This factor modifies h, to select when to remove
+	# a spring.
+	springRemoveFactor = 0.9
+
 # Appear in resolveCollions():
 
 	# Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???

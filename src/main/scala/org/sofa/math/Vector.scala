@@ -23,7 +23,6 @@ class Vector(size:Int) extends NumberSeq {
     protected[math] final val data = new Array[Double](size)
     def this(other:NumberSeq) = { this(other.size); copy(other) } 
     def newInstance = new Vector(size)
-    override def toDoubleArray = data
 }
 
 //===================================================
@@ -51,7 +50,6 @@ class Vector2(xInit:Double, yInit:Double) extends NumberSeq2 {
     def this(other:Vector2) = this(other.x, other.y)
     def this() = this(0, 0)
     def newInstance = new Vector2
-    override def toDoubleArray = data
     override final def size:Int = 2
 }
 
@@ -212,7 +210,6 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
     def this(other:Vector3) = this(other.x, other.y, other.z)
     def this() = this(0, 0, 0)
     def newInstance = new Vector3
-    override def toDoubleArray = data
     override final def size:Int = 3
 }
 
@@ -246,9 +243,12 @@ class Vector4(xInit:Double, yInit:Double, zInit:Double, wInit:Double) extends Nu
     type ReturnType = Vector4
     
     protected[math] final val data = Array[Double](xInit, yInit, zInit, wInit)
+    
     def this(other:Vector4) = this(other.x, other.y, other.z, other.w)
+    
     def this() = this(0, 0, 0, 0)
+    
     def newInstance = new Vector4
-    override def toDoubleArray = data
+    
     override final def size:Int = 4
 }
