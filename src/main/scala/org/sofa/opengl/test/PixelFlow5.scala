@@ -76,7 +76,7 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         anim.start
     }
     
-    override def windowDestroyNotify(ev:WindowEvent) { exit }
+    override def windowDestroyNotify(ev:WindowEvent) { sys.exit }
     
     def init(win:GLAutoDrawable) {
 //        gl = new backend.SGLJogl3(win.getGL.getGL3, GLU.createGLU)

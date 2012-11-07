@@ -14,4 +14,4 @@ libraryDependencies += "junit" % "junit" % "4.10"
 
 //libraryDependencies += "org.jogamp.jogl" % "jogl-all" % "2.0-rc9"
 
-scalacOptions += "–optimise"
+//scalacOptions ++= Seq("–optimise", "-deprecation")

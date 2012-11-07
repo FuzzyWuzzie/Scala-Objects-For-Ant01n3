@@ -1,46 +1,16 @@
 package org.sofa.simu.test
 
-import org.sofa.opengl.surface.SurfaceRenderer
-import org.sofa.opengl.SGL
-import org.sofa.opengl.surface.Surface
-import org.sofa.math.Matrix4
-import org.sofa.math.ArrayMatrix4
-import org.sofa.opengl.MatrixStack
-import org.sofa.opengl.ShaderProgram
-import org.sofa.opengl.mesh.Plane
-import org.sofa.opengl.VertexArray
-import org.sofa.opengl.Camera
-import org.sofa.opengl.surface.BasicCameraController
-import org.sofa.math.Rgba
-import org.sofa.math.Vector4
-import javax.media.opengl.GLCapabilities
-import javax.media.opengl.GLProfile
-import org.sofa.math.Vector3
-import org.sofa.opengl.Shader
-import org.sofa.opengl.mesh.DynPointsMesh
+import org.sofa.{Timer, Environment}
+import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
+import org.sofa.math.{Rgba, Matrix4, ArrayMatrix4, Vector4, Vector3, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
+
+import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture}
+import org.sofa.opengl.mesh.{Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet}
+import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent}
+
+import javax.media.opengl.{GLProfile, GLCapabilities}
+
 import scala.collection.mutable.ArrayBuffer
-import org.sofa.math.Point3
-import org.sofa.opengl.mesh.Cube
-import org.sofa.opengl.mesh.WireCube
-import org.sofa.opengl.mesh.ColoredLineSet
-import org.sofa.opengl.mesh.Axis
-import org.sofa.math.SpatialPoint
-import org.sofa.math.SpatialCube
-import org.sofa.math.SpatialHash
-import org.sofa.opengl.Texture
-import org.sofa.math.IsoSurfaceSimple
-import org.sofa.opengl.mesh.DynTriangleMesh
-import org.sofa.opengl.surface.KeyEvent
-import org.sofa.math.IsoSurface
-import org.sofa.math.IsoContour
-import org.sofa.opengl.mesh.DynIndexedTriangleMesh
-import org.sofa.simu.ViscoElasticSimulation
-import org.sofa.simu.Particle
-import org.sofa.simu.QuadWall
-import org.sofa.opengl.mesh.TriangleSet
-import org.sofa.opengl.mesh.ColoredTriangleSet
-import org.sofa.opengl.mesh.ColoredSurfaceTriangleSet
-import org.sofa.Environment
 
 object TestViscoElasticSimulation2D {
 	def main(args:Array[String]) = (new TestViscoElasticSimulation2D).test
@@ -94,7 +64,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var maxDynLines = 3000
 
 	/** max number of springs to draw. */
-	var maxSprings = 1000
+	var maxSprings = 2000
 
 	/** max number of particles in the simulation. */
 	var size = 500
@@ -119,6 +89,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var drawIsoContourFlag = false
 	var drawIsoSquaresFlag = false
 	var drawIsoPlaneFlag = false
+	var particlesToRemovePerStep = 10
 	
 	var isoSurfaceColor = Rgba(1,1,1,0.9)
 	var particleColor = Rgba(0.7, 0.7, 1, 0.3)
@@ -148,6 +119,8 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		println("    isoDiv .................... %.4f".format(isoDiv))
 		println("    isoCellSize ............... %.4f".format(isoCellSize))
 		println("    isoLimit .................. %.4f".format(isoLimit))
+		println("  Simu:")
+		println("    particles to remove ....... %d".format(particlesToRemovePerStep))
 	}
 
 // Fields --------------------------------------------------
@@ -191,6 +164,8 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	val simu = new ViscoElasticSimulation 
 	var isoSurfaceComp:IsoSurface = null
 	var isoContourComp:IsoContour = null
+
+	val timer = new Timer(Console.out)
 
 	// ----------------------------------------------------------------------------------
 	// Commands
@@ -357,6 +332,10 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		}
 		
 		step += 1
+
+		if(step % 10 == 0) {
+			timer.printAvgs("-- Iso ------")
+		}
 	}
 	
 	protected def launchSomeParticles() {
@@ -383,11 +362,11 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	}	
 	
 	protected def removeSomeParticles() {
-		if(!emiting && simu.size > 100) {
+		if(!emiting && simu.size > 10) {
 			var p = simu.randomParticle(random)
 			var i = 0
 			
-			while(p.x.y > 0.2 && i < 10) {
+			while(p.x.y > 0.2 && i < particlesToRemovePerStep) {
 				p = simu.randomParticle(random)
 				i += 1
 			}
@@ -575,18 +554,22 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	}
 	
 	protected def buildIsoSurface() {
-		isoSurfaceComp = new IsoSurface(isoCellSize)
-		isoSurfaceComp.autoComputeNormals(false)
-		exploreSpaceHashForIsoSurface
-		updateIsoSurfaceRepresentation
+			isoSurfaceComp = new IsoSurface(isoCellSize)
+			isoSurfaceComp.autoComputeNormals(false)
+			exploreSpaceHashForIsoSurface
+			updateIsoSurfaceRepresentation
 	}
 
 	protected def buildIsoContour() {
 		isoContourComp = new IsoContour(isoCellSize)
 		isoContourComp.computeSurface(true)
-		exploreSpaceHashForIsoContour
-		updateIsoContourRepresentation
-		updateIsoPlaneRepresentation
+		timer.measure("build Iso Contour") {
+			exploreSpaceHashForIsoContour
+		}
+		timer.measure("update Iso Repr") {
+			updateIsoContourRepresentation
+			updateIsoPlaneRepresentation
+		}
 	}
 	
 	protected def updateIsoSurfaceRepresentation() {

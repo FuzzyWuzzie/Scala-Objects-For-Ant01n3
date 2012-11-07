@@ -2,8 +2,7 @@
 
 	# Number of division of each space hash cube.
 	# Useful to specify how fine is the iso surface/plane mesh.
-	isoDiv = 3
-	isoLimit = 0.8
+	isoDiv = 4
 
 	drawParticlesFlag = true
 	drawSpringsFlag = true
@@ -14,14 +13,12 @@
 	drawIsoSquaresFlag = false
 	drawIsoPlaneFlag = false
 
-	particlesToRemovePerStep = 200
-
 # General settings:
 
 	# Assuming we use meters as units, g = 9.81 m/s^2
 	g = 9.81				
     
-	h = 1.2
+	h = 0.8
     
     spacialHashBucketSize = 1
 
@@ -55,16 +52,12 @@
 	gamma = 0.2
 
 	# Plasticity constant ???
-	alpha = 0.2
+	alpha = 0.1
 
 	# Normally, springs are removed as soon as their rest length
 	# equals h. This factor modifies h, to select when to remove
 	# a spring.
-	springRemoveFactor = 0.7
-
-	# Max spring real length as a factor of h. The spring is removed 
-	# if its real length (rij) is more than h times this factor.
-	maxSpringLength = 1.2
+	springRemoveFactor = 0.9
 
 # Appear in resolveCollions():
 

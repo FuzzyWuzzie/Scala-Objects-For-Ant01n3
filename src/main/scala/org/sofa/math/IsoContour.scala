@@ -377,8 +377,8 @@ class IsoContour(val cellSize:Double) {
 
 		while(i < neighborSquares.length) {
 			if(i != 4) {
-				val n = neighborSquares(i)
-				val pp= HashPoint3(p.x+n._1, p.y+n._2, 0)
+				val n   = neighborSquares(i)
+				val pp  = HashPoint3(p.x+n._1, p.y+n._2, 0)
 				nbSq(i) = spaceHash.get(pp).getOrElse(null)
 			} else {
 				nbSq(i) = null

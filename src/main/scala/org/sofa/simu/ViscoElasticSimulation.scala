@@ -27,8 +27,9 @@ object Particle {
 	var kspring = 100.0				// Spring stiffness (5.1) ???
 	var gamma   = 0.2				// Spring yield ratio, typically between 0 and 0.2 and < 1
 	var alpha   = 0.1				// Plasticity constant ???
-	var springRemoveFactor = 0.9	// Normally, springs are removed as soon as their rest length
-									// equals h. This factor modifies h, to select when to remove a spring.
+	var maxSpringLength = 1.2 		// Max spring real length as a factor of h. The spring is removed if its real length (rij) is more than h times this factor.
+	var springRemoveFactor = 0.9	// Normally, springs are removed as soon as their rest length (L) equals h. This factor modifies h, to select when to remove a spring.
+
 	// Appear in resolveCollions():
 	var umicron = 0.5				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
 	var wallsX  = 5.0
@@ -58,6 +59,8 @@ object Particle {
 		println("    kspring ........... %.4f".format(kspring))
 		println("    gamma ............. %.4f".format(gamma))
 		println("    alpha ............. %.4f".format(alpha))
+		println("    spring remove ..... %.4f".format(springRemoveFactor))
+		println("    max spring length . %.4f".format(maxSpringLength))
 		println("  Collisions:")
 		println("    umicron ........... %.4f".format(umicron))
 		println("  Stickiness (%b):".format(stickiness))
@@ -203,6 +206,43 @@ class Particle(val index:Int) extends VESObject with SpatialPoint {
 		v.y = (x.y - xprev.y) / dt
 		v.z = (x.z - xprev.z) / dt
 	}
+
+	/** Set of neighbors field from the given set of potential neighbors.
+	  * The set of neighbors depends on the viewing distance `Particle.h`. If
+	  * amongst the neighbors there are some non-particles objects, they are
+	  * treated as obstacles and the closest one is stored in the obstacle field. */
+	def computeNeighbors(potential:Set[VESObject]) {
+		val v = Vector3()
+
+		collision = null
+
+		if(neighbors eq null) {
+			neighbors = new ArrayBuffer[Particle]()
+		} else {
+			neighbors.clear
+		}
+
+		// A "match" would be so much cleaner... But again, after some micro bench,
+		// on an so important method, that is applied to all particles, this is
+		// much slower than "if instanceOf".
+		potential.foreach { j =>
+			if(j.isInstanceOf[Particle]) {
+				if(j ne this) {
+					v.set(x, j.from)
+					
+					val l = v.norm
+				
+					if(l < Particle.h) {
+						neighbors += j.asInstanceOf[Particle]
+					}
+				}
+			} else {
+				val o = j.asInstanceOf[Obstacle]
+				
+				collision = o.collision(this)
+			}
+		}
+	}
 }
 
 /** Represents a collision of a particle with an obstacle.
@@ -264,10 +304,11 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	def evalIsoSurface(x:Point3):Double = {
 		var value = 0.0
 		val neighbors = neighborsAround(x)
+		val R = Vector3()
 		
 		neighbors.foreach { i =>
 			if(! i.isVolume) {
-				val R = Vector3(x, i.from)
+				R.set(x, i.from)
 				val r = R.norm
 				val q = r/Particle.h
 				if(q < 1) {
@@ -284,11 +325,12 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	def evalIsoNormal(x:Point3):Vector3 = {
 		val n = Vector3(0, 0, 0)
 		val neighbors = neighborsAround(x)
+		val R = Vector3()
 		
 		neighbors.foreach { i =>
 			if(! i.isVolume) {
-				val R = Vector3(i.from, x)
-					val l = R.normalize
+				R.set(i.from, x)
+				val l = R.normalize
 				val q = l/Particle.h
 				if(q < 1) {
 					R /= l*l
@@ -306,10 +348,11 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		var rho = 0.0
 		var n = 0
 		val neighbors = neighborsAround(x)
+		val R = Vector3()
 		
 		neighbors.foreach { i =>
 			if(! i.isVolume) {
-				val R = Vector3(i.from, x)
+				R.set(i.from, x)
 				val l = R.norm
 				val q = l/Particle.h
 				if(q < 1) {
@@ -406,10 +449,14 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		timer.measure("collisions") {
 			resolveCollions(dt)						// Changes X
 		}
-		computeVelocity(dt)
+		timer.measure("velocity") {
+			computeVelocity(dt)
+		}
 		
 		// Update the space hash
-		updateSpaceHash
+		timer.measure("spaceHash") {
+			updateSpaceHash
+		}
 
 		// One step finished.
 		step += 1
@@ -420,7 +467,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	}
 
 	def computeNeighbors() {
-		foreach { computeNeighbors(_) }
+		foreach { p => p.computeNeighbors(neighborsAround(p)) }
 	}
 
 	def applyGravity(dt:Double) {
@@ -437,49 +484,6 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 
 	def updateSpaceHash() {
 		foreach { spaceHash.move(_) }		
-	}
-	
-	/** Set of neighbors of a given particle `i`. 
-	  * The set of neighbors depends on the viewing distance `Particle.h`. If
-	  * amongst the neighbors there are some non-particles objects, they are
-	  * treated as obstacles and the closest one is returned. */
-	def computeNeighbors(i:Particle) {
-		val potential = neighborsAround(i)
-		val v = Vector3()
-
-		if(i.neighbors eq null) {
-			i.neighbors = new ArrayBuffer[Particle]()
-		} else {
-			i.neighbors.clear
-		}
-
-		// TODO We need to compute the distance between the particle and its neighbors
-		// almost at each sub-step. This is a necessity since the particle x change during
-		// a whole simulation step. As soon as applyViscoity, this is done. We could therefore
-		// avoid to do it here in computeNeighbors ?
-
-		i.collision = null
-
-		// A "match" would be so much cleaner... But again, after some micro bench,
-		// on an so important method, that is applied to all particles, this is
-		// much slower than "if instanceOf".
-		potential.foreach { j =>
-			if(j.isInstanceOf[Particle]) {
-				if(j ne i) {
-					v.set(i.x, j.from)
-					
-					val l = v.norm
-				
-					if(l < Particle.h) {
-						i.neighbors += j.asInstanceOf[Particle]
-					}
-				}
-			} else {
-				val o = j.asInstanceOf[Obstacle]
-				
-				i.collision = o.collision(i)
-			}
-		}
 	}
 	
 	// /** Set of neighbors of a given particle `i`. 
@@ -596,47 +600,71 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 							spring.L -= dt * Particle.alpha * (L-d-rij) 
 						}
 
-						// Contrary to the original algorithm we remove the spring under the h
-						// distance to avoid building too much springs and fastening the simulation.
-						// This incurs a lost of precision, however.
-						// if(spring.L > Particle.h) ...
-						if(spring.L > Particle.h*Particle.springRemoveFactor) {
-							spring.removed
-							springs.remove(spring)
-						} else {
+						// // Contrary to the original algorithm we remove the spring under the h
+						// // distance to avoid building too much springs and fastening the simulation.
+						// // This incurs a lost of precision, however.
+						// // if(spring.L > Particle.h) ...
+						// if(spring.L > Particle.h*Particle.springRemoveFactor) {
+						// 	spring.removed
+						// 	springs.remove(spring)
+						// } else {
 							spring.step = step
-						}
+						// }
 					}
 				}
 			}
 		}
-		
+
 		// Remove springs
 
-// 		springs.retain { spring =>
-// 			// Contrary to the original algorithm we remove the spring under the h
-// 			// distance to avoid building too much springs and fastening the simulation.
-// 			// This incurs a lost of precision, however.
-// 			// if(spring.L > Particle.h) ...
-// 			if(spring.L > Particle.h*0.9) { spring.removed; false } else { true }
-// 		}
+		// springs.retain { spring =>
+		// 	// Contrary to the original algorithm we remove the spring under the h
+		// 	// distance to avoid building too much springs and fastening the simulation.
+		// 	// This incurs a lost of precision, however.
+		// 	// if(spring.L > Particle.h) ...
+		// 	if(spring.L > Particle.h*Particle.springRemoveFactor) { spring.removed; false } else { true }
+		// }
 	}
 	
 	/** Apply the springs displacements to the particles during `dt` time. */
 	def applySpringDisplacements(dt:Double) {
 		val dt2 = dt * dt
 		val r = Vector3()
-		
-		springs.foreach { spring =>
+
+		// Process and remove springs at once.
+
+		springs.retain { spring =>
 			r.set(spring.i.x, spring.j.x)
 
 			val rij = r.normalize
-			val D   = r.multBy(dt2 * Particle.kspring * (1-spring.L/Particle.h)*(spring.L-rij))
-			D      /= 2
+
+			if(rij < Particle.h*Particle.maxSpringLength && spring.L < Particle.h*Particle.springRemoveFactor) {
+				val D   = r.multBy(dt2 * Particle.kspring * (1-spring.L/Particle.h)*(spring.L-rij))
+				D      /= 2
 			
-			spring.i.x -= D
-			spring.j.x += D
+				spring.i.x -= D
+				spring.j.x += D
+
+				true
+			} else {
+				spring.removed
+				false
+			}
 		}
+		
+		// springs.foreach { spring =>
+		// 	r.set(spring.i.x, spring.j.x)
+
+		// 	val rij = r.normalize
+
+		// 	if(rij < Particle.h*1.2) {
+		// 		val D   = r.multBy(dt2 * Particle.kspring * (1-spring.L/Particle.h)*(spring.L-rij))
+		// 		D      /= 2
+			
+		// 		spring.i.x -= D
+		// 		spring.j.x += D
+		// 	}
+		// }
 	}
 	
 	/** The main feature of the algorithm (see paper). */

@@ -311,17 +311,36 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 	def getThings(things:HashSet[T], x0:Double, y0:Double, z0:Double, x1:Double, y1:Double, z1:Double) {
 		val from = hash(x0, y0, z0)
 		val to   = hash(x1, y1, z1)
+		var z    = from.z
 
-		for(z <- from.z to to.z) {
-			for(y <- from.y to to.y) {
-				for(x <- from.x to to.x) {
+		while(z <= to.z) {
+			var y = from.y
+			while(y <= to.y) {
+				var x = from.x
+				while(x <= to.x) {
 					val b = buckets.get(HashPoint3(x,y,z)).getOrElse(null)
 					if(b ne null)
 						things ++= b
+					x += 1
 				}
+				y += 1
 			}
+			z += 1
 		}
 	}
+	// def getThings(things:HashSet[T], x0:Double, y0:Double, z0:Double, x1:Double, y1:Double, z1:Double) {
+	// 	val from = hash(x0, y0, z0)
+	// 	val to   = hash(x1, y1, z1)
+	// 	for(z <- from.z to to.z) {
+	// 		for(y <- from.y to to.y) {
+	// 			for(x <- from.x to to.x) {
+	// 				val b = buckets.get(HashPoint3(x,y,z)).getOrElse(null)
+	// 				if(b ne null)
+	// 					things ++= b
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	/** All the buckets containing or intersecting the bounding box defined by point
 	  * (`x0`,`y0`,`z0`)  and point (`x1`,`y1`,`z1`). The first point must be
@@ -332,15 +351,21 @@ class SpatialHash[T<:SpatialObject](val bucketSize:Double) {
 		val from = hash(x0, y0, z0)
 		val to   = hash(x1, y1, z1)
 		val res  = new ArrayBuffer[Bucket[T]]
+		var z    = from.z
 
-		for(z <- from.z to to.z) {
-			for(y <- from.y to to.y) {
-				for(x <- from.x to to.x) {
+		while(z <= to.z) {
+			var y = from.y
+			while(y < to.y) {
+				var x = from.x
+				while(x < to.x) {
 					val b = buckets.get(HashPoint3(x,y,z)).getOrElse(null)
 					if(b ne null)
 						res += b
+					x += 1
 				}
+				y += 1
 			}
+			z += 1
 		}
 		
 		res

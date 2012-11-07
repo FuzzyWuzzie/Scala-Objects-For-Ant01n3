@@ -67,7 +67,7 @@ class Skinning extends SurfaceRenderer {
 	    initSurface    = initializeSuface
 	    frame          = display
 	    surfaceChanged = reshape
-	    close          = { surface => exit }
+	    close          = { surface => sys.exit }
 	    key            = ctrl.key
 	    motion         = ctrl.motion
 	    scroll         = ctrl.scroll

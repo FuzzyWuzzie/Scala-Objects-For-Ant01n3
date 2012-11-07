@@ -38,7 +38,7 @@ class MostBasicSetup extends WindowAdapter with GLEventListener {
         anim.start
     }
     
-    override def windowDestroyNotify(ev:WindowEvent) { exit }
+    override def windowDestroyNotify(ev:WindowEvent) { sys.exit }
     
     def init(win:GLAutoDrawable) {
         val gl = win.getGL.getGL2ES2; import gl._;
