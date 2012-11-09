@@ -173,6 +173,8 @@ abstract class SGL {
     def frontFace(i:Int)
     def lineWidth(width:Float)
     def lineWidth(width:Double)
+    // def pointSize(size:Float)
+    // def pointSize(size:Double)
     def blendEquation(mode:Int)
     def blendFunc(src:Int, dst:Int)
     def polygonMode(face:Int, mode:Int)

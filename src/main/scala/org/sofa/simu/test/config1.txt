@@ -2,19 +2,26 @@
 
 	# Number of division of each space hash cube.
 	# Useful to specify how fine is the iso surface/plane mesh.
-	isoDiv = 3
-	isoLimit = 0.8
+	isoDiv = 2
+	isoLimit = 0.7
 
 	drawParticlesFlag = true
-	drawSpringsFlag = true
+	drawSpringsFlag = false
 	drawSpaceHashFlag = false
 	drawIsoCubesFlag = false
 	drawIsoSurfaceFlag = false
 	drawIsoContourFlag = true
 	drawIsoSquaresFlag = false
 	drawIsoPlaneFlag = false
+	drawParticlesQuadFlag = true
+
+
+	particleSizePx = 50
 
 	particlesToRemovePerStep = 200
+
+	timeToWait = 20
+	timeToEmit = 20
 
 # General settings:
 
@@ -24,6 +31,8 @@
 	h = 1.2
     
     spacialHashBucketSize = 1
+
+    is2D = true
 
 # Appear in doubleDensityRelaxation():
 
@@ -69,7 +78,7 @@
 # Appear in resolveCollions():
 
 	# Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
-	umicron = 0.5
+	umicron = 0.4
 
 	wallsX  = 5.0
 	
@@ -85,7 +94,3 @@
 	
 	# Smaller than h (h/2?)
 	dStick  = 0.45
-
-# 2D mode:
-
-	is2D = true

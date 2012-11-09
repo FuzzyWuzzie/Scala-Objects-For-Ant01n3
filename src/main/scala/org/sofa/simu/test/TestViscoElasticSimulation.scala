@@ -494,7 +494,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	protected def exploreSpaceHash() {
 		var i = 0
 		simu.spaceHash.buckets.foreach { bucket =>
-			if(bucket._2.points > 0) {
+			if(bucket._2.points.size > 0) {
 				val x = (bucket._1.x-1) * simu.spaceHash.bucketSize
 				val y = (bucket._1.y-1) * simu.spaceHash.bucketSize
 				val z = (bucket._1.z-1) * simu.spaceHash.bucketSize

@@ -138,7 +138,7 @@ class TestMetaBalls extends SurfaceRenderer {
 	
 	var play = true
 	var isoSurfaceComp:IsoSurface = null
-	var spaceHash = new SpatialHash[MetaBall](bucketSize)
+	var spaceHash = new SpatialHash[MetaBall,MetaBall,SpatialCube](bucketSize)
 	var balls:ArrayBuffer[MetaBall] = null
 	
 	// --------------------------------------------------------------
@@ -171,7 +171,7 @@ class TestMetaBalls extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src-scala/org/sofa/opengl/shaders/"
+		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders

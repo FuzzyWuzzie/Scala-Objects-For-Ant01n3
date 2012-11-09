@@ -19,27 +19,15 @@ import org.sofa.math.Vector3
 import org.sofa.opengl.Shader
 import org.sofa.opengl.mesh.DynPointsMesh
 import scala.collection.mutable.ArrayBuffer
-import org.sofa.math.Point3
-import org.sofa.opengl.mesh.Cube
-import org.sofa.opengl.mesh.WireCube
-import org.sofa.opengl.mesh.WireCube
-import org.sofa.opengl.mesh.Axis
-import org.sofa.math.SpatialPoint
-import org.sofa.math.SpatialCube
-import org.sofa.math.SpatialHash
+import org.sofa.opengl.mesh.{Cube, WireCube, Axis}
+import org.sofa.math.{Point3, SpatialObject, SpatialPoint, SpatialCube, SpatialHash}
 
 object TestSpatialHash {
 	def main(args:Array[String]) = (new TestSpatialHash).test
 }
 
-class TestParticle(xx:Double, yy:Double, zz:Double) extends SpatialPoint {
-	val x = Point3(xx, yy, zz)
+trait TestObject extends SpatialObject {
 	val v = Vector3((math.random*2-1)*0.05, (math.random*2-1)*0.05, (math.random*2-1)*0.05)
-	def from:Point3 = x
-	def to:Point3 = x
-	def move() {
-		move(x)
-	}
 	protected def move(p:Point3) {
 		p.addBy(v)
 		val lim = 5
@@ -50,13 +38,25 @@ class TestParticle(xx:Double, yy:Double, zz:Double) extends SpatialPoint {
 		if(p.z > lim) { p.z = lim; v.z = -v.z }
 		else if(p.z < -lim) { p.z = -lim; v.z = -v.z }
 	}
+
 }
 
-class TestVolume(val side:Double) extends TestParticle(-side/2,-side/2, -side/2) with SpatialCube {
-	val y = Point3(side/2, side/2, side/2) 
-	override def to:Point3 = y
-	override def move() {
-		super.move()
+class TestParticle(xx:Double, yy:Double, zz:Double) extends SpatialPoint with TestObject {
+	val x = Point3(xx, yy, zz)
+	def from:Point3 = x
+	def to:Point3 = x
+	def move() {
+		move(x)
+	}
+}
+
+class TestVolume(val side:Double) extends SpatialCube with TestObject {
+	val x = Point3(-side/2, -side/2, -side/2)
+	val y = Point3(side/2, side/2, side/2)
+	def from:Point3 = x 
+	def to:Point3 = y
+	def move() {
+		move(x)
 		move(y)
 	}
 }
@@ -95,7 +95,7 @@ class TestSpatialHash extends SurfaceRenderer {
 	val bucketSize = 0.5
 	val random = new scala.util.Random()
 
-	var spaceHash = new SpatialHash[TestParticle](bucketSize)
+	var spaceHash = new SpatialHash[TestObject,TestParticle,TestVolume](bucketSize)
 	var simu:ArrayBuffer[TestParticle] = null
 	val simuCube = new TestVolume(0.4)
 	val simuCube2 = new TestVolume(0.8)
@@ -127,7 +127,7 @@ class TestSpatialHash extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src-scala/org/sofa/opengl/shaders/"
+		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders

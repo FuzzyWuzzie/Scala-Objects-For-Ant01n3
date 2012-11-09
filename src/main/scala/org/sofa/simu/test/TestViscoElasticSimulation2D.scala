@@ -89,17 +89,18 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var drawIsoContourFlag = false
 	var drawIsoSquaresFlag = false
 	var drawIsoPlaneFlag = false
+	var drawParticlesQuadFlag = true
 	var particlesToRemovePerStep = 10
 	
 	var isoSurfaceColor = Rgba(1,1,1,0.9)
-	var particleColor = Rgba(0.7, 0.7, 1, 0.3)
+	var particleColor = Rgba(0.7, 0.7, 1, 0.9)
 	var clearColor = Rgba.grey10
 	var planeColor = Rgba.grey80
 	val light1 = Vector4(0, 7, 3, 1)	
-	var particleSizePx = 160f // 160f
+	var particleSizePx = 30f // 160f
 	
-	val timeToWait = 20
-	val timeToEmit =  7
+	var timeToWait = 20
+	var timeToEmit =  7
 	var curParticle = 0
 	var waiting = timeToEmit
 	var emiting = true
@@ -132,6 +133,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	
 	var phongShad:ShaderProgram = null
 	var particlesShad:ShaderProgram = null
+	var particlesQuadShad:ShaderProgram = null
 	var plainShad:ShaderProgram = null
 	
 	var plane:VertexArray = null
@@ -145,7 +147,8 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var isoContour:VertexArray = null
 	var obstacles:VertexArray = null
 	var springs:VertexArray = null
-	
+	var quad:VertexArray = null
+
 	var axisMesh = new Axis(10)
 	var planeMesh = new Plane(2, 2, 10, 10)
 	var particlesMesh:DynPointsMesh = null
@@ -157,13 +160,16 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var isoContourMesh = new ColoredLineSet(maxDynLines)
 	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
 	var springsMesh = new ColoredLineSet(maxSprings)
-		
+	var quadMesh = new Plane(2, 2, 1f, 1f)
+
 	val random = new scala.util.Random()
 	var step = 0
 	var running = true
 	val simu = new ViscoElasticSimulation 
 	var isoSurfaceComp:IsoSurface = null
 	var isoContourComp:IsoContour = null
+
+	var pointTex:Texture = null
 
 	val timer = new Timer(Console.out)
 
@@ -181,9 +187,10 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 			
 		initSimuParams
 		initGL(sgl)
+		initTextures
 		initShaders
 		initGeometry
-		
+
 		camera.viewCartesian(0, 5, 14)
 		camera.setFocus(0, 4, 0)
 		reshape(surface)
@@ -211,11 +218,19 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		//gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
 		gl.checkErrors
 	}
+
+	protected def initTextures() {
+		pointTex = new Texture(gl, "/Users/antoine/Documents/Programs/SOFA/Point.png", true)
+	    pointTex.minMagFilter(gl.LINEAR, gl.LINEAR)
+	    pointTex.wrap(gl.REPEAT)
+	}
 	
 	protected def initShaders() {
 		phongShad = ShaderProgram(gl, "phong shader", "es2/phonghi.vert.glsl", "es2/phonghi.frag.glsl")
-		particlesShad = ShaderProgram(gl, "particles shader", "es2/particles.vert.glsl", "es2/particles.frag.glsl")
 		plainShad = ShaderProgram(gl, "plain shader", "es2/plainColor.vert.glsl", "es2/plainColor.frag.glsl")
+//		particlesShad = ShaderProgram(gl, "particles shader", "es2/particlesTex.vert.glsl", "es2/particlesTex.frag.glsl")
+		particlesShad = ShaderProgram(gl, "particles shader", "es2/particles.vert.glsl", "es2/particles.frag.glsl")
+		particlesQuadShad = ShaderProgram(gl, "particles quad shader", "es2/particlesTex.vert.glsl", "es2/particlesTex.frag.glsl")
 	}
 	
 	protected def initGeometry() {
@@ -261,13 +276,19 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		
 		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("colors", c))
 
+		v = particlesQuadShad.getAttribLocation("position")
+		var t = particlesQuadShad.getAttribLocation("texCoords")
+
+		quadMesh.setTextureRepeat(1, 1)
+		quad = quadMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("texcoords", t))
+
 		for(i <- 0 until maxDynTriangles*3) {
 			isoSurfaceMesh.setPointColor(i, isoSurfaceColor)
 			isoPlaneMesh.setPointColor(i, isoSurfaceColor)
 			isoPlaneMesh.setPointNormal(i, 0, 0, 1)
 		}
 
-		var springColor = Rgba(1, 0, 0, 0.3)
+		var springColor = Rgba(1, 1, 1, 0.8)
 		for(i <- 0 until maxSprings) {
 			springsMesh.setColor(i, springColor)
 		}
@@ -303,6 +324,8 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	// Rendering
 	
 	def display(surface:Surface) {
+		if((step+1)%10 == 0)
+			println("--step %d ---------------------".format(step+1))
 		if(running) {
 			launchSomeParticles
 			updateParticles
@@ -321,6 +344,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		drawIsoSquares
 		drawSprings
 		drawParticles
+		drawParticlesQuads
 		drawIsoPlane
 		drawIsoContour
 		
@@ -335,6 +359,9 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 
 		if(step % 10 == 0) {
 			timer.printAvgs("-- Iso ------")
+		}
+		if(step % 1000 == 0) {
+			timer.reset
 		}
 	}
 	
@@ -405,7 +432,10 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	protected def drawParticles() {
 		if(drawParticlesFlag) {
 			gl.enable(gl.BLEND)
+//			gl.enable(gl.TEXTURE_2D)
 			particlesShad.use
+//			pointTex.bindTo(gl.TEXTURE0)
+//	    	particlesShad.uniform("texColor", 0)	// Texture Unit 0
 			camera.setUniformMVP(particlesShad)
 			particlesShad.uniform("pointSize", particleSizePx)
 			particles.draw(particlesMesh.drawAs, simu.size)
@@ -413,13 +443,37 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		}
 	}
 
+	protected def drawParticlesQuads() {
+		if(drawParticlesQuadFlag) {
+			gl.enable(gl.BLEND)
+			gl.disable(gl.DEPTH_TEST)
+			particlesQuadShad.use
+			pointTex.bindTo(gl.TEXTURE0)
+	    	particlesQuadShad.uniform("texColor", 0)	// Texture Unit 0
+			simu.foreach { particle => 
+				camera.pushpop {
+					camera.translateModel(particle.x.x, particle.x.y, particle.x.z)
+ 					camera.rotateModel(math.Pi/2, 1, 0, 0)
+					camera.setUniformMVP(particlesQuadShad)
+					quad.draw(quadMesh.drawAs)
+				}
+			}
+			gl.enable(gl.DEPTH_TEST)
+			gl.disable(gl.BLEND)
+		}
+	}
+
 	protected def drawSprings() {
 		if(drawSpringsFlag) {
+			gl.disable(gl.DEPTH_TEST)
 			gl.enable(gl.BLEND)
+			gl.lineWidth(2)
 			plainShad.use
 			camera.setUniformMVP(plainShad)
 			springs.draw(springsMesh.drawAs, simu.springs.size*2)
+			gl.lineWidth(1)
 			gl.disable(gl.BLEND)
+			gl.enable(gl.DEPTH_TEST)
 		}
 	}
 	
@@ -546,10 +600,10 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 			gl.checkErrors
 		}
 		
-		if(drawIsoSurfaceFlag)
+		if(drawIsoSurfaceFlag || drawIsoCubesFlag)
 			buildIsoSurface
 
-		if(drawIsoContourFlag || drawIsoPlaneFlag)
+		if(drawIsoContourFlag || drawIsoPlaneFlag || drawIsoSquaresFlag)
 			buildIsoContour
 	}
 	
@@ -692,7 +746,7 @@ triangleCount = 0
 	
 	protected def exploreSpaceHashForIsoSurface() {
 		simu.spaceHash.buckets.foreach { bucket =>
-			if(bucket._2.points > 0) {
+			if((bucket._2.points ne null) && bucket._2.points.size > 0) {
 				val x = (bucket._1.x-1) * simu.spaceHash.bucketSize
 				val y = (bucket._1.y-1) * simu.spaceHash.bucketSize
 				val z = (bucket._1.z-1) * simu.spaceHash.bucketSize
@@ -708,10 +762,13 @@ triangleCount = 0
 	}
 
 	protected def exploreSpaceHashForIsoContour() {
+//simu.evalCount = 0
+//var bucketCount = 0
 		simu.spaceHash.buckets.foreach { bucket =>
-			if(bucket._2.points > 0) {
+			if((bucket._2.points ne null) && bucket._2.points.size > 0) {
 				// Only long the XY plane
 				if(bucket._1.z == 0) {
+//bucketCount += 1
 					val x = (bucket._1.x-1) * simu.spaceHash.bucketSize
 					val y = (bucket._1.y-1) * simu.spaceHash.bucketSize
 					val p = isoContourComp.nearestSquarePos(x, y)
@@ -720,9 +777,18 @@ triangleCount = 0
 						p.x.toInt,        p.y.toInt,
 						(3*isoDiv).toInt, (3*isoDiv).toInt,
 						simu.evalIsoSurface, isoLimit)
+					// val x = (bucket._1.x * simu.spaceHash.bucketSize) - (simu.spaceHash.bucketSize*2)
+					// val y = (bucket._1.y * simu.spaceHash.bucketSize) - (simu.spaceHash.bucketSize*2)
+					// val p = isoContourComp.nearestSquarePos(x, y)
+
+					// isoContourComp.addSquaresAt(
+					// 	p.x.toInt,        p.y.toInt,
+					// 	(isoDiv+4).toInt, (isoDiv+4).toInt,
+					// 	simu.evalIsoSurface, isoLimit)
 				}				
 			}
 		}
+//println("## %d (%.1f) buckets %d evals".format(bucketCount, bucketCount*isoDiv*isoDiv*4, simu.evalCount))
 	}
 
 	// --------------------------------------------------------------------------------------

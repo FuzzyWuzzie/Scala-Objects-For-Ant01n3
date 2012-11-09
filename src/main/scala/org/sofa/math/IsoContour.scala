@@ -136,9 +136,9 @@ class IsoSquare(val index:Int, val pos:HashPoint3, val contour:IsoContour) {
 			val np = Point2((pos.x+squareCoos(p)._1)*contour.cellSize,
 				            (pos.y+squareCoos(p)._2)*contour.cellSize)
 			contour.points += np
-			contour.values += eval(contour.points(i))
+			contour.values += eval(np)//contour.points(i))
 			points(p) = i
-
+// contour.evalCount += 1
 			assert(contour.points.size == contour.values.size)
 		}
 
@@ -303,6 +303,10 @@ class IsoContour(val cellSize:Double) {
 		computeSurfaceFlag = on
 	}
 
+// var squareCount = 0
+// var reallyAdded = 0
+// var evalCount = 0
+
 	/** Add a set of squares in a given portion of space. The portion of space is given in
 	  * marching squares space, where (0,0) is the origin that describe a square between
 	  * points (0,0) and (1,1). The squares have a side whose length is `cellSize`.
@@ -314,14 +318,19 @@ class IsoContour(val cellSize:Double) {
 		var xx = 0
 		var yy = 0
 		
+// squareCount = 0
+// reallyAdded = 0
+// evalCount = 0
 		while(yy < countY) {
 			xx = 0
 			while(xx < countX) {
 				val square = addSquareAt(x+xx, y+yy, eval, isoLevel)
+// squareCount += 1
 				xx += 1
 			}
 			yy += 1
 		}
+// Console.err.println("added (%d, %d)=%d==%d squares | really %d | evals %d (max %d should %d)".format(countX, countY, countX*countY, squareCount, reallyAdded, evalCount, countX*countY*4, (countX+1)*(countY+1)))
 	}
 
 	/** The nearest square position fromt the real coordinates. */
@@ -364,6 +373,7 @@ class IsoContour(val cellSize:Double) {
 				nonEmptySquares += square
 			}
 
+// reallyAdded += 1
 			square
 		}
 	}

@@ -44,6 +44,16 @@ class Point2(xInit:Double, yInit:Double) extends NumberSeq2 {
 		result
 	}
 
+    def distance(other:NumberSeq):Double = {
+        if(other.data.length > 1) {
+            val xx = other.data(0) - data(0)
+            val yy = other.data(1) - data(1)
+            sqrt(xx*xx + yy*yy)
+        } else {
+            0
+        }
+    }
+
 	/** Distance between this and `other`. */
 	def distance(other:Point2):Double = {
 		val xx = other.data(0) - data(0)

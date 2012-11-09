@@ -311,6 +311,8 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     def frontFace(i:Int) = glFrontFace(i)
     def lineWidth(width:Float) = glLineWidth(width)
     def lineWidth(width:Double) = glLineWidth(width.toFloat)
+    // def pointSize(size:Float) = glPointSize(size)
+    // def pointSize(size:Double) = glPointSize(size.toFloat)
     def blendEquation(mode:Int) = glBlendEquation(mode)
     def blendFunc(src:Int, dst:Int) = glBlendFunc(src, dst)
     def polygonMode(face:Int, mode:Int) = throw new RuntimeException("no polygon mode for GL ES 2.0 too bad")

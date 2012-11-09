@@ -27,7 +27,12 @@ class Timer(val out:PrintStream) {
 		measures.foreach { measure =>
 			sum += measure._2.printAvg(out)
 		}
-		out.println("  total: %.5f msecs".format(sum/100000.0))
+		out.println("  total: %.2f msecs".format(sum/100000.0))
+	}
+
+	def reset() {
+		measures.clear
+		
 	}
 }
 
@@ -41,10 +46,14 @@ class Measures(val name:String) {
 	/** The sum of all measures. */
 	var sum = 0L
 
+	/** The last measure. */
+	var last = 0L
+
 	/** Add a measure. */
 	def addMeasure(value:Long) {
 		count += 1
-		sum += value
+		sum   += value
+		last   = value
 	}
 
 	/** The average of all measures until now. */
@@ -53,7 +62,7 @@ class Measures(val name:String) {
 	/** Print the average measure to the given output stream. */
 	def printAvg(out:PrintStream):Double = {
 		val avg = average
-		out.println("    %s: ~ %.5f msecs (%d measures)".format(name, avg/100000.0, count))
+		out.println("    %s: ~ %.2f msecs (%d measures) (last %.2f)".format(name, avg/100000.0, count, last/100000.0))
 		avg
 	}
 }

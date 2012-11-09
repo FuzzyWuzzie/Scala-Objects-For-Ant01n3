@@ -47,6 +47,7 @@ object Particle {
 	/** Print the values of all the parameters. */
 	def printConfig() {
 		println("Particle settings:")
+		println("    2D ................ %b".format(is2D))
 		println("    g ................. %.4f".format(g))
 		println("    h ................. %.4f".format(h))
 		println("  Dentity / Pressure:")
@@ -222,9 +223,6 @@ class Particle(val index:Int) extends VESObject with SpatialPoint {
 			neighbors.clear
 		}
 
-		// A "match" would be so much cleaner... But again, after some micro bench,
-		// on an so important method, that is applied to all particles, this is
-		// much slower than "if instanceOf".
 		potential.foreach { j =>
 			if(j.isInstanceOf[Particle]) {
 				if(j ne this) {
@@ -241,6 +239,68 @@ class Particle(val index:Int) extends VESObject with SpatialPoint {
 				
 				collision = o.collision(this)
 			}
+		}		
+	}
+
+	/** Set of neighbors field from the given set of potential neighbors.
+	  * The set of neighbors depends on the viewing distance `Particle.h`. If
+	  * amongst the neighbors there are some non-particles objects, they are
+	  * treated as obstacles and the closest one is stored in the obstacle field. */
+	def computeNeighbors(points:ArrayBuffer[Particle], volumes:HashSet[Obstacle]) {
+		// val v = Vector3()
+
+		// collision = null
+
+		// if(neighbors eq null) {
+		// 	neighbors = new ArrayBuffer[Particle]()
+		// } else {
+		// 	neighbors.clear
+		// }
+
+		// A "match" would be so much cleaner... But again, after some micro bench,
+		// on an so important method, that is applied to all particles, this is
+		// much slower than "if instanceOf".
+		// potential.foreach { j =>
+		// 	if(j.isInstanceOf[Particle]) {
+		// 		if(j ne this) {
+		// 			v.set(x, j.from)
+					
+		// 			val l = v.norm
+				
+		// 			if(l < Particle.h) {
+		// 				neighbors += j.asInstanceOf[Particle]
+		// 			}
+		// 		}
+		// 	} else {
+		// 		val o = j.asInstanceOf[Obstacle]
+				
+		// 		collision = o.collision(this)
+		// 	}
+		// }
+		
+		// if(neighbors eq null) {
+		// 	neighbors = new ArrayBuffer[Particle]()
+		// } else {
+		// 	neighbors.clear
+		// }
+
+		// points.foreach { j =>
+		// 	if(j ne this) {
+		// 		v.set(x, j.from)
+					
+		// 		val l = v.norm
+				
+		// 		if(l < Particle.h) {
+		// 			neighbors += j.asInstanceOf[Particle]
+		// 		}
+		// 	}			
+		// }
+		neighbors = points
+	
+		collision = null
+
+		volumes.foreach { o =>
+			collision = o.collision(this)
 		}
 	}
 }
@@ -265,7 +325,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	
 	/** Allow to quickly retrieve the particles in space without browsing all
 	  * particles (avoids the O(n^2) complexity). */
-	val spaceHash = new SpatialHash[VESObject](Particle.spacialHashBucketSize) 
+	val spaceHash = new SpatialHash[VESObject,Particle,Obstacle](Particle.spacialHashBucketSize) 
 	
 	/** All the springs actually active between two particles. */
 	val springs = new HashSet[Spring]()
@@ -281,61 +341,109 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	
 	protected val timer = new Timer(Console.out)
 	
+	protected var evalHFactor = 1.0
+
 	/** A particle at random in the simulation. */
 	def randomParticle(random:Random):Particle = this(random.nextInt(size))
 	
-	protected def neighborsAround(x:Point3):Set[VESObject] = {
+	protected def neighborsAround(x:Point3, points:ArrayBuffer[Particle], volumes:HashSet[Obstacle]) {
+		points.clear
+		if(volumes ne null) volumes.clear
 		if(Particle.is2D)
-			 spaceHash.neighborsInBoxXY(x, Particle.h*2)
-		else spaceHash.neighborsInBox(x, Particle.h*2)
+			 spaceHash.neighborsInBoxXY(x, Particle.h*evalHFactor, points, volumes)
+		else spaceHash.neighborsInBox(x, Particle.h*evalHFactor, points, volumes)
 	}
 
-	protected def neighborsAround(x:Point2):Set[VESObject] = {
-		 spaceHash.neighborsInBoxXY(x, Particle.h*2)
+	protected def neighborsAround(x:Point2, points:ArrayBuffer[Particle], volumes:HashSet[Obstacle]) {
+		points.clear
+		if(volumes ne null) volumes.clear
+		spaceHash.neighborsInBoxXY(x, Particle.h*evalHFactor, points, volumes)
 	}
 
-	protected def neighborsAround(p:Particle):Set[VESObject] = {
+	protected def neighborsAround(p:Particle, points:ArrayBuffer[Particle], volumes:HashSet[Obstacle]) {
+		points.clear
+		if(volumes ne null) volumes.clear
 		if(Particle.is2D)
-			 spaceHash.neighborsInBoxXY(p, Particle.h*2)
-		else spaceHash.neighborsInBox(p, Particle.h*2)		
+			 spaceHash.neighborsInBoxXY(p, Particle.h*evalHFactor, points, volumes)
+		else spaceHash.neighborsInBox(p, Particle.h*evalHFactor, points, volumes)		
 	}
+
+	protected val pointBuffer = new ArrayBuffer[Particle]()
+
+	protected val volumeBuffer = new HashSet[Obstacle]()
+
+//var evalCount = 0
 
 	/** Evaluate the iso-surface in 3D at the given point `x`. */
 	def evalIsoSurface(x:Point3):Double = {
 		var value = 0.0
-		val neighbors = neighborsAround(x)
-		val R = Vector3()
+		neighborsAround(x, pointBuffer, null)
+		var I = 0
+		val N = pointBuffer.size
+	
+		while(I < N) {
+			val i = pointBuffer(I)
+			val r = x.distance(i.from)
+			val q = r/Particle.h
+			if(q < 1) {
+				val v = (1 - q)
+				value += (v*v)
+			}
+			I += 1
+		}
 		
-		neighbors.foreach { i =>
-			if(! i.isVolume) {
-				R.set(x, i.from)
-				val r = R.norm
-				val q = r/Particle.h
-				if(q < 1) {
-					val v = (1 - q)
+//evalCount += 1
+		math.sqrt(value)
+	}
+
+	/** Evaluate the iso-surface in 2D at the given point `x`. */
+	def evalIsoSurface(x:Point2):Double = {
+		val h2 = Particle.h/2
+		var value = 0.0
+		var xx = x.x
+		var yy = x.y
+		spaceHash.getThingsRadius(x, Particle.h, xx-h2, yy-h2, xx+h2, yy+h2, 
+			{	(l:Double, p:Particle) => {
+					val v = 1 - (l/Particle.h)
 					value += (v*v)
 				}
 			}
-		}
+		)
+
+// 		var value = 0.0
+// 		neighborsAround(x, pointBuffer, null)
+// 		var I = 0
+// 		val N = pointBuffer.size
+	
+// 		while(I < N) {
+// 			val i = pointBuffer(I)
+// 			val r = x.distance(i.from)
+// 			val q = r/Particle.h
+// 			if(q < 1) {
+// 				val v = (1 - q)
+// 				value += (v*v)
+// 			}
+// 			I += 1
+// 		}
 		
-		math.sqrt(value)
+// //evalCount += 1
+ 		math.sqrt(value)		
 	}
+
+	protected val RR = Vector3()
 
 	/** Evaluate the normal to the iso-surface in 3D at point `x`. */
 	def evalIsoNormal(x:Point3):Vector3 = {
 		val n = Vector3(0, 0, 0)
-		val neighbors = neighborsAround(x)
-		val R = Vector3()
+		neighborsAround(x, pointBuffer, null)
 		
-		neighbors.foreach { i =>
-			if(! i.isVolume) {
-				R.set(i.from, x)
-				val l = R.normalize
-				val q = l/Particle.h
-				if(q < 1) {
-					R /= l*l
-					n += R
-				}
+		pointBuffer.foreach { i =>
+			RR.set(i.from, x)
+			val l = RR.normalize
+			val q = l/Particle.h
+			if(q < 1) {
+				RR /= l*l
+				n += RR
 			}
 		}
 		
@@ -347,28 +455,23 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	def evalIsoDensity(x:Point3):Double = { 
 		var rho = 0.0
 		var n = 0
-		val neighbors = neighborsAround(x)
-		val R = Vector3()
+		neighborsAround(x, pointBuffer, null)
 		
-		neighbors.foreach { i =>
-			if(! i.isVolume) {
-				R.set(i.from, x)
-				val l = R.norm
-				val q = l/Particle.h
-				if(q < 1) {
-					rho += (i.asInstanceOf[Particle].rho / (l*l))  
-				}
-				n += 1
+		pointBuffer.foreach { i =>
+//			RRR.set(i.from, x)
+//			val l = RRR.norm
+			val l = x.distance(i.from)
+			val q = l/Particle.h
+			if(q < 1) {
+				rho += (i.asInstanceOf[Particle].rho / (l*l))  
 			}
+			n += 1
 		}
 		
 		rho / n
 	}
 
 	def evalIsoDensity(x:Point2):Double = evalIsoDensity(Point3(x.x, x.y, 0))
-
-	/** Evaluate the iso-surface in 2D at the given point `x`. */
-	def evalIsoSurface(x:Point2):Double = { evalIsoSurface(Point3(x.x, x.y, 0)) }
 
 	/** Add a particle at a given location (`x`,`y`,`z`) with given velocity (`vx`,`vy`,`vz`). */
 	def addParticle(x:Double, y:Double, z:Double, vx:Double, vy:Double, vz:Double):Particle = {
@@ -464,10 +567,28 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 		if(step % 10 == 0) {
 			timer.printAvgs("-- Times --------")
 		}
+		if(step % 1000 == 0) {
+			println("### RESET TIMER ##########################")
+			timer.reset
+		}
+
 	}
 
 	def computeNeighbors() {
-		foreach { p => p.computeNeighbors(neighborsAround(p)) }
+		// foreach { p => p.computeNeighbors(spaceHash.neighborsInBoxXY(p, Particle.h*evalHFactor)) }
+
+		foreach { p =>
+			volumeBuffer.clear
+		//	pointBuffer.clear
+		
+			if(p.neighbors eq null)
+			 	p.neighbors = new ArrayBuffer[Particle]()
+			else
+		     	p.neighbors.clear
+			
+			spaceHash.neighborsInBoxRadiusXY(p, Particle.h*evalHFactor, Particle.h, p.neighbors, volumeBuffer)
+			p.computeNeighbors(p.neighbors, volumeBuffer)
+		}
 	}
 
 	def applyGravity(dt:Double) {

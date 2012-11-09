@@ -309,6 +309,8 @@ class SGLJogl3(val gl:GL3, val glu:GLU) extends SGL {
     def frontFace(i:Int) = glFrontFace(i)
     def lineWidth(width:Float) = glLineWidth(width)
     def lineWidth(width:Double) = glLineWidth(width.toFloat)
+    // def pointSize(size:Float) = glPointSize(size)
+    // def pointSize(size:Double) = glPointSize(size.toFloat)
     def blendEquation(mode:Int) = glBlendEquation(mode)
     def blendFunc(src:Int, dst:Int) = glBlendFunc(src, dst)
     def polygonMode(face:Int, mode:Int) = glPolygonMode(face, mode)
