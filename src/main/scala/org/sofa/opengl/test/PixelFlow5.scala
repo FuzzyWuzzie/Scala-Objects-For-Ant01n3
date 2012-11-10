@@ -44,8 +44,8 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
     
     var cubeShad:ShaderProgram = null
     
-    val projection:Matrix4 = new ArrayMatrix4
-    val modelview = new MatrixStack(new ArrayMatrix4)
+    val projection:Matrix4 = new Matrix4
+    val modelview = new MatrixStack(new Matrix4)
     
     var width = 800.0
     var height = 600.0

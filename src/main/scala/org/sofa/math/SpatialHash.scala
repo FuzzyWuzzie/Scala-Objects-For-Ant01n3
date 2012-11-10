@@ -380,7 +380,6 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		getThings(points, volumes, p.x-s2, p.y - s2, p.x+s2, p.y+s2)
 	}
 
-
 	def neighborsInBoxRadius(thing:T, size:Double, radius:Double, points:ArrayBuffer[P], volumes:HashSet[V]) {
 		val s2 = size/2
 		val p  = thing.from
@@ -394,7 +393,6 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 	
 		getThingsRadius(points, volumes, thing, radius, p.x-s2, p.y - s2, p.x+s2, p.y+s2)
 	}
-
 
 	
 	/** Get the bucket which contains "user" coordinates (`x`,`y`,`z`).

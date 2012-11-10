@@ -2,7 +2,7 @@ package org.sofa.simu.test
 
 import org.sofa.{Timer, Environment}
 import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
-import org.sofa.math.{Rgba, Matrix4, ArrayMatrix4, Vector4, Vector3, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
+import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
 
 import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture}
 import org.sofa.opengl.mesh.{Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet}
@@ -128,8 +128,8 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 
 	var gl:SGL = null
 	
-	val projection:Matrix4 = new ArrayMatrix4
-	val modelview = new MatrixStack(new ArrayMatrix4)
+	val projection:Matrix4 = new Matrix4
+	val modelview = new MatrixStack(new Matrix4)
 	
 	var phongShad:ShaderProgram = null
 	var particlesShad:ShaderProgram = null
@@ -184,6 +184,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	def initializeSurface(sgl:SGL, surface:Surface) {
 		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 		Shader.includePath += "src/com/chouquette/tests"
+		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/"
 			
 		initSimuParams
 		initGL(sgl)
@@ -220,7 +221,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	}
 
 	protected def initTextures() {
-		pointTex = new Texture(gl, "/Users/antoine/Documents/Programs/SOFA/Point.png", true)
+		pointTex = new Texture(gl, "Point.png", true)
 	    pointTex.minMagFilter(gl.LINEAR, gl.LINEAR)
 	    pointTex.wrap(gl.REPEAT)
 	}
@@ -450,14 +451,20 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 			particlesQuadShad.use
 			pointTex.bindTo(gl.TEXTURE0)
 	    	particlesQuadShad.uniform("texColor", 0)	// Texture Unit 0
-			simu.foreach { particle => 
-				camera.pushpop {
-					camera.translateModel(particle.x.x, particle.x.y, particle.x.z)
- 					camera.rotateModel(math.Pi/2, 1, 0, 0)
-					camera.setUniformMVP(particlesQuadShad)
-					quad.draw(quadMesh.drawAs)
-				}
+timer.measure("draw quads") {
+			var I = 0
+			val N = simu.size
+			while(I < N) {
+				val particle = simu(I)
+				camera.push
+				camera.translateModel(particle.x.x, particle.x.y, particle.x.z)
+ 				camera.rotateModel(math.Pi/2, 1, 0, 0)
+				camera.setUniformMVP(particlesQuadShad)
+				quad.draw(quadMesh.drawAs)
+				camera.pop
+				I += 1
 			}
+}
 			gl.enable(gl.DEPTH_TEST)
 			gl.disable(gl.BLEND)
 		}

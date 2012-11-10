@@ -156,9 +156,9 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
             20, 21, 22,
             20, 22, 23)
     
-    val projection:Matrix4 = new NioBufferMatrix4
+    val projection:Matrix4 = new Matrix4 // new NioBufferMatrix4
     
-    val modelview = new MatrixStack(new NioBufferMatrix4)
+    val modelview = new MatrixStack(new Matrix4) //new NioBufferMatrix4)
     
     def test() {
 //        val prof = GLProfile.get(GLProfile.GL3)
@@ -201,8 +201,8 @@ class PixelFlow3 extends WindowAdapter with GLEventListener {
         gl.frontFace(gl.CCW)
     
         cubeShad = new ShaderProgram(gl, "gouraud shader",
-                new VertexShader(gl, "gouraud", "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3VertexShader.glsl"),
-                new FragmentShader(gl, "gouraud", "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
+                new VertexShader(gl, "gouraud", "src/main/scala/org/sofa/opengl/shaders/es2/pixelFlow3VertexShader.glsl"),
+                new FragmentShader(gl, "gouraud", "src/main/scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
 //                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3VertexShader.glsl"),
 //                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3FragmentShader.glsl"))
 

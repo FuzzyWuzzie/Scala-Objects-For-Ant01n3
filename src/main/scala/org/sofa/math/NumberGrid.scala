@@ -2,6 +2,7 @@ package org.sofa.math
 
 import org.sofa.nio._
 import scala.math._
+import scala.compat.Platform
 
 /** A 2D grid of numbers.
   * 
@@ -24,14 +25,14 @@ import scala.math._
 trait NumberGrid extends IndexedSeq[Double] {
 // Attribute
 	
-	/** Type of the matrix storage : something that can be queried and updated like an array. */
-	type ArrayLike <: { def apply(i:Int):Double; def update(i:Int, f:Double); def length:Int }
-	
 	/** The return type of +, -, * and / operations for example. */
 	type ReturnType <: NumberGrid
 	
 	/** The real storage. */
-	val data:ArrayLike
+	protected[math] val data:Array[Double]
+
+	/** A reference to a temporary array, to avoid reallocate it constantly. */
+    protected var tmpFltArr:Array[Float] = null
 
 // Access
 	
@@ -67,7 +68,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	
 	/** New number grid of the same size as this. */
 	protected def newInstance(width:Int, height:Int):ReturnType
-	
+
 	/** New copy of this. */
 	def newClone:ReturnType = {
 	    val result = newInstance(width, height)
@@ -81,16 +82,7 @@ trait NumberGrid extends IndexedSeq[Double] {
       *
       * If the sequence is not backed by a double array, a conversion occurs.
       */
-    def toDoubleArray:Array[Double] = {
-        val n     = data.length
-        var i     = 0
-        val array = new Array[Double](n)
-        while(i<n) {
-            array(i) = data(i).asInstanceOf[Double]
-            i += 1
-        }
-        array
-    }
+    def toDoubleArray:Array[Double] = data
     
     /** This sequence converted of numbers as an array of floats.
       *
@@ -99,12 +91,16 @@ trait NumberGrid extends IndexedSeq[Double] {
     def toFloatArray:Array[Float] = {
         val n     = data.length
         var i     = 0
-        val array = new Array[Float](n)
-        while(i<n) {
-            array(i) = data(i).asInstanceOf[Float]
+
+        if((tmpFltArr eq null) || tmpFltArr.length < n)
+        	tmpFltArr = new Array[Float](n)
+
+        while(i < n) {
+            tmpFltArr(i) = data(i).toFloat
             i += 1
         }
-        array
+
+        tmpFltArr
     }
     
     /** This sequence converted of numbers as a NIO buffer of doubles.
@@ -115,7 +111,7 @@ trait NumberGrid extends IndexedSeq[Double] {
         val n   = data.length
         var i   = 0
         val buf = new DoubleBuffer(n)
-        while(i<n) {
+        while(i < n) {
             buf(i) = data(i).asInstanceOf[Double]
             i += 1
         }
@@ -130,7 +126,7 @@ trait NumberGrid extends IndexedSeq[Double] {
         val n   = data.length
         var i   = 0
         val buf = new FloatBuffer(n)
-        while(i<n) {
+        while(i < n) {
             buf(i) = data(i).asInstanceOf[Float]
             i += 1
         }
@@ -153,32 +149,28 @@ trait NumberGrid extends IndexedSeq[Double] {
       * only the 3x3 upper part of the 4x4 grid will be changed.0
       */
     def copy(other:NumberGrid) {
-        var w = scala.math.min(width, other.width)
-        var h = scala.math.min(height, other.height)
-        
-        for(row <- 0 until h) {
-            for(col <- 0 until w) {
-                this(row,col)= other(row, col)
-            }
-        }
+    	Platform.arraycopy(other.data, 0, data, 0, math.min(data.length, other.data.length))
     }
     
 	/** Copy `value` in each component. */
 	def fill(value:Double) {
-	    val n = size
-	    var i = 0
-	    while(i<n) {
-	    	data(i) = value
-	    	i += 1
-	    }
+	   	val n = size
+	   	var i = 0
+	   	while(i < n) {
+	   		data(i) = value
+	   		i += 1
+	   	}
 	}
 
 	def setIdentity() {
 	    fill(0)
-	    var n = scala.math.min(width, height)
 	    
-	    for(i <- 0 until n) {
+	    val n = math.min(width, height)
+		var i = 0	    
+
+		while(i < n) {
 	    	this(i, i) = 1
+	    	i += 1
 	    }
 	}
 
@@ -187,14 +179,26 @@ trait NumberGrid extends IndexedSeq[Double] {
 	  * The modification is made in place.
 	  */
 	def addBy(other:NumberGrid) {
-	    var w = scala.math.min(width, other.width)
-	    var h = scala.math.min(height, other.height)
-	    
-	    for(row <- 0 until h) {
-	        for(col <- 0 until w) {
-	            this(row, col) += other(row, col)
-	        }
-	    }
+	    var w = math.min(width, other.width)
+	    var h = math.min(height, other.height)
+	   	var x = 0
+	   	var y = 0
+
+	   	while(y < h) {
+	   		x = 0
+	   		var Y = y*w;
+	   		while(x < w) {
+	   			data(Y+x) += other.data(Y+x)
+	   			x += 1
+	   		}
+	   		y += 1
+	   	}
+
+	    // for(row <- 0 until h) {
+	    //     for(col <- 0 until w) {
+	    //         this(row, col) += other(row, col)
+	    //     }
+	    // }
 	}
 	
 	/** Add each element of `other` to the corresponding element of this. 
@@ -224,7 +228,8 @@ trait NumberGrid extends IndexedSeq[Double] {
 	def subBy(other:NumberGrid) {
 	    var w = scala.math.min(width, other.width)
 	    var h = scala.math.min(height, other.height)
-	    
+	   
+// TODO 
 	    for(row <- 0 until h) {
 	        for(col <- 0 until w) {
 	            this(row, col) -= other(row, col)
@@ -265,7 +270,8 @@ trait NumberGrid extends IndexedSeq[Double] {
 	    val w      = other.width
 	    val h      = height
 	    val result = newInstance(w, h)
-	    
+	   
+// TODO 
 	    for(row <- 0 until h) {
 	        for(col <- 0 until w) {
 	            var value = 0.0
@@ -287,6 +293,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	    checkSizes(other)
 	    val result = other.newInstance.asInstanceOf[T]
 
+// TODO
 	    for(row <- 0 until height) {
 	        var res = 0.0
 	        for(col <- 0 until width) {
@@ -336,6 +343,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	  * must be (this.width-1 x this.height-1).
 	  */
 	def subMatrix(result:NumberGrid, row:Int, col:Int) {
+// TODO
 	    if(result.width == (width-1) && result.height == (height-1) ) {
 	    	for(c <- 0 until width) {
 	    		for(r <- 0 until height) {
@@ -378,6 +386,14 @@ trait NumberGrid3 extends NumberGrid {
     def row0_=(abc:(Double, Double, Double)) = { this(0,0)=abc._1; this(0,1)=abc._2; this(0,2)=abc._3 }
     def row1_=(abc:(Double, Double, Double)) = { this(1,0)=abc._1; this(1,1)=abc._2; this(1,2)=abc._3 }
     def row2_=(abc:(Double, Double, Double)) = { this(2,0)=abc._1; this(2,1)=abc._2; this(2,2)=abc._3 }
+
+	override def apply(row:Int, col:Int):Double = data(row+col*3)
+
+	override def setIdentity() {
+		data(0) = 1;  data(3) = 0;  data(6) = 0
+		data(1) = 0;  data(4) = 1;  data(7) = 0
+		data(2) = 0;  data(5) = 0;  data(8) = 1
+	}
     
     /** Multiply this by `rhs` storing the result in this, using usual matrix multiplication.
       * 
@@ -472,6 +488,10 @@ trait NumberGrid3 extends NumberGrid {
   *
   */
 trait NumberGrid4 extends NumberGrid {
+
+	/** Reference to a temporary matrix used internally, to avoid reallocating it constantly. */
+	protected var tmpM4:NumberGrid4 = null
+
     def width = 4
     def height = 4
 
@@ -487,6 +507,14 @@ trait NumberGrid4 extends NumberGrid {
     def row2_=(abcd:(Double, Double, Double, Double)) = { this(2,0)=abcd._1; this(2,1)=abcd._2; this(2,2)=abcd._3; this(2,3)=abcd._4 }
     def row3_=(abcd:(Double, Double, Double, Double)) = { this(3,0)=abcd._1; this(3,1)=abcd._2; this(3,2)=abcd._3; this(3,3)=abcd._4 }
 
+	override def apply(row:Int, col:Int):Double = data(row+col*4)
+
+	override def setIdentity() {
+		data(0) = 1;  data(4) = 0;  data(8)  = 0;  data(12) = 0
+		data(1) = 0;  data(5) = 1;  data(9)  = 0;  data(13) = 0
+		data(2) = 0;  data(6) = 0;  data(10) = 1;  data(14) = 0
+		data(3) = 0;  data(7) = 0;  data(11) = 0;  data(15) = 1
+	}
     
     /** Multiply this by `rhs` storing the result in this, using usual matrix multiplication.
       * 
@@ -506,18 +534,18 @@ trait NumberGrid4 extends NumberGrid {
 			//
 			// Row i of this.
 			//
-			a = this(i,0)
-			b = this(i,1)
-			c = this(i,2)
-			d = this(i,3)
+			a = data(i+0)
+			b = data(i+4)
+			c = data(i+8)
+			d = data(i+12)
 
 			//
 			// With each column of rhs.
 			//
-			this(i,0) = (a * rhs.data( 0)) + (b * rhs.data( 1)) + (c * rhs.data( 2)) + ( d * rhs.data( 3))
-			this(i,1) = (a * rhs.data( 4)) + (b * rhs.data( 5)) + (c * rhs.data( 6)) + ( d * rhs.data( 7))
-			this(i,2) = (a * rhs.data( 8)) + (b * rhs.data( 9)) + (c * rhs.data(10)) + ( d * rhs.data(11))
-			this(i,3) = (a * rhs.data(12)) + (b * rhs.data(13)) + (c * rhs.data(14)) + ( d * rhs.data(15))
+			data(i+0)  = (a * rhs.data( 0)) + (b * rhs.data( 1)) + (c * rhs.data( 2)) + ( d * rhs.data( 3))
+			data(i+4)  = (a * rhs.data( 4)) + (b * rhs.data( 5)) + (c * rhs.data( 6)) + ( d * rhs.data( 7))
+			data(i+8)  = (a * rhs.data( 8)) + (b * rhs.data( 9)) + (c * rhs.data(10)) + ( d * rhs.data(11))
+			data(i+12) = (a * rhs.data(12)) + (b * rhs.data(13)) + (c * rhs.data(14)) + ( d * rhs.data(15))
 				
 			i += 1
 		}
@@ -647,9 +675,10 @@ trait NumberGrid4 extends NumberGrid {
 	  * The other matrix coefficients are not changed.
 	  */
 	def setRotation(X:NumberSeq3, Y:NumberSeq3, Z:NumberSeq3) {
-	    data(0) = X.x; data(4) = Y.x; data(8) = Z.x
-	    data(1) = X.y; data(5) = Y.y; data(9) = Z.y
-	    data(2) = X.z; data(6) = Y.z; data(10) = Z.z
+	    data(0) = X.x; data(4) = Y.x; data(8)  = Z.x;  //data(12) = 0
+	    data(1) = X.y; data(5) = Y.y; data(9)  = Z.y;  //data(13) = 0
+	    data(2) = X.z; data(6) = Y.z; data(10) = Z.z;  //data(14) = 0
+	    //data(3) = 0;   data(7) = 0;   data(11) = 0;    data(15) = 1
 	}
 	
 	/** Fill only the upper left 3x3 matrix. */
@@ -657,9 +686,10 @@ trait NumberGrid4 extends NumberGrid {
 		r01:Double, r02:Double, r03:Double,
 		r11:Double, r12:Double, r13:Double,
 		r21:Double, r22:Double, r23:Double ) = {
-		data(0) = r01;		data(4) = r02;		data(8)  = r03
-		data(1) = r11;		data(5) = r12;		data(9)  = r13
-		data(2) = r21;		data(6) = r22;		data(10) = r23
+		data(0) = r01;		data(4) = r02;		data(8)  = r03;		//data(12) = 0
+		data(1) = r11;		data(5) = r12;		data(9)  = r13;		//data(13) = 0
+		data(2) = r21;		data(6) = r22;		data(10) = r23;		//data(14) = 0
+		//data(3) = 0;        data(7) = 0;        data(11) = 0;		data(15) = 1
 	}
 
 	/** Inverse each of the translation coefficients. */
@@ -735,10 +765,10 @@ trait NumberGrid4 extends NumberGrid {
 //		setIdentity
 //		setTranslation(tx, ty, tz)
 //		multBy(T)
-		val T = newInstance(4, 4).asInstanceOf[NumberGrid4]
-		T.setIdentity
-		T.setTranslation(tx, ty, tz)
-		multBy(T)
+		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
+		tmpM4.setIdentity
+		tmpM4.setTranslation(tx, ty, tz)
+		multBy(tmpM4)
 	}
 
 	/** Multiply this matrix by a scale matrix defined by the given
@@ -759,10 +789,10 @@ trait NumberGrid4 extends NumberGrid {
 //		setIdentity
 //		setScale(sx, sy, sz)
 //		multBy(S)
-		val S = newInstance(4, 4).asInstanceOf[NumberGrid4]
-		S.setIdentity
-		S.setScale(sx, sy, sz)
-		multBy(S)
+		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
+		tmpM4.setIdentity
+		tmpM4.setScale(sx, sy, sz)
+		multBy(tmpM4)
 	}
 	
 	/** Mutliply this matris by a rotation matrix defined by the given
@@ -783,10 +813,9 @@ trait NumberGrid4 extends NumberGrid {
 //		setIdentity
 //		setRotation(angle, u, v, w)
 //		multBy(R)
-		val R = newInstance(4, 4).asInstanceOf[NumberGrid4]
-		R.setIdentity
-		R.setRotation(angle, u, v, w)
-		multBy(R)
+		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
+		tmpM4.setRotation(angle, u, v, w)	// This fills the matrix, no need for setIdentity
+		multBy(tmpM4)
 	}
 	
 	/**
@@ -977,6 +1006,7 @@ trait NumberGrid4 extends NumberGrid {
 	  * The submatrix is copied in the `result` parameter.
 	  */
 	def subMatrix(result:NumberGrid3, row:Int, col:Int) {
+// TODO
 	    for(c <- 0 until 3) {
 	        for(r <- 0 until 3) {
 	            result(r, c) = this(
@@ -992,7 +1022,8 @@ trait NumberGrid4 extends NumberGrid {
 	    var result = 0.0
 	    var i = 1.0
 	    val msub3 = Matrix3()
-	    
+	   
+// TODO 
 	    for(n <- 0 until 4) {
 	        subMatrix(msub3, 0, n)
 	        result += this(0, n) * msub3.det * i
@@ -1013,7 +1044,8 @@ trait NumberGrid4 extends NumberGrid {
 	    if(abs(d) > 0.0005) {
 	        val mtmp = Matrix3()
 	        var sign = 0.0
-	        
+	   
+// TODO     
 	        for(c <- 0 until 4) {
 	            for(r <- 0 until 4) {
 	                sign = 1 - ((c + r) % 2) * 2

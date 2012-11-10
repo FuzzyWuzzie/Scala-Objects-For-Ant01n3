@@ -140,9 +140,9 @@ class TestMath {
         assertEquals(0, c(1,0), 0);  assertEquals(1, c(1,1), 0);  assertEquals(0, c(1,2), 0)
         assertEquals(0, c(2,0), 0);  assertEquals(0, c(2,1), 0);  assertEquals(1, c(2,2), 0)
 
-        a = ArrayMatrix3((1, 2, 3),
-                         (4, 5, 6),
-                         (7, 8, 9))
+        a = Matrix3((1, 2, 3),
+                    (4, 5, 6),
+                    (7, 8, 9))
 
         b.row0 = (9, 8, 7)
         b.row1 = (6, 5, 4)
@@ -156,14 +156,14 @@ class TestMath {
         
         // 4 x 4 matrices
         
-        var g = ArrayMatrix4(( 1,  2,  3,  4),
-                             ( 5,  6,  7,  8),
-                             ( 9, 10, 11, 12),
-                             (13, 14, 15, 16)) 
-        var h = ArrayMatrix4((16, 15, 14, 13),
-                			 (12, 11, 10,  9),
-                			 ( 8,  7,  6,  5),
-                			 ( 4,  3,  2,  1))
+        var g = Matrix4(( 1,  2,  3,  4),
+                        ( 5,  6,  7,  8),
+                        ( 9, 10, 11, 12),
+                        (13, 14, 15, 16)) 
+        var h = Matrix4((16, 15, 14, 13),
+                		(12, 11, 10,  9),
+                		( 8,  7,  6,  5),
+                		( 4,  3,  2,  1))
         var i = g * h
        
         assertEquals(( 80,  70,  60,  50), i.row0);
@@ -174,8 +174,8 @@ class TestMath {
         
         // Any size matrices
         
-        var d = ArrayMatrix(List(1., 2., 3.), List(4., 5., 6.))
-        var e = ArrayMatrix(List(1., 2.), List(3., 4.), List(5., 6.))
+        var d = Matrix(List(1., 2., 3.), List(4., 5., 6.))
+        var e = Matrix(List(1., 2.), List(3., 4.), List(5., 6.))
 
         
         assertEquals(3, d.width, 0)
@@ -236,11 +236,11 @@ class TestMath {
     
     @Test
     def testVectorMatrix() {
-        val M1 = ArrayMatrix(List( 1.,  2.,  3.,  4.,  5.),
-                             List( 6.,  7.,  8.,  9., 10.),
-                             List(11., 12., 13., 14., 15.),
-                             List(16., 17., 18., 19., 20.),
-                             List(21., 22., 23., 24., 25.))
+        val M1 = Matrix(List( 1.,  2.,  3.,  4.,  5.),
+                        List( 6.,  7.,  8.,  9., 10.),
+                        List(11., 12., 13., 14., 15.),
+                        List(16., 17., 18., 19., 20.),
+                        List(21., 22., 23., 24., 25.))
         val V1 = Vector(1., 2., 3., 4., 5.)
         val R1 = M1 * V1
         
@@ -250,7 +250,7 @@ class TestMath {
         assertEquals(280, R1(3), 0)
         assertEquals(355, R1(4), 0)
         
-        val M2 = ArrayMatrix4((1, 2, 3, 4), (5, 6, 7, 8), (9, 10, 11, 12), (13, 14, 15, 16))
+        val M2 = Matrix4((1, 2, 3, 4), (5, 6, 7, 8), (9, 10, 11, 12), (13, 14, 15, 16))
         val V2 = Vector4(1, 2, 3, 4)
         val R2 = M2 * V2
         

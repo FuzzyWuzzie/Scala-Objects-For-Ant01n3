@@ -63,9 +63,9 @@ class PixelFlow2 extends WindowAdapter with GLEventListener {
             4, 5, 0,
             5, 1, 0)
     
-    val projection:Matrix4 = new NioBufferMatrix4
+    val projection:Matrix4 = new Matrix4 //new NioBufferMatrix4
     
-    val modelview = new MatrixStack(new NioBufferMatrix4)
+    val modelview = new MatrixStack(new Matrix4) //new NioBufferMatrix4)
     
 // As comments, under are the versions for OpenGL 3, OpenGL ES 2 is very close.
     

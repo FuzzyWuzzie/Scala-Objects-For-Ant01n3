@@ -261,10 +261,10 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
         checkErrors
     }
 
-    def uniformMatrix(variable:String, matrix:Matrix4#ReturnType) {
-        uniformMatrix(variable, matrix.toFloatBuffer)	// Matrices in shaders are made of floats
-        checkErrors										// No way to use a double !!
-    }
+    // def uniformMatrix(variable:String, matrix:Matrix4#ReturnType) {
+    //     uniformMatrix(variable, matrix.toFloatBuffer)	// Matrices in shaders are made of floats
+    //     checkErrors										// No way to use a double !!
+    // }
 
     def uniformMatrix(variable:String, matrix:Matrix4) {
         uniformMatrix(variable, matrix.toFloatBuffer)	// Matrices in shaders are made of floats

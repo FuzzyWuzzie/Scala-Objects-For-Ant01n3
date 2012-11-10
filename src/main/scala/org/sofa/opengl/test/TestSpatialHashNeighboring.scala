@@ -5,7 +5,6 @@ import org.sofa.opengl.surface.SurfaceRenderer
 import org.sofa.opengl.SGL
 import org.sofa.opengl.surface.Surface
 import org.sofa.math.Matrix4
-import org.sofa.math.ArrayMatrix4
 import org.sofa.opengl.MatrixStack
 import org.sofa.opengl.ShaderProgram
 import org.sofa.opengl.mesh.Plane
@@ -72,8 +71,8 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 	var gl:SGL = null
 	var surface:Surface = null
 	
-	val projection:Matrix4 = new ArrayMatrix4
-	val modelview = new MatrixStack(new ArrayMatrix4)
+	val projection:Matrix4 = new Matrix4
+	val modelview = new MatrixStack(new Matrix4)
 	
 	var phongShad:ShaderProgram = null
 	var particlesShad:ShaderProgram = null

@@ -22,16 +22,16 @@ class Bone(val id:Int) {
 // Attributes
     
     /** The matrix that transforms the bone at its original location in the untransformed model mesh. */
-	val orientation:Matrix4 = ArrayMatrix4()
+	val orientation:Matrix4 = Matrix4()
 	
 	/** The matrix that animates the bone. */
-	val animation:Matrix4 = ArrayMatrix4()
+	val animation:Matrix4 = Matrix4()
 	
 	/** Inverse of [[orientation]] matrix. */
-	val inverseOrientation:Matrix4 = ArrayMatrix4()
+	val inverseOrientation:Matrix4 = Matrix4()
 	
 	/** Final matrix computed for the vertices attached to this bone. */
-	val TX:Matrix4 = ArrayMatrix4()
+	val TX:Matrix4 = Matrix4()
 	
 	/** Bone color. */
 	var color = new Rgba(1, 1, 1, 1)
@@ -103,8 +103,8 @@ class Bone(val id:Int) {
 	  *      uniform mat4 MVP;   // Projection-Model-View matrix.
 	  */
 	def drawModel(gl:SGL, camera:Camera, model:Mesh, modelInstance:VertexArray, shader:ShaderProgram) {
-		val orientation = ArrayMatrix4(); orientation.setIdentity
-	    val forward = ArrayMatrix4(); forward.setIdentity
+		val orientation = Matrix4(); orientation.setIdentity
+	    val forward = Matrix4(); forward.setIdentity
 	    
 	    recursiveComputeMatrices(orientation, forward)
 	    recursiveUniformMatrices(shader, camera)
@@ -162,7 +162,7 @@ class Bone(val id:Int) {
 	    }
 	}
 	
-	protected def recursiveComputeMatrices(orientation:ArrayMatrix4, forward:ArrayMatrix4) {
+	protected def recursiveComputeMatrices(orientation:Matrix4, forward:Matrix4) {
 	    // Concatenate the parents bone orientation with this bone orientation.
 	    val localOrientation = orientation * this.orientation
 	    // Save the inverse.

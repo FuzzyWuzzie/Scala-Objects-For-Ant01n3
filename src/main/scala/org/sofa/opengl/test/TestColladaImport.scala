@@ -7,7 +7,6 @@ import org.sofa.opengl.mesh.EditableMesh
 import org.sofa.opengl.ShaderProgram
 import org.sofa.math.Matrix4
 import org.sofa.opengl.MatrixStack
-import org.sofa.math.ArrayMatrix4
 import javax.media.opengl.GLAutoDrawable
 import javax.media.opengl.GLProfile
 import javax.media.opengl.GLCapabilities
@@ -35,8 +34,8 @@ class TestColladaImport extends SurfaceRenderer {
 	var gl:SGL = null
 	var surface:Surface = null
 	
-	val projection:Matrix4 = new ArrayMatrix4
-	val modelview = new MatrixStack(new ArrayMatrix4)
+	val projection:Matrix4 = new Matrix4
+	val modelview = new MatrixStack(new Matrix4)
 	
 	var planeShad:ShaderProgram = null
 	var thingShad:ShaderProgram = null

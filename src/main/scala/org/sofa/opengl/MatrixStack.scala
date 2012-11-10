@@ -1,7 +1,5 @@
 package org.sofa.opengl
 
-import scala.collection.mutable.ArrayStack
-
 import org.sofa.math._
 
 object MatrixStack {
@@ -24,32 +22,44 @@ class MatrixStack[M<:Matrix4](initialMatrix:M) {
     
 // Attributes
     
-    /** The top matrix. */
-    protected var current = initialMatrix
-    
     /** The stack of matrices, excepted the top. */
-    protected var stack = new ArrayStack[M]
+    protected var stack = new scala.collection.mutable.ArrayBuffer[M]()
+
+    /** Position the top matrix. */
+    protected var end = 0
+
+    stack += initialMatrix
     
 // Access
     
     /** Access to the top-most matrix. */
-    def top:M = current
+    def top:M = stack(end)
     
     /** Number of matrices in the stack. */
-    def size = stack.size + 1
+    def size = end + 1
     
 // Commands
     
     /** Make a copy of the top matrix and push it on the top of the stack. */
     def push() {
-        stack.push(current)
-        current = current.newClone.asInstanceOf[M]
+        //stack.push(current)
+        //current = current.newClone.asInstanceOf[M]
+        if(stack.size == (end+1)) {
+            val m  = stack(end).newClone.asInstanceOf[M]
+            stack += m
+            end   += 1
+        } else {
+            end += 1
+            stack(end).copy(stack(end-1))
+        }
     }
     
     /** Delete the top matrix and install the previous one on the top of the stack. */
     def pop() {
         if(stack.size>0) {
-        	current = stack.pop
+        	end -= 1
+        } else {
+            throw new RuntimeException("cannot pop more elements of the matrix stack, at least one element must remain")
         }
     }
     
@@ -65,48 +75,48 @@ class MatrixStack[M<:Matrix4](initialMatrix:M) {
 // Commands -- Transforms
     
     /** Make the top matrix an identity matrix. */
-    def setIdentity() = current.setIdentity
+    def setIdentity() = stack(end).setIdentity
     
     /** Multiply the top matrix by a translation matrix whose coefficient are given
      *  as (`dx`, `dy`, `dz`). */
-    def translate(dx:Double, dy:Double, dz:Double) = current.translate(dx, dy, dz)
+    def translate(dx:Double, dy:Double, dz:Double) = stack(end).translate(dx, dy, dz)
     
-    def translate(of:NumberSeq3) = current.translate(of)
+    def translate(of:NumberSeq3) = stack(end).translate(of)
     
     /** Multiply the top matrix by a rotation matrix defining a rotation of `angle` degrees
      * around axis (`x`, `y`, `z`). */
-    def rotate(angle:Double, x:Double, y:Double, z:Double) = current.rotate(angle, x, y, z)
+    def rotate(angle:Double, x:Double, y:Double, z:Double) = stack(end).rotate(angle, x, y, z)
     
-    def rotate(angle:Double, axis:NumberSeq3) = current.rotate(angle, axis)
+    def rotate(angle:Double, axis:NumberSeq3) = stack(end).rotate(angle, axis)
     
     /** Multiply the top matrix by a scaling matrix with factors (`sx`, `sy`, `sz`). */
-    def scale(sx:Double, sy:Double, sz:Double) = current.scale(sx, sy, sz)
+    def scale(sx:Double, sy:Double, sz:Double) = stack(end).scale(sx, sy, sz)
     
-    def scale(by:Vector3) = current.scale(by)
+    def scale(by:Vector3) = stack(end).scale(by)
     
     /** Replace the top matrix by new transformations matrix that mimics the positioning of
      * a camera whose position would be (`eyex`, `eyey`, `eyez`), that would point at a center
      * located at (`ctrx`, `ctry`, `ctrz`). The camera could bank in one or another direction,
      * its up vector (a vector perpendicular to its horizon) being (`upvx`, `upvy`, `upvz`). */
     def setLookAt(eyex:Double, eyey:Double, eyez:Double, ctrx:Double, ctry:Double, ctrz:Double, upvx:Double, upvy:Double, upvz:Double) =
-    	current.setLookAt(eyex, eyey, eyez, ctrx, ctry, ctrz, upvx, upvy, upvz, true)
+    	stack(end).setLookAt(eyex, eyey, eyez, ctrx, ctry, ctrz, upvx, upvy, upvz, true)
     
     /** Replace the top matrix by new transformations matrix that mimics the positioning of
      * a camera whose position would be `eye`, that would point at a center
      * located at `ctr`. The camera could bank in one or another direction,
      * its up vector (a vector perpendicular to its horizon) being `upv`. */
-    def setLookAt(eye:NumberSeq3, ctr:NumberSeq3, upv:NumberSeq3) = current.setLookAt(eye, ctr, upv, true)
+    def setLookAt(eye:NumberSeq3, ctr:NumberSeq3, upv:NumberSeq3) = stack(end).setLookAt(eye, ctr, upv, true)
 
     /** Multiply the top matrix by new transformations matrix that mimics the positioning of
      * a camera whose position would be (`eyex`, `eyey`, `eyez`), that would point at a center
      * located at (`ctrx`, `ctry`, `ctrz`). The camera could bank in one or another direction,
      * its up vector (a vector perpendicular to its horizon) being (`upvx`, `upvy`, `upvz`). */
     def lookAt(eyex:Double, eyey:Double, eyez:Double, ctrx:Double, ctry:Double, ctrz:Double, upvx:Double, upvy:Double, upvz:Double) =
-    	current.lookAt(eyex, eyey, eyez, ctrx, ctry, ctrz, upvx, upvy, upvz, true)
+    	stack(end).lookAt(eyex, eyey, eyez, ctrx, ctry, ctrz, upvx, upvy, upvz, true)
     
     /** Multiply the top matrix by new transformations matrix that mimics the positioning of
      * a camera whose position would be `eye`, that would point at a center
      * located at `ctr`. The camera could bank in one or another direction,
      * its up vector (a vector perpendicular to its horizon) being `upv`. */
-    def lookAt(eye:NumberSeq3, ctr:NumberSeq3, upv:NumberSeq3) = current.lookAt(eye, ctr, upv, true)
+    def lookAt(eye:NumberSeq3, ctr:NumberSeq3, upv:NumberSeq3) = stack(end).lookAt(eye, ctr, upv, true)
 }
