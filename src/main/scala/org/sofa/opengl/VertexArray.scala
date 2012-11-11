@@ -200,10 +200,14 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
 
     protected def bind() {
         if(gl.isES) {
+            // No vertex arrays in ES2, a shame ! :-)
             var i = 0
-            buffers.foreach { item =>
-                item._2.bind
-                item._2.vertexAttrib(item._1, true)
+            val n = buffers.length
+            while(i < n) {
+                val pos = buffers(i)._1
+                val buf = buffers(i)._2
+                buf.bind
+                buf.vertexAttrib(pos, true)
                 i += 1
             }
             if(elements ne null) {

@@ -160,7 +160,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var isoContourMesh = new ColoredLineSet(maxDynLines)
 	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
 	var springsMesh = new ColoredLineSet(maxSprings)
-	var quadMesh = new Plane(2, 2, 1f, 1f)
+	var quadMesh = new Plane(2, 2, 1f, 1f, true)
 
 	val random = new scala.util.Random()
 	var step = 0
@@ -345,8 +345,8 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		drawIsoSquares
 		drawSprings
 		drawParticles
-		drawParticlesQuads
 		drawIsoPlane
+		drawParticlesQuads
 		drawIsoContour
 		
 		surface.swapBuffers
@@ -458,7 +458,7 @@ timer.measure("draw quads") {
 				val particle = simu(I)
 				camera.push
 				camera.translateModel(particle.x.x, particle.x.y, particle.x.z)
- 				camera.rotateModel(math.Pi/2, 1, 0, 0)
+// 				camera.rotateModel(math.Pi/2, 1, 0, 0)
 				camera.setUniformMVP(particlesQuadShad)
 				quad.draw(quadMesh.drawAs)
 				camera.pop

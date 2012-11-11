@@ -267,12 +267,14 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     // }
 
     def uniformMatrix(variable:String, matrix:Matrix4) {
-        uniformMatrix(variable, matrix.toFloatBuffer)	// Matrices in shaders are made of floats
+        uniformMatrix(variable, matrix.toFloatArray)    // It seems that using regular arrays is faster !
+//        uniformMatrix(variable, matrix.toFloatBuffer)	// Matrices in shaders are made of floats
         checkErrors										// No way to use a double !!
     }
 
     def uniformMatrix(variable:String, matrix:Matrix3) {
-        uniformMatrix(variable, matrix.toFloatBuffer)
+        uniformMatrix(variable, matrix.toFloatArray)
+//        uniformMatrix(variable, matrix.toFloatBuffer)
         checkErrors
     }
 
@@ -282,6 +284,16 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
         if(matrix.size == 9)
             uniformMatrix3(loc, 1, false, matrix)
         else if(matrix.size == 16)
+            uniformMatrix4(loc, 1, false, matrix)
+        else throw new RuntimeException("matrix must be 9 (3x3) or 16 (4x4) floats");
+    }
+
+    def uniformMatrix(variable:String, matrix:Array[Float]) {
+        checkId
+        val loc = getUniformLocation(variable)
+        if(matrix.length == 9)
+            uniformMatrix3(loc, 1, false, matrix)
+        else if(matrix.length == 16)
             uniformMatrix4(loc, 1, false, matrix)
         else throw new RuntimeException("matrix must be 9 (3x3) or 16 (4x4) floats");
     }

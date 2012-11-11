@@ -151,6 +151,8 @@ abstract class SGL {
     def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer)
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer)
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer)
+    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:Array[Float])
+    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:Array[Float])
     def uniform(loc:Int, v:Array[Float])
     def uniform(loc:Int, v:Array[Double])
     def uniform(loc:Int, v:FloatBuffer)

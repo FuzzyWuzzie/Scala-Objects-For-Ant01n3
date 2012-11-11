@@ -34,6 +34,8 @@ trait NumberGrid extends IndexedSeq[Double] {
 	/** A reference to a temporary array, to avoid reallocate it constantly. */
     protected var tmpFltArr:Array[Float] = null
 
+    protected var tmpFltBuf:FloatBuffer = null
+
 // Access
 	
 	/** Number of numbers in the grid. */
@@ -108,13 +110,7 @@ trait NumberGrid extends IndexedSeq[Double] {
       * If the sequence is not backed by a NIO buffer of doubles, a conversion occurs.
       */
     def toDoubleBuffer:DoubleBuffer = {
-        val n   = data.length
-        var i   = 0
-        val buf = new DoubleBuffer(n)
-        while(i < n) {
-            buf(i) = data(i).asInstanceOf[Double]
-            i += 1
-        }
+        val buf = new DoubleBuffer(data)
         buf
     }
     
@@ -125,12 +121,16 @@ trait NumberGrid extends IndexedSeq[Double] {
     def toFloatBuffer:FloatBuffer = {
         val n   = data.length
         var i   = 0
-        val buf = new FloatBuffer(n)
+
+        if((tmpFltBuf eq null) || tmpFltBuf.size < n)
+        	tmpFltBuf = new FloatBuffer(n)
+
         while(i < n) {
-            buf(i) = data(i).asInstanceOf[Float]
+            tmpFltBuf(i) = data(i).toFloat
             i += 1
         }
-        buf
+        
+        tmpFltBuf
     }
 
 // Modification

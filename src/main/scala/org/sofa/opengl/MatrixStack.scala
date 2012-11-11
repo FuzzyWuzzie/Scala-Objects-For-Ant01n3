@@ -8,16 +8,16 @@ object MatrixStack {
     def apply(initialMatrix:Matrix4):MatrixStack[Matrix4] = new MatrixStack[Matrix4](initialMatrix)
 }
 
-/**
- * Define a stack of 4x4 matrices.
- * 
- * The goal of this class is to mimic the OpenGL matrix stack. It starts with an initial matrix
- * and allows you to push it on the stack, installing a new matrix at the top, copy of the
- * previous one. The new matrix can be modified, used, and then popped from the stack to
- * return to the old one.
- * 
- * You can push and pop as many times as you want.
- */
+/** A stack of 4x4 matrices.
+  * 
+  * The goal of this class is to mimic the OpenGL matrix stack. It starts with an initial matrix
+  * and allows you to push it on the stack, installing a new matrix at the top, copy of the
+  * previous one. The new matrix can be modified, used, and then popped from the stack to
+  * return to the old one.
+  * 
+  * You can push and pop as many times as you want. This stack is somewhat optimized to reuse
+  * old popped matrices in the stack, therefore, references to old popped matrices cannot be
+  * used elsewhere. */
 class MatrixStack[M<:Matrix4](initialMatrix:M) {
     
 // Attributes

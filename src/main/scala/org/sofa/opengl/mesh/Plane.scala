@@ -11,9 +11,12 @@ import GL3._
 
 /** A single plane of several quads (themselves made of two triangles) in the XZ plane, centered
   * around the (0, 0, 0) point.
-  * 
+  *
   * The number of rows and columns of quads can be specified with `nVertX` and `nVertZ` and the
   * overall size of the plane can be given with `width` and `depth`.
+  *
+  * The last argument of the constructor `isXY` allows to build a plane in the XY plane instead of
+  * the XZ plane. In this case the `nVertZ` argument must naturally be read `nVertY`.
   * 
   * The plane is made of triangles and must be drawn in this mode. Indices must be used. You can
   * use a normal, color, tangent, and tex-coords arrays with this mesh.
@@ -31,7 +34,7 @@ import GL3._
   * 
   * Triangles are in CW order.
   */
-class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
+class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, var isXY:Boolean)
 	extends Mesh with ColorableMesh with TangentSurfaceMesh
 		with IndexedMesh with TexturableMesh {
     
@@ -42,6 +45,8 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
     protected lazy val X:FloatBuffer = allocateTexCoords
     protected lazy val I:IntBuffer = allocateIndices
 
+    def this(nVertX:Int, nVertZ:Int, width:Float, depth:Float) { this(nVertX, nVertZ, width, depth, false) }
+
     def vertices:FloatBuffer = V
     override def colors:FloatBuffer = C
     override def normals:FloatBuffer = N
@@ -51,7 +56,7 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
     
     protected var textureRepeatS:Int = 4
     protected var textureRepeatT:Int = 4
-    
+
     override def hasColors = true
     
     override def hasIndices = true
@@ -70,16 +75,31 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
         var zz  = -depth/2f
         var i   = 0
 
-        for(d <- 0 until nVertZ) {
-        	for(x <- 0 until nVertX) {
-        	    buf(i+0) = xx
-        	    buf(i+1) = 0
-        	    buf(i+2) = zz
-        	    xx += nw
-        	    i  += 3
-        	}
-        	xx  = -width/2f
-        	zz += nd
+        if(isXY) {
+            zz = depth/2f
+            for(d <- 0 until nVertZ) {
+                for(x <- 0 until nVertX) {
+                    buf(i+0) = xx
+                    buf(i+1) = zz
+                    buf(i+2) = 0
+                    xx += nw
+                    i  += 3
+                }
+                xx  = -width/2f
+                zz -= nd
+            }
+        } else {
+            for(d <- 0 until nVertZ) {
+                for(x <- 0 until nVertX) {
+                    buf(i+0) = xx
+                    buf(i+1) = 0
+                    buf(i+2) = zz
+                    xx += nw
+                    i  += 3
+                }
+                xx  = -width/2f
+                zz += nd
+            }
         }
         
         buf
@@ -128,10 +148,18 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
         val n   = nVertX * nVertZ * 3
         val buf = new FloatBuffer(n)
         
-        for(i <- 0 until n by 3) {
-        	buf(i+0) = 0f
-        	buf(i+1) = 1f
-        	buf(i+2) = 0f
+        if(isXY) {
+            for(i <- 0 until n by 3) {
+               buf(i+0) = 0f
+               buf(i+1) = 0f
+               buf(i+2) = 1f
+            }
+        } else {
+            for(i <- 0 until n by 3) {
+        	   buf(i+0) = 0f
+        	   buf(i+1) = 1f
+        	   buf(i+2) = 0f
+            }
         }
         
         buf
@@ -142,9 +170,9 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float)
         val buf = new FloatBuffer(n)
         
         for(i <- 0 until n by 3) {
-           buf(i+0) = 1f
-           buf(i+1) = 0f
-           buf(i+2) = 0f
+            buf(i+0) = 1f
+            buf(i+1) = 0f
+            buf(i+2) = 0f
         }
             
         buf

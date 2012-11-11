@@ -197,6 +197,8 @@ class Camera {
         modelview.multBy(transform)
     }
     
+    protected val tmpM4 = new Matrix4()
+    
     /** Store as uniform variables the model-view matrix, the projection matrix and the top 3x3
       * matrix extracted from the model-view matrix in the given shader.
       * 
@@ -204,12 +206,18 @@ class Camera {
       * perspective * model-view and "MV3x3" for the top 3x3 model-view matrix.
       */
     def uniformMVP(shader:ShaderProgram) {
-    	shader.uniformMatrix("MV", modelview.top)
-	    shader.uniformMatrix("MV3x3", modelview.top3x3)
-	    shader.uniformMatrix("MVP", projection * modelview)
+        tmpM4.copy(projection)
+        tmpM4.multBy(modelview)
+    	  shader.uniformMatrix("MV", modelview.top)
+	      shader.uniformMatrix("MV3x3", modelview.top3x3)
+	      shader.uniformMatrix("MVP", tmpM4)
     }
-    
-    def setUniformMVP(shader:ShaderProgram) { shader.uniformMatrix("MVP", projection * modelview) }
+
+    def setUniformMVP(shader:ShaderProgram) {
+        tmpM4.copy(projection)
+        tmpM4.multBy(modelview)
+        shader.uniformMatrix("MVP", tmpM4)
+    }
     	
     def setUniformMV(shader:ShaderProgram) { shader.uniformMatrix("MV", modelview.top) }
     

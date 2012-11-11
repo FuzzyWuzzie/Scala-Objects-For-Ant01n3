@@ -261,6 +261,8 @@ class SGLJogl3(val gl:GL3, val glu:GLU) extends SGL {
     def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = glUniformMatrix3dv(loc, i, b, buffer.buffer)
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix4fv(loc, i, b, buffer.buffer)
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = glUniformMatrix4dv(loc, i, b, buffer.buffer)
+    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix3fv(loc, i, b, buffer, 0)
+    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix4fv(loc, i, b, buffer, 0)
     def uniform(loc:Int, v:Array[Float]) {
         if(     v.size==1) uniform(loc, v(0))
         else if(v.size==2) uniform(loc, v(0), v(1))

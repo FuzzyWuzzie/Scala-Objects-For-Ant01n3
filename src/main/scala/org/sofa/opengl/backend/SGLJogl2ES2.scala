@@ -263,6 +263,8 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL ES 2.0 too bad")
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix4fv(loc, i, b, buffer.buffer)
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL ES 2.0 too bad")
+    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix3fv(loc, i, b, buffer, 0)
+    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix4fv(loc, i, b, buffer, 0)
     def uniform(loc:Int, v:Array[Float]) {
         if(     v.size==1) uniform(loc, v(0))
         else if(v.size==2) uniform(loc, v(0), v(1))
