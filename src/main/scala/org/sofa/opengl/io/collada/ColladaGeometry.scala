@@ -22,7 +22,7 @@ class Geometry(node:Node) extends ColladaFeature {
 	parse(node)
 	
 	protected def parse(node:Node) {
-		name = (node\"@name").text
+		name = (node \ "@name").text
 		(node \\ "mesh").foreach { mesh => meshes += ((mesh.label, new ColladaMesh(mesh))) }
 	}
 	
@@ -251,7 +251,7 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	
 	protected override def parse(node:Node) {
 		super.parse(node)
-		vcount = (node\"vcount").text.split(" ").map(_.toInt)
+		vcount = (node \ "vcount").text.split(" ").map(_.toInt)
 	}
 	
 	override def toString():String = "polys(%d, [%s], vcount %d, data %d)".format(count, inputs.mkString(","), vcount.length, data.length)
@@ -322,12 +322,12 @@ class ColladaMesh(node:Node) {
 	}
 	
 	protected def processVertices(vert:Node) {
-		vertices = (vert\"input"\"@source").text.substring(1)
+		vertices = (vert \ "input" \ "@source").text.substring(1)
 	}
 	
 	protected def processFaces(node:Node) {
-		val triangles = (node\\"triangles")
-		val polylist = (node\\"polylist")
+		val triangles = (node \\ "triangles")
+		val polylist = (node \\ "polylist")
 		
 		if(!triangles.isEmpty) {
 			faces = new Triangles(triangles.head, this)

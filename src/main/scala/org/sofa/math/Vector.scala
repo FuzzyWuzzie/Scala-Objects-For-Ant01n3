@@ -204,6 +204,15 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
         data(0)*o(0) + data(1)*o(1) + data(2)*o(2)
     }
 
+    /** Compute the angle in radians between the two vectors. */
+    def angle(other:Vector3):Double = {
+        val v0 = Vector3(other)
+        val v1 = Vector3(this)
+        v0.normalize
+        v1.normalize
+        math.acos(v0.dot(v1))
+    }
+
     type ReturnType = Vector3
     
     protected[math] final val data = Array[Double](xInit, yInit, zInit)

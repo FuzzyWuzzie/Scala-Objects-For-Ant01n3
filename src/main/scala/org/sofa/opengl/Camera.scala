@@ -60,6 +60,14 @@ class Camera {
     
     def phi:Double = sphericalEye.y
 
+    def viewportWidth:Double = viewportPx.x
+
+    def viewportWidth_= (value:Double):Unit = { viewportPx.x = value } 
+
+    def viewportHeight:Double = viewportPx.y
+
+    def viewportHeight_= (value:Double):Unit = { viewportPx.y = value }
+
     /** Set the coordinates of the camera "eye" in spherical coordinates. This will be used
       * to define the "view" part of the model-view matrix when using [[setupView()]]. */
     def viewSpherical(theta:Double, phi:Double, radius:Double) {
@@ -168,7 +176,7 @@ class Camera {
     }
     
     /** Apply a translation of vector `of` to the current model-view matrix. */
-    def translateModel(of:Vector3) {
+    def translateModel(of:NumberSeq3) {
         modelview.translate(of)
     }
     
@@ -178,7 +186,7 @@ class Camera {
     }
     
     /** Apply a rotation of `angle` around `axis` to the current model-view matrix. */
-    def rotateModel(angle:Double, axis:Vector3) {
+    def rotateModel(angle:Double, axis:NumberSeq3) {
         modelview.rotate(angle, axis)
     }
     
@@ -188,7 +196,7 @@ class Camera {
     }
     
     /** Scale the current model-view matrix by coefficients from the vector `by`. */
-    def scaleModel(by:Vector3) {
+    def scaleModel(by:NumberSeq3) {
         modelview.scale(by)
     }
     

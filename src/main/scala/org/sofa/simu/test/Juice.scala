@@ -2,27 +2,39 @@ package org.sofa.simu.test
 
 import org.sofa.{Timer, Environment}
 import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
-import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
+import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Vector2, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
 
 import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture}
-import org.sofa.opengl.mesh.{Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet, Cylinder}
-import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent}
+import org.sofa.opengl.mesh.{Mesh, Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet, Cylinder}
+import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent, ScrollEvent, MotionEvent}
 
 import javax.media.opengl.{GLProfile, GLCapabilities}
 
 import scala.collection.mutable.ArrayBuffer
 
-object TestViscoElasticSimulation2D {
-	def main(args:Array[String]) = (new TestViscoElasticSimulation2D).test
+object JuiceLauncher {
+	def main(args:Array[String]) = {
+		GLProfile.initSingleton()
+		Thread.sleep(1000)
+		(new JuiceLauncher).launch
+	}
 }
 
-class TestViscoElasticSimulation2D {
+class JuiceLauncher {
+	/** View point. */
 	var camera = new Camera()
-	var ctrl:BasicCameraController = null
-	var surface:Surface = null
-	var simu = new ViscoElasticSimulationViewer2D(camera)
 
-	def test() {
+	/** Interaction. */
+	var ctrl:BasicCameraController = null
+	
+	/** Rendering surface. */
+	var surface:Surface = null
+	
+	/** The visco-elastic simulator. */
+	var scene = new JuiceScene(camera)
+
+	/** Launch the game main screen. */
+	def launch() {
 		val caps = new GLCapabilities(GLProfile.getGL2ES2)
 		
 		caps.setRedBits(8)
@@ -34,28 +46,50 @@ class TestViscoElasticSimulation2D {
 		caps.setHardwareAccelerated(true)
 		caps.setSampleBuffers(true)
 		
-		Environment.readConfigFile("/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/simu/test/config1.txt")
+		Environment.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/simu/test/"
+		Environment.readConfigFile("juiceConfig.txt")
 		Environment.initializeFieldsOf(Particle)
-		Environment.initializeFieldsOf(simu)
+		Environment.initializeFieldsOf(scene)
+		Environment.initializeFieldsOf(camera)
 		Environment.printParameters(Console.out)
 
-		ctrl                = new TVESCameraController2D(camera, simu)
-		simu.initSurface    = simu.initializeSurface
-		simu.frame          = simu.display
-		simu.surfaceChanged = simu.reshape
-		simu.key            = ctrl.key
-		simu.motion         = ctrl.motion
-		simu.scroll         = ctrl.scroll
-		simu.close          = { surface => sys.exit }
-		surface             = new org.sofa.opengl.backend.SurfaceNewt(simu,
-							camera, "P'tit jet !", caps,
-							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
+		ctrl                 = new JuiceInteractions(camera, scene)
+		scene.initSurface    = scene.initializeSurface
+		scene.frame          = scene.display
+		scene.surfaceChanged = scene.reshape
+		scene.key            = ctrl.key
+		scene.motion         = ctrl.motion
+		scene.scroll         = ctrl.scroll
+		scene.close          = { surface => sys.exit }
+		surface              = new org.sofa.opengl.backend.SurfaceNewt(
+								scene, camera, "Juice", caps,
+								org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
 	}
 }
 
-class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer {	
+class Player(val emitPoint:Point3, val velocity:Vector3, var timeToEmit:Int, var timeToWait:Int) {
+	var emiting = false
 
-// Settings --------------------------------------------------
+	var waiting = timeToWait
+
+	def step() {
+		waiting -= 1
+
+		if(waiting <= 0) {
+			emiting = ! emiting
+
+			if(emiting) {
+				waiting = timeToEmit
+			} else {
+				waiting = timeToWait
+			}
+		}
+	}
+}
+
+class JuiceScene(val camera:Camera) extends SurfaceRenderer {	
+
+// == Settings ====================================================
 
 	/** max number of triangles for the iso-surface. */
 	var maxDynTriangles = 3000
@@ -69,54 +103,67 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	/** max number of particles in the simulation. */
 	var size = 500
 
-	var emitPoint = Point3(-5, 5, 0)
-	var emitVelocity1 = Vector3(15, 6, 0)
-	var emitVelocity2 = Vector3(15, 8, 0)
+	var playfield = Vector2(30, 10)
+
+	// -- Biroute config --------------------------------------------
+
+	val player1 = new Player(Point3(-12,5,0), Vector3(15,6,0), 7, 20)
+
+	val player2 = new Player(Point3(12,5,0), Vector3(-15,6,0), 7, 20)
+
+	var curParticle = 10
 	
+	// -- Iso Surface -----------------------------------------------
+
 	/** Number of iso-cubes inside a space hash cube. */
-	var isoDiv = 3.0
+	var isoDiv = 2.0
 	
+	/** Size of an iso-cell. */
 	var isoCellSize = Particle.spacialHashBucketSize / isoDiv
 	
 	/** Limit of the iso-surface in the implicit function used to define the surface. */
 	var isoLimit = 0.65
 
+	// -- Rendering config -------------------------------------------
+
 	var drawParticlesFlag = true
+	
 	var drawSpringsFlag = false
-	var drawSpaceHashFlag = false
-	var drawIsoCubesFlag = false
+	
 	var drawIsoSurfaceFlag = false
+	
 	var drawIsoContourFlag = false
-	var drawIsoSquaresFlag = false
+	
 	var drawIsoPlaneFlag = false
+	
 	var drawParticlesQuadFlag = true
+	
 	var particlesToRemovePerStep = 10
 	
 	var isoSurfaceColor = Rgba(1,1,1,0.9)
+
 	var particleColor = Rgba(0.7, 0.7, 1, 0.9)
-	var clearColor = Rgba.grey10
-	var planeColor = Rgba.grey80
+	
+	var clearColor = Rgba.black
+	
+	var groundColor = Rgba.grey80
+	
 	val light1 = Vector4(0, 7, 3, 1)	
+	
 	var particleSizePx = 30f // 160f
 	
 	var particleQuadSize = 0.8f
+	
 	var birouteSize = 2f
-	var timeToWait = 20
-	var timeToEmit =  7
-	var curParticle = 0
-	var waiting = timeToEmit
-	var emiting = true
-	var velocityMode = true	
+	
+// == Utility =====================================================
 
 	def printConfig() {
 		println("VES config:")
 		println("  Visibility:")
 		println("    draw particles ............ %b".format(drawParticlesFlag))
 		println("    draw springs .............. %b".format(drawSpringsFlag))
-		println("    draw space hash ........... %b".format(drawSpaceHashFlag))
-		println("    draw iso cubes ............ %b".format(drawIsoCubesFlag))
 		println("    draw iso contour .......... %b".format(drawIsoContourFlag))
-		println("    draw iso squares .......... %b".format(drawIsoSquaresFlag))
 		println("    draw iso plane ............ %b".format(drawIsoPlaneFlag))
 		println("  Iso surface:")
 		println("    isoDiv .................... %.4f".format(isoDiv))
@@ -126,24 +173,29 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		println("    particles to remove ....... %d".format(particlesToRemovePerStep))
 	}
 
-// Fields --------------------------------------------------
+// == Fields ===========================================================
+
+	// -- View -------------------------------------
 
 	var gl:SGL = null
 	
 	val projection:Matrix4 = new Matrix4
 	val modelview = new MatrixStack(new Matrix4)
 	
+	// -- Shading -----------------------------------
+
 	var phongShad:ShaderProgram = null
 	var particlesShad:ShaderProgram = null
 	var particlesQuadShad:ShaderProgram = null
 	var plainShad:ShaderProgram = null
+	var nmapShad:ShaderProgram = null
+	var wallShad:ShaderProgram = null
 	
-	var plane:VertexArray = null
+	// -- Model ---------------------------------------
+
+	var ground:VertexArray = null
 	var axis:VertexArray = null
 	var particles:VertexArray = null	
-	var wcube:VertexArray = null
-	var wcube2:VertexArray = null
-	var wcube3:VertexArray = null
 	var isoSurface:VertexArray = null
 	var isoPlane:VertexArray = null
 	var isoContour:VertexArray = null
@@ -151,13 +203,11 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var springs:VertexArray = null
 	var quad:VertexArray = null
 	var biroute:VertexArray = null
+	var wall:VertexArray = null
 
 	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 10, 10)
+	var groundMesh = new Plane(2, 2, playfield.x.toFloat, playfield.x.toFloat)
 	var particlesMesh:DynPointsMesh = null
-	var wcubeMesh:WireCube = null
-	var wcubeMesh2:WireCube = null
-	var wcubeMesh3:WireCube = null
 	var isoSurfaceMesh = new DynIndexedTriangleMesh(maxDynTriangles)
 	var isoPlaneMesh = new DynIndexedTriangleMesh(maxDynTriangles)
 	var isoContourMesh = new ColoredLineSet(maxDynLines)
@@ -165,46 +215,71 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var springsMesh = new ColoredLineSet(maxSprings)
 	var quadMesh = new Plane(2, 2, particleQuadSize, particleQuadSize, true)
 	var birouteMesh = new Cylinder(birouteSize*0.25f, birouteSize, 8, 1)
+	var wallMesh:Mesh = null
 
-	val random = new scala.util.Random()
-	var step = 0
-	var running = true
-	val simu = new ViscoElasticSimulation 
-	var isoSurfaceComp:IsoSurface = null
-	var isoContourComp:IsoContour = null
+	// -- Texture -------------------------------------------
 
 	var pointTex:Texture = null
 
+	var groundTex:Texture = null
+
+	var groundNMapTex:Texture = null
+
+	// -- General -------------------------------------------
+
+	val random = new scala.util.Random()
+	
+	var step = 0
+	
+	var running = true
+	
+	val simu = new ViscoElasticSimulation 
+	
+	var isoSurfaceComp:IsoSurface = null
+	
+	var isoContourComp:IsoContour = null
+
 	val timer = new Timer(Console.out)
 
-	// ----------------------------------------------------------------------------------
-	// Commands
+// == Commands =====================================================================
 
 	def pausePlay() { running = ! running }
 
-	// ----------------------------------------------------------------------------------
-	// Init.
+// == Init. ========================================================================
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-		Shader.includePath += "src/com/chouquette/tests"
+		Shader.includePath  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.includePath  += "src/com/chouquette/tests"
 		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/"
+		Texture.includePath += "textures/"
 			
 		initSimuParams
 		initGL(sgl)
 		initTextures
 		initShaders
+		initMeshes
 		initGeometry
+		initCamera(surface)
 
-		camera.viewCartesian(0, 5, 14)
+		player2.waiting = 0
+	}
+
+	protected def initCamera(surface:Surface) {
 		camera.setFocus(0, 4, 0)
+//		camera.viewSpherical(0, 0, 50)
+		camera.viewCartesian(0, 15, 50)
 		reshape(surface)
 	}
+
+	def reshape(surface:Surface) {
+		camera.viewportPx(surface.width, surface.height)
+		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
+		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, 5)
+	}	
 
 	def initSimuParams() {
 		// Adapt parameters dependent of others, and eventually changed by Environment.
 		isoCellSize = Particle.spacialHashBucketSize / isoDiv
-
 		printConfig
 		Particle.printConfig
 	}
@@ -218,9 +293,10 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		gl.enable(gl.CULL_FACE)
 		gl.cullFace(gl.BACK)
 		gl.frontFace(gl.CW)
-		gl.disable(gl.BLEND)
+		gl.enable(gl.BLEND)
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-		//gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
+		//gl.enable(gl.PROGRAM_POINT_SIZE)	// WTF ?
+		
 		gl.checkErrors
 	}
 
@@ -228,51 +304,65 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		pointTex = new Texture(gl, "Point.png", true)
 	    pointTex.minMagFilter(gl.LINEAR, gl.LINEAR)
 	    pointTex.wrap(gl.REPEAT)
+
+		groundTex = new Texture(gl, "Ground.png", true)
+	    groundTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    groundTex.wrap(gl.REPEAT)
+
+		groundNMapTex = new Texture(gl, "GroundNMap.png", true)
+	    groundNMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    groundNMapTex.wrap(gl.REPEAT)
 	}
 	
 	protected def initShaders() {
-		phongShad = ShaderProgram(gl, "phong shader", "es2/phonghi.vert.glsl", "es2/phonghi.frag.glsl")
-		plainShad = ShaderProgram(gl, "plain shader", "es2/plainColor.vert.glsl", "es2/plainColor.frag.glsl")
-//		particlesShad = ShaderProgram(gl, "particles shader", "es2/particlesTex.vert.glsl", "es2/particlesTex.frag.glsl")
-		particlesShad = ShaderProgram(gl, "particles shader", "es2/particles.vert.glsl", "es2/particles.frag.glsl")
+		phongShad         = ShaderProgram(gl, "phong shader",          "es2/phonghi.vert.glsl",      "es2/phonghi.frag.glsl")
+		plainShad         = ShaderProgram(gl, "plain shader",          "es2/plainColor.vert.glsl",   "es2/plainColor.frag.glsl")
+		particlesShad     = ShaderProgram(gl, "particles shader",      "es2/particles.vert.glsl",    "es2/particles.frag.glsl")
 		particlesQuadShad = ShaderProgram(gl, "particles quad shader", "es2/particlesTex.vert.glsl", "es2/particlesTex.frag.glsl")
+		nmapShad          = ShaderProgram(gl, "normal map phong",      "es2/nmapPhong.vert",         "es2/nmapPhong.frag")
+		wallShad          = ShaderProgram(gl, "wall shader",           "es2/phonghiuniformcolor.vert.glsl", "es2/phonghiuniformcolor.frag.glsl")
+
+	}
+
+	protected def initMeshes() {
+		val model = new org.sofa.opengl.io.collada.File(scala.xml.XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/MurJuice.dae").child)
+		wallMesh = model.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh 
 	}
 	
 	protected def initGeometry() {
 		initParticles		
 		initSimu
 
+		// NMap shader
+
+		var v = nmapShad.getAttribLocation("position")
+	    var n = nmapShad.getAttribLocation("normal")
+	    var t = nmapShad.getAttribLocation("tangent")
+	    var u = nmapShad.getAttribLocation("texCoords")
+
+		//groundMesh.setColor(groundColor)
+		
+		groundMesh.setTextureRepeat(50,50)
+		ground = groundMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangents", t), ("texcoords", u))
+
 		// Phong shader
 		
-		var v = phongShad.getAttribLocation("position")
+		v     = phongShad.getAttribLocation("position")
 		var c = phongShad.getAttribLocation("color")
-		var n = phongShad.getAttribLocation("normal")
+		n     = phongShad.getAttribLocation("normal")
 		
-		planeMesh.setColor(Rgba.red)
-		
-		plane      = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		isoPlane   = isoPlaneMesh.newVertexArray(gl, ("vertices",v), ("colors", c), ("normals", n))
-		obstacles  = obstaclesMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		biroute    = birouteMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		isoPlane   = isoPlaneMesh.newVertexArray(  gl, ("vertices", v), ("colors", c), ("normals", n))
+		obstacles  = obstaclesMesh.newVertexArray( gl, ("vertices", v), ("colors", c), ("normals", n))
+		biroute    = birouteMesh.newVertexArray(   gl, ("vertices", v), ("colors", c), ("normals", n))
 		
 		// Plain shader
 		
 		v = plainShad.getAttribLocation("position")
 		c = plainShad.getAttribLocation("color")
-		
-		wcubeMesh = new WireCube(simu.spaceHash.bucketSize.toFloat)
-		wcubeMesh2 = new WireCube(isoCellSize.toFloat)
-		wcubeMesh3 = new WireCube(isoCellSize.toFloat)
-		wcubeMesh.setColor(Rgba(1, 1, 1, 0.5))
-		wcubeMesh2.setColor(Rgba(1, 0, 0, 0.2))
-		wcubeMesh3.setColor(Rgba(0, 1, 0, 0.2))
-		wcube = wcubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
-		wcube2 = wcubeMesh2.newVertexArray(gl, ("vertices", v), ("colors", c))
-		wcube3 = wcubeMesh3.newVertexArray(gl, ("vertices", v), ("colors", c))
-		
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
-		springs = springsMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+				
+		axis       = axisMesh.newVertexArray(      gl, ("vertices", v), ("colors", c))
+		springs    = springsMesh.newVertexArray(   gl, ("vertices", v), ("colors", c))
 		isoContour = isoContourMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 
 		// Particles shader
@@ -283,7 +373,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("colors", c))
 
 		v = particlesQuadShad.getAttribLocation("position")
-		var t = particlesQuadShad.getAttribLocation("texCoords")
+		t = particlesQuadShad.getAttribLocation("texCoords")
 
 		quadMesh.setTextureRepeat(1, 1)
 		quad = quadMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("texcoords", t))
@@ -298,6 +388,13 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		for(i <- 0 until maxSprings) {
 			springsMesh.setColor(i, springColor)
 		}
+
+		// Murs
+	
+		v = wallShad.getAttribLocation("position")
+		n = wallShad.getAttribLocation("normal")
+
+		wall = wallMesh.newVertexArray(gl, ("vertices", v), ("normals", n))
 	}
 	
 	protected def initParticles {
@@ -332,25 +429,28 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	def display(surface:Surface) {
 		if((step+1)%10 == 0)
 			println("--step %d ---------------------".format(step+1))
+		
 		if(running) {
-			launchSomeParticles
+			player1.step
+			player2.step
+			if(player1.emiting) juicePlayer(player1)
+			if(player2.emiting) juicePlayer(player2)
 			updateParticles
 		}
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
+//		camera.rotateViewHorizontal(0.1)
 		camera.setupView
 
-		drawPlane
+		drawGround
+		drawWalls
 		drawObstacles
 		drawIsoSurface
 		drawAxis
-		drawSpaceHash
-		drawIsoCubes
-		drawIsoSquares
 		drawSprings
 		drawParticles
-		drawBiroute
+		drawBiroutes
 		drawIsoPlane
 		drawParticlesQuads
 		drawIsoContour
@@ -372,62 +472,94 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		}
 	}
 	
-	protected def launchSomeParticles() {
-		waiting -= 1
-		if(waiting <= 0) {
-			emiting = ! emiting
-			if(emiting)
-				waiting = timeToEmit
-			else waiting = timeToWait
-			if(emiting) {
-				velocityMode = ! velocityMode
-			}
-		} 
-		if(emiting) {
-			if(simu.size < size) {
-				val emitVelocity = if(velocityMode) emitVelocity1 else emitVelocity2
-				val p = simu.addParticle(emitPoint.x, emitPoint.y, emitPoint.z,
-						emitVelocity.x+math.random*0.1, emitVelocity.y+math.random*0.1, emitVelocity.z)//+math.random*0.05)
-			//	particlesMesh.setPoint(curParticle, p.x)
-			//	particlesMesh.setColor(curParticle, particleColor)
-				curParticle += 1
-			}
+	protected def juicePlayer(player:Player) {
+		if(simu.size < size) {
+			simu.addParticle(
+					player.emitPoint,
+					player.velocity.x+random.nextFloat*0.1,
+					player.velocity.y+random.nextFloat*0.1,
+					player.velocity.z)
+			curParticle += 1
 		}
-	}	
-	
+	}
+
 	protected def removeSomeParticles() {
-		if(!emiting && simu.size > 10) {
-			var p = simu.randomParticle(random)
-			var i = 0
-			
-			while(p.x.y > 0.2 && i < particlesToRemovePerStep) {
-				p = simu.randomParticle(random)
-				i += 1
+		var I = 0
+		val N = simu.size
+		var removed = 0
+		val toRemove = new ArrayBuffer[Particle]()
+		while(I < N) {
+			var p = simu(I)
+
+			if(p.x.y < (Particle.ground+0.1) && removed < particlesToRemovePerStep) {
+				toRemove += p
 			}
-			
-			if(p.x.y <= 0.2) {
-//				Console.err.println("removing particle %d".format(p.index))
-				simu.removeParticle(p)
-			}
+
+			I += 1
 		}
+
+		toRemove.foreach { simu.removeParticle(_) }
 	}
 
-	protected def drawPlane() {
-		phongShad.use
-		useLights(phongShad)
-		camera.uniformMVP(phongShad)
-		plane.draw(planeMesh.drawAs)
+	protected def drawGround() {
+		gl.enable(gl.BLEND)
+		nmapShad.use
+		
+		groundTex.bindTo(gl.TEXTURE0)
+	    nmapShad.uniform("texColor", 0)	// Texture Unit 0
+	    groundNMapTex.bindTo(gl.TEXTURE2)
+	    nmapShad.uniform("texNormal", 2)	// Texture Unit 2
+		
+		//useLights(nmapShad)
+		nmapShad.uniform("lightPos", Vector3(camera.modelview.top * light1))
+	    nmapShad.uniform("lightIntensity", 100f)
+	    nmapShad.uniform("ambientIntensity", 0.2f)
+	    nmapShad.uniform("specularPow", 128f)
+
+		camera.uniformMVP(nmapShad)
+		ground.draw(groundMesh.drawAs)
+		gl.disable(gl.BLEND)
 	}
 
-	protected def drawBiroute() {
+	protected def drawWalls() {
+		gl.frontFace(gl.CCW)
+		wallShad.use
+		useLights(wallShad)
+		wallShad.uniform("color", Rgba.white)
+		camera.pushpop {
+			camera.translateModel(-15, 4, 0)
+			camera.scaleModel(10,10,10)
+			camera.rotateModel(math.Pi/2, 0, 1, 0)
+			camera.uniformMVP(wallShad)
+			wall.draw(wallMesh.drawAs)
+		}
+		camera.pushpop {
+			camera.translateModel(15, 4, 0)
+			camera.scaleModel(10,10,10)
+			camera.rotateModel(math.Pi/2, 0, 1, 0)
+			camera.uniformMVP(wallShad)
+			wall.draw(wallMesh.drawAs)
+		}
+		gl.frontFace(gl.CW)
+	}
+
+	protected def drawBiroutes() {
 		phongShad.use
 		useLights(phongShad)
-		val angle = Vector3(0,1,0).angle(emitVelocity1)
+		drawBiroute(player1)
+		drawBiroute(player2)
+	}
+
+	protected def drawBiroute(player:Player) {
+		var angle = Vector3(0,1,0).angle(player.velocity)
+
+		if(player.velocity.x > 0)
+			angle = -angle
 
 		camera.pushpop {
-			camera.translateModel(emitPoint)
-			camera.translateModel(0, -birouteSize, 0)
-			camera.rotateModel(-angle, 0, 0, 1)
+			camera.translateModel(player.emitPoint)
+			//camera.translateModel(0, -birouteSize/2, 0)
+			camera.rotateModel(angle, 0, 0, 1)
 			camera.uniformMVP(phongShad)
 			biroute.draw(birouteMesh.drawAs)
 		}
@@ -474,11 +606,20 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 timer.measure("draw quads") {
 			var I = 0
 			val N = simu.size
+			val up = Vector3(0,1,0)
+			val dir = Vector3()
 			while(I < N) {
 				val particle = simu(I)
 				camera.push
 				camera.translateModel(particle.x.x, particle.x.y, particle.x.z)
-// 				camera.rotateModel(math.Pi/2, 1, 0, 0)
+				dir.set(particle.x, particle.xprev)
+				var l = dir.norm
+				var angle = dir.angle(up) - (math.Pi/2)
+				if(dir.x > 0)
+					angle = -angle
+				if(l > 1)  l = 1
+ 				camera.rotateModel(angle, 0, 0, 1)
+				camera.scaleModel(1+l, 1-l, 1)
 				camera.setUniformMVP(particlesQuadShad)
 				quad.draw(quadMesh.drawAs)
 				camera.pop
@@ -503,64 +644,7 @@ timer.measure("draw quads") {
 			gl.enable(gl.DEPTH_TEST)
 		}
 	}
-	
-	protected def drawSpaceHash() {
-		if(drawSpaceHashFlag) {
-			gl.enable(gl.BLEND)
-			plainShad.use
-			val cs = simu.spaceHash.bucketSize
-			val cs2 = cs/2
-			simu.spaceHash.buckets.foreach { bucket =>
-				//if(bucket._2.points > 0) {
-				camera.pushpop {
-					val p = bucket._2.position
-					camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
-					camera.setUniformMVP(plainShad)
-					wcube.draw(wcubeMesh.drawAs)
-				}
-				//}
-			}
-			gl.disable(gl.BLEND)
-		}
-	}
-
-	protected def drawIsoCubes() {
-		if(drawIsoCubesFlag) {
-			gl.enable(gl.BLEND)
-			plainShad.use
-			var cs = isoSurfaceComp.cellSize
-			var cs2 = cs/2
-			isoSurfaceComp.cubes.foreach { cube=>
-				if(!cube.isEmpty) camera.pushpop {
-					val p = cube.pos
-					camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
-					camera.setUniformMVP(plainShad)
-					wcube2.draw(wcubeMesh.drawAs)
-				}
-			}
-			gl.disable(gl.BLEND)
-		}
-	}
-
-	protected def drawIsoSquares() {
-		if(drawIsoSquaresFlag) {
-			var empty = 0
-			gl.enable(gl.BLEND)
-			plainShad.use
-			var cs = isoContourComp.cellSize
-			var cs2 = cs/2
-			isoContourComp.squares.foreach { square =>
-				if(! square.isEmpty) camera.pushpop {
-					val p = square.pos
-					camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
-					camera.setUniformMVP(plainShad)
-					wcube3.draw(wcubeMesh.drawAs)
-				}
-			}
-			gl.disable(gl.BLEND)
-		}
-	}
-	
+		
 	protected def drawIsoSurface() {
 		if(drawIsoSurfaceFlag) {
 			if((isoSurfaceComp ne null) && isoSurfaceComp.triangleCount > 0) {
@@ -604,34 +688,33 @@ timer.measure("draw quads") {
 	protected def updateParticles() {
 		simu.simulationStep(0.044)
 		
-		if(drawParticlesFlag) {
-			var i = 0
-			simu.foreach { particle => 
-				particlesMesh.setPoint(i, particle.x)
-				i += 1
-			}
+		// if(drawParticlesFlag) {
+		// 	var i = 0
+		// 	simu.foreach { particle => 
+		// 		particlesMesh.setPoint(i, particle.x)
+		// 		i += 1
+		// 	}
 		
-			particlesMesh.updateVertexArray(gl, "vertices", "colors")
-			gl.checkErrors
-		}
+		// 	particlesMesh.updateVertexArray(gl, "vertices", "colors")
+		// 	gl.checkErrors
+		// }
 
-		if(drawSpringsFlag) {
-			var i = 0
-			simu.springs.foreach { spring =>
-				springsMesh.setLine(i, spring.i.x, spring.j.x)
-				//springsMesh.setColor(i, Rgba.red)
-				i += 1
-			}
+		// if(drawSpringsFlag) {
+		// 	var i = 0
+		// 	simu.springs.foreach { spring =>
+		// 		springsMesh.setLine(i, spring.i.x, spring.j.x)
+		// 		i += 1
+		// 	}
 
-			springsMesh.updateVertexArray(gl, "vertices", "colors")
-			gl.checkErrors
-		}
+		// 	springsMesh.updateVertexArray(gl, "vertices", "colors")
+		// 	gl.checkErrors
+		// }
 		
-		if(drawIsoSurfaceFlag || drawIsoCubesFlag)
-			buildIsoSurface
+		// if(drawIsoSurfaceFlag)
+		// 	buildIsoSurface
 
-		if(drawIsoContourFlag || drawIsoPlaneFlag || drawIsoSquaresFlag)
-			buildIsoContour
+		// if(drawIsoContourFlag || drawIsoPlaneFlag)
+		// 	buildIsoContour
 	}
 	
 	protected def buildIsoSurface() {
@@ -744,32 +827,6 @@ triangleCount = 0
 			isoPlaneMesh.updateVertexArray(gl, "vertices", "colors", "normals")
 		}
 	}
-
-	class Normal() {
-		val normal = Vector3(0,0,1)
-		var count = 0
-	}
-
-	protected def createNormals(segCount:Int, ptCount:Int) {
-		val normals = 
-
-		isoContourComp.nonEmptySquares.foreach { square =>
-			if(square.hasSegments) {
-				// Pour tous les segments
-				//  - pour les points du segment (x,y,0)
-				//     - ajouter la normale au segment (-y,x,0)
-				//     - incrémenter le normal count des points
-				// Pour tous les triangles,
-				//  - pour les points qui ne sont pas sur des segments:
-				//     - ajouter la normale du segment (-y,x,0.5)
-				//     - incrémenter le normal count du point.
-				//     XXX comment connaître les segments correspondants aux triangles.
-			} else if(square.hasTriangles) {
-				// pour tous les triangles retrouver les points.
-				// incrémenter leur normal count et ajouter (0,0,1) à la normale.
-			}
-		}
-	}
 	
 	protected def exploreSpaceHashForIsoSurface() {
 		simu.spaceHash.buckets.foreach { bucket =>
@@ -789,13 +846,10 @@ triangleCount = 0
 	}
 
 	protected def exploreSpaceHashForIsoContour() {
-//simu.evalCount = 0
-//var bucketCount = 0
 		simu.spaceHash.buckets.foreach { bucket =>
 			if((bucket._2.points ne null) && bucket._2.points.size > 0) {
 				// Only long the XY plane
 				if(bucket._1.z == 0) {
-//bucketCount += 1
 					val x = (bucket._1.x-1) * simu.spaceHash.bucketSize
 					val y = (bucket._1.y-1) * simu.spaceHash.bucketSize
 					val p = isoContourComp.nearestSquarePos(x, y)
@@ -804,72 +858,73 @@ triangleCount = 0
 						p.x.toInt,        p.y.toInt,
 						(3*isoDiv).toInt, (3*isoDiv).toInt,
 						simu.evalIsoSurface, isoLimit)
-					// val x = (bucket._1.x * simu.spaceHash.bucketSize) - (simu.spaceHash.bucketSize*2)
-					// val y = (bucket._1.y * simu.spaceHash.bucketSize) - (simu.spaceHash.bucketSize*2)
-					// val p = isoContourComp.nearestSquarePos(x, y)
-
-					// isoContourComp.addSquaresAt(
-					// 	p.x.toInt,        p.y.toInt,
-					// 	(isoDiv+4).toInt, (isoDiv+4).toInt,
-					// 	simu.evalIsoSurface, isoLimit)
 				}				
 			}
 		}
-//println("## %d (%.1f) buckets %d evals".format(bucketCount, bucketCount*isoDiv*isoDiv*4, simu.evalCount))
 	}
 
 	// --------------------------------------------------------------------------------------
 	// Utility
 
-	def reshape(surface:Surface) {
-		camera.viewportPx(surface.width, surface.height)
-		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
-		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, 2)
-	}
-	
 	protected def useLights(shader:ShaderProgram) {
-		shader.uniform("light.pos", Vector3(camera.modelview.top * light1))
-		shader.uniform("light.intensity", 10f)
-		shader.uniform("light.ambient", 0.2f)
-		shader.uniform("light.specular", 1000f)
+		shader.uniform("light.pos",       Vector3(camera.modelview.top * light1))
+		shader.uniform("light.intensity", 5f)
+		shader.uniform("light.ambient",   0.2f)
+		shader.uniform("light.specular",  1000f)
 	}
 }
 
 /** A simple mouse/key controller for the camera and simulation. */
-class TVESCameraController2D(camera:Camera, val ves:ViscoElasticSimulationViewer2D) extends BasicCameraController(camera) {
+class JuiceInteractions(camera:Camera, val scene:JuiceScene) extends BasicCameraController(camera) {
     override def key(surface:Surface, keyEvent:KeyEvent) {
         import keyEvent.ActionChar._
         if(keyEvent.isPrintable) {
-        	Console.err.println("KEY=%c".format(keyEvent.unicodeChar))
         	keyEvent.unicodeChar match {
-            	case ' ' => { ves.pausePlay }
-            	case 'p' => { ves.drawParticlesFlag = !ves.drawParticlesFlag }
-            	case 'P' => { ves.drawIsoPlaneFlag = !ves.drawIsoPlaneFlag }
-            	case 'h' => { ves.drawSpaceHashFlag = !ves.drawSpaceHashFlag }
-            	case 'c' => { ves.drawIsoCubesFlag = !ves.drawIsoCubesFlag }
-            	case 's' => { ves.drawIsoSurfaceFlag = !ves.drawIsoSurfaceFlag }
-            	case 'O' => { ves.drawIsoContourFlag = !ves.drawIsoContourFlag }
-            	case 'S' => { ves.drawIsoSquaresFlag = !ves.drawIsoSquaresFlag }
-            	case 'i' => { ves.drawSpringsFlag = !ves.drawSpringsFlag }
+            	case ' ' => { scene.pausePlay }
+            	case 'p' => { scene.drawParticlesFlag  = !scene.drawParticlesFlag  }
+            	case 'P' => { scene.drawIsoPlaneFlag   = !scene.drawIsoPlaneFlag   }
+            	case 's' => { scene.drawIsoSurfaceFlag = !scene.drawIsoSurfaceFlag }
+            	case 'O' => { scene.drawIsoContourFlag = !scene.drawIsoContourFlag }
+            	case 'i' => { scene.drawSpringsFlag    = !scene.drawSpringsFlag    }
             	case 'q' => { sys.exit(0) }
+            	case '1' => { scene.player1.velocity.y -= 0.5 }
+            	case '7' => { scene.player1.velocity.y += 0.5 }
+            	case '3' => { scene.player2.velocity.y -= 0.5 }
+            	case '9' => { scene.player2.velocity.y += 0.5 }
             	case 'H' => {
             		println("Keys:")
             		println("    <space>  pause/play the simulation.")
             		println("    p        toggle draw particles.")
             		println("    P        toggle draw the iso plane.")
-            		println("    h        toggle draw the space hash.")
-            		println("    c        toggle draw the iso surface cubes.")
             		println("    s        toggle draw the iso surface.")
             		println("    O        toggle draw the iso contour.")
-            		println("    S        toogle draw the iso squares.")
             		println("    i        toogle draw the springs.")
             		println("    q        quit (no questions, it quits!).")
             	}
             	case _ => { super.key(surface, keyEvent) }
             }
         } else {
-        	//Console.err.println("KEYCODE=%d".format(keyEvent.key))
+	    	keyEvent.actionChar match {
+		    	case PageUp   => { camera.zoomView(-step) } 
+		    	case PageDown => { camera.zoomView(step) }
+		    	case Up       => { camera.rotateViewVertical(step) }
+		    	case Down     => { camera.rotateViewVertical(-step) }
+		    	case Left     => { camera.rotateViewHorizontal(-step) }
+		    	case Right    => { camera.rotateViewHorizontal(step) }
+		    	case _        => { super.key(surface, keyEvent) }
+	    	}
+
             super.key(surface, keyEvent)
         }
     }
+	
+	override def scroll(surface:Surface, e:ScrollEvent) {
+	    camera.zoom = camera.zoom + e.amount * step
+	    if(camera.zoom < 30) camera.zoom = 30
+	    else if(camera.zoom > 50) camera.zoom = 50
+	} 	
+	
+	override def motion(surface:Surface, e:MotionEvent) {
+		super.motion(surface, e)
+	}
 }

@@ -40,7 +40,8 @@ class NormalMap extends SurfaceRenderer {
 	def build() {
 //	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.get(GLProfile.GL3))
 	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.getGL2ES2)
-	    
+
+		Texture.includePath += "textures/"	    
 		Shader.includePath += "src/main/scala/org/sofa/opengl/shaders/"
 
 	    caps.setDoubleBuffered(true)
@@ -108,18 +109,19 @@ class NormalMap extends SurfaceRenderer {
     	tube  = new VertexArray(gl, tubeMesh.indices, ("vertices", p, 3, tubeMesh.vertices),
     			("normals", n, 3, tubeMesh.normals), ("tangents", t, 3, tubeMesh.tangents), ("texcoords", u, 2, tubeMesh.texCoords))
 	    
-	    uvTex = new Texture(gl, "textures/stone_wall__.jpg", true)
+	    uvTex = new Texture(gl, "stone_wall__.jpg", true)
 //	    uvTex = new Texture(gl, "textures/face.jpg", true)
 	    uvTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    uvTex.wrap(gl.REPEAT)
 
-	    specTex = new Texture(gl, "textures/specular.png", true)
+	    specTex = new Texture(gl, "specular.png", true)
 	    specTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    specTex.wrap(gl.REPEAT)
 	    
-//	    nmapTex = new Texture(gl, "textures/NormalFlat.png", false)
-	    nmapTex = new Texture(gl, "textures/normal.jpg", true)
-//	    nmapTex = new Texture(gl, "textures/facenrm.jpg", true)
+//	    nmapTex = new Texture(gl, "NormalFlat.png", false)
+//	    nmapTex = new Texture(gl, "normal.jpg", true)
+		nmapTex = new Texture(gl, "JuiceGroundNormalMap.png", true)
+//	    nmapTex = new Texture(gl, "facenrm.jpg", true)
 	    nmapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    nmapTex.wrap(gl.REPEAT)
 	}

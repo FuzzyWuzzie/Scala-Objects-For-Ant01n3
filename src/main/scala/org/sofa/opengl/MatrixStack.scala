@@ -92,7 +92,7 @@ class MatrixStack[M<:Matrix4](initialMatrix:M) {
     /** Multiply the top matrix by a scaling matrix with factors (`sx`, `sy`, `sz`). */
     def scale(sx:Double, sy:Double, sz:Double) = stack(end).scale(sx, sy, sz)
     
-    def scale(by:Vector3) = stack(end).scale(by)
+    def scale(by:NumberSeq3) = stack(end).scale(by)
     
     /** Replace the top matrix by new transformations matrix that mimics the positioning of
      * a camera whose position would be (`eyex`, `eyey`, `eyez`), that would point at a center

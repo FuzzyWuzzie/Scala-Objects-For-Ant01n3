@@ -1,7 +1,7 @@
 package org.sofa.simu
 
 import org.sofa.Timer
-import org.sofa.math.{Point3, Point2, Vector3, SpatialHash, SpatialPoint, SpatialObject, SpatialCube, Triangle, ConstTriangle}
+import org.sofa.math.{Point3, Point2, Vector3, NumberSeq3, SpatialHash, SpatialPoint, SpatialObject, SpatialCube, Triangle, ConstTriangle}
 import scala.collection.mutable.{Set, HashMap, HashSet, ArrayBuffer, ArrayStack}
 import scala.util.Random
 
@@ -34,6 +34,7 @@ object Particle {
 	var umicron = 0.5				// Friction parameter between 0 and 1 (0 = slip, 1 = no slip). ???
 	var wallsX  = 5.0
 	var wallsZ  = 2.0
+	var wallY   = 10.0
 	var ground  = 0.1
 	
 	// Stickiness:
@@ -43,6 +44,8 @@ object Particle {
 
 	// 2D Mode ?
 	var is2D = false
+
+	var maxVelocity = 50.0
 
 	/** Print the values of all the parameters. */
 	def printConfig() {
@@ -196,6 +199,10 @@ class Particle(val index:Int) extends VESObject with SpatialPoint {
 	  * The old position is stored in the xprev field. */
 	def move(dt:Double) {
 		xprev.copy(x)
+
+		if(v.x > Particle.maxVelocity) v.x = 0.1
+		if(v.y > Particle.maxVelocity) v.y = 0.1
+
 		x.x += v.x * dt
 		x.y += v.y * dt
 		x.z += v.z * dt
@@ -473,6 +480,12 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 
 	def evalIsoDensity(x:Point2):Double = evalIsoDensity(Point3(x.x, x.y, 0))
 
+	/** Add a particle at a given location `p` with given velocity `v`. */
+	def addParticle(p:NumberSeq3, v:NumberSeq3):Particle = addParticle(p.x,p.y,p.z, v.x,v.y,v.z)
+
+	/** Add a particle at a given location `p` with given velocity (`vx`,`vy`,`vz`). */
+	def addParticle(p:NumberSeq3, vx:Double, vy:Double, vz:Double):Particle = addParticle(p.x,p.y,p.z, vx,vy,vz)
+
 	/** Add a particle at a given location (`x`,`y`,`z`) with given velocity (`vx`,`vy`,`vz`). */
 	def addParticle(x:Double, y:Double, z:Double, vx:Double, vy:Double, vz:Double):Particle = {
 		val p = new Particle(particlesIndexMax) 
@@ -588,6 +601,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 			
 			spaceHash.neighborsInBoxRadiusXY(p, Particle.h*evalHFactor, Particle.h, p.neighbors, volumeBuffer)
 			p.computeNeighbors(p.neighbors, volumeBuffer)
+
 		}
 	}
 
@@ -855,20 +869,24 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 			I += 1
 		}
 	}
+
+	val ground = Vector3( 0, 1, 0)
+	val wallY  = Vector3( 0,-1, 0)
+	val wallX1 = Vector3(-1, 0, 0)
+	val wallX2 = Vector3( 1, 0, 0)
+	val wallZ1 = Vector3( 0, 0,-1)
+	val wallZ2 = Vector3( 0, 0, 1)
 	
 	/** Apply displacements from collisions with objects. */
 	def resolveCollions(dt:Double) {
-		val ground = Vector3( 0, 1, 0)
-		val wallX1 = Vector3(-1, 0, 0)
-		val wallX2 = Vector3( 1, 0, 0)
-		val wallZ1 = Vector3( 0, 0,-1)
-		val wallZ2 = Vector3( 0, 0, 1)
-		
 		// We only test collisions with the ground and walls actually.
 		foreach { i =>
-			if(i.x.y <  Particle.ground) { handleCollisionWithAxisPlane(dt, i, ground, Particle.ground) }
+			if(i.x.y <  Particle.ground) { handleCollisionWithAxisPlane(dt, i, ground, Particle.ground) } else
+			if(i.x.y >  Particle.wallY)  { handleCollisionWithAxisPlane(dt, i, wallY,  Particle.wallY) }
+			
 			if(i.x.x >  Particle.wallsX) { handleCollisionWithAxisPlane(dt, i, wallX1, Particle.wallsX) } else
 			if(i.x.x < -Particle.wallsX) { handleCollisionWithAxisPlane(dt, i, wallX2, Particle.wallsX) }
+			
 			if(i.x.z >  Particle.wallsZ) { handleCollisionWithAxisPlane(dt, i, wallZ1, Particle.wallsZ) } else  
 			if(i.x.z < -Particle.wallsZ) { handleCollisionWithAxisPlane(dt, i, wallZ2, Particle.wallsZ) }
 			

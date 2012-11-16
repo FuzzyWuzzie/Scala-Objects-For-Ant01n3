@@ -1,9 +1,9 @@
 package org.sofa
 
 import java.lang.reflect.Method
-import java.io.{File, FileNotFoundException, InputStream}
-import _root_.scala.collection.mutable.HashMap
-import _root_.scala.io.Source
+import java.io.{File, FileNotFoundException, InputStream, FileInputStream, IOException}
+import scala.collection.mutable.{HashMap, ArrayBuffer}
+import scala.io.Source
 
 /** Representation of a set of parameters that can be read from the command line
   * or configuration files and automatically stored in objects.
@@ -69,10 +69,13 @@ class Environment {
  
 	/** Read a configuration file from a file name and process each field trying to store them as parameters.
       * If a line cannot be read, it is merely ignored, no exception is thrown. This behaviour has
-      * been chosen to be as error tolerant as possible. */
+      * been chosen to be as error tolerant as possible. The fileName must match a resource that is available
+      * in the current environment path. It depends on the default loader of the environment how the resources
+      * are searched. By default, files are searched on the local file system, you can either pass a fully
+      * qualified path name, or the name of something in the environment path. */
 	def readConfigFile(fileName:String) {
 		try {
-			readConfigFile(Source.fromFile(new File(fileName))) 
+			readConfigFile(Source.fromInputStream(Environment.loader.open(fileName))) 
 		} catch {
 			case e:FileNotFoundException => { printf("Environment: command file %s not found%n", fileName) }
 		}
@@ -163,4 +166,29 @@ class Environment {
 }
 
 /** A singleton environment that plays the role of default environment. */
-object Environment extends Environment
+object Environment extends Environment {
+	/** Path to look for configuration files. */
+	var path = new ArrayBuffer[String]()
+
+	var loader:EnvironmentLoader = new DefaultEnvironmentLoader()
+}
+
+trait EnvironmentLoader {
+	def open(resource:String):InputStream 
+}
+
+class DefaultEnvironmentLoader extends EnvironmentLoader {
+    def open(resource:String):InputStream = {
+        var file = new File(resource)
+        if(file.exists) {
+            new FileInputStream(file)
+        } else {
+            val sep = sys.props.get("file.separator").get
+
+            Environment.path.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
+                case path:Some[String] => {new FileInputStream(new File("%s%s%s".format(path.get,sep,resource))) }
+                case None => { throw new IOException("cannot locate environment file %s".format(resource)) }
+            }
+        }
+    }
+}

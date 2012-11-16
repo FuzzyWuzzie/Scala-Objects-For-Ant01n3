@@ -49,9 +49,21 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     val LINEAR_MIPMAP_LINEAR:Int = GL.GL_LINEAR_MIPMAP_LINEAR
     val LINEAR:Int = GL.GL_LINEAR
     val REPEAT:Int = GL.GL_REPEAT
+    val CLAMP_TO_EDGE:Int = GL.GL_CLAMP_TO_EDGE
+    val NEAREST:Int = GL.GL_NEAREST
+    val DEPTH_COMPONENT:Int = GL2ES2.GL_DEPTH_COMPONENT
+    val FRAMEBUFFER:Int = GL.GL_FRAMEBUFFER
+    val DEPTH_ATTACHMENT:Int = GL.GL_DEPTH_ATTACHMENT
+    val COLOR_ATTACHMENT0:Int = GL.GL_COLOR_ATTACHMENT0
+    val FRAMEBUFFER_COMPLETE:Int = GL.GL_FRAMEBUFFER_COMPLETE
+    val FRAMEBUFFER_INCOMPLETE_ATTACHMENT:Int = GL.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT
+    val FRAMEBUFFER_INCOMPLETE_DIMENSIONS:Int = GL.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS
+    val FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:Int = GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT
+    val FRAMEBUFFER_UNSUPPORTED:Int = GL.GL_FRAMEBUFFER_UNSUPPORTED
 
     val UNSIGNED_BYTE:Int = GL.GL_UNSIGNED_BYTE
     val UNSIGNED_INT:Int = GL.GL_UNSIGNED_INT
+    val UNSIGNED_SHORT:Int = GL.GL_UNSIGNED_SHORT
     val FLOAT:Int = GL.GL_FLOAT
     val DOUBLE:Int = -1
     val RGBA:Int = GL.GL_RGBA
@@ -113,6 +125,20 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, data)
     def generateMipmaps(target:Int) = glGenerateMipmap(target)
     
+    def genFramebuffer:Int = {
+    	glGenFramebuffers(1, ib1)
+    	ib1.get(0)
+    }
+
+    def deleteFramebuffer(id:Int) {
+    	ib1.put(0, id)
+    	glDeleteFramebuffers(1, ib1)
+    }
+
+    def bindFramebuffer(target:Int, id:Int) = glBindFramebuffer(target, id)
+    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, texture:Int, level:Int) = glFramebufferTexture2D(target,attachment,textarget,texture,level)
+    def checkFramebufferStatus(target:Int):Int = glCheckFramebufferStatus(target)
+
 // Buffers
 	
 	def genBuffer():Int = {

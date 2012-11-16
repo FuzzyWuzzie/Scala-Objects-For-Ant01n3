@@ -490,6 +490,7 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		val to   = hash(x1, y1, 0)
 		val p    = thing.from
 		var y    = from.y
+
 		while(y <= to.y) {
 			var x = from.x
 			while(x <= to.x) {

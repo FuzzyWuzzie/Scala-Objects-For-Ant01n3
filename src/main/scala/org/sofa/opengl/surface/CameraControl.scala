@@ -6,7 +6,7 @@ import org.sofa.opengl.Camera
 
 class BasicCameraController(val camera:Camera) {
 	
-	protected val step = 0.1
+	protected var step = 0.1
 	
 	def scroll(surface:Surface, e:ScrollEvent) {
 	    camera.rotateViewHorizontal(e.amount * step * 0.05)

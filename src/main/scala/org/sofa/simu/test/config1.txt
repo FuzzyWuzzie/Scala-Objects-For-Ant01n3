@@ -5,12 +5,12 @@
 	isoDiv = 2
 	isoLimit = 0.7
 
-	drawParticlesFlag = true
+	drawParticlesFlag = false
 	drawSpringsFlag = false
 	drawSpaceHashFlag = false
 	drawIsoCubesFlag = false
 	drawIsoSurfaceFlag = false
-	drawIsoContourFlag = true
+	drawIsoContourFlag = false
 	drawIsoSquaresFlag = false
 	drawIsoPlaneFlag = false
 	drawParticlesQuadFlag = true

@@ -18,13 +18,13 @@ smooth out vec4 C;
 smooth out float LL;
 
 void main(void) {
-	uint b;
+	int b;
 	vec3 n;
 	vec4 p;
 	vec4 P;
 	
-	b  = uint(boneIndex);
-	p  = bone[b].MV * vec4(position, 1);
+	b  = int(uint(boneIndex));				// Indexing an array with a uint makes OS X become crazy.
+	p  = bone[b].MV * vec4(position, 1); 	// It works on Linux with the same machine..  Distinct drivers ? WTF ?
 	n  = bone[b].MV3x3 * normal;
 
 	P  = MV * p;
@@ -32,7 +32,7 @@ void main(void) {
 	L  = lights[0].pos - vec3(P);
 	LL = length(L);
 	L  = normalize(L);
-    C  = bone[b].color;
+	C  = bone[b].color;
 
 	gl_Position = MVP * p;
 }

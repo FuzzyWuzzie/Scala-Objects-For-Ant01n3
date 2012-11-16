@@ -36,9 +36,21 @@ abstract class SGL {
     val LINEAR_MIPMAP_LINEAR:Int
     val LINEAR:Int
     val REPEAT:Int
+    val CLAMP_TO_EDGE:Int
+    val NEAREST:Int
+    val DEPTH_COMPONENT:Int
+    val FRAMEBUFFER:Int
+    val DEPTH_ATTACHMENT:Int
+    val COLOR_ATTACHMENT0:Int
+    val FRAMEBUFFER_COMPLETE:Int
+    val FRAMEBUFFER_INCOMPLETE_ATTACHMENT:Int
+    val FRAMEBUFFER_INCOMPLETE_DIMENSIONS:Int
+    val FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:Int
+    val FRAMEBUFFER_UNSUPPORTED:Int
     
     val UNSIGNED_BYTE:Int
     val UNSIGNED_INT:Int
+    val UNSIGNED_SHORT:Int
     val FLOAT:Int
     val DOUBLE:Int
     val RGBA:Int
@@ -92,6 +104,12 @@ abstract class SGL {
 	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer)
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer)
     def generateMipmaps(target:Int)
+
+    def genFramebuffer:Int
+    def deleteFramebuffer(id:Int)
+    def bindFramebuffer(target:Int, id:Int)
+    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, texture:Int, level:Int)
+    def checkFramebufferStatus(target:Int):Int
     
 // Buffers
 	

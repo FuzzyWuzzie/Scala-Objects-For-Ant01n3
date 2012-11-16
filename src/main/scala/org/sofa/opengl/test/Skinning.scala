@@ -132,9 +132,10 @@ Console.err.println("B")
 	            new FragmentShader(gl, "uniform", "uniformColor.frag"))
 	    
 Console.err.println("C") // The error seems to appear in the vertex shader at compilation.
-	    boneShader = new ShaderProgram(gl, "phong n-map with bones",
-	            new VertexShader(gl, "bone", "bonePhong.vert.glsl"),
-	            new FragmentShader(gl, "bone", "bonePhong.frag.glsl"))
+		boneShader = ShaderProgram(gl, "phong n-map with bones", "bonePhong.vert.glsl", "bonePhong.frag.glsl")
+//	    boneShader = new ShaderProgram(gl, "phong n-map with bones",
+//	            new VertexShader(gl, "bone", "bonePhong.vert.glsl"),
+//	            new FragmentShader(gl, "bone", "bonePhong.frag.glsl"))
 Console.err.println("D")
 
 	    boneShader.uniform("bone[0].color", skeleton.color)
