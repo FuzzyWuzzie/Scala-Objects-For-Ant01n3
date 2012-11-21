@@ -113,11 +113,22 @@ object DoubleBuffer {
     }
 }
 
-class ByteBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Byte] {
+class ByteBuffer(var capacity:Int, direct:Boolean, data:Array[Byte]) extends NioTypedBuffer[Byte] {
 	type BufferLike = java.nio.ByteBuffer
-	var buffer = if(direct) java.nio.ByteBuffer.allocateDirect(capacity) else java.nio.ByteBuffer.allocate(capacity)
+	var buffer:java.nio.ByteBuffer = if(direct) {
+            val b = java.nio.ByteBuffer.allocateDirect(capacity)
+            if(data ne null) copy(data)
+            b
+        } else {
+            if(data ne null) {
+                java.nio.ByteBuffer.wrap(data)
+            } else {
+                java.nio.ByteBuffer.allocate(capacity)
+            }
+        }
 	nativeOrder
-	def this(data:Array[Byte], direct:Boolean) { this(data.size, direct); copy(data) }
+	def this(data:Array[Byte], direct:Boolean) { this(data.size, direct, data) }
+    def this(capacity:Int, direct:Boolean) { this(capacity, direct, null) }
 	def rewind() { buffer.rewind() }
 	def position(i:Int) { buffer.position(i) }
 	def update(i:Int, value:Byte):Unit = buffer.put(i, value)

@@ -54,6 +54,9 @@ abstract class SGL {
     val FLOAT:Int
     val DOUBLE:Int
     val RGBA:Int
+    val LUMINANCE:Int
+    val LUMINANCE_ALPHA:Int
+    val ALPHA:Int
     
     val ELEMENT_ARRAY_BUFFER:Int
     val ARRAY_BUFFER:Int

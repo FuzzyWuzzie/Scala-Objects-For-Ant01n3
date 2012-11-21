@@ -1,7 +1,7 @@
 package org.sofa.opengl
 
 import org.sofa.nio._
-import java.awt.image.BufferedImage
+import java.awt.image.{BufferedImage, DataBufferByte}
 import javax.imageio.ImageIO
 import java.io.{File, IOException}
 
@@ -19,24 +19,52 @@ object Texture {
     var loader:TextureLoader = new DefaultTextureLoader()
 }
 
-/** The image data used for the texture. */
-abstract class TextureImage {
+object ImageFormat extends Enumeration {
+    val RGBA_8888 = Value
+    val A_8 = Value
+}
+
+/** The image data used for the texture.
+  *
+  * This is an abstract class that represents image data to be transfered into a texture.
+  * Most of the time it can be released once the data has been given to OpenGL. Its main
+  * method is texImage2D() that will transfer its data to OpenGL. It can be used by multiple
+  * texture instances.
+  */
+trait TextureImage {
     /** Width in pixels. */
     def width:Int
     /** Height in pixels. */
     def height:Int
-    /** Initialise this image. */
-    def initFromData(gl:SGL, mode:Int, doGenerateMipmaps:Boolean)
+    /** Image type. */
+    def format:ImageFormat.Value 
+    /** Initialize the current texture with this image data. */
+    def texImage2D(gl:SGL, mode:Int, doGenerateMipmaps:Boolean)
 }
 
 /** A texture image data using an AWT buffered image. */
 class TextureImageAwt(val data:BufferedImage) extends TextureImage {
-    def initFromData(gl:SGL, mode:Int, doGenerateMipmaps:Boolean) {
-       val (format, theType) = imageFormatAndType(gl, this.data)
-       val data = imageData(this.data)
-       val width = this.data.getWidth
-       val height = this.data.getHeight
-       gl.texImage2D(mode, 0, gl.RGBA, width, height, 0, format, theType, data)
+
+    protected val imgFormat = verify
+
+    protected def verify():ImageFormat.Value = {
+        import BufferedImage._
+        data.getType match {
+            case TYPE_INT_ARGB    => ImageFormat.RGBA_8888
+            case TYPE_INT_RGB     => ImageFormat.RGBA_8888
+            case TYPE_INT_BGR     => ImageFormat.RGBA_8888
+            case TYPE_3BYTE_BGR   => ImageFormat.RGBA_8888
+            case TYPE_4BYTE_ABGR  => ImageFormat.RGBA_8888
+            case TYPE_BYTE_GRAY   => ImageFormat.A_8
+            case _ => { throw new RuntimeException("unsupported image format (support INT_ARGB, INT_RGB, BYTE_GRAY)") }
+        }
+    }
+
+    def texImage2D(gl:SGL, mode:Int, doGenerateMipmaps:Boolean) {
+       val (format, internalFormat, theType, bytes) = imageFormatAndType(gl, data)
+       
+       gl.texImage2D(mode, 0, format, width, height, 0, internalFormat, theType, bytes)
+       
        if(doGenerateMipmaps)
            gl.generateMipmaps(gl.TEXTURE_2D)
     }
@@ -45,29 +73,70 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
 
     def height:Int = data.getHeight
 
-    protected def imageFormatAndType(gl:SGL, image:BufferedImage):(Int, Int) = {
-        (gl.RGBA, gl.UNSIGNED_BYTE) // TODO, see inefficient imageData()
+    def format:ImageFormat.Value = imgFormat
+
+    protected def imageFormatAndType(gl:SGL, image:BufferedImage):(Int, Int, Int, ByteBuffer) = {
+        imgFormat match {
+            case ImageFormat.RGBA_8888 => (gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageDataRGBA(image))
+            case ImageFormat.A_8       => (gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, imageDataGray(image))
+            case _                   => throw new RuntimeException("WTF?")
+        }
     }
     
-    protected def imageData(image:BufferedImage):ByteBuffer = {
-        val width = data.getWidth
-        val height = data.getHeight
+    protected def imageDataRGBA(image:BufferedImage):ByteBuffer = {
+        val width          = image.getWidth
+        val height         = image.getHeight
+        // val dataBuffer     = image.getRaster.getDataBuffer
+        // val buf:ByteBuffer = dataBuffer match {
+        //     case b: DataBufferByte => new ByteBuffer(b.getData, false)
+        //     case _ => null
+        // }
+        
         val buf = new ByteBuffer(width * height * 4, true)
         
         // Very inefficient.
         
         var b = 0
-        
-        for(y <- 0 until height) {
-            for(x <-0 until width) {
-                val rgba = image.getRGB(x, y)
+        var y = 0
+        var x = 0
+
+        while(y < height) {
+            x = 0
+            while(x < width) {
+                val rgba = image.getRGB(x,y)
                 buf(b+0) = ((rgba>>16) & 0xFF).toByte   // R
                 buf(b+1) = ((rgba>> 8) & 0xFF).toByte   // G
                 buf(b+2) = ((rgba>> 0) & 0xFF).toByte   // B
                 buf(b+3) = ((rgba>>24) & 0xFF).toByte   // A
-                
+                x += 1
                 b += 4
             }
+            y += 1
+        }
+        
+        buf
+    }
+    
+    protected def imageDataGray(image:BufferedImage):ByteBuffer = {
+        val width  = data.getWidth
+        val height = data.getHeight
+        val buf    = new ByteBuffer(width * height, true)
+        
+        // Very inefficient.
+        
+        var b = 0
+        var y = 0
+        var x = 0
+
+        while(y < height) {
+            x = 0
+            while(x < width) {
+                val rgba = image.getRGB(x,y)
+                buf(b) = (rgba & 0xFF).toByte
+                x += 1
+                b += 1
+            }
+            y += 1
         }
         
         buf
@@ -120,7 +189,7 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     
     def this(gl:SGL, image:TextureImage, generateMipmaps:Boolean) {
         this(gl, gl.TEXTURE_2D, image.width, image.height, 0)
-        image.initFromData(gl, mode, generateMipmaps)
+        image.texImage2D(gl, mode, generateMipmaps)
        checkErrors
     }
 

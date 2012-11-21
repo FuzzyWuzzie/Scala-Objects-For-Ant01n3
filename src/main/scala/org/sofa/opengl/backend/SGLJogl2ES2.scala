@@ -67,6 +67,9 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     val FLOAT:Int = GL.GL_FLOAT
     val DOUBLE:Int = -1
     val RGBA:Int = GL.GL_RGBA
+    val LUMINANCE:Int = GL.GL_LUMINANCE
+    val LUMINANCE_ALPHA:Int = GL.GL_LUMINANCE_ALPHA
+    val ALPHA:Int = GL.GL_ALPHA
 
     val ELEMENT_ARRAY_BUFFER:Int = GL.GL_ELEMENT_ARRAY_BUFFER
     val ARRAY_BUFFER:Int = GL.GL_ARRAY_BUFFER

@@ -20,9 +20,13 @@ void main(void) {
 	vec3    r = normalize(reflect(-l, n));				// Reflection vector
 	float   s = pow(max(dot(n, r), 0), light.specular);	// Specular
 	float  DD = D * D;									// D^2
-	vec4    C = texture2D(texColor, vTexCoords.st);
+	vec4   CC = texture2D(texColor, vTexCoords.st);
+	vec3    C = CC.rgb;
+	float   a = CC.a;
 
-	gl_FragColor = ((C * d * light.intensity) / DD)
-	             + ((vec4(1,1,1,1) * s * light.intensity) / DD)
-		 		 + (C * light.ambient);
+	C = ((C * d * light.intensity) / DD)
+	  + ((vec3(1,1,1) * s * light.intensity) / DD)
+	  + (C * light.ambient);
+
+	gl_FragColor = vec4(C.rgb, a);
 }
