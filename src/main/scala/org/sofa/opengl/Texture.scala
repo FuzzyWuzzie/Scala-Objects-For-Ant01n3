@@ -76,10 +76,11 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
     def format:ImageFormat.Value = imgFormat
 
     protected def imageFormatAndType(gl:SGL, image:BufferedImage):(Int, Int, Int, ByteBuffer) = {
+        val padding = gl.getInteger(gl.UNPACK_ALIGNMENT)
         imgFormat match {
             case ImageFormat.RGBA_8888 => (gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageDataRGBA(image))
-            case ImageFormat.A_8       => (gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, imageDataGray(image))
-            case _                   => throw new RuntimeException("WTF?")
+            case ImageFormat.A_8       => (gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, imageDataGray(image, padding))
+            case _                     => throw new RuntimeException("WTF?")
         }
     }
     
@@ -117,10 +118,12 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
         buf
     }
     
-    protected def imageDataGray(image:BufferedImage):ByteBuffer = {
+    protected def imageDataGray(image:BufferedImage, align:Int):ByteBuffer = {
         val width  = data.getWidth
         val height = data.getHeight
-        val buf    = new ByteBuffer(width * height, true)
+        val pad    = (align - (width%align)) % align
+println("align === %d (width = %d, width + pad = %d (pad=%d  OR %d ??)".format(align, width, width+(width%align), width%align, pad))
+        val buf    = new ByteBuffer((width+pad) * height, true)   // Take care to pad data on 4 bytes.
         
         // Very inefficient.
         
@@ -136,6 +139,7 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
                 x += 1
                 b += 1
             }
+            b += pad   // Take care of align at end of row.
             y += 1
         }
         

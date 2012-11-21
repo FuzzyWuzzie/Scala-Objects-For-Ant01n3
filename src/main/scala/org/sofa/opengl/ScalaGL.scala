@@ -24,6 +24,7 @@ abstract class SGL {
     val FRONT_AND_BACK:Int
     val FILL:Int
     val LINE:Int
+    val UNPACK_ALIGNMENT:Int
 
     val TEXTURE_2D:Int
     val TEXTURE0:Int
@@ -77,6 +78,8 @@ abstract class SGL {
 // Info
     
     def isES:Boolean
+
+    def getInteger(param:Int):Int
     
 // Vertex arrays
 	

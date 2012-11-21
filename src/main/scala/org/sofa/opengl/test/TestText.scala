@@ -97,9 +97,11 @@ class TestText extends SurfaceRenderer {
 	}
 
 	def initGLText() {
+		println("unpack alignment = %d".format(gl.getInteger(gl.UNPACK_ALIGNMENT)))
+
 		GLFont.path += "/Users/antoine/Library/Fonts"
 
-		font = new GLFont(gl, "DroidSerif-Italic.ttf", 22, 0, 0)
+		font = new GLFont(gl, "DroidSerif-Italic.ttf", 100, 0, 0)
 	}
 	
 	def initGeometry() {

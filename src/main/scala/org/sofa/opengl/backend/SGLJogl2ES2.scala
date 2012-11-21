@@ -37,6 +37,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     val FRONT_AND_BACK:Int = GL.GL_FRONT_AND_BACK
     val FILL:Int = GL2GL3.GL_FILL
     val LINE:Int = GL2GL3.GL_LINE
+    val UNPACK_ALIGNMENT:Int = GL.GL_UNPACK_ALIGNMENT
     
     val TEXTURE_2D:Int = GL.GL_TEXTURE_2D
     val TEXTURE0:Int = GL.GL_TEXTURE0
@@ -90,6 +91,11 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 // Info
     
     def isES:Boolean = true
+
+    def getInteger(param:Int):Int = {
+    	glGetIntegerv(param, ib1)
+    	ib1.get(0)
+    }
 
 // Vertex arrays
 	
