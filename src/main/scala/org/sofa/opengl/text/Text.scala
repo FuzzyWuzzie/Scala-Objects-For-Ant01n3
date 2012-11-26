@@ -5,8 +5,9 @@ import scala.collection.mutable.ArrayBuffer
 import java.awt.{Font => AWTFont, Color => AWTColor, RenderingHints => AWTRenderingHints, Graphics2D => AWTGraphics2D}
 import java.awt.image.BufferedImage
 import java.io.{File, IOException, InputStream, FileInputStream}
-import org.sofa.opengl.{SGL, Texture, TextureImageAwt}
-
+import org.sofa.math.{Rgba,Matrix4}
+import org.sofa.opengl.{SGL, Texture, TextureImageAwt, ShaderProgram, VertexArray, Camera}
+import org.sofa.opengl.mesh.{DynIndexedTriangleMesh}
 
 object GLFont {
 	/** First character Unicode. */
@@ -19,20 +20,17 @@ object GLFont {
 	val CharCnt = (((CharEnd-CharStart)+1)+1)
 	
 	/** Character to use for unknown. */
-	val CharNone = 32
+	val CharNone = 32	// Must be in the range CharStart .. CharEnd
 	
 	/** Index of unknown character. */
 	val CharUnknown = (CharCnt-1)
-	
+
 	/** Minimum font size (pixels). */
 	val FontSizeMin = 6
 	
 	/** Maximum font size (pixels). */
 	val FontSizeMax = 180
 	
-	/** Number of characters to render per batch. */
-	val CharBatchSize = 100
-
 	/** Path to lookup for font files. */
 	val path = new ArrayBuffer[String]()
 
@@ -64,6 +62,10 @@ class GLFont(val gl:SGL, file:String, val size:Int, padX:Int, padY:Int) {
 	/** The full texture region. */
 	var textureRgn:TextureRegion = null
 
+	var textureMin:Int = gl.NEAREST
+
+	var textureMag:Int = gl.LINEAR
+
 	//----------------------
 
 	/** Maximal character width (pixels). */
@@ -89,17 +91,35 @@ class GLFont(val gl:SGL, file:String, val size:Int, padX:Int, padY:Int) {
 
 	/** Number of columns in the texture. */
 	var colCnt = 0
-
-	/** Font scale along X. */
-	var scaleX = 1f
-
-	/** Font scale along Y. */
-	var scaleY = 1f
-
-	/** Additional X spacing (unscaled). */
-	var spaceX = 0f
 	
 	GLFont.loader.load(gl, file, size, padX, padY, this)
+
+	/** Set the minification and magnification filters for the glyph
+	  * texture. For 2D pixel perfect use, the NEAREST-LINEAR mode is better.
+	  * For 3D use the LINEAR-LINEAR mode is better. */
+	def minMagFilter(minFilter:Int, magFilter:Int) {
+		textureMin = minFilter
+		textureMag = magFilter
+		texture.minMagFilter(textureMin, textureMag)
+	}
+
+	/** Width of the given char, if unknown, returns the default character width. */
+	def charWidth(c:Char):Float = {
+		if(c >= GLFont.CharStart && c <= GLFont.CharEnd) {
+			charWidths(c.toInt - GLFont.CharStart)
+		} else {
+			charWidths(GLFont.CharNone)
+		}
+	}
+
+	/** Texture region of the given char, if unknown, returns the default character texture region. */
+	def charTextureRegion(c:Char):TextureRegion = {
+		if(c >= GLFont.CharStart && c <= GLFont.CharEnd) {
+			charRgn(c.toInt - GLFont.CharStart)
+		} else {
+			charRgn(GLFont.CharNone)
+		}		
+	}
 }
 
 trait GLFontLoader {
@@ -108,8 +128,6 @@ trait GLFontLoader {
 
 class GLFontLoaderAWT extends GLFontLoader {
 	def load(gl:SGL, resource:String, size:Int, padX:Int, padY:Int, font:GLFont) {
-val timer = new Timer(Console.out)
-timer.measure("load fond %s".format(resource)) {
 		font.fontPadX = padX
 		font.fontPadY = padY
 
@@ -124,11 +142,12 @@ timer.measure("load fond %s".format(resource)) {
 		val w = size*1.2 + 2*padX       // 1.2 factor to make some room.
 		val h = size*1.2 + 2*padY 		// idem
 		val textureSize = math.sqrt(w * h * GLFont.CharCnt).toInt
-
-println("size=%d textureSize=%d".format(size, textureSize))
 		
 		val image = new BufferedImage(textureSize, textureSize, BufferedImage.TYPE_BYTE_GRAY);
 		val gfx   = image.getGraphics.asInstanceOf[AWTGraphics2D]
+
+//		gfx.setColor(new AWTColor(0.2f, 0f, 0f, 1))
+//		gfx.fillRect(0, 0, textureSize, textureSize)
 
 		gfx.setFont(awtFont)
 		gfx.setRenderingHint(AWTRenderingHints.KEY_TEXT_ANTIALIASING,
@@ -188,11 +207,10 @@ println("size=%d textureSize=%d".format(size, textureSize))
 
 		while(c < GLFont.CharEnd) {
 			gfx.drawString("%c".format(c), x, y)
-//			if((x+font.cellWidth-font.fontPadX) > textureSize) {
 
 			x += font.cellWidth
 
-			if((x+font.cellWidth) >= textureSize) {
+			if((x + font.cellWidth - font.fontPadX) >= textureSize) {
 				x  = font.fontPadX
 				y += font.cellHeight
 			}
@@ -213,18 +231,21 @@ println("size=%d textureSize=%d".format(size, textureSize))
 		c = 0
 
 		while(c < GLFont.CharCnt) {
-			font.charRgn(c) = new TextureRegion(textureSize, textureSize, x, y, font.cellWidth-1, font.cellHeight-1)
-			if(x+font.cellWidth > textureSize) {
-				x  = 0
+			// Why we remove size/5 -> because the cell size is often too large for
+			// italic text and some parts of the characters just aside will appear. Se we restrain
+			// the area of the character. We do the same thing in GLString when drawing characters
+			// to compensate.
+			font.charRgn(c) = new TextureRegion(textureSize, textureSize, x, y, font.cellWidth-(size/5), font.cellHeight-(size/5))
+
+			x += font.cellWidth
+
+			if((x + font.cellWidth - font.fontPadX) >= textureSize) {
+				x  = font.fontPadX
 				y += font.cellHeight
-			} else {
-				x += font.cellWidth
 			}
 
 			c += 1
 		}
-}
-timer.printAvgs("-- Load Font %s --".format(resource))
 	}
 
 	protected def loadFont(resource:String):AWTFont = AWTFont.createFont(AWTFont.TRUETYPE_FONT, openFont(resource))
@@ -261,5 +282,178 @@ class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
 	  * @param height The height of the texture region in pixels. */
 	def this(texWidth:Float, texHeight:Float, x:Float, y:Float, width:Float, height:Float) {
 		this((x/texWidth), (y/texHeight), ((x/texWidth) + (width/texWidth)), ((y/texHeight) + (height/texHeight)))
+	}
+}
+
+/** A single string of text.
+  * 
+  * The string is stored as a vertex array of quads each one representing
+  * a character.
+  *
+  * TODO: per character color.
+  * TODO: Right-to-Left, Top-to-Bottom advance.
+  * TODO: Multi-line string.
+  */
+class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
+	/** Mesh used to build the triangles of the batch. */
+	protected val batchMesh = new DynIndexedTriangleMesh(maxCharCnt*2)
+
+	/** Vertex array of the triangles (by two to form a quad) for each character. */
+	protected var batch:VertexArray = null
+
+	/** Rendering color. */
+	protected var color = Rgba.black
+
+	/** Current triangle. */
+	protected var t = 0
+
+	/** Current point. */
+	protected var p = 0
+
+	/** Current x. */
+	protected var x = 0f
+
+	/** Current y. */
+	protected var y = 0f
+
+	/** Shader used for text compositing. */
+	protected var shader:ShaderProgram = null
+
+	init
+
+	protected def init() {
+		shader = ShaderProgram(gl, "text shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
+		var v  = shader.getAttribLocation("position")
+		var t  = shader.getAttribLocation("texCoords")
+		batch  = batchMesh.newVertexArray(gl, ("vertices", v), ("texcoords", t))
+	}
+
+	/** Size of the string in pixels. */
+	def advance:Float = x
+
+	/** height of the string in pixels. */
+	def height:Float = y
+
+	def setColor(color:Rgba) {
+		this.color = color
+	}
+
+	/** Start the definition of a new string. This must be called before any call to char(Char).
+	  * When finished the end() method must be called. The string is always located at the
+	  * origin (0,0,0) on the XY plane. The point at the origin is at the baseline of the text
+	  * before the first character. */
+	def begin() {
+		p = 0
+		x = 0f
+		y = 0f
+	}
+
+	/** Same as calling begin(), a code that uses char(), then end(), you
+	  * only pass the code that must call char() one or more time to build
+	  * the string. */
+	def build(stringBuilder: => Unit) {
+		begin
+		stringBuilder
+		end
+	}
+
+	/** Same as calling begin(), char() on each character of the string, then end(). */
+	def build(string:String) {
+		begin
+		var i = 0
+		val n = string.length
+		while(i < n) {
+			char(string.charAt(i))
+			i += 1
+		}
+		end
+	}
+
+	/** Add a character in the string. This can only be called after a call to begin() and before a call to end(). */
+	def char(c:Char) {
+		val width = font.charWidth(c)
+		val rgn   = font.charTextureRegion(c)
+
+		addCharTriangles(rgn)
+
+		x += width  	// Triangles may overlap.
+	}
+
+	/** End the definition of the new string. This can only be called if begin() has been called before. */
+	def end() {
+		batchMesh.updateVertexArray(gl, "vertices", null, null ,"texcoords")
+	}
+
+	def draw(camera:Camera) {
+		val ff = gl.getInteger(gl.FRONT_FACE)
+		gl.frontFace(gl.CCW)
+		shader.use
+		font.texture.bindTo(gl.TEXTURE0)
+	    shader.uniform("texColor", 0)
+	    shader.uniform("textColor", color)
+	    camera.setUniformMVP(shader)
+		batch.draw(batchMesh.drawAs, p)
+		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?		
+		gl.frontFace(ff)
+	}
+
+	/** Draw the string with the baseline at (0,0). Use translation of the current MVP. */
+	def draw(mvp:Matrix4) {
+		shader.use
+		font.texture.bindTo(gl.TEXTURE0)
+	    shader.uniform("texColor", 0)
+	    shader.uniform("textColor", color)
+	    shader.uniformMatrix("MVP", mvp)
+		batch.draw(batchMesh.drawAs, p)
+		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?
+	}
+
+	protected def addCharTriangles(rgn:TextureRegion) {
+		val w = font.cellWidth-(font.size/5)
+		val h = font.cellHeight-(font.size/5)
+		val d = font.fontDescent-(font.size/5)
+
+		//  u1 --> u2
+		//  
+		//  v1
+		//   |
+		//   v
+		//  v2
+
+		//  6--5 3
+		//  |2/ /|   ^
+		//  |/ /1|   |
+		//  4 1--2 >-+ CCW
+
+		// Vertices
+
+		batchMesh.setPoint(p,   x,   y-d,   0)
+		batchMesh.setPoint(p+1, x+w, y-d,   0)
+		batchMesh.setPoint(p+2, x+w, y-d+h, 0)
+
+		batchMesh.setPoint(p+3, x,   y-d,   0)
+		batchMesh.setPoint(p+4, x+w, y-d+h, 0)
+		batchMesh.setPoint(p+5, x,   y-d+h, 0)
+
+		// TexCoords
+
+		batchMesh.setPointTexCoord(p,   rgn.u1, rgn.v2)
+		batchMesh.setPointTexCoord(p+1, rgn.u2, rgn.v2)
+		batchMesh.setPointTexCoord(p+2, rgn.u2, rgn.v1)
+
+		batchMesh.setPointTexCoord(p+3, rgn.u1, rgn.v2)
+		batchMesh.setPointTexCoord(p+4, rgn.u2, rgn.v1)
+		batchMesh.setPointTexCoord(p+5, rgn.u1, rgn.v1)
+
+		// Triangles
+
+		batchMesh.setTriangle(t,   p,   p+1, p+2)
+		batchMesh.setTriangle(t+1, p+3, p+4, p+5)
+
+		// The TrianglesMesh supports color per vertice, would it be interesting
+		// to allow to color individual characters in a string ?
+
+		p += 6
+		t += 2
 	}
 }

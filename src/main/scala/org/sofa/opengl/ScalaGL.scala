@@ -22,6 +22,7 @@ abstract class SGL {
     val COLOR_BUFFER_BIT:Int
     val DEPTH_BUFFER_BIT:Int
     val FRONT_AND_BACK:Int
+    val FRONT_FACE:Int
     val FILL:Int
     val LINE:Int
     val UNPACK_ALIGNMENT:Int

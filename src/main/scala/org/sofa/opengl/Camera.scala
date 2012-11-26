@@ -117,9 +117,9 @@ class Camera {
     }
     
     protected def sphericalFromCartesian() {
-        sphericalEye.z = sqrt(cartesianEye.x*cartesianEye.x + cartesianEye.y*cartesianEye.y + cartesianEye.z*cartesianEye.z)
-    	sphericalEye.y = acos(cartesianEye.z / sphericalEye.z)
-    	sphericalEye.x = atan(cartesianEye.y / cartesianEye.x)
+      	sphericalEye.z = sqrt(cartesianEye.x*cartesianEye.x + cartesianEye.y*cartesianEye.y + cartesianEye.z*cartesianEye.z)
+    	sphericalEye.y = acos(cartesianEye.y / sphericalEye.z)
+    	sphericalEye.x = atan(cartesianEye.z / cartesianEye.x)
     	//Console.err.println("sphe(%s) -> cart(%s)".format(sphericalEye, cartesianEye))
     }
     
@@ -133,9 +133,17 @@ class Camera {
     
     /** Erase the projection matrix with a new projection using the given frustum
       * specifications. */
-    def frustum(left:Double, right:Double, up:Double, down:Double, near:Double) {
+    def frustum(left:Double, right:Double, bottom:Double, top:Double, near:Double) {
         projection.setIdentity
-        projection.frustum(left, right, up, down, near, maxDepth)
+        projection.frustum(left, right, bottom, top, near, maxDepth)
+    }
+
+    /** Erase the projection matrix with a new projection using the given orthographic
+      * specifications. */
+    def orthographic(left:Double, right:Double, bottom:Double, top:Double, near:Double) {
+        projection.setIdentity
+        projection.orthographic(left, right, bottom, top, near, maxDepth)
+Console.err.println("ORTHO=%s".format(projection.toString))
     }
     
     /** Erase the model-view matrix at the top of the model-view matrix stack and copy in

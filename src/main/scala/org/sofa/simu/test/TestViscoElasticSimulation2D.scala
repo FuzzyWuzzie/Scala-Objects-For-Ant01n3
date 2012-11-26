@@ -188,7 +188,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	def initializeSurface(sgl:SGL, surface:Surface) {
 		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 		Shader.includePath += "src/com/chouquette/tests"
-		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/"
+		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/textures"
 			
 		initSimuParams
 		initGL(sgl)
@@ -666,7 +666,7 @@ timer.measure("draw quads") {
 				}				
 			}
 			
-			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals")
+			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
 		}
 	}
 
@@ -741,7 +741,7 @@ triangleCount = 0
 
 //			assert(i == isoContourComp.triangleCount)
 
-			isoPlaneMesh.updateVertexArray(gl, "vertices", "colors", "normals")
+			isoPlaneMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
 		}
 	}
 

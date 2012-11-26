@@ -80,7 +80,7 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "src-scala/org/sofa/opengl/shaders"
+		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -217,7 +217,7 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 		thingMesh.setPointNormal(8, 0, 0, 1)
 		thingMesh.setPointNormal(9, 0, 0, 1)
 		
-		thingMesh.updateVertexArray(gl, "vertices", "colors", "normals")
+		thingMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
 	}
 	
 	def reshape(surface:Surface) {

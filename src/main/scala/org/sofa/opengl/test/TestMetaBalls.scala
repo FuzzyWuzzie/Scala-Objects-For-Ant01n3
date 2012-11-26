@@ -378,7 +378,7 @@ class TestMetaBalls extends SurfaceRenderer {
 				}
 			}
 			
-			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals")
+			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
 		}
 	}
 	

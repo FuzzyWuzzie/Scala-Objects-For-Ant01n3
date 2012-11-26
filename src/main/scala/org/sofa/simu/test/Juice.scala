@@ -749,7 +749,7 @@ timer.measure("draw quads") {
 				}				
 			}
 			
-			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals")
+			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
 		}
 	}
 
@@ -824,7 +824,7 @@ triangleCount = 0
 
 //			assert(i == isoContourComp.triangleCount)
 
-			isoPlaneMesh.updateVertexArray(gl, "vertices", "colors", "normals")
+			isoPlaneMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
 		}
 	}
 	

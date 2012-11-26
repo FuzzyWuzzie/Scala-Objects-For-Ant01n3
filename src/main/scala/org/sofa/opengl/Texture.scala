@@ -76,24 +76,27 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
     def format:ImageFormat.Value = imgFormat
 
     protected def imageFormatAndType(gl:SGL, image:BufferedImage):(Int, Int, Int, ByteBuffer) = {
-        val padding = gl.getInteger(gl.UNPACK_ALIGNMENT)
+        val align = gl.getInteger(gl.UNPACK_ALIGNMENT)
+        
         imgFormat match {
-            case ImageFormat.RGBA_8888 => (gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageDataRGBA(image))
-            case ImageFormat.A_8       => (gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, imageDataGray(image, padding))
+            case ImageFormat.RGBA_8888 => (gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageDataRGBA(image, align))
+            case ImageFormat.A_8       => (gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, imageDataGray(image, align))
             case _                     => throw new RuntimeException("WTF?")
         }
     }
     
-    protected def imageDataRGBA(image:BufferedImage):ByteBuffer = {
-        val width          = image.getWidth
-        val height         = image.getHeight
+    protected def imageDataRGBA(image:BufferedImage, align:Int):ByteBuffer = {
+        val width  = image.getWidth
+        val height = image.getHeight
+        val pad    = (align - (width % align)) % align
+        
         // val dataBuffer     = image.getRaster.getDataBuffer
         // val buf:ByteBuffer = dataBuffer match {
         //     case b: DataBufferByte => new ByteBuffer(b.getData, false)
         //     case _ => null
         // }
         
-        val buf = new ByteBuffer(width * height * 4, true)
+        val buf = new ByteBuffer((width + pad) * height * 4, true)
         
         // Very inefficient.
         
@@ -112,6 +115,7 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
                 x += 1
                 b += 4
             }
+            b += pad
             y += 1
         }
         
@@ -121,9 +125,8 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
     protected def imageDataGray(image:BufferedImage, align:Int):ByteBuffer = {
         val width  = data.getWidth
         val height = data.getHeight
-        val pad    = (align - (width%align)) % align
-println("align === %d (width = %d, width + pad = %d (pad=%d  OR %d ??)".format(align, width, width+(width%align), width%align, pad))
-        val buf    = new ByteBuffer((width+pad) * height, true)   // Take care to pad data on 4 bytes.
+        val pad    = (align - (width % align)) % align
+        val buf    = new ByteBuffer((width + pad) * height, true)   // Take care to pad data on 4 bytes.
         
         // Very inefficient.
         

@@ -876,9 +876,9 @@ trait NumberGrid4 extends NumberGrid {
 	  * @param far The far clipping plane.
 	  */
 	def orthographic(left:Double, right:Double, bottom:Double, top:Double, near:Double, far:Double) {
-		setRow(0, 2/(right-left), 0,              0,            -(right+left)/(right-left))
-		setRow(1, 0,              2/(top-bottom), 0,            -(top+bottom)/(top-bottom))
-		setRow(2, 0,              0,              2/(far-near), -(far+near)/(far-near))
+		setRow(0, 2/(right-left), 0,              0,            -((right+left)/(right-left)))
+		setRow(1, 0,              2/(top-bottom), 0,            -((top+bottom)/(top-bottom)))
+		setRow(2, 0,              0,              2/(far-near), -((far+near)/(far-near)))
 		setRow(3, 0,              0,              0,            1)
 	}
 	

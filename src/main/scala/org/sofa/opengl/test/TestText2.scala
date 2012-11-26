@@ -9,11 +9,30 @@ import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
 import org.sofa.math.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject, Point3, Vector3, Vector4, Rgba, Matrix4}
 
-object TestText {
-	def main(args:Array[String]) = (new TestText).test
+object TestText2 {
+	def main(args:Array[String]) = (new TestText2).test
+
+	val lorem = Array[String](
+		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing",
+		"nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin",
+		"porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa,",
+		"scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum",
+		"bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales.",
+		"Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam nibh. Mauris ac mauris sed pede",
+		"pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit. Ut velit mauris, egestas sed, gravida nec, ornare",
+		"ut, mi. Aenean ut orci vel massa suscipit pulvinar. Nulla sollicitudin. Fusce varius, ligula non tempus aliquam, nunc turpis",
+		"ullamcorper nibh, in tempus sapien eros vitae ligula. Pellentesque rhoncus nunc et augue. Integer id felis. Curabitur aliquet",
+		"pellentesque diam. Integer quis metus vitae elit lobortis egestas. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Morbi",
+		"vel erat non mauris convallis vehicula. Nulla et sapien. Integer tortor tellus, aliquam faucibus, convallis id, congue eu, quam.",
+		"Mauris ullamcorper felis vitae erat. Proin feugiat, augue non elementum posuere, metus purus iaculis lectus, et tristique ligula",
+		"justo vitae magna. Aliquam convallis sollicitudin purus. Praesent aliquam, enim at fermentum mollis, ligula massa adipiscing nisl,",
+		"ac euismod nibh nisl eu lectus. Fusce vulputate sem at sapien. Vivamus leo. Aliquam euismod libero eu enim. Nulla nec felis sed leo",
+		"placerat imperdiet. Aenean suscipit nulla in justo. Suspendisse cursus rutrum augue. Nulla tincidunt tincidunt mi. Curabitur iaculis,",
+		"lorem vel rhoncus faucibus, felis magna fermentum augue, et ultricies lacus lorem varius purus. Curabitur eu amet."
+	)
 }
 
-class TestText extends SurfaceRenderer {
+class TestText2 extends SurfaceRenderer {
 	var gl:SGL = null
 	var surface:Surface = null
 	
@@ -37,7 +56,7 @@ class TestText extends SurfaceRenderer {
 	val light1 = Vector4(1, 2, 1, 1)
 
 	var font:GLFont = null
-	var text:GLString = null
+	var text:Array[GLString] = new Array[GLString](TestText2.lorem.length)
 		
 	def test() {
 		val caps = new GLCapabilities(GLProfile.getGL2ES2)
@@ -74,6 +93,7 @@ class TestText extends SurfaceRenderer {
 		initGeometry
 		
 		camera.viewCartesian(5, 2, 5)
+		//camera.viewCartesian(0,0,10)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -104,12 +124,13 @@ class TestText extends SurfaceRenderer {
 
 		font = new GLFont(gl, "DroidSerif-Italic.ttf", 100, 0, 0)
 //		font = new GLFont(gl, "SourceSansPro-Black.ttf", 100, 0, 0)
-		text = new GLString(gl, font, 256)
-
 		font.minMagFilter(gl.LINEAR, gl.LINEAR)
 
-		text.setColor(Rgba.grey20)
-		text.build("This is GL text !")
+		for(i <- 0 until text.length) {
+			text(i) = new GLString(gl, font, 256)
+			text(i).setColor(Rgba.grey20)
+			text(i).build(TestText2.lorem(i))
+		}
 	}
 	
 	def initGeometry() {
@@ -156,11 +177,14 @@ class TestText extends SurfaceRenderer {
 
 		// GLString
 
-		camera.pushpop {
+		for(i <- 0 until text.length) {
 			gl.disable(gl.DEPTH_TEST)
-			val scale = 5.0 / text.advance
-			camera.scaleModel(scale, scale, scale)
-			text.draw(camera)
+			camera.pushpop {
+				val scale = 5.0 / text(0).advance
+				camera.scaleModel(scale, scale, scale)
+				camera.translateModel(0, (text.length-i)*font.cellHeight, 0)
+				text(i).draw(camera)
+			}
 			gl.enable(gl.DEPTH_TEST)
 		}
 
@@ -170,10 +194,15 @@ class TestText extends SurfaceRenderer {
 		gl.checkErrors
 	}
 	
+var zoom = 10.0
+
 	def reshape(surface:Surface) {
 		camera.viewportPx(surface.width, surface.height)
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
 		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, 2)
+		//camera.maxDepth = 1
+		//camera.orthographic(-1, 1, -1, 1, -1)
+		//camera.orthographic(-camera.viewportRatio*zoom, camera.viewportRatio*zoom, -1*zoom, 1*zoom, 1)
 	}
 	
 	// protected def useLights(shader:ShaderProgram) {
