@@ -185,7 +185,7 @@ Console.err.println("D")
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	    
 	    nmapShader.use
-	    camera.setupView
+	    camera.viewLookAt
 	    useLights(nmapShader)
 	    useTextures(nmapShader)
 	    camera.uniformMVP(nmapShader)

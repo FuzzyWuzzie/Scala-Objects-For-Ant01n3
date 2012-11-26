@@ -441,7 +441,7 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
 //		camera.rotateViewHorizontal(0.1)
-		camera.setupView
+		camera.viewLookAt
 
 		drawGround
 		drawWalls

@@ -138,7 +138,7 @@ class TestColladaImport extends SurfaceRenderer {
 		
 		gl.frontFace(gl.CW)
 		planeShad.use
-		camera.setupView
+		camera.viewLookAt
 		useLights(planeShad)
 		camera.uniformMVP(planeShad)
 		plane.draw(planeMesh.drawAs)

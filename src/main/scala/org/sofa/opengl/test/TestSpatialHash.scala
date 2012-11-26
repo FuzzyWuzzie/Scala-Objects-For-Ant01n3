@@ -204,7 +204,7 @@ class TestSpatialHash extends SurfaceRenderer {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.frontFace(gl.CW)
 		
-		camera.setupView
+		camera.viewLookAt
 
 		// Plane
 		

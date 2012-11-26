@@ -139,7 +139,7 @@ class NormalMap extends SurfaceRenderer {
 	    
 	    nmapShader.use
 
-	    camera.setupView
+	    camera.viewLookAt
 	    
 	    setupLights
 	    setupTextures

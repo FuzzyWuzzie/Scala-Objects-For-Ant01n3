@@ -339,7 +339,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
-		camera.setupView
+		camera.viewLookAt
 
 		drawPlane
 		drawObstacles

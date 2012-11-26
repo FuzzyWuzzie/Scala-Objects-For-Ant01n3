@@ -179,7 +179,7 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
 		planeShad.use
-		camera.setupView
+		camera.viewLookAt
 		useLights(planeShad)
 		camera.uniformMVP(planeShad)
 		plane.draw(planeMesh.drawAs)

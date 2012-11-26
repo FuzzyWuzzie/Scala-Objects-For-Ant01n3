@@ -263,7 +263,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
-		camera.setupView
+		camera.viewLookAt
 
 		drawIsoSurface
 		drawAxis

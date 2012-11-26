@@ -39,6 +39,13 @@ object GLFont {
 }
 
 class GLFont(val gl:SGL, file:String, val size:Int, padX:Int, padY:Int) {
+	// TODO this strangePad allows to adjust the way we pick a rectangle around
+	// each glyph. Knowing that each glyph is drawn on a very large rectangle, and
+	// some part of a glyph may overlap another (descent, slanted font, etc.). We in
+	// general do not draw the full rectangle of a glyph but only a part of it.
+	// However the technique is bad, we should use the font metrics.
+	val strangePad = size / 10.0f
+
 	/** Font X padding (pixels, on each side, doubled on X axis) */
 	var fontPadX = 0
 
@@ -235,7 +242,7 @@ class GLFontLoaderAWT extends GLFontLoader {
 			// italic text and some parts of the characters just aside will appear. Se we restrain
 			// the area of the character. We do the same thing in GLString when drawing characters
 			// to compensate.
-			font.charRgn(c) = new TextureRegion(textureSize, textureSize, x, y, font.cellWidth-(size/5), font.cellHeight-(size/5))
+			font.charRgn(c) = new TextureRegion(textureSize, textureSize, x, y, font.cellWidth-font.strangePad, font.cellHeight-font.strangePad)
 
 			x += font.cellWidth
 
@@ -409,9 +416,9 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	}
 
 	protected def addCharTriangles(rgn:TextureRegion) {
-		val w = font.cellWidth-(font.size/5)
-		val h = font.cellHeight-(font.size/5)
-		val d = font.fontDescent-(font.size/5)
+		val w = font.cellWidth-font.strangePad
+		val h = font.cellHeight-font.strangePad
+		val d = font.fontDescent-font.strangePad
 
 		//  u1 --> u2
 		//  

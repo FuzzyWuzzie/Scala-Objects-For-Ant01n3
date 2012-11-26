@@ -13,22 +13,42 @@ object TestText2 {
 	def main(args:Array[String]) = (new TestText2).test
 
 	val lorem = Array[String](
-		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing",
-		"nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin",
-		"porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa,",
-		"scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum",
-		"bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales.",
-		"Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam nibh. Mauris ac mauris sed pede",
-		"pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit. Ut velit mauris, egestas sed, gravida nec, ornare",
-		"ut, mi. Aenean ut orci vel massa suscipit pulvinar. Nulla sollicitudin. Fusce varius, ligula non tempus aliquam, nunc turpis",
-		"ullamcorper nibh, in tempus sapien eros vitae ligula. Pellentesque rhoncus nunc et augue. Integer id felis. Curabitur aliquet",
-		"pellentesque diam. Integer quis metus vitae elit lobortis egestas. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Morbi",
-		"vel erat non mauris convallis vehicula. Nulla et sapien. Integer tortor tellus, aliquam faucibus, convallis id, congue eu, quam.",
-		"Mauris ullamcorper felis vitae erat. Proin feugiat, augue non elementum posuere, metus purus iaculis lectus, et tristique ligula",
-		"justo vitae magna. Aliquam convallis sollicitudin purus. Praesent aliquam, enim at fermentum mollis, ligula massa adipiscing nisl,",
-		"ac euismod nibh nisl eu lectus. Fusce vulputate sem at sapien. Vivamus leo. Aliquam euismod libero eu enim. Nulla nec felis sed leo",
-		"placerat imperdiet. Aenean suscipit nulla in justo. Suspendisse cursus rutrum augue. Nulla tincidunt tincidunt mi. Curabitur iaculis,",
-		"lorem vel rhoncus faucibus, felis magna fermentum augue, et ultricies lacus lorem varius purus. Curabitur eu amet."
+		"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+		"Sed non risus. Suspendisse lectus tortor, dignissim sit",
+		"amet, adipiscing, nec, ultricies sed, dolor. Cras",
+		"elementum ultrices diam. Maecenas ligula massa, varius a,",
+		"semper congue, euismod non, mi. Proin porttitor, orci nec",
+		"nonummy molestie, enim est eleifend mi, non fermentum",
+		"diam nisl sit amet erat. Duis semper. Duis arcu massa,",
+		"scelerisque vitae, consequat in, pretium a, enim.",
+		"Pellentesque congue. Ut in risus volutpat libero pharetra",
+		"tempor. Cras vestibulum bibendum augue. Praesent egestas",
+		"leo in pede. Praesent blandit odio eu enim. Pellentesque",
+		"sed dui ut augue blandit sodales. Vestibulum ante ipsum",
+		"primis in faucibus orci luctus et ultrices posuere cubilia",
+		"Curae; Aliquam nibh. Mauris ac mauris sed pede pellentesque",
+		"fermentum. Maecenas adipiscing ante non diam sodales",
+		"hendrerit. Ut velit mauris, egestas sed, gravida nec, ornare",
+		"ut, mi. Aenean ut orci vel massa suscipit pulvinar. Nulla",
+		"sollicitudin. Fusce varius, ligula non tempus aliquam, nunc",
+		"turpis ullamcorper nibh, in tempus sapien eros vitae ligula.",
+		"Pellentesque rhoncus nunc et augue. Integer id felis.",
+		"Curabitur aliquet pellentesque diam. Integer quis metus",
+		"vitae elit lobortis egestas. Lorem ipsum dolor sit amet,",
+		"consectetuer adipiscing elit. Morbi vel erat non mauris",
+		"convallis vehicula. Nulla et sapien. Integer tortor tellus,",
+		"aliquam faucibus, convallis id, congue eu, quam. Mauris",
+		"ullamcorper felis vitae erat. Proin feugiat, augue non",
+		"elementum posuere, metus purus iaculis lectus, et tristique",
+		"ligula justo vitae magna. Aliquam convallis sollicitudin",
+		"purus. Praesent aliquam, enim at fermentum mollis, ligula",
+		"massa adipiscing nisl, ac euismod nibh nisl eu lectus.",
+		"Fusce vulputate sem at sapien. Vivamus leo. Aliquam euismod",
+		"libero eu enim. Nulla nec felis sed leo placerat imperdiet.",
+		"Aenean suscipit nulla in justo. Suspendisse cursus rutrum",
+		"augue. Nulla tincidunt tincidunt mi. Curabitur iaculis,",
+		"lorem vel rhoncus faucibus, felis magna fermentum augue,",
+		"et ultricies lacus lorem varius purus. Curabitur eu amet."
 	)
 }
 
@@ -42,17 +62,15 @@ class TestText2 extends SurfaceRenderer {
 	var textShad:ShaderProgram = null
 	var plainShad:ShaderProgram = null
 	
-	var plane:VertexArray = null
+	//var plane:VertexArray = null
 	var axis:VertexArray = null
 	
 	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 10, 10)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
 	val clearColor = Rgba.white
-	val planeColor = Rgba.grey80
 	val light1 = Vector4(1, 2, 1, 1)
 
 	var font:GLFont = null
@@ -92,8 +110,6 @@ class TestText2 extends SurfaceRenderer {
 		initGLText
 		initGeometry
 		
-		camera.viewCartesian(5, 2, 5)
-		//camera.viewCartesian(0,0,10)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -122,9 +138,9 @@ class TestText2 extends SurfaceRenderer {
 
 		GLFont.path += "/Users/antoine/Library/Fonts"
 
-		font = new GLFont(gl, "DroidSerif-Italic.ttf", 100, 0, 0)
-//		font = new GLFont(gl, "SourceSansPro-Black.ttf", 100, 0, 0)
-		font.minMagFilter(gl.LINEAR, gl.LINEAR)
+//		font = new GLFont(gl, "DroidSerif-Italic.ttf", 12, 0, 0)
+		font = new GLFont(gl, "SourceSansPro-Black.ttf", 20, 0, 0)
+//		font.minMagFilter(gl.LINEAR, gl.LINEAR)
 
 		for(i <- 0 until text.length) {
 			text(i) = new GLString(gl, font, 256)
@@ -134,14 +150,8 @@ class TestText2 extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
-		var v = textShad.getAttribLocation("position")
-		var c = textShad.getAttribLocation("texCoords")
-
-		planeMesh.setTextureRepeat(1,1)
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("texcoords", c))
-		
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
+		val v = plainShad.getAttribLocation("position")
+		val c = plainShad.getAttribLocation("color")
 		
 		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))		
 	}	
@@ -151,7 +161,7 @@ class TestText2 extends SurfaceRenderer {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.frontFace(gl.CW)
 		
-		camera.setupView
+		camera.viewIdentity
 		
 		// Axis
 		
@@ -160,28 +170,13 @@ class TestText2 extends SurfaceRenderer {
 		camera.setUniformMVP(plainShad)
 		axis.draw(axisMesh.drawAs)
 
-		// Plane
-		
-		camera.pushpop {
-			val scale = (font.texture.width / 100.0)
-
-			textShad.use
-			font.texture.bindTo(gl.TEXTURE0)
-	    	textShad.uniform("texColor", 0)	// Texture Unit 0
-	    	textShad.uniform("textColor", Rgba.black)
-	    	//camera.scaleModel(scale, scale, scale)
-			camera.setUniformMVP(textShad)
-			plane.draw(planeMesh.drawAs)
-			gl.bindTexture(gl.TEXTURE_2D, 0)
-		}
-
 		// GLString
 
 		for(i <- 0 until text.length) {
 			gl.disable(gl.DEPTH_TEST)
 			camera.pushpop {
-				val scale = 5.0 / text(0).advance
-				camera.scaleModel(scale, scale, scale)
+				//val scale = 5.0 / text(0).advance
+				//camera.scaleModel(scale, scale, scale)
 				camera.translateModel(0, (text.length-i)*font.cellHeight, 0)
 				text(i).draw(camera)
 			}
@@ -194,21 +189,9 @@ class TestText2 extends SurfaceRenderer {
 		gl.checkErrors
 	}
 	
-var zoom = 10.0
-
 	def reshape(surface:Surface) {
 		camera.viewportPx(surface.width, surface.height)
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
-		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, 2)
-		//camera.maxDepth = 1
-		//camera.orthographic(-1, 1, -1, 1, -1)
-		//camera.orthographic(-camera.viewportRatio*zoom, camera.viewportRatio*zoom, -1*zoom, 1*zoom, 1)
-	}
-	
-	// protected def useLights(shader:ShaderProgram) {
-	// 	shader.uniform("light.pos", Vector3(camera.modelview.top * light1))
-	// 	shader.uniform("light.intensity", 4f)
-	// 	shader.uniform("light.ambient", 0.1f)
-	// 	shader.uniform("light.specular", 100f)
-	// }
+		camera.orthographic(0, surface.width, 0, surface.height, -1, 1)
+	}	
 }

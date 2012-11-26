@@ -140,10 +140,10 @@ class Camera {
 
     /** Erase the projection matrix with a new projection using the given orthographic
       * specifications. */
-    def orthographic(left:Double, right:Double, bottom:Double, top:Double, near:Double) {
+    def orthographic(left:Double, right:Double, bottom:Double, top:Double, near:Double, far:Double) {
         projection.setIdentity
-        projection.orthographic(left, right, bottom, top, near, maxDepth)
-Console.err.println("ORTHO=%s".format(projection.toString))
+        maxDepth = far
+        projection.orthographic(left, right, bottom, top, near, far)
     }
     
     /** Erase the model-view matrix at the top of the model-view matrix stack and copy in
@@ -151,12 +151,19 @@ Console.err.println("ORTHO=%s".format(projection.toString))
       * up vector.
       * 
       * This method must be called before any transform done on the "model", usually first
-      * before drawing anything. 
+      * before drawing anything. It is suitable for a 3D environment with a perspective
+      * transform. For an orthographic
       * 
       * This method does not empty the model-view matrix stack. */
-    def setupView() {
+    def viewLookAt() {
         modelview.setIdentity
         modelview.lookAt(cartesianEye, focus, up)
+    }
+
+    /** Reset the modelview to the identity. This must be called before each display
+      * of the scene, before any transformation are made to the model view matrix. */
+    def viewIdentity() {
+    	modelview.setIdentity
     }
     
     /** Push a copy of the current model-view matrix in the model-view matrix stack. */

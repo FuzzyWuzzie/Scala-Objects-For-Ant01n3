@@ -140,7 +140,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 			gl.clearColor(Rgba.blue)
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 			camera2.rotateViewHorizontal(0.1)
-			camera2.setupView
+			camera2.viewLookAt
 			
 			//plainShad.use
 			//camera2.setUniformMVP(plainShad)
@@ -161,7 +161,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.frontFace(gl.CW)
 		
-		camera.setupView
+		camera.viewLookAt
 
 		// Plane
 		
