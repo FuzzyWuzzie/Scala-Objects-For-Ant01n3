@@ -17,9 +17,6 @@ class TestText extends SurfaceRenderer {
 	var gl:SGL = null
 	var surface:Surface = null
 	
-	val projection:Matrix4 = new Matrix4
-	val modelview = new MatrixStack(new Matrix4)
-	
 	var textShad:ShaderProgram = null
 	var plainShad:ShaderProgram = null
 	

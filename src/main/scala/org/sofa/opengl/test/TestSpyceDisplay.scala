@@ -4,36 +4,42 @@ import org.sofa.Timer
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
 import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, TextureFramebuffer}
 import org.sofa.opengl.mesh.{Plane, Cube, WireCube, Axis, DynPointsMesh}
+import org.sofa.opengl.text.{GLFont, GLString}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
 import org.sofa.math.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject, Point3, Vector3, Vector4, Rgba, Matrix4}
 
-object TestRenderToTexture {
-	def main(args:Array[String]) = (new TestRenderToTexture).test
+object TestSpyceDisplay {
+	def main(args:Array[String]) = (new TestSpyceDisplay
+	).test
 }
 
-class TestRenderToTexture extends SurfaceRenderer {
+class TestSpyceDisplay extends SurfaceRenderer {
 	var gl:SGL = null
 	var surface:Surface = null
 	
 	var phongShad:ShaderProgram = null
 	var plainShad:ShaderProgram = null
-	var phongTexShad:ShaderProgram = null
-	
-	var plane:VertexArray = null
-	var axis:VertexArray = null
-	var cube:VertexArray = null
-	
+	var phtexShad:ShaderProgram = null
+	var textShad:ShaderProgram = null
+
+	val wallMesh:Array[Plane] = new Array[Plane](4)	
 	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 4, 4)
-	var cubeMesh = new Cube(0.5f)
-	
+
+	var wall:Array[VertexArray] = new Array[VertexArray](4)
+	var axis:VertexArray = null
+
 	var camera:Camera = null
-	var camera2:Camera = null
+	var cameraTex:Camera = null
 	var ctrl:BasicCameraController = null
 	
+	var heaFont:GLFont = null
+	var subFont:GLFont = null
+	var stdFont:GLFont = null
+
+	var text:Array[GLString] = new Array[GLString](4)
+
 	val clearColor = Rgba.grey20
-	val planeColor = Rgba.grey80
 	val light1 = Vector4(1, 2, 1, 1)
 
 	var fb:TextureFramebuffer = null
@@ -51,7 +57,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 		caps.setSampleBuffers(true)
 		
 		camera         = new Camera()
-		camera2        = new Camera()
+		cameraTex      = new Camera()
 		ctrl           = new MyCameraController(camera, light1)
 		initSurface    = initializeSurface
 		frame          = display
@@ -61,7 +67,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 		scroll         = ctrl.scroll
 		close          = { surface => sys.exit }
 		surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
-							camera, "Test Render to Texture", caps,
+							camera, "Spyce Like Wall", caps,
 							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
 	}
 	
@@ -70,6 +76,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 			
 		initGL(sgl)
 		initShaders
+		initFonts
 		initTextureFB
 		initGeometry
 		
@@ -89,44 +96,78 @@ class TestRenderToTexture extends SurfaceRenderer {
 		gl.frontFace(gl.CW)
 		gl.disable(gl.BLEND)
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-		gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
 	}
 	
 	def initShaders() {
 		phongShad = ShaderProgram(gl, "phong shader", "es2/phonghi.vert.glsl", "es2/phonghi.frag.glsl")
 		plainShad = ShaderProgram(gl, "plain shader", "es2/plainColor.vert.glsl", "es2/plainColor.frag.glsl")
-		phongTexShad = ShaderProgram(gl, "textured phong shader", "es2/phonghitex.vert.glsl", "es2/phonghitex.frag.glsl")
+		phtexShad = ShaderProgram(gl, "textured phong shader", "es2/phonghitex.vert.glsl", "es2/phonghitex.frag.glsl")
+		textShad  = ShaderProgram(gl, "text shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
+	}
+
+	def initFonts() {
+		GLFont.path += "/Users/antoine/Library/Fonts"
+
+		heaFont = new GLFont(gl, "Ubuntu-B.ttf", 40, 0, 0)
+		subFont = new GLFont(gl, "Ubuntu-RI.ttf", 30, 0, 0)
+		stdFont = new GLFont(gl, "Ubuntu-R.ttf", 20, 0, 0)
+		
+		heaFont.minMagFilter(gl.LINEAR, gl.LINEAR)
+		subFont.minMagFilter(gl.LINEAR, gl.LINEAR)
+		stdFont.minMagFilter(gl.LINEAR, gl.LINEAR)
+
+		text(0) = new GLString(gl, heaFont, 256)
+		text(1) = new GLString(gl, subFont, 256)
+		text(2) = new GLString(gl, stdFont, 256)
+		text(3) = new GLString(gl, stdFont, 256)
+
+		for(i <- 0 until text.length) {
+			text(i).setColor(Rgba.white)
+		}
+
+		text(0).build("Player 1")
+		text(1).build("Score 5000 pt")
+		text(2).build("voilà, voilà")
+		text(3).build("...")
 	}
 
 	def initTextureFB() {
-		fb = new TextureFramebuffer(gl, 64, 64)
+		fb = new TextureFramebuffer(gl, 1024, 1024, gl.LINEAR, gl.LINEAR)
 
-		camera2.viewCartesian(2, 2, 2)
-		camera2.setFocus(0, 0, 0)
-		camera2.viewportPx(fb.width, fb.height)
-		camera2.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, 2)
+		cameraTex.viewportPx(fb.width, fb.height)
+//		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
+		cameraTex.orthographic(0, fb.width, 0, fb.height, -1, 1)
 	}
 	
+	val Ground = 0
+	val BackWall = 1
+	val RightWall = 2
+	val LeftWall = 3
+
 	def initGeometry() {
+		wallMesh(Ground)    = new Plane(2, 2, 2, 1, false)
+		wallMesh(BackWall)  = new Plane(2, 2, 2, 1, true)
+		wallMesh(RightWall) = null
+		wallMesh(LeftWall)  = null
+
 		var v = phongShad.getAttribLocation("position")
 		var c = phongShad.getAttribLocation("color")
 		var n = phongShad.getAttribLocation("normal")
 
-		cubeMesh.setColor(Rgba.yellow)
-		cube = cubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		wallMesh(Ground).setColor(Rgba.red)
+		wall(Ground) = wallMesh(Ground).newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		
+		v = phtexShad.getAttribLocation("position")
+		n = phtexShad.getAttribLocation("normal")
+		c = phtexShad.getAttribLocation("texCoords")
+
+		wallMesh(BackWall).setTextureRepeat(1,1)
+		wall(BackWall) = wallMesh(BackWall).newVertexArray(gl, ("vertices", v), ("normals", n), ("texcoords", c))
+
 		v = plainShad.getAttribLocation("position")
 		c = plainShad.getAttribLocation("color")
 		
-		//cube  = cubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))		
-
-		v = phongTexShad.getAttribLocation("position")
-		n = phongTexShad.getAttribLocation("normal")
-		c = phongTexShad.getAttribLocation("texCoords")
-
-		planeMesh.setTextureRepeat(1,1)
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("texcoords", c))
 	}	
 
 	def display(surface:Surface) {
@@ -134,54 +175,65 @@ class TestRenderToTexture extends SurfaceRenderer {
 			gl.frontFace(gl.CW)
 			gl.disable(gl.BLEND)
 			gl.disable(gl.DEPTH_TEST)
-			gl.clearColor(Rgba.blue)
+			gl.clearColor(0, 0, 0, 0)
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-			camera2.rotateViewHorizontal(0.1)
-			camera2.viewLookAt
+			//cameraTex.rotateViewHorizontal(0.1)
+			cameraTex.viewIdentity
 			
-			//plainShad.use
-			//camera2.setUniformMVP(plainShad)
-			//cube.draw(cubeMesh.drawAs)
+			textShad.use
+			cameraTex.setUniformMVP(textShad)
 			
-			phongShad.use
-			useLights2(phongShad)
-			camera2.uniformMVP(phongShad)
-			cube.draw(cubeMesh.drawAs)
+			cameraTex.pushpop {
+				cameraTex.translateModel(20, 1000, 0)
+				text(0).draw(cameraTex)
+				cameraTex.translateModel(0, -40, 0)
+				text(1).draw(cameraTex)
+				cameraTex.translateModel(0, -30, 0)
+				text(2).draw(cameraTex)
+				cameraTex.translateModel(0, -20, 0)
+				text(3).draw(cameraTex)
+			}
 
 			gl.checkErrors
 			gl.enable(gl.DEPTH_TEST)
 			gl.enable(gl.BLEND)
 		}
 
-		gl.clearColor(0,0,0,1)
+		gl.clearColor(clearColor)
 		gl.viewport(0, 0, surface.width, surface.height)
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.frontFace(gl.CW)
 		
 		camera.viewLookAt
 
-		// Plane
-		
-		phongTexShad.use
-		fb.bindColorTextureTo(gl.TEXTURE0)
-	    phongTexShad.uniform("texColor", 0)	// Texture Unit 0
-		useLights(phongTexShad)
-		camera.uniformMVP(phongTexShad)
-		plane.draw(planeMesh.drawAs)
-		gl.bindTexture(gl.TEXTURE_2D, 0)
-		
 		// Axis
 		
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.setUniformMVP(plainShad)
 		axis.draw(axisMesh.drawAs)
+
+		// Planes
 		
-			// phongShad.use
-			// useLights(phongShad)
-			//camera.setUniformMVP(plainShad)
-			//cube.draw(cubeMesh.drawAs)
+		camera.pushpop {
+			phongShad.use
+			useLights(phongShad)
+			camera.translateModel(0,0,0.5f)
+			camera.uniformMVP(phongShad)
+			wall(Ground).draw(wallMesh(Ground).drawAs)
+		}
 		
+		camera.pushpop {
+			phtexShad.use
+			fb.bindColorTextureTo(gl.TEXTURE0)
+	    	phtexShad.uniform("texColor", 0)	// Texture Unit 0
+			useLights(phtexShad)
+			camera.translateModel(0,0.5,0)
+			camera.uniformMVP(phtexShad)
+			wall(BackWall).draw(wallMesh(BackWall).drawAs)
+			gl.bindTexture(gl.TEXTURE_2D, 0)
+		}
+
 		surface.swapBuffers
 		gl.checkErrors
 	}
@@ -194,12 +246,6 @@ class TestRenderToTexture extends SurfaceRenderer {
 	
 	protected def useLights(shader:ShaderProgram) {
 		shader.uniform("light.pos", Vector3(camera.modelview.top * light1))
-		shader.uniform("light.intensity", 4f)
-		shader.uniform("light.ambient", 0.1f)
-		shader.uniform("light.specular", 100f)
-	}
-	protected def useLights2(shader:ShaderProgram) {
-		shader.uniform("light.pos", Vector3(camera2.modelview.top * light1))
 		shader.uniform("light.intensity", 4f)
 		shader.uniform("light.ambient", 0.1f)
 		shader.uniform("light.specular", 100f)

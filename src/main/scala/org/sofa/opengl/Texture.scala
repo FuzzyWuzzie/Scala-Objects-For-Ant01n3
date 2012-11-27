@@ -242,7 +242,7 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
 }
 
 /** An alternate frame buffer that renders in a texture that can then be used onto onto objects. */
-class TextureFramebuffer(gl:SGL, val width:Int, val height:Int) extends OpenGLObject(gl) {
+class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val minFilter:Int, val magFilter:Int) extends OpenGLObject(gl) {
     import gl._
 
     protected var colorid:Int = -1 
@@ -250,6 +250,8 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int) extends OpenGLOb
     protected var depthid:Int = -1
 
     init
+
+    def this(gl:SGL, width:Int, height:Int) { this(gl, width, height, gl.NEAREST, gl.NEAREST) }
 
     protected def init() {
         super.init(genFramebuffer)
@@ -264,8 +266,8 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int) extends OpenGLOb
 
         texParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
         texParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-        texParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-        texParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+        texParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magFilter)
+        texParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minFilter)
 
         bindTexture(gl.TEXTURE_2D, 0)
 
@@ -280,8 +282,8 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int) extends OpenGLOb
 
         texParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
         texParameter(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-        texParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-        texParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+        texParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magFilter)
+        texParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minFilter)
 
         bindTexture(gl.TEXTURE_2D, 0)
 

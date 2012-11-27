@@ -56,22 +56,16 @@ class TestText2 extends SurfaceRenderer {
 	var gl:SGL = null
 	var surface:Surface = null
 	
-	val projection:Matrix4 = new Matrix4
-	val modelview = new MatrixStack(new Matrix4)
-	
 	var textShad:ShaderProgram = null
 	var plainShad:ShaderProgram = null
 	
-	//var plane:VertexArray = null
-	var axis:VertexArray = null
-	
+	var axis:VertexArray = null	
 	var axisMesh = new Axis(10)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
 	val clearColor = Rgba.white
-	val light1 = Vector4(1, 2, 1, 1)
 
 	var font:GLFont = null
 	var text:Array[GLString] = new Array[GLString](TestText2.lorem.length)
@@ -89,7 +83,7 @@ class TestText2 extends SurfaceRenderer {
 		caps.setSampleBuffers(true)
 		
 		camera         = new Camera()
-		ctrl           = new MyCameraController(camera, light1)
+		ctrl           = new MyCameraController(camera, null)
 		initSurface    = initializeSurface
 		frame          = display
 		surfaceChanged = reshape
@@ -125,7 +119,6 @@ class TestText2 extends SurfaceRenderer {
 		gl.frontFace(gl.CW)
 		gl.disable(gl.BLEND)
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-		gl.enable(gl.PROGRAM_POINT_SIZE)	// Necessary on my ES2 implementation ?? 
 	}
 	
 	def initShaders() {
