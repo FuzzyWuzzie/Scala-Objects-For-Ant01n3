@@ -3,15 +3,15 @@ package org.sofa.opengl.test
 import org.sofa.Timer
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
 import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, TextureFramebuffer}
-import org.sofa.opengl.mesh.{Plane, Cube, WireCube, Axis, DynPointsMesh}
+import org.sofa.opengl.mesh.{Plane, Cube, WireCube, Axis, DynPointsMesh, DynIndexedTriangleMesh}
 import org.sofa.opengl.text.{GLFont, GLString}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
 import org.sofa.math.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject, Point3, Vector3, Vector4, Rgba, Matrix4}
+import scala.math._
 
 object TestSpyceDisplay {
-	def main(args:Array[String]) = (new TestSpyceDisplay
-	).test
+	def main(args:Array[String]) = (new TestSpyceDisplay ).test
 }
 
 class TestSpyceDisplay extends SurfaceRenderer {
@@ -21,13 +21,16 @@ class TestSpyceDisplay extends SurfaceRenderer {
 	var phongShad:ShaderProgram = null
 	var plainShad:ShaderProgram = null
 	var phtexShad:ShaderProgram = null
+	var spyceShad:ShaderProgram = null
 	var textShad:ShaderProgram = null
 
 	val wallMesh:Array[Plane] = new Array[Plane](4)	
-	var axisMesh = new Axis(10)
+	val axisMesh = new Axis(10)
+	var trianglesMesh = new DynIndexedTriangleMesh(8)
 
-	var wall:Array[VertexArray] = new Array[VertexArray](4)
+	var wall:Array[VertexArray] = new Array[VertexArray](8)
 	var axis:VertexArray = null
+	var triangles:VertexArray = null
 
 	var camera:Camera = null
 	var cameraTex:Camera = null
@@ -37,11 +40,13 @@ class TestSpyceDisplay extends SurfaceRenderer {
 	var subFont:GLFont = null
 	var stdFont:GLFont = null
 
-	var text:Array[GLString] = new Array[GLString](4)
+	var text:Array[GLString] = new Array[GLString](8)
 
 	val clearColor = Rgba.grey20
-	val light1 = Vector4(1, 2, 1, 1)
+	val light1 = Vector4(0.5, 1, 0.5, 1)
 
+	val fbWidth = 512
+	val fbHeight = 256
 	var fb:TextureFramebuffer = null
 		
 	def test() {
@@ -56,8 +61,8 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		caps.setHardwareAccelerated(true)
 		caps.setSampleBuffers(true)
 		
-		camera         = new Camera()
-		cameraTex      = new Camera()
+		camera         = new Camera(); camera.viewport = (1280, 800)
+		cameraTex      = new Camera(); cameraTex.viewport = (fbWidth, fbHeight)
 		ctrl           = new MyCameraController(camera, light1)
 		initSurface    = initializeSurface
 		frame          = display
@@ -80,8 +85,8 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		initTextureFB
 		initGeometry
 		
-		camera.viewCartesian(5, 2, 5)
-		camera.setFocus(0, 0, 0)
+		camera.viewCartesian(0, 0.4, 2.7)
+		camera.setFocus(0, 0.5, 0)
 		reshape(surface)
 	}
 	
@@ -102,6 +107,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		phongShad = ShaderProgram(gl, "phong shader", "es2/phonghi.vert.glsl", "es2/phonghi.frag.glsl")
 		plainShad = ShaderProgram(gl, "plain shader", "es2/plainColor.vert.glsl", "es2/plainColor.frag.glsl")
 		phtexShad = ShaderProgram(gl, "textured phong shader", "es2/phonghitex.vert.glsl", "es2/phonghitex.frag.glsl")
+		spyceShad = ShaderProgram(gl, "spyce wall shader", "es2/spyce.vert.glsl", "es2/spyce.frag.glsl")
 		textShad  = ShaderProgram(gl, "text shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
 	}
 
@@ -109,30 +115,30 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		GLFont.path += "/Users/antoine/Library/Fonts"
 
 		heaFont = new GLFont(gl, "Ubuntu-B.ttf", 40, 0, 0)
-		subFont = new GLFont(gl, "Ubuntu-RI.ttf", 30, 0, 0)
-		stdFont = new GLFont(gl, "Ubuntu-R.ttf", 20, 0, 0)
+		subFont = new GLFont(gl, "Ubuntu-B.ttf", 30, 0, 0)
+		stdFont = new GLFont(gl, "Ubuntu-B.ttf", 25, 0, 0)
 		
 		heaFont.minMagFilter(gl.LINEAR, gl.LINEAR)
 		subFont.minMagFilter(gl.LINEAR, gl.LINEAR)
 		stdFont.minMagFilter(gl.LINEAR, gl.LINEAR)
 
-		text(0) = new GLString(gl, heaFont, 256)
-		text(1) = new GLString(gl, subFont, 256)
-		text(2) = new GLString(gl, stdFont, 256)
-		text(3) = new GLString(gl, stdFont, 256)
+		text(0) = new GLString(gl, heaFont, 256);	text(4) = new GLString(gl, heaFont, 256)
+		text(1) = new GLString(gl, subFont, 256);	text(5) = new GLString(gl, subFont, 256)
+		text(2) = new GLString(gl, stdFont, 256);	text(6) = new GLString(gl, stdFont, 256)
+		text(3) = new GLString(gl, stdFont, 256);	text(7) = new GLString(gl, stdFont, 256)
 
 		for(i <- 0 until text.length) {
 			text(i).setColor(Rgba.white)
 		}
 
-		text(0).build("Player 1")
-		text(1).build("Score 5000 pt")
-		text(2).build("voilà, voilà")
-		text(3).build("...")
+		text(0).build("Player 1");			text(4).build("Player 2")
+		text(1).build("Score 5000 pts");	text(5).build("Score 4000 pts")
+		text(2).build("voilà, voilà");		text(6).build("ha ha ha")
+		text(3).build(":-)");				text(7).build("^v^")
 	}
 
 	def initTextureFB() {
-		fb = new TextureFramebuffer(gl, 1024, 1024, gl.LINEAR, gl.LINEAR)
+		fb = new TextureFramebuffer(gl, fbWidth, fbHeight, gl.LINEAR, gl.LINEAR)
 
 		cameraTex.viewportPx(fb.width, fb.height)
 //		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
@@ -154,7 +160,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		var c = phongShad.getAttribLocation("color")
 		var n = phongShad.getAttribLocation("normal")
 
-		wallMesh(Ground).setColor(Rgba.red)
+		wallMesh(Ground).setColor(Rgba.black)
 		wall(Ground) = wallMesh(Ground).newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		
 		v = phtexShad.getAttribLocation("position")
@@ -167,8 +173,39 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		v = plainShad.getAttribLocation("position")
 		c = plainShad.getAttribLocation("color")
 		
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))		
+		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+
+		// Init the triangles
+
+		val C = Point3(0, 0, 0)
+		var i = 1
+		var r = 0.0
+		val radius = 10
+		val color = Rgba(1, 0.8, 0, 0.4)
+
+		trianglesMesh.setPoint(0, C)
+		trianglesMesh.setPointColor(0, color)
+
+		while(i < 17) {
+			trianglesMesh.setPoint(i, cos(r).toFloat*radius, sin(r).toFloat*radius, 0)
+			trianglesMesh.setPointColor(i, color)
+			i += 1
+			r += Pi/8
+		}
+
+		i = 0
+		var p = 1;
+
+		while(i < 8) {
+			trianglesMesh.setTriangle(i, 0, p, p+1)
+			p += 2
+			i += 1
+		}	
+
+		triangles = trianglesMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 	}	
+
+	var angle = 0.0
 
 	def display(surface:Surface) {
 		fb.display {
@@ -179,19 +216,48 @@ class TestSpyceDisplay extends SurfaceRenderer {
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 			//cameraTex.rotateViewHorizontal(0.1)
 			cameraTex.viewIdentity
-			
+
+			// Triangles
+
+			cameraTex.pushpop {
+				gl.enable(gl.BLEND)
+				gl.frontFace(gl.CCW)
+				plainShad.use
+				cameraTex.translateModel(fbWidth/2, fbHeight/2, 0)
+				cameraTex.scaleModel(40, 40, 1)
+				cameraTex.rotateModel(angle, 0, 0, 1)
+				cameraTex.setUniformMVP(plainShad)
+				triangles.draw(trianglesMesh.drawAs, 8*3)
+
+				angle += 0.01
+				if(angle > 2*Pi) angle = 0
+			}
+
+			// Text 
+						
 			textShad.use
 			cameraTex.setUniformMVP(textShad)
 			
 			cameraTex.pushpop {
-				cameraTex.translateModel(20, 1000, 0)
+				cameraTex.translateModel(20, fbHeight-50, 0)
 				text(0).draw(cameraTex)
 				cameraTex.translateModel(0, -40, 0)
 				text(1).draw(cameraTex)
 				cameraTex.translateModel(0, -30, 0)
 				text(2).draw(cameraTex)
-				cameraTex.translateModel(0, -20, 0)
+				cameraTex.translateModel(0, -25, 0)
 				text(3).draw(cameraTex)
+			}
+
+			cameraTex.pushpop {
+				cameraTex.translateModel(fbWidth-text(4).advance-20, fbHeight-50, 0)
+				text(4).draw(cameraTex)
+				cameraTex.translateModel(text(4).advance-text(5).advance, -40, 0)
+				text(5).draw(cameraTex)
+				cameraTex.translateModel(text(5).advance-text(6).advance, -30, 0)
+				text(6).draw(cameraTex)
+				cameraTex.translateModel(text(6).advance-text(7).advance, -25, 0)
+				text(7).draw(cameraTex)
 			}
 
 			gl.checkErrors
@@ -224,12 +290,12 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		}
 		
 		camera.pushpop {
-			phtexShad.use
+			spyceShad.use
 			fb.bindColorTextureTo(gl.TEXTURE0)
-	    	phtexShad.uniform("texColor", 0)	// Texture Unit 0
-			useLights(phtexShad)
+	    	spyceShad.uniform("texColor", 0)	// Texture Unit 0
+			useLights(spyceShad)
 			camera.translateModel(0,0.5,0)
-			camera.uniformMVP(phtexShad)
+			camera.uniformMVP(spyceShad)
 			wall(BackWall).draw(wallMesh(BackWall).drawAs)
 			gl.bindTexture(gl.TEXTURE_2D, 0)
 		}
@@ -237,17 +303,19 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		surface.swapBuffers
 		gl.checkErrors
 	}
+
+var zoom = 0.5
 	
 	def reshape(surface:Surface) {
 		camera.viewportPx(surface.width, surface.height)
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
-		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, 2)
+		camera.frustum(-camera.viewportRatio*zoom, camera.viewportRatio*zoom, -1*zoom, 1*zoom, 2)
 	}
 	
 	protected def useLights(shader:ShaderProgram) {
 		shader.uniform("light.pos", Vector3(camera.modelview.top * light1))
-		shader.uniform("light.intensity", 4f)
+		shader.uniform("light.intensity", 5f)
 		shader.uniform("light.ambient", 0.1f)
-		shader.uniform("light.specular", 100f)
+		shader.uniform("light.specular", 10f)
 	}
 }

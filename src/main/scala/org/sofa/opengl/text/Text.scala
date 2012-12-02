@@ -44,7 +44,7 @@ class GLFont(val gl:SGL, file:String, val size:Int, padX:Int, padY:Int) {
 	// some part of a glyph may overlap another (descent, slanted font, etc.). We in
 	// general do not draw the full rectangle of a glyph but only a part of it.
 	// However the technique is bad, we should use the font metrics.
-	val strangePad = size / 10.0f
+	val strangePad = size / 50.0f
 
 	/** Font X padding (pixels, on each side, doubled on X axis) */
 	var fontPadX = 0

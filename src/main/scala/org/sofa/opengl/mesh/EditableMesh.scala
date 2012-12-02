@@ -53,6 +53,13 @@ class EditableMesh extends Mesh {
 		
 		beganVertex = true
 	}
+
+	/** Same as calling begin(MeshDrawMode), a code that calls vertex, color, normal, etc. and a final call to en(). */
+	def buildAttributes(drawMode:MeshDrawMode.Value)(code: => Unit) {
+		begin(drawMode)
+		code
+		end
+	}
 	
 	/** Add a vertex to the primitive. If other attributes were declared but not changed
 	  * the vertex take the last value specified for these attributes. */
@@ -105,8 +112,16 @@ class EditableMesh extends Mesh {
 		indexNioCache = null
 		indexBuffer = new ArrayBuffer[Int]()
 	}
+
+	/** Like a call to beginIndices(), calls to index(Int) inside the given code and a call to endIndices(). */
+	def buildIndices(code: => Unit) {
+		beginIndices
+		code
+		endIndices
+	}
 	
 	def index(i:Int) {
+		if(!beganIndex) throw new BadlyNestedBeginEnd
 		indexBuffer += i
 	}
 	
@@ -124,7 +139,7 @@ class EditableMesh extends Mesh {
 	protected var indexNioCache:IntBuffer = null
 	
     protected def getCache(name:String):FloatBuffer = nioCache.getOrElseUpdate(name,
-    		{ new FloatBuffer(otherBuffers.get(name).getOrElse(throw new RuntimeException("no normal attributes in this mesh")).buffer) } )
+    		{ new FloatBuffer(otherBuffers.get(name).getOrElse(throw new RuntimeException("no %s attributes in this mesh".format(name))).buffer) } )
 	
 	def vertices:FloatBuffer = nioCache.getOrElseUpdate("vertex", { new FloatBuffer(vertexBuffer.buffer) } )
 

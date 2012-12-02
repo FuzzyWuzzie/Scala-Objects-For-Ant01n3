@@ -1,22 +1,22 @@
 package org.sofa.opengl.io.collada
 
-import scala.collection.mutable.HashMap
-import scala.xml.Node
-import org.sofa.opengl.mesh.Mesh
-import org.sofa.opengl.mesh.EditableMesh
-import org.sofa.opengl.mesh.MeshDrawMode
-import scala.collection.mutable.ArrayBuffer
-import scala.xml.NodeSeq
+import scala.xml.{Node, NodeSeq}
+import scala.collection.mutable.{HashMap, ArrayBuffer}
+import org.sofa.opengl.mesh.{Mesh, EditableMesh, MeshDrawMode}
 
-
+/** Geometry feature companion object. */
 object Geometry {
 	def apply(node:Node):Geometry = new Geometry(node)
 }
 
-/** A geometry descriptor in a Collada geometry library. */
+/** A geometry descriptor in a Collada geometry library.
+  *
+  * The geometry feature is made of a name and a set of meshes. */
 class Geometry(node:Node) extends ColladaFeature {
+	/** Name of the geometry. */
 	var name = ""
 	
+	/** Set of meshes. */
 	val meshes = new HashMap[String,ColladaMesh]()
 
 	parse(node)
@@ -28,6 +28,8 @@ class Geometry(node:Node) extends ColladaFeature {
 	
 	override def toString():String = "geometry(%s, (%s))".format(name, meshes.values.mkString(", "))
 }
+
+//------------------------------------------------------------------------------------------------------
 
 /** One source of data in a mesh (in OpenGL terms, a vertex attribute). */
 class MeshSource(node:Node) {
@@ -65,6 +67,8 @@ class MeshSource(node:Node) {
 	
 	override def toString():String = "source(%s, stride %d, %d floats)".format(name, stride, data.length) 
 }
+
+//------------------------------------------------------------------------------------------------------
 
 /** Faces making up a mesh.
   * 
@@ -149,18 +153,18 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 		val in = (node \\ "input")
 		inputs = new Array[(Input.Value,String)](in.length)
 		in.foreach { input =>
-			val offset = (input\"@offset").text.toInt
-			inputs(offset) = (input\"@semantic").text match {
-				case "VERTEX"   => { revInputs += ((Input.Vertex,   offset)); (Input.Vertex,   (input\"@source").text.substring(1)) }
-				case "NORMAL"   => { revInputs += ((Input.Normal,   offset)); (Input.Normal,   (input\"@source").text.substring(1)) }
-				case "TEXCOORD" => { revInputs += ((Input.TexCoord, offset)); (Input.TexCoord, (input\"@source").text.substring(1)) }
-				case "TANGENT"  => { revInputs += ((Input.Tangent,  offset)); (Input.Tangent,  (input\"@source").text.substring(1)) }
-				case "COLOR"    => { revInputs += ((Input.Color,    offset)); (Input.Color,    (input\"@source").text.substring(1)) }
-				case "JOINT"    => { revInputs += ((Input.Bone,     offset)); (Input.Bone,     (input\"@source").text.substring(1)) }
-				case _          => { revInputs += ((Input.User,     offset)); (Input.User,     (input\"@source").text.substring(1)) }
+			val offset = (input \ "@offset").text.toInt
+			inputs(offset) = (input \ "@semantic").text match {
+				case "VERTEX"   => { revInputs += ((Input.Vertex,   offset)); (Input.Vertex,   (input \ "@source").text.substring(1)) }
+				case "NORMAL"   => { revInputs += ((Input.Normal,   offset)); (Input.Normal,   (input \ "@source").text.substring(1)) }
+				case "TEXCOORD" => { revInputs += ((Input.TexCoord, offset)); (Input.TexCoord, (input \ "@source").text.substring(1)) }
+				case "TANGENT"  => { revInputs += ((Input.Tangent,  offset)); (Input.Tangent,  (input \ "@source").text.substring(1)) }
+				case "COLOR"    => { revInputs += ((Input.Color,    offset)); (Input.Color,    (input \ "@source").text.substring(1)) }
+				case "JOINT"    => { revInputs += ((Input.Bone,     offset)); (Input.Bone,     (input \ "@source").text.substring(1)) }
+				case _          => { revInputs += ((Input.User,     offset)); (Input.User,     (input \ "@source").text.substring(1)) }
 			}
 		}
-		data = (node\"p").text.split(" ").map(_.toInt)
+		data = (node \ "p").text.split(" ").map(_.toInt)
 	}
 	
 	/** Transform this into a SOFA mesh, usable to draw in an OpenGL scene. */
@@ -168,8 +172,8 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 
 	/** Generate a list of vertices from the data given in the Collada file such that each vertex
 	  * owns its own set of attributes (as needed by OpenGL). The procedure try to ensure that
-	  * two vertices having exactly the same attributes will not be duplicated. Naturally the order
-	  * remains the same. */
+	  * two vertices having exactly the same attributes (all of them) will not be duplicated.
+	  * The order remains the same. */
 	def toVertexList():(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
 		val unicity  = new HashMap[Vertex,Int]()		// To test unicity, and retrieve the original.
 		val vertices = new ArrayBuffer[Vertex]()		// The element buffer.
@@ -183,7 +187,7 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 			if(!unicity.contains(vertex)) {
 				val index = vertices.length
 				vertices += vertex
-				unicity += ((vertex,index))
+				unicity  += ((vertex,index))
 			}
 //			else {
 //				vertex = vertices(unicity.get(vertex).get)
@@ -202,7 +206,7 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 	protected def toMesh(elements:ArrayBuffer[Int], vertices:ArrayBuffer[Vertex]):Mesh = {
 		val mesh = new EditableMesh()
 	
-		mesh.begin(MeshDrawMode.TRIANGLES)
+		mesh.buildAttributes(MeshDrawMode.TRIANGLES) {
 			vertices.foreach { vertex =>
 				if(vertex.normal >= 0) {
 					val norm = getAttribute(Input.Normal, vertex.normal)
@@ -217,23 +221,29 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 					mesh.vertex(vert(0), vert(1), vert(2))
 				}
 			}
-		mesh.end
-		mesh.beginIndices
+		}
+		
+		mesh.buildIndices {
 			elements.foreach { mesh.index(_) }
-		mesh.endIndices
+		}
 		
 		mesh
-	}
-	
-	/** Represents internally a vertex. */
-	class Vertex(val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int) {
-		override def equals(other:Any):Boolean = other match {
-			case v:Vertex => (index==v.index && normal==v.normal && texcoord==v.texcoord && tangent==v.tangent && color==v.color && bone==v.bone)
-			case _ => false
-		}
-		override def hashCode():Int = 41 * (41 * (41 * (41 * (41 * (41 + index) + normal ) + texcoord ) + tangent ) + color ) + bone
-	}
+	}	
 }
+
+/** Represents internally a vertex. */
+class Vertex(val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int) {
+	override def equals(other:Any):Boolean = other match {
+		case v:Vertex => (index==v.index && normal==v.normal && texcoord==v.texcoord && tangent==v.tangent && color==v.color && bone==v.bone)
+		case _ => false
+	}
+	override def hashCode():Int = 41 * (41 * (41 * (41 * (41 * (41 + index) + normal ) + texcoord ) + tangent ) + color ) + bone
+
+	override def toString():String = "vertex(pos=%d, norm=%d, texc=%d, tang=%d, clr=%d, bone=%d)".format(index, normal, texcoord, tangent, color, bone)
+}
+
+
+//------------------------------------------------------------------------------------------------------
 
 /** Faces only made of triangles. */
 class Triangles(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
@@ -241,6 +251,8 @@ class Triangles(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	override def toString():String = "triangles(%d, [%s], data %d(%d))".format(count, inputs.mkString(","), data.length, (data.length/inputs.length)/3)
 	def toMesh():Mesh = { val (elements,vertices) = toVertexList; toMesh(elements, vertices) }
 }
+
+//------------------------------------------------------------------------------------------------------
 
 /** Faces made of polygons with an arbitrary number of vertices. */
 class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
@@ -296,6 +308,8 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 		(elems,vertices)
 	}
 }
+
+//------------------------------------------------------------------------------------------------------
 
 /** Describe a mesh (source (vertex attributes), and indices in the source under the form of faces. */
 class ColladaMesh(node:Node) {

@@ -4,18 +4,21 @@ import org.sofa.{Timer, Environment}
 import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
 import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Vector2, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
 
-import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture}
+import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture, TextureFramebuffer}
 import org.sofa.opengl.mesh.{Mesh, Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet, Cylinder}
+import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent, ScrollEvent, MotionEvent}
 
 import javax.media.opengl.{GLProfile, GLCapabilities}
 
 import scala.collection.mutable.ArrayBuffer
 
+import scala.math._
+
 object JuiceLauncher {
 	def main(args:Array[String]) = {
-		GLProfile.initSingleton()
-		Thread.sleep(1000)
+		//GLProfile.initSingleton()
+		//Thread.sleep(1000)
 		(new JuiceLauncher).launch
 	}
 }
@@ -144,7 +147,7 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 
 	var particleColor = Rgba(0.7, 0.7, 1, 0.9)
 	
-	var clearColor = Rgba.black
+	var clearColor = Rgba.grey20
 	
 	var groundColor = Rgba.grey80
 	
@@ -181,15 +184,34 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	
 	val projection:Matrix4 = new Matrix4
 	val modelview = new MatrixStack(new Matrix4)
+
+	var cameraTex:Camera = null
 	
+	// -- Text --------------------------------------
+		
+	var heaFont:GLFont = null
+	var subFont:GLFont = null
+	var stdFont:GLFont = null
+
+	var text:Array[GLString] = new Array[GLString](8)
+
+	// -- Second framebuffer ------------------------
+
+	val fbWidth = 512
+	val fbHeight = 256
+	var fb:TextureFramebuffer = null
+
 	// -- Shading -----------------------------------
 
+	var phongNoClrShad:ShaderProgram = null
 	var phongShad:ShaderProgram = null
+	var phongTexShad:ShaderProgram = null
 	var particlesShad:ShaderProgram = null
 	var particlesQuadShad:ShaderProgram = null
 	var plainShad:ShaderProgram = null
 	var nmapShad:ShaderProgram = null
-	var wallShad:ShaderProgram = null
+	var spyceShad:ShaderProgram = null
+	var textShad:ShaderProgram = null
 	
 	// -- Model ---------------------------------------
 
@@ -202,8 +224,11 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	var obstacles:VertexArray = null
 	var springs:VertexArray = null
 	var quad:VertexArray = null
+	var tube:VertexArray = null
 	var biroute:VertexArray = null
 	var wall:VertexArray = null
+	var ledWall:VertexArray = null
+	var triangles:VertexArray = null
 
 	var axisMesh = new Axis(10)
 	var groundMesh = new Plane(2, 2, playfield.x.toFloat, playfield.x.toFloat)
@@ -214,16 +239,18 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
 	var springsMesh = new ColoredLineSet(maxSprings)
 	var quadMesh = new Plane(2, 2, particleQuadSize, particleQuadSize, true)
-	var birouteMesh = new Cylinder(birouteSize*0.25f, birouteSize, 8, 1)
+	var tubeMesh = new Cylinder(birouteSize*0.25f, birouteSize, 8, 1)
 	var wallMesh:Mesh = null
+	var birouteMesh:Mesh = null
+	var ledWallMesh:Plane = new Plane(2, 2, playfield.x.toFloat, playfield.x.toFloat/1.7f, true)
+	var trianglesMesh = new DynIndexedTriangleMesh(8)
 
 	// -- Texture -------------------------------------------
 
 	var pointTex:Texture = null
-
 	var groundTex:Texture = null
-
 	var groundNMapTex:Texture = null
+	var wallTex:Texture = null
 
 	// -- General -------------------------------------------
 
@@ -253,9 +280,14 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/"
 		Texture.includePath += "textures/"
 			
+		camera.viewport = (1280, 800)
+		cameraTex = new Camera(); cameraTex.viewport = (fbWidth, fbHeight)
+
 		initSimuParams
 		initGL(sgl)
+		initFonts
 		initTextures
+		initTextureFB
 		initShaders
 		initMeshes
 		initGeometry
@@ -300,6 +332,40 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		gl.checkErrors
 	}
 
+	protected def initFonts() {
+		GLFont.path += "/Users/antoine/Library/Fonts"
+
+		heaFont = new GLFont(gl, "Ubuntu-B.ttf", 40, 0, 0)
+		subFont = new GLFont(gl, "Ubuntu-B.ttf", 30, 0, 0)
+		stdFont = new GLFont(gl, "Ubuntu-B.ttf", 25, 0, 0)
+		
+		heaFont.minMagFilter(gl.LINEAR, gl.LINEAR)
+		subFont.minMagFilter(gl.LINEAR, gl.LINEAR)
+		stdFont.minMagFilter(gl.LINEAR, gl.LINEAR)
+
+		text(0) = new GLString(gl, heaFont, 256);	text(4) = new GLString(gl, heaFont, 256)
+		text(1) = new GLString(gl, subFont, 256);	text(5) = new GLString(gl, subFont, 256)
+		text(2) = new GLString(gl, stdFont, 256);	text(6) = new GLString(gl, stdFont, 256)
+		text(3) = new GLString(gl, stdFont, 256);	text(7) = new GLString(gl, stdFont, 256)
+
+		for(i <- 0 until text.length) {
+			text(i).setColor(Rgba.white)
+		}
+
+		text(0).build("Player 1");			text(4).build("Player 2")
+		text(1).build("Score 5000 pts");	text(5).build("Score 4000 pts")
+		text(2).build("voilà, voilà");		text(6).build("ha ha ha")
+		text(3).build(":-)");				text(7).build("^v^")
+	}
+
+	def initTextureFB() {
+		fb = new TextureFramebuffer(gl, fbWidth, fbHeight, gl.LINEAR, gl.LINEAR)
+
+		cameraTex.viewportPx(fb.width, fb.height)
+//		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
+		cameraTex.orthographic(0, fb.width, 0, fb.height, -1, 1)
+	}
+
 	protected def initTextures() {
 		pointTex = new Texture(gl, "Point.png", true)
 	    pointTex.minMagFilter(gl.LINEAR, gl.LINEAR)
@@ -312,21 +378,32 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		groundNMapTex = new Texture(gl, "GroundNMap.png", true)
 	    groundNMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    groundNMapTex.wrap(gl.REPEAT)
+
+	    wallTex = new Texture(gl, "Wall.jpg", true)
+	    wallTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    wallTex.wrap(gl.REPEAT)
 	}
 	
 	protected def initShaders() {
 		phongShad         = ShaderProgram(gl, "phong shader",          "es2/phonghi.vert.glsl",      "es2/phonghi.frag.glsl")
+		phongTexShad      = ShaderProgram(gl, "phong textured shader", "es2/phonghitex.vert.glsl",   "es2/phonghitex.frag.glsl")
 		plainShad         = ShaderProgram(gl, "plain shader",          "es2/plainColor.vert.glsl",   "es2/plainColor.frag.glsl")
 		particlesShad     = ShaderProgram(gl, "particles shader",      "es2/particles.vert.glsl",    "es2/particles.frag.glsl")
 		particlesQuadShad = ShaderProgram(gl, "particles quad shader", "es2/particlesTex.vert.glsl", "es2/particlesTex.frag.glsl")
 		nmapShad          = ShaderProgram(gl, "normal map phong",      "es2/nmapPhong.vert",         "es2/nmapPhong.frag")
-		wallShad          = ShaderProgram(gl, "wall shader",           "es2/phonghiuniformcolor.vert.glsl", "es2/phonghiuniformcolor.frag.glsl")
-
+		spyceShad         = ShaderProgram(gl, "spyce wall shader",     "es2/spyce.vert.glsl",        "es2/spyce.frag.glsl")
+		textShad          = ShaderProgram(gl, "text shader",           "es2/text.vert.glsl",         "es2/text.frag.glsl")
+		phongNoClrShad    = ShaderProgram(gl, "phong uni clr shader",  "es2/phonghiuniformcolor.vert.glsl", "es2/phonghiuniformcolor.frag.glsl")
 	}
 
 	protected def initMeshes() {
-		val model = new org.sofa.opengl.io.collada.File(scala.xml.XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/MurJuice.dae").child)
-		wallMesh = model.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh 
+		import org.sofa.opengl.io.collada.{File => ColladaFile}
+		import scala.xml.XML
+
+		val wallModel = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/MurJuice.dae").child)
+		wallMesh = wallModel.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh 
+		val birouteModel = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/Bruce_003.dae").child)
+		birouteMesh = birouteModel.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh
 	}
 	
 	protected def initGeometry() {
@@ -354,7 +431,14 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		isoPlane   = isoPlaneMesh.newVertexArray(  gl, ("vertices", v), ("colors", c), ("normals", n))
 		obstacles  = obstaclesMesh.newVertexArray( gl, ("vertices", v), ("colors", c), ("normals", n))
-		biroute    = birouteMesh.newVertexArray(   gl, ("vertices", v), ("colors", c), ("normals", n))
+		tube       = birouteMesh.newVertexArray(   gl, ("vertices", v), ("colors", c), ("normals", n))
+
+		// Phong uniform color shader
+
+		v = phongNoClrShad.getAttribLocation("position")
+		n = phongNoClrShad.getAttribLocation("normal")
+
+		biroute = birouteMesh.newVertexArray(   gl, ("vertices", v), ("normals", t))
 		
 		// Plain shader
 		
@@ -364,6 +448,35 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		axis       = axisMesh.newVertexArray(      gl, ("vertices", v), ("colors", c))
 		springs    = springsMesh.newVertexArray(   gl, ("vertices", v), ("colors", c))
 		isoContour = isoContourMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+
+		// Init the triangles
+
+		val C = Point3(0, 0, 0)
+		var i = 1
+		var r = 0.0
+		val radius = 10
+		val color = Rgba(1, 0.8, 0, 0.4)
+
+		trianglesMesh.setPoint(0, C)
+		trianglesMesh.setPointColor(0, color)
+
+		while(i < 17) {
+			trianglesMesh.setPoint(i, cos(r).toFloat*radius, sin(r).toFloat*radius, 0)
+			trianglesMesh.setPointColor(i, color)
+			i += 1
+			r += Pi/8
+		}
+
+		i = 0
+		var p = 1;
+
+		while(i < 8) {
+			trianglesMesh.setTriangle(i, 0, p, p+1)
+			p += 2
+			i += 1
+		}	
+
+		triangles = trianglesMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 
 		// Particles shader
 		
@@ -391,10 +504,13 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 
 		// Murs
 	
-		v = wallShad.getAttribLocation("position")
-		n = wallShad.getAttribLocation("normal")
+		v = phongTexShad.getAttribLocation("position")
+		n = phongTexShad.getAttribLocation("normal")
+		t = phongTexShad.getAttribLocation("texCoords")
 
-		wall = wallMesh.newVertexArray(gl, ("vertices", v), ("normals", n))
+		ledWallMesh.setTextureRepeat(1,1)
+		wall = wallMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("texcoords", t))
+		ledWall = ledWallMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("texcoords", t))
 	}
 	
 	protected def initParticles {
@@ -425,6 +541,8 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	
 	// ----------------------------------------------------------------------------------
 	// Rendering
+
+var angle = 0.0
 	
 	def display(surface:Surface) {
 		if((step+1)%10 == 0)
@@ -438,12 +556,73 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 			updateParticles
 		}
 		
+		// Render the led wall.
+
+		fb.display {
+			gl.frontFace(gl.CW)
+			gl.enable(gl.BLEND)
+			gl.disable(gl.DEPTH_TEST)
+			gl.clearColor(0, 0, 0, 0)
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+			//cameraTex.rotateViewHorizontal(0.1)
+			cameraTex.viewIdentity
+
+			// Triangles
+
+			cameraTex.pushpop {
+				gl.frontFace(gl.CCW)
+				plainShad.use
+				cameraTex.translateModel(fbWidth/2, fbHeight/2, 0)
+				cameraTex.scaleModel(40, 40, 1)
+				cameraTex.rotateModel(angle, 0, 0, 1)
+				cameraTex.setUniformMVP(plainShad)
+				triangles.draw(trianglesMesh.drawAs, 8*3)
+
+				angle += 0.01
+				if(angle > 2*Pi) angle = 0
+			}
+
+			// Text 
+						
+			textShad.use
+			cameraTex.setUniformMVP(textShad)
+			
+			cameraTex.pushpop {
+				cameraTex.translateModel(20, fbHeight-50, 0)
+				text(0).draw(cameraTex)
+				cameraTex.translateModel(0, -40, 0)
+				text(1).draw(cameraTex)
+				cameraTex.translateModel(0, -30, 0)
+				text(2).draw(cameraTex)
+				cameraTex.translateModel(0, -25, 0)
+				text(3).draw(cameraTex)
+			}
+
+			cameraTex.pushpop {
+				cameraTex.translateModel(fbWidth-text(4).advance-20, fbHeight-50, 0)
+				text(4).draw(cameraTex)
+				cameraTex.translateModel(text(4).advance-text(5).advance, -40, 0)
+				text(5).draw(cameraTex)
+				cameraTex.translateModel(text(5).advance-text(6).advance, -30, 0)
+				text(6).draw(cameraTex)
+				cameraTex.translateModel(text(6).advance-text(7).advance, -25, 0)
+				text(7).draw(cameraTex)
+			}
+
+			gl.checkErrors
+			gl.enable(gl.DEPTH_TEST)
+			gl.enable(gl.BLEND)
+		}
+
+		// Render the scene.
+
+		gl.clearColor(clearColor)
+		gl.viewport(0, 0, surface.width, surface.height)
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
 //		camera.rotateViewHorizontal(0.1)
 		camera.viewLookAt
 
-		drawGround
 		drawWalls
 		drawObstacles
 		drawIsoSurface
@@ -452,8 +631,9 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		drawParticles
 		drawBiroutes
 		drawIsoPlane
-		drawParticlesQuads
 		drawIsoContour
+		drawGround
+		drawParticlesQuads
 		
 		surface.swapBuffers
 		gl.checkErrors
@@ -523,29 +703,43 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 
 	protected def drawWalls() {
 		gl.frontFace(gl.CCW)
-		wallShad.use
-		useLights(wallShad)
-		wallShad.uniform("color", Rgba.white)
+		phongTexShad.use
+		wallTex.bindTo(gl.TEXTURE0)
+		phongTexShad.uniform("texColor", 0)
+		useLights(phongTexShad)
+	//	phongTexShad.uniform("color", Rgba.black)
 		camera.pushpop {
 			camera.translateModel(-15, 4, 0)
 			camera.scaleModel(10,10,10)
 			camera.rotateModel(math.Pi/2, 0, 1, 0)
-			camera.uniformMVP(wallShad)
+			camera.uniformMVP(phongTexShad)
 			wall.draw(wallMesh.drawAs)
 		}
 		camera.pushpop {
 			camera.translateModel(15, 4, 0)
 			camera.scaleModel(10,10,10)
 			camera.rotateModel(math.Pi/2, 0, 1, 0)
-			camera.uniformMVP(wallShad)
+			camera.uniformMVP(phongTexShad)
 			wall.draw(wallMesh.drawAs)
 		}
 		gl.frontFace(gl.CW)
+
+		camera.pushpop {
+			spyceShad.use
+			fb.bindColorTextureTo(gl.TEXTURE0)
+	    	spyceShad.uniform("texColor", 0)	// Texture Unit 0
+			useLights(spyceShad)
+			camera.translateModel(0,4,-10)
+			camera.uniformMVP(spyceShad)
+			ledWall.draw(ledWallMesh.drawAs)
+			gl.bindTexture(gl.TEXTURE_2D, 0)
+		}
+
 	}
 
 	protected def drawBiroutes() {
-		phongShad.use
-		useLights(phongShad)
+		phongNoClrShad.use
+		useLights(phongNoClrShad)
 		drawBiroute(player1)
 		drawBiroute(player2)
 	}
@@ -560,7 +754,7 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 			camera.translateModel(player.emitPoint)
 			//camera.translateModel(0, -birouteSize/2, 0)
 			camera.rotateModel(angle, 0, 0, 1)
-			camera.uniformMVP(phongShad)
+			camera.uniformMVP(phongNoClrShad)
 			biroute.draw(birouteMesh.drawAs)
 		}
 	}

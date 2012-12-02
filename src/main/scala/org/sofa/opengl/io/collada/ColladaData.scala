@@ -63,7 +63,7 @@ class Assets {
 		
 		created  = (xml \ "created").text
 		modified = (xml \ "modified").text
-		units    = new Unit((xml\"unit").head)
+		units    = new Unit((xml \ "unit").head)
 		upAxis   = (xml \ "up_axis").text match {
 			case "Z_UP" => Axis.Z
 			case "X_UP" => Axis.X

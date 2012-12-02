@@ -68,6 +68,10 @@ class Camera {
 
     def viewportHeight_= (value:Double):Unit = { viewportPx.y = value }
 
+    def viewport:(Double,Double) = (viewportPx.x, viewportPx.y)
+
+    def viewport_=(values:(Double,Double)):Unit = { viewportPx.set(values._1, values._2) }
+
     /** Set the coordinates of the camera "eye" in spherical coordinates. This will be used
       * to define the "view" part of the model-view matrix when using [[setupView()]]. */
     def viewSpherical(theta:Double, phi:Double, radius:Double) {

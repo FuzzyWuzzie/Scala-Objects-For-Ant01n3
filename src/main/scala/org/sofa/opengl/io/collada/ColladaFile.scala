@@ -5,9 +5,13 @@ import scala.collection.mutable.HashMap
 
 /** A Collada file, assets, library of elements and a scene. */
 class File(root:NodeSeq) {
-	var asset:Assets = new Assets((root \\ "asset").head)
+	/** Meta-data on the file. */
+	val asset:Assets = new Assets((root \\ "asset").head)
+	
+	/** All the objects and elements in the file. */
 	val library = new Library(root)
-	// TODO scene
+	
+	// TODO add the scene description.
 	
 	override def toString():String = "%s%n%s".format(asset, library)
 }

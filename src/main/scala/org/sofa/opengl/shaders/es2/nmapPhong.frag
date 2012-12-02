@@ -30,15 +30,14 @@ void main(void) {							// TBN and not TNB since most nmap textures uses Z up, t
 
 	float dd  = ll * (ll*0.5);					// The light decrease inversely with the square of the distance.
 
-//	vec4 S = texture2D(texSpec, X.st);
-	vec4 C = texture2D(texColor, X.st);
-	vec4 S = vec4(1,1,1,1);// texture(texSpec, X.st);
-//	C = vec4(0.9, 0.4, 0.3, 1);
+	vec4 CC   = texture2D(texColor, X.st);
+	vec3 C    = CC.rgb;
+	vec3 S    = vec3(1,1,1);
 
-	if(C.a > 0.05) {
-		gl_FragColor = ((C * d * lightIntensity) / dd)
-	    	         + ((S * s * lightIntensity) / dd)
-	        	     + (C * ambientIntensity);
+	if(CC.a > 0.05) {
+		gl_FragColor = vec4(((C * d * lightIntensity) / dd)
+	    	               +((S * s * lightIntensity) / dd)
+	        	           +(C * ambientIntensity), CC.a);
 	} else {
 		gl_FragColor = vec4(0,0,0,0);
 	}
