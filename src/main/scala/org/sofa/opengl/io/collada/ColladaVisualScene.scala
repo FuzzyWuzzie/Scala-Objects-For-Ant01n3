@@ -53,9 +53,9 @@ class SceneNode(node:Node) {
 			item.label match {
 				case "translate" => transforms += new Translate(item.text)
 				case "rotate"    => transforms += new Rotate(item.text)
-				case "instance_light"    => instance = (item\"@url").text.substring(1)
-				case "instance_camera"   => instance = (item\"@url").text.substring(1)
-				case "instance_geometry" => instance = (item\"@url").text.substring(1)
+				case "instance_light"    => instance = (item \ "@url").text.substring(1)
+				case "instance_camera"   => instance = (item \ "@url").text.substring(1)
+				case "instance_geometry" => instance = (item \ "@url").text.substring(1)
 				case _ => {}
 			} 
 		}
@@ -80,10 +80,10 @@ class VisualScene(node:Node) extends ColladaFeature {
 	parse(node)
 	
 	protected def parse(node:Node) {
-		name = (node\"@name").text
-		id   = (node\"@id").text
+		name = (node \ "@name").text
+		id   = (node \ "@id").text
 		
-		(node\\"node").foreach { item => nodes += new SceneNode(item) }
+		(node \\ "node").foreach { item => nodes += new SceneNode(item) }
 	}
 	
 	override def toString():String = "visualScene(%s, (%s)".format(name, nodes.mkString(", "))

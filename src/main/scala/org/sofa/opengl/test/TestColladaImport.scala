@@ -80,7 +80,7 @@ class TestColladaImport extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "src-scala/org/sofa/opengl/shaders"
+		Shader.includePath  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -129,8 +129,8 @@ class TestColladaImport extends SurfaceRenderer {
 	
 	def initThing() {
 //		val model = new File(scala.xml.XML.loadFile("/Users/antoine/Desktop/duck_triangulate.dae").child)
-		val model = new File(scala.xml.XML.loadFile("/Users/antoine/Documents/Art/Blender/Suzanne2.dae").child)
-		thingMesh = model.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh 
+		val model = new File(scala.xml.XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/Suzanne2.dae").child)
+		thingMesh = model.library.geometry("Monkey").mesh.toMesh 
 	}
 	
 	def display(surface:Surface) {

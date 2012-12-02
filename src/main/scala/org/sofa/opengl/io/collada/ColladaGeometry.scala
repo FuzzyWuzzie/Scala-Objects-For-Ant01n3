@@ -16,17 +16,24 @@ class Geometry(node:Node) extends ColladaFeature {
 	/** Name of the geometry. */
 	var name = ""
 	
-	/** Set of meshes. */
-	val meshes = new HashMap[String,ColladaMesh]()
+	/** The mesh. */
+	var mesh:ColladaMesh = null
 
 	parse(node)
 	
 	protected def parse(node:Node) {
+		val meshes = (node \\ "mesh")
 		name = (node \ "@name").text
-		(node \\ "mesh").foreach { mesh => meshes += ((mesh.label, new ColladaMesh(mesh))) }
+
+		if(meshes.size > 0) 
+			mesh = new ColladaMesh(meshes.head)
+		else {
+			// TODO conves_mesh or spline 
+			throw new RuntimeException("convex_mesh or spline not yet supported, no mesh in geometry")
+		}
 	}
 	
-	override def toString():String = "geometry(%s, (%s))".format(name, meshes.values.mkString(", "))
+	override def toString():String = "geometry(%s, %s)".format(name, mesh)
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -167,8 +174,10 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 		data = (node \ "p").text.split(" ").map(_.toInt)
 	}
 	
+	def toMesh():Mesh = toMesh(false)
+
 	/** Transform this into a SOFA mesh, usable to draw in an OpenGL scene. */
-	def toMesh():Mesh
+	def toMesh(xyz2zxy:Boolean):Mesh
 
 	/** Generate a list of vertices from the data given in the Collada file such that each vertex
 	  * owns its own set of attributes (as needed by OpenGL). The procedure try to ensure that
@@ -198,19 +207,22 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 			i += inputs.length
 		}
 
-//Console.err.println("Generated a list of vertices (%d vertices, for %d inputs, data size %d), with %d unique vertices".format(vertexList.size, inputs.length, data.size, vertices.size))
+//Console.err.println("Collada Faces %d original elements %d unique elements".format(data.length/inputs.length, elements.size))
 		
 		(elements, vertices)
 	}
 
-	protected def toMesh(elements:ArrayBuffer[Int], vertices:ArrayBuffer[Vertex]):Mesh = {
+	protected def toMesh(elements:ArrayBuffer[Int], vertices:ArrayBuffer[Vertex], xyz2zxy:Boolean):Mesh = {
 		val mesh = new EditableMesh()
 	
 		mesh.buildAttributes(MeshDrawMode.TRIANGLES) {
 			vertices.foreach { vertex =>
 				if(vertex.normal >= 0) {
 					val norm = getAttribute(Input.Normal, vertex.normal)
-					mesh.normal(norm(0), norm(1), norm(2))
+					
+					if(xyz2zxy)
+					     mesh.normal(norm(1), norm(2), norm(0))
+					else mesh.normal(norm(0), norm(1), norm(2))
 				}
 				if(vertex.texcoord >= 0) {
 					val uv = getAttribute(Input.TexCoord, vertex.texcoord)
@@ -218,7 +230,10 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 				}
 				if(vertex.index >= 0) {
 					val vert = getVertex(vertex.index)
-					mesh.vertex(vert(0), vert(1), vert(2))
+
+					if(xyz2zxy)
+					     mesh.vertex(vert(1), vert(2), vert(0))
+					else mesh.vertex(vert(0), vert(1), vert(2))
 				}
 			}
 		}
@@ -249,7 +264,7 @@ class Vertex(val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, v
 class Triangles(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	parse(node)
 	override def toString():String = "triangles(%d, [%s], data %d(%d))".format(count, inputs.mkString(","), data.length, (data.length/inputs.length)/3)
-	def toMesh():Mesh = { val (elements,vertices) = toVertexList; toMesh(elements, vertices) }
+	def toMesh(xyz2zxy:Boolean):Mesh = { val (elements,vertices) = toVertexList; toMesh(elements, vertices, xyz2zxy) }
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -269,9 +284,9 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	override def toString():String = "polys(%d, [%s], vcount %d, data %d)".format(count, inputs.mkString(","), vcount.length, data.length)
 	
 	/** */
-	def toMesh():Mesh = {
+	def toMesh(xyz2zxy:Boolean):Mesh = {
 		var (elements,vertices) = triangulate
-		toMesh(elements,vertices)
+		toMesh(elements,vertices,xyz2zxy)
 	}
 	
 	def triangulate():(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
@@ -349,8 +364,17 @@ class ColladaMesh(node:Node) {
 			faces = new Polygons(polylist.head, this)
 		}
 	}
+
+	/** Transform the Collada data to a SOFA Mesh object. */
+	def toMesh():Mesh = toMesh(false)
 	
-	def toMesh():Mesh = faces.toMesh
+	/** Transform the Collada data to a SOFA Mesh object.
+	  * If the argument xyz2zxy is true, vertices and normals components
+	  * are interverted so that:
+	  * Blender x becomes OpenGL z,
+	  * Blender y becomes OpenGL x,
+	  * Blender z becomes OpenGL y. */
+	def toMesh(xyz2zxy:Boolean):Mesh = faces.toMesh(xyz2zxy)
 	
 	override def toString():String = "mesh(%s(%s), %s)".format(sources(vertices).name, sources.values.mkString(","), faces)
 }

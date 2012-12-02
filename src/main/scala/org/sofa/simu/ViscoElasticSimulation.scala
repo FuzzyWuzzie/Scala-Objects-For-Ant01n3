@@ -529,7 +529,7 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 	}
 
 	/** Apply one simulaton step during time range `dt`. */
-	def simulationStep(dt:Double) {
+	def simulationStepWithTimer(dt:Double) {
 		
 		// Compute neighbors
 		timer.measure("neighbors") {
@@ -585,6 +585,38 @@ class ViscoElasticSimulation extends ArrayBuffer[Particle] {
 			timer.reset
 		}
 
+	}
+	/** Apply one simulaton step during time range `dt`. */
+	def simulationStep(dt:Double) {		
+		// Compute neighbors
+		computeNeighbors
+
+		// Gravity
+		applyGravity(dt)							// Changes V
+		
+		// Viscosity
+		applyViscosity(dt)						// Changes V
+		
+		// Move
+		move(dt)									// Changes X
+		
+		// Add and remove springs, change rest lengths
+		if(Particle.plasticity) {
+			adjustSprings(dt)					// Does not changes X nor V
+			// Modify positions according to springs
+			// double density relaxation, and collisions
+			applySpringDisplacements(dt)		// Changes X
+		}
+		
+		doubleDensityRelaxation(dt)				// Changes X
+		resolveCollions(dt)						// Changes X
+		computeVelocity(dt)
+		
+		// Update the space hash
+		updateSpaceHash
+
+		// One step finished.
+		step += 1
 	}
 
 	def computeNeighbors() {

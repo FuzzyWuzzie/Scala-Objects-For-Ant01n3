@@ -147,7 +147,7 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 
 	var particleColor = Rgba(0.7, 0.7, 1, 0.9)
 	
-	var clearColor = Rgba.grey20
+	var clearColor = Rgba.black
 	
 	var groundColor = Rgba.grey80
 	
@@ -279,7 +279,8 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		Shader.includePath  += "src/com/chouquette/tests"
 		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/"
 		Texture.includePath += "textures/"
-			
+		GLFont.path += "/Users/antoine/Library/Fonts"
+
 		camera.viewport = (1280, 800)
 		cameraTex = new Camera(); cameraTex.viewport = (fbWidth, fbHeight)
 
@@ -333,8 +334,6 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	}
 
 	protected def initFonts() {
-		GLFont.path += "/Users/antoine/Library/Fonts"
-
 		heaFont = new GLFont(gl, "Ubuntu-B.ttf", 40, 0, 0)
 		subFont = new GLFont(gl, "Ubuntu-B.ttf", 30, 0, 0)
 		stdFont = new GLFont(gl, "Ubuntu-B.ttf", 25, 0, 0)
@@ -400,10 +399,13 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		import org.sofa.opengl.io.collada.{File => ColladaFile}
 		import scala.xml.XML
 
-		val wallModel = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/MurJuice.dae").child)
-		wallMesh = wallModel.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh 
+		val wallModel    = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/MurJuice.dae").child)
 		val birouteModel = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/Bruce_003.dae").child)
-		birouteMesh = birouteModel.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh
+	
+println("%s".format(birouteModel.toString))
+
+		wallMesh    = wallModel.library.geometry("Plane.007").mesh.toMesh(false)	
+		birouteMesh = birouteModel.library.geometry("BirouteLowPoly").mesh.toMesh(true)
 	}
 	
 	protected def initGeometry() {
@@ -431,14 +433,13 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		isoPlane   = isoPlaneMesh.newVertexArray(  gl, ("vertices", v), ("colors", c), ("normals", n))
 		obstacles  = obstaclesMesh.newVertexArray( gl, ("vertices", v), ("colors", c), ("normals", n))
-		tube       = birouteMesh.newVertexArray(   gl, ("vertices", v), ("colors", c), ("normals", n))
 
 		// Phong uniform color shader
 
 		v = phongNoClrShad.getAttribLocation("position")
 		n = phongNoClrShad.getAttribLocation("normal")
 
-		biroute = birouteMesh.newVertexArray(   gl, ("vertices", v), ("normals", t))
+		biroute = birouteMesh.newVertexArray(   gl, ("vertices", v), ("normals", n))
 		
 		// Plain shader
 		
@@ -545,8 +546,8 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 var angle = 0.0
 	
 	def display(surface:Surface) {
-		if((step+1)%10 == 0)
-			println("--step %d ---------------------".format(step+1))
+		// if((step+1)%10 == 0)
+		// 	println("--step %d ---------------------".format(step+1))
 		
 		if(running) {
 			player1.step
@@ -644,12 +645,12 @@ var angle = 0.0
 		
 		step += 1
 
-		if(step % 10 == 0) {
-			timer.printAvgs("-- Iso ------")
-		}
-		if(step % 1000 == 0) {
-			timer.reset
-		}
+		// if(step % 10 == 0) {
+		// 	timer.printAvgs("-- Iso ------")
+		// }
+		// if(step % 1000 == 0) {
+		// 	timer.reset
+		// }
 	}
 	
 	protected def juicePlayer(player:Player) {
@@ -737,22 +738,31 @@ var angle = 0.0
 
 	}
 
+val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
+
 	protected def drawBiroutes() {
+		gl.disable(gl.CULL_FACE)
+		gl.frontFace(gl.CW)
 		phongNoClrShad.use
-		useLights(phongNoClrShad)
+		phongNoClrShad.uniform("color", birouteColor)
+		useLights(phongNoClrShad, 120f, 10f)
 		drawBiroute(player1)
 		drawBiroute(player2)
+		gl.enable(gl.CULL_FACE)
 	}
 
 	protected def drawBiroute(player:Player) {
-		var angle = Vector3(0,1,0).angle(player.velocity)
-
-		if(player.velocity.x > 0)
-			angle = -angle
+		var angle = 0.0
 
 		camera.pushpop {
 			camera.translateModel(player.emitPoint)
-			//camera.translateModel(0, -birouteSize/2, 0)
+			camera.scaleModel(0.5, 0.5, 0.5)
+			if(player.velocity.x < 0) {
+				camera.rotateModel(Pi, 0, 1, 0)
+				angle = (Pi/2.0) - Vector3(0,1,0).angle(player.velocity)
+			} else {
+				angle = (Pi/2.0) - Vector3(0,1,0).angle(player.velocity)
+			}
 			camera.rotateModel(angle, 0, 0, 1)
 			camera.uniformMVP(phongNoClrShad)
 			biroute.draw(birouteMesh.drawAs)
@@ -881,6 +891,7 @@ timer.measure("draw quads") {
 
 	protected def updateParticles() {
 		simu.simulationStep(0.044)
+		//simu.simulationStepWithTimer(0.044)
 		
 		// if(drawParticlesFlag) {
 		// 	var i = 0
@@ -1059,6 +1070,13 @@ triangleCount = 0
 
 	// --------------------------------------------------------------------------------------
 	// Utility
+
+	protected def useLights(shader:ShaderProgram, intensity:Float, specular:Float) {
+		shader.uniform("light.pos",       Vector3(camera.modelview.top * light1))
+		shader.uniform("light.intensity", intensity)
+		shader.uniform("light.ambient",   0.2f)
+		shader.uniform("light.specular",  specular)
+	}
 
 	protected def useLights(shader:ShaderProgram) {
 		shader.uniform("light.pos",       Vector3(camera.modelview.top * light1))

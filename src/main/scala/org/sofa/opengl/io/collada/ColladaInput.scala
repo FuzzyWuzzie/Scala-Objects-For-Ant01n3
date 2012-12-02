@@ -25,7 +25,7 @@ class ColladaInput {
 		
 		println(file)
 		
-		println(file.library.geometries.get("geometry").get.meshes.get("mesh").get.toMesh)
+		println(file.library.geometries.get("geometry").get.mesh.toMesh)
 		
 //		file.library.geometries.foreach { geometry =>
 //			println("  geometry %s".format(geometry._1))

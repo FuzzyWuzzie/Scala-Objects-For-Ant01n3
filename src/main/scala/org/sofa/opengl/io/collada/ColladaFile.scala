@@ -33,22 +33,35 @@ class Library(root:NodeSeq) {
 
 	parse(root)
 	
+	def geometry(name:String):Geometry = geometries.get(name).getOrElse(throw new RuntimeException("geometry %s not found".format(name)))
+
+	def light(name:String):Light = lights.get(name).getOrElse(throw new RuntimeException("light %s not found".format(name)))
+
+	def camera(name:String):Camera = cameras.get(name).getOrElse(throw new RuntimeException("camera %s not found".format(name)))
+
+	def visualScene(name:String):VisualScene = visualScenes.get(name).getOrElse(throw new RuntimeException("visual scene %s not found".format(name)))
+
 	def parse(root:NodeSeq) {
 		// Cameras
 		(root \\ "library_cameras" \ "camera").foreach { node =>
-			cameras += ((node.label, Camera(node)))
+			val camera = Camera(node)
+			cameras += ((camera.name, camera))
 		}  
 		// Lights
 		(root \\ "library_lights" \ "light").foreach { node =>
-			lights += ((node.label, Light(node)))
+			val light = Light(node)
+			lights += ((light.name, light))
 		}
 		// Geometries
 		(root \\ "library_geometries" \ "geometry").foreach { node =>
-			geometries += ((node.label, Geometry(node)))
+			val geometry = Geometry(node)
+			geometries += ((geometry.name, geometry))
 		}
 		// Visual Scenes
 		(root \\ "library_visual_scenes" \ "visual_scene").foreach { node =>
-			visualScenes += ((node.label, VisualScene(node))) }
+			val visualScene = VisualScene(node)
+			visualScenes += ((visualScene.name, visualScene))
+		}
 	}
 	
 	override def toString():String = {
