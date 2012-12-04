@@ -45,7 +45,7 @@ void main(void) {
 	// Compute the final color.
 
 	B = B								
-	  + ((vec3(1,1,1) * s * light.intensity * 0.05) / DD)	// Specular.
+	  + ((vec3(1,1,1) * s * light.intensity * (1-i)*0.05) / DD)	// Specular.
 	  + (B * light.ambient);						// Ambient.
 
 	gl_FragColor = vec4(B.rgb, 1);

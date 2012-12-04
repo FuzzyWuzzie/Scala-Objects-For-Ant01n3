@@ -3,12 +3,12 @@ package org.sofa.opengl.mesh
 import javax.media.opengl._
 import org.sofa.nio._
 import org.sofa.opengl._
+import org.sofa.math.{Point3, Rgba, Vector3}
 import GL._
 import GL2._
 import GL2ES2._
 import GL3._
 import scala.math._
-import org.sofa.math.{Point3, Rgba}
 
 class LineSet(val count:Int) extends Mesh {
     protected lazy val V:FloatBuffer = allocateVertices
@@ -20,7 +20,8 @@ class LineSet(val count:Int) extends Mesh {
     protected var vend = count
 
     protected var vertexArray:VertexArray = null
-    
+
+	/** Set the i-th line as the line between points `a` and `b`. */    
     def setLine(i:Int, a:Point3, b:Point3) {
         val pos = i*3*2
         
@@ -30,6 +31,21 @@ class LineSet(val count:Int) extends Mesh {
         V(pos+3) = b.x.toFloat
         V(pos+4) = b.y.toFloat
         V(pos+5) = b.z.toFloat
+
+        if(i < vbeg) vbeg = i
+        if(i+1 > vend) vend = i+1
+    }
+
+    /** Set the i-th line as the line between points `p` and `p+v`. */
+    def setLine(i:Int, p:Point3, v:Vector3) {
+    	val pos = i*3*2
+
+    	V(pos+0) = p.x.toFloat
+    	V(pos+1) = p.y.toFloat
+    	V(pos+2) = p.z.toFloat
+    	V(pos+3) = (p.x+v.x).toFloat
+    	V(pos+4) = (p.y+v.y).toFloat
+    	V(pos+5) = (p.z+v.z).toFloat
 
         if(i < vbeg) vbeg = i
         if(i+1 > vend) vend = i+1

@@ -77,8 +77,8 @@ class TestEditableMesh extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "src-scala/org/sofa/opengl/shaders"
-			
+		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		
 		initGL(sgl)
 		initShaders
 		initGeometry
@@ -121,7 +121,7 @@ class TestEditableMesh extends SurfaceRenderer {
 	}
 	
 	def initThing() {
-		thingMesh.begin(MeshDrawMode.TRIANGLES)
+		thingMesh.begin
 			thingMesh.color(1, 0, 0)
 			thingMesh.normal(0, 0, 1)
 			thingMesh.vertex(-1, 0, 0)	// 0
@@ -131,7 +131,7 @@ class TestEditableMesh extends SurfaceRenderer {
 			thingMesh.vertex(-1, 2, 0)	// 3
 			thingMesh.vertex(1, 2, 0)	// 4
 		thingMesh.end
-		thingMesh.beginIndices
+		thingMesh.beginIndices(MeshDrawMode.TRIANGLES)
 			thingMesh.index(0)
 			thingMesh.index(1)
 			thingMesh.index(2)

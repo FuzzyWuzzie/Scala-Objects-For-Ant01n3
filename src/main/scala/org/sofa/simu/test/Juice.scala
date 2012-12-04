@@ -5,7 +5,7 @@ import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
 import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Vector2, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
 
 import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture, TextureFramebuffer}
-import org.sofa.opengl.mesh.{Mesh, Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet, Cylinder}
+import org.sofa.opengl.mesh.{Mesh, Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet, Cylinder, EditableMesh}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent, ScrollEvent, MotionEvent}
 
@@ -150,14 +150,18 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	var clearColor = Rgba.black
 	
 	var groundColor = Rgba.grey80
+
+	var ambientIntensity = 0.05f
 	
-	val light1 = Vector4(0, 7, 3, 1)	
+	val light1 = Vector4(0, 10, 3, 1)	
 	
 	var particleSizePx = 30f // 160f
 	
 	var particleQuadSize = 0.8f
 	
 	var birouteSize = 2f
+
+	var groundTexRepeat = 70
 	
 // == Utility =====================================================
 
@@ -400,12 +404,14 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		import scala.xml.XML
 
 		val wallModel    = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/MurJuice.dae").child)
-		val birouteModel = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/Bruce_003.dae").child)
+		val birouteModel = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/Bruce_004.dae").child)
 	
 println("%s".format(birouteModel.toString))
 
 		wallMesh    = wallModel.library.geometry("Plane.007").mesh.toMesh(false)	
 		birouteMesh = birouteModel.library.geometry("BirouteLowPoly").mesh.toMesh(true)
+
+birouteMesh.asInstanceOf[EditableMesh].autoComputeTangents
 	}
 	
 	protected def initGeometry() {
@@ -421,7 +427,7 @@ println("%s".format(birouteModel.toString))
 
 		//groundMesh.setColor(groundColor)
 		
-		groundMesh.setTextureRepeat(50,50)
+		groundMesh.setTextureRepeat(groundTexRepeat, groundTexRepeat)
 		ground = groundMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangents", t), ("texcoords", u))
 
 		// Phong shader
@@ -694,7 +700,7 @@ var angle = 0.0
 		//useLights(nmapShad)
 		nmapShad.uniform("lightPos", Vector3(camera.modelview.top * light1))
 	    nmapShad.uniform("lightIntensity", 100f)
-	    nmapShad.uniform("ambientIntensity", 0.2f)
+	    nmapShad.uniform("ambientIntensity", ambientIntensity)
 	    nmapShad.uniform("specularPow", 128f)
 
 		camera.uniformMVP(nmapShad)
@@ -729,7 +735,7 @@ var angle = 0.0
 			spyceShad.use
 			fb.bindColorTextureTo(gl.TEXTURE0)
 	    	spyceShad.uniform("texColor", 0)	// Texture Unit 0
-			useLights(spyceShad)
+			useLights(spyceShad, 1000f, 100f)
 			camera.translateModel(0,4,-10)
 			camera.uniformMVP(spyceShad)
 			ledWall.draw(ledWallMesh.drawAs)
@@ -1074,14 +1080,14 @@ triangleCount = 0
 	protected def useLights(shader:ShaderProgram, intensity:Float, specular:Float) {
 		shader.uniform("light.pos",       Vector3(camera.modelview.top * light1))
 		shader.uniform("light.intensity", intensity)
-		shader.uniform("light.ambient",   0.2f)
+		shader.uniform("light.ambient",   ambientIntensity)
 		shader.uniform("light.specular",  specular)
 	}
 
 	protected def useLights(shader:ShaderProgram) {
 		shader.uniform("light.pos",       Vector3(camera.modelview.top * light1))
 		shader.uniform("light.intensity", 5f)
-		shader.uniform("light.ambient",   0.2f)
+		shader.uniform("light.ambient",   ambientIntensity)
 		shader.uniform("light.specular",  1000f)
 	}
 }
