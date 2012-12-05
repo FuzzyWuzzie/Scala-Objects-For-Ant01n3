@@ -408,8 +408,10 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	
 println("%s".format(birouteModel.toString))
 
-		wallMesh    = wallModel.library.geometry("Plane.007").mesh.toMesh(false)	
-		birouteMesh = birouteModel.library.geometry("BirouteLowPoly").mesh.toMesh(true)
+		birouteModel.library.geometry("BirouteLowPoly").mesh.blenderToOpenGL(true)
+
+		wallMesh    = wallModel.library.geometry("Plane.007").mesh.toMesh	
+		birouteMesh = birouteModel.library.geometry("BirouteLowPoly").mesh.toMesh
 
 birouteMesh.asInstanceOf[EditableMesh].autoComputeTangents
 	}

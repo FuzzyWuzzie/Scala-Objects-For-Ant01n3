@@ -77,6 +77,17 @@ class MeshSource(node:Node) {
 
 //------------------------------------------------------------------------------------------------------
 
+/** Possible type of vertex attributes. */
+object Input extends Enumeration {
+	val Vertex   = Value
+	val Normal   = Value
+	val TexCoord = Value
+	val Tangent  = Value
+	val Color    = Value
+	val Bone     = Value
+	val User     = Value
+}	
+
 /** Faces making up a mesh.
   * 
   * The faces are polygons. They are arranged in Collada as a list of indices in various
@@ -107,7 +118,7 @@ class MeshSource(node:Node) {
   * 
   * For each kind of input you can get the name of the source mesh where the data is defined.
   * */
-abstract class Faces(node:Node, mesh:ColladaMesh) {
+abstract class Faces(node:Node, val mesh:ColladaMesh) {
 	
 	/** Number of faces. */
 	var count = 0
@@ -123,17 +134,6 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 	  * then for example the color index and the normal index. In this example, there would be
 	  * three inputs. */
 	var data:Array[Int] = null
-
-	/** Possible type of vertex attributes. */
-	object Input extends Enumeration {
-		val Vertex   = Value
-		val Normal   = Value
-		val TexCoord = Value
-		val Tangent  = Value
-		val Color    = Value
-		val Bone     = Value
-		val User     = Value
-	}	
 	
 	/** Does the vertex attribute 'input' is provided for this face set ? */
 	def hasInput(input:Input.Value):Boolean = revInputs.contains(input)
@@ -174,45 +174,52 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 		data = (node \ "p").text.split(" ").map(_.toInt)
 	}
 	
-	def toMesh():Mesh = toMesh(false)
-
-	/** Transform this into a SOFA mesh, usable to draw in an OpenGL scene. */
-	def toMesh(xyz2yzx:Boolean):Mesh
+	/** Transform this into a SOFA [[Mesh]], usable to draw in an OpenGL scene.
+	  * Some transformations may be applyed to the original data accoding to the settings in
+	  * The Collada Mesh. */
+	def toMesh():Mesh
 
 	/** Generate a list of vertices from the data given in the Collada file such that each vertex
 	  * owns its own set of attributes (as needed by OpenGL). If mergeVertices is true, the procedure
 	  * will try to ensure that two vertices having exactly the same attributes (all of them) will
 	  * not be duplicated. The order remains the same. */
-	def toVertexList(mergeVertices:Boolean):(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
+	def toVertexList():(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
 		val vertices = new ArrayBuffer[Vertex]()		// The element buffer.
 		val elements = new ArrayBuffer[Int]()
 
-		if(mergeVertices) {
+		if(mesh.mergeVerticesMesh) {
 			val unicity  = new HashMap[Vertex,Int]()		// To test unicity, and retrieve the original.	
 			var i = 0
 
 			while(i < data.length) {
-				var vertex = new Vertex(getData(i, Input.Vertex), getData(i, Input.Normal), getData(i, Input.TexCoord),
+				var vertex = new Vertex(this, getData(i, Input.Vertex), getData(i, Input.Normal), getData(i, Input.TexCoord),
 					getData(i, Input.Tangent), getData(i, Input.Color), getData(i, Input.Bone))
 	
+//Console.err.print("%s".format(vertex))
+
 				if(!unicity.contains(vertex)) {
 					val index = vertices.length
 					vertices += vertex
 					unicity  += ((vertex,index))
 					elements += index//unicity.get(vertex).get
+//Console.err.println("  -> new %d".format(index))
 				} else {
-					elements += unicity.get(vertex).get
+					val index = unicity.get(vertex).get
+					elements += index
 	//				vertex = vertices(unicity.get(vertex).get)
+//Console.err.println("  -> old %d".format(index))
 				}
 			
 				i += inputs.length
 			}
 			
-Console.err.println("Collada Faces %d original elements %d unique elements".format(data.length/inputs.length, elements.size))
+			val expected = data.length / inputs.length
+			val obtained = unicity.size
+//Console.err.println("Collada Faces %d original elements %d unique elements (saved %d compressed %.2f%%)".format(expected, obtained, expected-obtained, (1-(obtained.toDouble/expected.toDouble))*100))
 		} else {		
 			var i = 0
 			while(i < data.length) {
-				var vertex = new Vertex(getData(i, Input.Vertex), getData(i, Input.Normal), getData(i, Input.TexCoord),
+				var vertex = new Vertex(this, getData(i, Input.Vertex), getData(i, Input.Normal), getData(i, Input.TexCoord),
 					getData(i, Input.Tangent), getData(i, Input.Color), getData(i, Input.Bone))
 	
 				val index = vertices.length
@@ -225,7 +232,7 @@ Console.err.println("Collada Faces %d original elements %d unique elements".form
 		(elements, vertices)
 	}
 
-	protected def toMesh(elements:ArrayBuffer[Int], vertices:ArrayBuffer[Vertex], xyz2yzx:Boolean):Mesh = {
+	protected def toMesh(elements:ArrayBuffer[Int], vertices:ArrayBuffer[Vertex]):Mesh = {
 		val mesh = new EditableMesh()
 	
 		mesh.buildAttributes {
@@ -233,7 +240,7 @@ Console.err.println("Collada Faces %d original elements %d unique elements".form
 				if(vertex.normal >= 0) {
 					val norm = getAttribute(Input.Normal, vertex.normal)
 					
-					if(xyz2yzx)
+					if(this.mesh.blenderToOpenGLCoos)
 					     mesh.normal(norm(1), norm(2), norm(0))
 					else mesh.normal(norm(0), norm(1), norm(2))
 				}
@@ -244,7 +251,7 @@ Console.err.println("Collada Faces %d original elements %d unique elements".form
 				if(vertex.index >= 0) {
 					val vert = getVertex(vertex.index)
 
-					if(xyz2yzx)
+					if(this.mesh.blenderToOpenGLCoos)
 					     mesh.vertex(vert(1), vert(2), vert(0))
 					else mesh.vertex(vert(0), vert(1), vert(2))
 				}
@@ -260,7 +267,94 @@ Console.err.println("Collada Faces %d original elements %d unique elements".form
 }
 
 /** Represents internally a vertex. */
-class Vertex(val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int) {
+class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int) {
+	protected var repr:Array[Float] = null
+
+	def getRepr():Array[Float] = { computeRepr; repr }
+
+	protected def computeRepr() {
+		if(repr eq null) {
+			repr = new Array[Float](17)
+
+			if(index >=0) {
+				val vert = faces.getVertex(index)
+				repr(0) = vert(0).toFloat
+				repr(1) = vert(1).toFloat
+				repr(2) = vert(2).toFloat
+			}
+			if(normal >= 0) {
+				val norm = faces.getAttribute(Input.Normal, normal) 
+				repr(3) = norm(0).toFloat
+				repr(4) = norm(1).toFloat
+				repr(5) = norm(2).toFloat
+			}
+			if(texcoord >= 0) {
+				val uv = faces.getAttribute(Input.TexCoord, texcoord)
+				repr(6) = uv(0).toFloat
+				repr(7) = uv(1).toFloat
+			}
+			if(tangent >= 0) {
+				val tan = faces.getAttribute(Input.Tangent, tangent)
+				repr(8)  = tan(0).toFloat
+				repr(9)  = tan(1).toFloat
+				repr(10) = tan(2).toFloat
+				repr(11) = tan(3).toFloat
+			} 
+			if(color >= 0) {
+				val clr = faces.getAttribute(Input.Color, color)
+				repr(12) = clr(0).toFloat
+				repr(13) = clr(1).toFloat
+				repr(14) = clr(2).toFloat
+				repr(15) = clr(3).toFloat
+			}
+			if(bone >= 0) {
+				repr(16) = faces.getAttribute(Input.Bone, bone)(0).toFloat
+			}
+		}
+	}
+
+	override def equals(other:Any):Boolean = other match {
+		case v:Vertex => {
+			computeRepr
+			val otherRepr = v.getRepr
+			var equals = true
+			var i = 0
+			while(i < repr.length && equals) {
+				if(repr(i) != otherRepr(i)) {
+					equals = false
+				}
+				i += 1
+			}
+
+			equals
+		}
+		case _ => false
+	}
+	
+	override def hashCode():Int = {
+		// yeah !
+		computeRepr
+
+		var i = 1
+		var sum = 41 + java.lang.Float.floatToIntBits(repr(0))
+		while(i < repr.length) {
+			sum = (41 * sum + java.lang.Float.floatToIntBits(repr(i)))
+			i += 1
+		}
+
+		sum
+
+		//(41*(41*(41*(41*(41*(41*(41*(41*(41*(41*(41*(41*(41*(41*(41*(41*(41+x)+y)+z)+nx)+ny)+nz)+u)+v)+tx)+ty)+tz)+tw)+r)+g)+b)+a)+bo)
+	}
+
+	override def toString():String = {
+		computeRepr
+		"vertex(%d, %d, %d, %d, %d, %d { %s })".format(index, normal, texcoord, tangent, color, bone, repr.mkString(", "))
+	}
+}
+
+/** Represents internally a vertex. */
+class VertexOld(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int) {
 	override def equals(other:Any):Boolean = other match {
 		case v:Vertex => (index==v.index && normal==v.normal && texcoord==v.texcoord && tangent==v.tangent && color==v.color && bone==v.bone)
 		case _ => false
@@ -270,14 +364,13 @@ class Vertex(val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, v
 	override def toString():String = "vertex(pos=%d, norm=%d, texc=%d, tang=%d, clr=%d, bone=%d)".format(index, normal, texcoord, tangent, color, bone)
 }
 
-
 //------------------------------------------------------------------------------------------------------
 
 /** Faces only made of triangles. */
 class Triangles(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	parse(node)
 	override def toString():String = "triangles(%d, [%s], data %d(%d))".format(count, inputs.mkString(","), data.length, (data.length/inputs.length)/3)
-	def toMesh(xyz2yzx:Boolean):Mesh = { val (elements,vertices) = toVertexList(false); toMesh(elements, vertices, xyz2yzx) }
+	def toMesh():Mesh = { val (elements,vertices) = toVertexList; toMesh(elements, vertices) }
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -297,13 +390,13 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	override def toString():String = "polys(%d, [%s], vcount %d, data %d)".format(count, inputs.mkString(","), vcount.length, data.length)
 	
 	/** */
-	def toMesh(xyz2yzx:Boolean):Mesh = {
+	def toMesh():Mesh = {
 		var (elements,vertices) = triangulate
-		toMesh(elements,vertices,xyz2yzx)
+		toMesh(elements,vertices)
 	}
 	
 	def triangulate():(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
-		var (elements,vertices) = toVertexList(false)
+		var (elements,vertices) = toVertexList
 		val elems = new ArrayBuffer[Int]
 		var i = 0
 		var v = 0
@@ -342,6 +435,12 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 /** Describe a mesh (source (vertex attributes), and indices in the source under the form of faces. */
 class ColladaMesh(node:Node) {
 	
+	/** Try to merge vertices with exactly the same values (for position, but also color, normals, etc.) */
+	var mergeVerticesMesh:Boolean = false
+
+	/** Invert x with y, y with z and z with x. Useful to pass from Blender coordinates to OpenGL ones. */
+	var blenderToOpenGLCoos:Boolean = false
+
 	/** All the vertex attributes. */
 	val sources = new HashMap[String,MeshSource]()
 	
@@ -353,6 +452,15 @@ class ColladaMesh(node:Node) {
 		
 	parse(node)
 	
+	/** Try to merge vertices with exactly the same values (for position, but also color, normals, etc.)
+	  * This setting is applyed when the mesh is transformed to a SOFA [[Mesh]], when calling [[toMesh()]]. */	
+	def mergeVertices(on:Boolean) { mergeVerticesMesh = on }
+
+	/** Try to swap axis considering the source uses Blender axis and pass them to OpenGL axis.
+	  * This means that the x becomes y, the y becomes z and the z becomes x. This setting is applyed
+	  * when the mesh is transformed to a SOFA [[Mesh]] when calling [[toMesh()]]. */
+	def blenderToOpenGL(on:Boolean) { blenderToOpenGLCoos = on }
+
 	protected def parse(node:Node) {
 		processSources(node \\ "source")
 		processVertices((node \ "vertices").head)
@@ -378,16 +486,9 @@ class ColladaMesh(node:Node) {
 		}
 	}
 
-	/** Transform the Collada data to a SOFA Mesh object. */
-	def toMesh():Mesh = toMesh(false)
-	
 	/** Transform the Collada data to a SOFA Mesh object.
-	  * If the argument xyz2yzx is true, vertices and normals components
-	  * are interverted so that:
-	  * Blender x becomes OpenGL z,
-	  * Blender y becomes OpenGL x,
-	  * Blender z becomes OpenGL y. */
-	def toMesh(xyz2yzx:Boolean):Mesh = faces.toMesh(xyz2yzx)
+	  * See [[mergeVertices(Boolean)]] and [[blenderToOpenGL(Boolean)]]. */
+	def toMesh():Mesh = faces.toMesh
 	
 	override def toString():String = "mesh(%s(%s), %s)".format(sources(vertices).name, sources.values.mkString(","), faces)
 }
