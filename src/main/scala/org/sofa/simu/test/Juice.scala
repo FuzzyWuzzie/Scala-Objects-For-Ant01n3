@@ -8,6 +8,8 @@ import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Ca
 import org.sofa.opengl.mesh.{Mesh, Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet, Cylinder, EditableMesh}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent, ScrollEvent, MotionEvent}
+import org.sofa.opengl.io.collada.{ColladaFile}
+
 
 import javax.media.opengl.{GLProfile, GLCapabilities}
 
@@ -284,6 +286,7 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/"
 		Texture.includePath += "textures/"
 		GLFont.path += "/Users/antoine/Library/Fonts"
+		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
 
 		camera.viewport = (1280, 800)
 		cameraTex = new Camera(); cameraTex.viewport = (fbWidth, fbHeight)
@@ -400,20 +403,16 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	}
 
 	protected def initMeshes() {
-		import org.sofa.opengl.io.collada.{File => ColladaFile}
-		import scala.xml.XML
-
-		val wallModel    = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/MurJuice.dae").child)
-		val birouteModel = new ColladaFile(XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/Bruce_004.dae").child)
+		val wallModel    = new ColladaFile("MurJuice.dae")
+		val birouteModel = new ColladaFile("Bruce_004.dae")
 	
-println("%s".format(birouteModel.toString))
-
+		birouteModel.library.geometry("BirouteLowPoly").mesh.mergeVertices(true)
 		birouteModel.library.geometry("BirouteLowPoly").mesh.blenderToOpenGL(true)
 
 		wallMesh    = wallModel.library.geometry("Plane.007").mesh.toMesh	
 		birouteMesh = birouteModel.library.geometry("BirouteLowPoly").mesh.toMesh
 
-birouteMesh.asInstanceOf[EditableMesh].autoComputeTangents
+		birouteMesh.asInstanceOf[EditableMesh].autoComputeTangents
 	}
 	
 	protected def initGeometry() {

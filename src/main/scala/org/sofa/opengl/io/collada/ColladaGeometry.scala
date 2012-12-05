@@ -215,7 +215,7 @@ abstract class Faces(node:Node, val mesh:ColladaMesh) {
 			
 			val expected = data.length / inputs.length
 			val obtained = unicity.size
-//Console.err.println("Collada Faces %d original elements %d unique elements (saved %d compressed %.2f%%)".format(expected, obtained, expected-obtained, (1-(obtained.toDouble/expected.toDouble))*100))
+println("Collada Faces %d original elements %d unique elements (saved %d compressed %.2f%%)".format(expected, obtained, expected-obtained, (1-(obtained.toDouble/expected.toDouble))*100))
 		} else {		
 			var i = 0
 			while(i < data.length) {
@@ -432,7 +432,8 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 
 //------------------------------------------------------------------------------------------------------
 
-/** Describe a mesh (source (vertex attributes), and indices in the source under the form of faces. */
+/** Describe a mesh (source (vertex attributes), and indices in the source under the form of faces.
+  * This mesh format offer a convertion toward SOFA meshes */
 class ColladaMesh(node:Node) {
 	
 	/** Try to merge vertices with exactly the same values (for position, but also color, normals, etc.) */

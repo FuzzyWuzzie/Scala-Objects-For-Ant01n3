@@ -24,7 +24,7 @@ import org.sofa.opengl.Shader
 import org.sofa.math.Vector3
 import org.sofa.opengl.mesh.MeshDrawMode
 import org.sofa.opengl.mesh.Mesh
-import org.sofa.opengl.io.collada.File
+import org.sofa.opengl.io.collada.ColladaFile
 
 object TestColladaImport {
 	def main(args:Array[String]):Unit = { (new TestColladaImport).test }
@@ -129,7 +129,7 @@ class TestColladaImport extends SurfaceRenderer {
 	
 	def initThing() {
 //		val model = new File(scala.xml.XML.loadFile("/Users/antoine/Desktop/duck_triangulate.dae").child)
-		val model = new File(scala.xml.XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/Suzanne2.dae").child)
+		val model = new ColladaFile(scala.xml.XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/Suzanne2.dae").child)
 		thingMesh = model.library.geometry("Monkey").mesh.toMesh 
 	}
 	

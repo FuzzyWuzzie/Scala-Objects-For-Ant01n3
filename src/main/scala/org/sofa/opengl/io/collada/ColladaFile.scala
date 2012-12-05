@@ -3,8 +3,19 @@ package org.sofa.opengl.io.collada
 import scala.xml.NodeSeq
 import scala.collection.mutable.HashMap
 
+object ColladaFile{
+	val path = new scala.collection.mutable.ArrayBuffer[String]()
+
+	var loader:ColladaLoader = new DefaultColladaLoader()
+}
+
 /** A Collada file, assets, library of elements and a scene. */
-class File(root:NodeSeq) {
+class ColladaFile(root:NodeSeq) {
+
+	def this(resource:String) {
+		this(ColladaFile.loader.open(resource))
+	}
+
 	/** Meta-data on the file. */
 	val asset:Assets = new Assets((root \\ "asset").head)
 	
@@ -14,6 +25,29 @@ class File(root:NodeSeq) {
 	// TODO add the scene description.
 	
 	override def toString():String = "%s%n%s".format(asset, library)
+}
+
+/** Locate and fetch image data. */
+trait ColladaLoader {
+    /** Try to locate a resource in the include path and load it. */
+    def open(resource:String):NodeSeq
+}
+
+/** Default Collada loader that uses files in the local file system. */
+class DefaultColladaLoader extends ColladaLoader {
+    def open(resource:String):NodeSeq = {
+        var file = new java.io.File(resource)
+        if(file.exists) {
+            scala.xml.XML.loadFile(resource).child
+        } else {
+            val sep = sys.props.get("file.separator").get
+
+            ColladaFile.path.find(path => (new java.io.File("%s%s%s".format(path, sep, resource))).exists) match {
+                case path:Some[String] => { scala.xml.XML.loadFile("%s%s%s".format(path.get,sep,resource)).child }
+                case None => { throw new java.io.IOException("cannot locate Collada file %s (path %s)".format(resource, ColladaFile.path.mkString(":"))) }
+            }
+        }
+    }
 }
 
 

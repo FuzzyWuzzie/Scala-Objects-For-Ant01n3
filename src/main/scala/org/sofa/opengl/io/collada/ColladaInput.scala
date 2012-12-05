@@ -21,7 +21,7 @@ class ColladaInput {
 	}
 	
 	def process(root:NodeSeq) {
-		val file = new File(root)
+		val file = new ColladaFile(root)
 		
 		println(file)
 		

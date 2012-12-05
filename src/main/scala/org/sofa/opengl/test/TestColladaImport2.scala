@@ -4,7 +4,7 @@ import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Camera, Sh
 import org.sofa.opengl.mesh.{Plane, EditableMesh, MeshDrawMode, Mesh}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
 import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3}
-import org.sofa.opengl.io.collada.{File}
+import org.sofa.opengl.io.collada.{ColladaFile}
 
 import javax.media.opengl.{GLAutoDrawable, GLProfile, GLCapabilities, GLEventListener}
 import com.jogamp.newt.opengl.{GLWindow}
@@ -70,6 +70,7 @@ class TestColladaImport2 extends SurfaceRenderer {
 	def initializeSurface(sgl:SGL, surface:Surface) {
 		Shader.includePath  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/textures"
+		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
 
 		initGL(sgl)
 		initTextures
@@ -97,11 +98,11 @@ class TestColladaImport2 extends SurfaceRenderer {
 	}
 
 	protected def initTextures() {
-		colorTex = new Texture(gl, "CubicThing_Color.png", true)
+		colorTex = new Texture(gl, "Thing_Color.png", true)
 	    colorTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    colorTex.wrap(gl.REPEAT)
 
-		nMapTex = new Texture(gl, "CubicThing_NMap.png", true)
+		nMapTex = new Texture(gl, "Thing_NMap.png", true)
 	    nMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    nMapTex.wrap(gl.REPEAT)
 	}
@@ -138,8 +139,11 @@ class TestColladaImport2 extends SurfaceRenderer {
 	}
 	
 	def initThing() {
-		val model = new File(scala.xml.XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/CubicThing_001.dae").child)
-		thingMesh = model.library.geometry("Cube").mesh.toMesh
+		val model = new ColladaFile("Thing_001.dae")
+
+		model.library.geometry("Thing").mesh.mergeVertices(true)
+
+		thingMesh = model.library.geometry("Thing").mesh.toMesh
 
 		thingMesh.asInstanceOf[EditableMesh].autoComputeTangents(true)			// Also compute handedness and store 4-component tangents
 //		thingMesh.asInstanceOf[EditableMesh].autoComputeTangents(false,true)	// Also compute bitangentss
