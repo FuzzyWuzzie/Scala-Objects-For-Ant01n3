@@ -166,13 +166,13 @@ class DynIndexedTriangleMesh(val size:Int) extends Mesh with IndexedMesh with Su
 	
 	def drawAs():Int = GL_TRIANGLES
 	
-    override def newVertexArray(gl:SGL, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+    override def newVertexArray(gl:SGL, locations:Tuple7[Int,Int,Int,Int,Int,Int,Int]):VertexArray = {
 		cbeg = size; cend = 0; vbeg = size; vend = 0; tbeg = size; tend = 0; ibeg = size; iend = 0
 		vertexArray = super.newVertexArray(gl, locations)
 		vertexArray
 	}
 
-    override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+    override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple7[Int,Int,Int,Int,Int,Int, Int]):VertexArray = {
 		cbeg = size; cend = 0; vbeg = size; vend = 0; tbeg = size; tend = 0; ibeg = size; iend = 0
 		vertexArray = super.newVertexArray(gl, drawMode, locations)
 		vertexArray

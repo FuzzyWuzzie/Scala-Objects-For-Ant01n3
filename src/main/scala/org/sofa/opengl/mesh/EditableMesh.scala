@@ -19,7 +19,11 @@ object MeshDrawMode extends Enumeration {
 /** A mesh class that mimics the way OpenGL 1 builds geometry.
   *
   * TODO document this, actually only TRIANGLES are completely supported (notably for
-  * the automatic construction of tangents and biTangents). */
+  * the automatic construction of tangents and biTangents).
+  *
+  * Took lot of inspiration for the tangent auto computation from :
+  * http://www.terathon.com/code/tangent.html
+  * Which is a very good and well explained tutorial on tangent space. */
 class EditableMesh extends Mesh {
 	import MeshDrawMode._
 	
@@ -46,6 +50,11 @@ class EditableMesh extends Mesh {
 	
 	override def drawAs():Int = drawMode.id
 	
+    override def tangentComponents = {
+    	val tangentBuffer = getTangentMeshBuffer
+    	if(tangentBuffer ne null) tangentBuffer.components else 3
+    }
+
 	// --------------------------------------------------------------
 	// Command, mesh building
 
@@ -97,6 +106,12 @@ class EditableMesh extends Mesh {
 	
 	/** Specify the tangent for the next vertex or vertices. */
 	def tangent(t:NumberSeq3) { tangent(t.x.toFloat, t.y.toFloat, t.z.toFloat) }
+
+	/** Specify the bitangent for the next vertex or vertices. */
+	def bitangent(x:Float, y:Float, z:Float) { attribute("bitangent", x, y, z) }
+	
+	/** Specify the bitangent for the next vertex or vertices. */
+	def bitangent(t:NumberSeq3) { bitangent(t.x.toFloat, t.y.toFloat, t.z.toFloat) }
 
 	/** Specify the texture coordinates for the next vertex or vertices. */
 	def texCoord(u:Float, v:Float) { attribute("texcoord", u, v) }
@@ -212,24 +227,39 @@ class EditableMesh extends Mesh {
 		i = 0
 
 		// toTriangles.foreach { vertex =>
-		// 	println("vertex %d references { %s }".format(i, vertex.mkString(", ")))
+		// 	if(vertex ne null)
+		// 		println("vertex %d references { %s }".format(i, vertex.mkString(", ")))
+		// 	else println("vertex %d is null !!".format(i))
 		// 	i += 1
 		// }
 
 		toTriangles
 	}
 
-	/** Recompute the tangents (and eventually normals).
+	/** Recompute the tangents.
 	  * The mesh must already have the triangles indices, the vertices position, normals, and texture coordinates, all
 	  * four are needed to build the tangents. */
-	def autoComputeTangents() = autoComputeTangents(false)
+	def autoComputeTangents() { autoComputeTangents(false) }
 
-	/** Recompute the tangents (and eventually normals).
+	/** Recompute the tangents.
 	  * The mesh must already have the triangles indices, the vertices position, normals, and texture coordinates, all
-	  * four are needed to build the tangents.
+	  * four are needed to build the tangents. you can retrieve the bitangents
+	  * using a cross product of the normal and tangent, however you need the handedness of the basis because
+	  * your computed bitangent may point in the wrong direction. In this case the boolean argument asks to store
+	  * tangents as 4-component elements where the fourth component is the handedness (1 or -1). You then multiply
+	  * the result of this cross product by the value of this fourth component to have the correct handedness. */
+	def autoComputeTangents(storeHandedness:Boolean) { autoComputeTangents(storeHandedness, false) }
+
+	/** Recompute the tangents.
+	  * The mesh must already have the triangles indices, the vertices position, normals, and texture coordinates, all
+	  * four are needed to build the tangents. If you do not request to compute the bitangents, you can retrieve them
+	  * using a cross product of the normal and tangent, however you need the handedness of the basis because
+	  * your computed bitangent may point in the wrong direction. In this case the first argument asks to store
+	  * tangents as 4-component elements where the fourth component is the handedness (1 or -1). You then multiply
+	  * the result of this cross product by the value of this fourth component to have the correct handedness.
 	  * The process involves to compute biTangents, they can be stored as a vertex attribute also by passing
-	  * true as argument. */
-	def autoComputeTangents(alsoComputeBiTangents:Boolean) {
+	  * true as argument the second argument. */
+	def autoComputeTangents(storeHandedness:Boolean, alsoComputeBiTangents:Boolean) {
 		// Do some verifications.
 
 		if(beganIndex || beganVertex) throw new BadlyNestedBeginEnd("cannot call autoComputeTangents() inside begin/end")
@@ -243,7 +273,10 @@ class EditableMesh extends Mesh {
 
 		// Add (or replace) a tangent buffer.
 
-		otherBuffers += (("tangent", new MeshBuffer("tangent", 3, null)))
+		if(storeHandedness)
+			 otherBuffers += (("tangent", new MeshBuffer("tangent", 4, null)))
+		else otherBuffers += (("tangent", new MeshBuffer("tangent", 3, null)))
+
 		val tangentBuffer = otherBuffers.get("tangent").get
 
 		var biTangentBuffer:MeshBuffer = null
@@ -305,14 +338,23 @@ class EditableMesh extends Mesh {
         	// Orthogonalize the tangent with the normal (Gram-Schmidt).
         	//tangent[a] = (t - n * Dot(n, t)).Normalize();
         
-        	val N = Vector3(normalBuffer(i*3), normalBuffer(i*3+1), normalBuffer(i*3+2))
+        	var N = Vector3(normalBuffer(i*3), normalBuffer(i*3+1), normalBuffer(i*3+2))
         	N.multBy(N.dot(sdir))
         	sdir.subBy(N)
         	sdir.normalize
 
         	// Finally add the tangent, one for each vertex.
 
-        	tangentBuffer.append(sdir.x.toFloat, sdir.y.toFloat, sdir.z.toFloat)
+        	if(storeHandedness) {
+        		// tangent[a].w = (Dot(Cross(n, t), tan2[a]) < 0.0F) ? -1.0F : 1.0F;
+        		N = Vector3(normalBuffer(i*3), normalBuffer(i*3+1), normalBuffer(i*3+2))
+        		N.cross(sdir)
+        		val res = N.dot(tdir)
+
+        		tangentBuffer.append(sdir.x.toFloat, sdir.y.toFloat, sdir.z.toFloat, if(res < 0) 1.0f else -1.0f)
+        	} else {
+        		tangentBuffer.append(sdir.x.toFloat, sdir.y.toFloat, sdir.z.toFloat)
+        	}
 
         	if(alsoComputeBiTangents)
  				biTangentBuffer.append(tdir.x.toFloat, tdir.y.toFloat, tdir.z.toFloat)       	
@@ -328,7 +370,15 @@ class EditableMesh extends Mesh {
 	  * and the tangents (in green). The mesh contains position, and color attributes
 	  * only. It must be drawn using single lines. This allows to verify the normals and
 	  * tangents are good. */
-	def newNormalsTangentsMesh():Mesh = {
+	def newNormalsTangentsMesh():Mesh = newNormalsTangentsMesh(Rgba.red, Rgba.green)
+
+	/** Create a new mesh (a ColoredLineMesh) that represents the normals (using
+	  * the first given color)
+	  * and the tangents (using the second given color). The mesh contains position,
+	  * and color attributes
+	  * only. It must be drawn using single lines. This allows to verify the normals and
+	  * tangents are good. */
+	def newNormalsTangentsMesh(normalsColor:Rgba, tangentsColor:Rgba):Mesh = {
 		var point    = 0
 		val vertices = vertexBuffer
 		val normals  = getNormalMeshBuffer
@@ -339,11 +389,11 @@ class EditableMesh extends Mesh {
 		while(point < n) {
 			val P = Point3(vertices(point*3), vertices(point*3+1), vertices(point*3+2))
 			val N = Vector3(normals(point*3), normals(point*3+1), normals(point*3+2))
-			val T = Vector3(tangents(point*3), tangents(point*3+1), tangents(point*3+2))
+			val T = Vector3(tangents(point*tangents.components), tangents(point*tangents.components+1), tangents(point*tangents.components+2))
 
-			ntMesh.setColor(point, Rgba.red)
+			ntMesh.setColor(point, normalsColor)
 			ntMesh.setLine(point, P, N)
-			ntMesh.setColor(point+n, Rgba.green)
+			ntMesh.setColor(point+n, tangentsColor)
 			ntMesh.setLine(point+n, P, T)
 
 			point += 1
@@ -365,6 +415,11 @@ class EditableMesh extends Mesh {
 	  * You can compute them automatically from the texture coordinates and normals, see
 	  * [[autoComputeTangents()]]. */
 	def getTangentMeshBuffer():MeshBuffer = otherBuffers.get("tangent").getOrElse(null)
+
+	/** The internal storage for the vertex bitangent attributes (as many as vertices). It may be null.
+	  * You can compute them automatically from the texture coordinates and normals, see
+	  * [[autoComputeTangents()]]. */
+	def getBitangentMeshBuffer():MeshBuffer = otherBuffers.get("bitangent").getOrElse(null)
 
 	/** The internal storage for the vertex color attributes (as many as vertices). It may be null. */
 	def getColorMeshBuffer():MeshBuffer = otherBuffers.get("color").getOrElse(null)
@@ -389,6 +444,8 @@ class EditableMesh extends Mesh {
 
     override def tangents:FloatBuffer = getCache("tangent")
 
+    override def bitangents:FloatBuffer = getCache("bitangent")
+
     override def colors:FloatBuffer = getCache("color")
 
     override def texCoords:FloatBuffer = getCache("texcoord")
@@ -408,6 +465,8 @@ class EditableMesh extends Mesh {
     override def hasNormals:Boolean = otherBuffers.contains("normal")
     
     override def hasTangents:Boolean = otherBuffers.contains("tangent")
+
+    override def hasBitangents:Boolean = otherBuffers.contains("bitangent")
     
     override def hasColors:Boolean = otherBuffers.contains("color")
     

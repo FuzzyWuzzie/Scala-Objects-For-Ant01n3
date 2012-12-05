@@ -180,35 +180,48 @@ abstract class Faces(node:Node, mesh:ColladaMesh) {
 	def toMesh(xyz2yzx:Boolean):Mesh
 
 	/** Generate a list of vertices from the data given in the Collada file such that each vertex
-	  * owns its own set of attributes (as needed by OpenGL). The procedure try to ensure that
-	  * two vertices having exactly the same attributes (all of them) will not be duplicated.
-	  * The order remains the same. */
-	def toVertexList():(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
-		val unicity  = new HashMap[Vertex,Int]()		// To test unicity, and retrieve the original.
+	  * owns its own set of attributes (as needed by OpenGL). If mergeVertices is true, the procedure
+	  * will try to ensure that two vertices having exactly the same attributes (all of them) will
+	  * not be duplicated. The order remains the same. */
+	def toVertexList(mergeVertices:Boolean):(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
 		val vertices = new ArrayBuffer[Vertex]()		// The element buffer.
 		val elements = new ArrayBuffer[Int]()
-		
-		var i = 0
-		while(i < data.length) {
-			var vertex = new Vertex(getData(i, Input.Vertex), getData(i, Input.Normal), getData(i, Input.TexCoord),
+
+		if(mergeVertices) {
+			val unicity  = new HashMap[Vertex,Int]()		// To test unicity, and retrieve the original.	
+			var i = 0
+
+			while(i < data.length) {
+				var vertex = new Vertex(getData(i, Input.Vertex), getData(i, Input.Normal), getData(i, Input.TexCoord),
 					getData(i, Input.Tangent), getData(i, Input.Color), getData(i, Input.Bone))
 	
-			if(!unicity.contains(vertex)) {
+				if(!unicity.contains(vertex)) {
+					val index = vertices.length
+					vertices += vertex
+					unicity  += ((vertex,index))
+					elements += index//unicity.get(vertex).get
+				} else {
+					elements += unicity.get(vertex).get
+	//				vertex = vertices(unicity.get(vertex).get)
+				}
+			
+				i += inputs.length
+			}
+			
+Console.err.println("Collada Faces %d original elements %d unique elements".format(data.length/inputs.length, elements.size))
+		} else {		
+			var i = 0
+			while(i < data.length) {
+				var vertex = new Vertex(getData(i, Input.Vertex), getData(i, Input.Normal), getData(i, Input.TexCoord),
+					getData(i, Input.Tangent), getData(i, Input.Color), getData(i, Input.Bone))
+	
 				val index = vertices.length
 				vertices += vertex
-				unicity  += ((vertex,index))
+				elements += index			
+				i += inputs.length
 			}
-//			else {
-//				vertex = vertices(unicity.get(vertex).get)
-//			}
-			
-			elements += unicity.get(vertex).get
-			
-			i += inputs.length
 		}
 
-//Console.err.println("Collada Faces %d original elements %d unique elements".format(data.length/inputs.length, elements.size))
-		
 		(elements, vertices)
 	}
 
@@ -264,7 +277,7 @@ class Vertex(val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, v
 class Triangles(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	parse(node)
 	override def toString():String = "triangles(%d, [%s], data %d(%d))".format(count, inputs.mkString(","), data.length, (data.length/inputs.length)/3)
-	def toMesh(xyz2yzx:Boolean):Mesh = { val (elements,vertices) = toVertexList; toMesh(elements, vertices, xyz2yzx) }
+	def toMesh(xyz2yzx:Boolean):Mesh = { val (elements,vertices) = toVertexList(false); toMesh(elements, vertices, xyz2yzx) }
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -290,7 +303,7 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	}
 	
 	def triangulate():(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
-		var (elements,vertices) = toVertexList
+		var (elements,vertices) = toVertexList(false)
 		val elems = new ArrayBuffer[Int]
 		var i = 0
 		var v = 0

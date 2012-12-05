@@ -101,10 +101,10 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
         // Very inefficient.
         
         var b = 0
-        var y = 0
+        var y = height-1
         var x = 0
 
-        while(y < height) {
+        while(y >= 0) {
             x = 0
             while(x < width) {
                 val rgba = image.getRGB(x,y)
@@ -116,7 +116,7 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
                 b += 4
             }
             b += pad
-            y += 1
+            y -= 1
         }
         
         buf

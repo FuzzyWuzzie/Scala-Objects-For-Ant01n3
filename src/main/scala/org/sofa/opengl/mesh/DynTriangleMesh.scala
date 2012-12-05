@@ -155,13 +155,13 @@ class DynTriangleMesh(val size:Int) extends Mesh with SurfaceMesh with Colorable
 	
 	def drawAs():Int = GL_TRIANGLES
 	
-    override def newVertexArray(gl:SGL, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+    override def newVertexArray(gl:SGL, locations:Tuple7[Int,Int,Int,Int,Int,Int,Int]):VertexArray = {
 		cbeg = size; cend = 0; vbeg = size; vend = 0
 		vertexArray = super.newVertexArray(gl, locations)
 		vertexArray
 	}
 
-    override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+    override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple7[Int,Int,Int,Int,Int,Int,Int]):VertexArray = {
 		cbeg = size; cend = 0; vbeg = size; vend = 0
 		vertexArray = super.newVertexArray(gl, drawMode, locations)
 		vertexArray

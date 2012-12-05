@@ -57,13 +57,13 @@ class LineSet(val count:Int) extends Mesh {
     
     def drawAs():Int = GL_LINES
 
-   override def newVertexArray(gl:SGL, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+   override def newVertexArray(gl:SGL, locations:Tuple7[Int,Int,Int,Int,Int,Int,Int]):VertexArray = {
         vbeg = count; vend = 0
         vertexArray = super.newVertexArray(gl, locations)
         vertexArray
     }
 
-    override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple6[Int,Int,Int,Int,Int,Int]):VertexArray = {
+    override def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple7[Int,Int,Int,Int,Int,Int,Int]):VertexArray = {
         vbeg = count; vend = 0
         vertexArray = super.newVertexArray(gl, drawMode, locations)
         vertexArray

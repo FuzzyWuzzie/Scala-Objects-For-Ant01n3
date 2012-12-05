@@ -93,6 +93,8 @@ class TestEditableMesh2 extends SurfaceRenderer {
 		gl.enable(gl.CULL_FACE)
 		gl.cullFace(gl.BACK)
 		gl.frontFace(gl.CW)
+		gl.enable(gl.BLEND)
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 		
 		gl.disable(gl.BLEND)
 	}
@@ -175,11 +177,12 @@ class TestEditableMesh2 extends SurfaceRenderer {
 
 		// Now show the normals and tangents
 
-		normalsMesh = thingMesh.newNormalsTangentsMesh
+		normalsMesh = thingMesh.newNormalsTangentsMesh(Rgba(1,0,0,0.5), Rgba(0,1,0,0.5))
 	}
 	
 	def display(surface:Surface) {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		gl.disable(gl.BLEND)
 
 		camera.viewLookAt
 		
@@ -189,7 +192,6 @@ class TestEditableMesh2 extends SurfaceRenderer {
 		plane.draw(planeMesh.drawAs)
 		
 
-		gl.enable(gl.BLEND)
 		thingShad.use		
 		colorTex.bindTo(gl.TEXTURE0)
 	    thingShad.uniform("texColor", 0)	// Texture Unit 0
@@ -202,11 +204,12 @@ class TestEditableMesh2 extends SurfaceRenderer {
 		    thingShad.uniform("specularPow", 128f)
 		camera.uniformMVP(thingShad)
 		thing.draw(thingMesh.drawAs)
-		gl.disable(gl.BLEND)
 
+		gl.enable(gl.BLEND)
 		normalsShad.use
 		camera.setUniformMVP(normalsShad)
 		normals.draw(normalsMesh.drawAs)
+		gl.disable(gl.BLEND)
 
 		surface.swapBuffers
 		gl.checkErrors
