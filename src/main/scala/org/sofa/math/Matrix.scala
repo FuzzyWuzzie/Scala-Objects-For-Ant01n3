@@ -90,6 +90,16 @@ object Matrix4 {
     	result.row3 = row3
     	result
     }
+    def apply(data:Array[Float], offset:Int):Matrix4 = {
+    	val result = new Matrix4()
+    	result.copy(data, offset)
+    	result
+    }
+    def apply(data:Array[Double], offset:Int):Matrix4 = {
+    	val result = new Matrix4()
+    	result.copy(data, offset)
+    	result
+    }
     def apply(other:Matrix4):Matrix4 = {
         val result = new Matrix4()
         result.copy(other)

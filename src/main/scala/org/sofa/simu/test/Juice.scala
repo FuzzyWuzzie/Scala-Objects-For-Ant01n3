@@ -112,9 +112,9 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 
 	// -- Biroute config --------------------------------------------
 
-	val player1 = new Player(Point3(-12,5,0), Vector3(15,6,0), 7, 20)
+	val player1 = new Player(Point3(-10,5.5,0), Vector3(15,4.5,0), 7, 20)
 
-	val player2 = new Player(Point3(12,5,0), Vector3(-15,6,0), 7, 20)
+	val player2 = new Player(Point3(10,5.5,0), Vector3(-15,4.5,0), 7, 20)
 
 	var curParticle = 10
 	
@@ -153,7 +153,7 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	
 	var groundColor = Rgba.grey80
 
-	var ambientIntensity = 0.05f
+	var ambientIntensity = 0.1f
 	
 	val light1 = Vector4(0, 10, 3, 1)	
 	
@@ -257,6 +257,8 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	var groundTex:Texture = null
 	var groundNMapTex:Texture = null
 	var wallTex:Texture = null
+	var birouteTex:Texture = null
+	var birouteNMapTex:Texture = null
 
 	// -- General -------------------------------------------
 
@@ -385,6 +387,14 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	    groundNMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    groundNMapTex.wrap(gl.REPEAT)
 
+		birouteTex = new Texture(gl, "BruceColor.png", true)
+	    birouteTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    birouteTex.wrap(gl.REPEAT)
+
+		birouteNMapTex = new Texture(gl, "BruceNMap.png", true)
+	    birouteNMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    birouteNMapTex.wrap(gl.REPEAT)
+
 	    wallTex = new Texture(gl, "Wall.jpg", true)
 	    wallTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    wallTex.wrap(gl.REPEAT)
@@ -431,6 +441,8 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		groundMesh.setTextureRepeat(groundTexRepeat, groundTexRepeat)
 		ground = groundMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangents", t), ("texcoords", u))
 
+		biroute = birouteMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangents", t), ("texcoords", u))
+
 		// Phong shader
 		
 		v     = phongShad.getAttribLocation("position")
@@ -443,10 +455,10 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 
 		// Phong uniform color shader
 
-		v = phongNoClrShad.getAttribLocation("position")
-		n = phongNoClrShad.getAttribLocation("normal")
+		// v = phongNoClrShad.getAttribLocation("position")
+		// n = phongNoClrShad.getAttribLocation("normal")
 
-		biroute = birouteMesh.newVertexArray(   gl, ("vertices", v), ("normals", n))
+		// biroute = birouteMesh.newVertexArray(   gl, ("vertices", v), ("normals", n))
 		
 		// Plain shader
 		
@@ -750,9 +762,25 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 	protected def drawBiroutes() {
 		gl.disable(gl.CULL_FACE)
 		gl.frontFace(gl.CW)
-		phongNoClrShad.use
-		phongNoClrShad.uniform("color", birouteColor)
-		useLights(phongNoClrShad, 120f, 10f)
+		//phongNoClrShad.use
+		//phongNoClrShad.uniform("color", birouteColor)
+		//useLights(phongNoClrShad, 120f, 10f)
+		
+		nmapShad.use
+
+		birouteTex.bindTo(gl.TEXTURE0)
+	    nmapShad.uniform("texColor", 0)	// Texture Unit 0
+	    birouteNMapTex.bindTo(gl.TEXTURE2)
+	    nmapShad.uniform("texNormal", 2)	// Texture Unit 2
+		
+		//useLights(nmapShad)
+		nmapShad.uniform("lightPos", Vector3(camera.modelview.top * light1))
+	    nmapShad.uniform("lightIntensity", 128f)
+	    nmapShad.uniform("ambientIntensity", ambientIntensity+0.3f)
+	    nmapShad.uniform("specularPow", 128f)
+
+//		camera.uniformMVP(nmapShad)
+
 		drawBiroute(player1)
 		drawBiroute(player2)
 		gl.enable(gl.CULL_FACE)
@@ -771,7 +799,8 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 				angle = (Pi/2.0) - Vector3(0,1,0).angle(player.velocity)
 			}
 			camera.rotateModel(angle, 0, 0, 1)
-			camera.uniformMVP(phongNoClrShad)
+//			camera.uniformMVP(phongNoClrShad)
+			camera.uniformMVP(nmapShad)
 			biroute.draw(birouteMesh.drawAs)
 		}
 	}

@@ -152,7 +152,7 @@ abstract class Faces(node:Node, val mesh:ColladaMesh) {
 	
 	/** Get the index-th attributes value corresponding to the given input type. */
 	def getAttribute(input:Input.Value, index:Int):Array[Float] = getAttribute(getSource(input), index)
-	
+
 	protected def getAttribute(source:String, index:Int):Array[Float] = mesh.sources.get(source).get.getData(index)
 	
 	protected def parse(node:Node) {
@@ -266,12 +266,22 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 	}	
 }
 
-/** Represents internally a vertex. */
+/** Represents internally a vertex.
+  *
+  * This class allows :
+  *  - To represent the integer indices in the various vertex attribute arrays.
+  *  - To easily hash and compare it in order to implement a the vertex merging
+  *    to remove multiple versions of the same vertex. */
 class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int) {
+	/** Linear array of all the values associated with the vertex, the x, y, z positions, the normal, the color, tex coords,
+	  * etc.. */
 	protected var repr:Array[Float] = null
 
+	/** Obtain the flat representation of this vertex. */
 	def getRepr():Array[Float] = { computeRepr; repr }
 
+	/** Compute a representation in an array where each value for each attribute of a single vertex are stored, this
+	  * allows fast (somewhat...) comparison, and hash value obtension. */
 	protected def computeRepr() {
 		if(repr eq null) {
 			repr = new Array[Float](17)
@@ -351,17 +361,6 @@ class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, v
 		computeRepr
 		"vertex(%d, %d, %d, %d, %d, %d { %s })".format(index, normal, texcoord, tangent, color, bone, repr.mkString(", "))
 	}
-}
-
-/** Represents internally a vertex. */
-class VertexOld(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int) {
-	override def equals(other:Any):Boolean = other match {
-		case v:Vertex => (index==v.index && normal==v.normal && texcoord==v.texcoord && tangent==v.tangent && color==v.color && bone==v.bone)
-		case _ => false
-	}
-	override def hashCode():Int = 41 * (41 * (41 * (41 * (41 * (41 + index) + normal ) + texcoord ) + tangent ) + color ) + bone
-
-	override def toString():String = "vertex(pos=%d, norm=%d, texc=%d, tang=%d, clr=%d, bone=%d)".format(index, normal, texcoord, tangent, color, bone)
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -450,6 +449,9 @@ class ColladaMesh(node:Node) {
 	
 	/** Indices into the source to build the real geometry. */
 	var faces:Faces = null
+
+	/** Optionnal controller. */
+	var controller:Controller = null
 		
 	parse(node)
 	
@@ -461,6 +463,9 @@ class ColladaMesh(node:Node) {
 	  * This means that the x becomes y, the y becomes z and the z becomes x. This setting is applyed
 	  * when the mesh is transformed to a SOFA [[Mesh]] when calling [[toMesh()]]. */
 	def blenderToOpenGL(on:Boolean) { blenderToOpenGLCoos = on }
+	
+	/** Set the optionnal controller on this geometry. */
+	def setController(c:Controller) { controller = c }
 
 	protected def parse(node:Node) {
 		processSources(node \\ "source")

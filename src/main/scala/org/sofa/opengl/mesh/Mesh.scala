@@ -9,18 +9,39 @@ import GL2ES2._
 import GL3._ 
 import scala.collection.mutable.HashMap
 
+object VertexAttribute extends Enumeration {
+	val Vertex    = Value("vertices")
+	val Normal    = Value("normals")
+	val Tangent   = Value("tangents")
+	val Bitangent = Value("bitangents")
+	val Color     = Value("colors")
+	val TexCoords = Value("texcoords")
+	val Bone      = Value("bones")
+	val Weight    = Value("weights")
+}
+
 /** A mesh is a set of vertex data. */
 trait Mesh {
-    /** The set of vertices making up the mesh. */
+	/** A vertex attribute by its name. */
+//	def vertexAttribute(name:String):FloatBuffer
+
+	/** A vertex attribute by its enumeration name. */
+//	def vertexAttribute(name:VertexAttribute):FloatBuffer
+
+    /** Shortcut to the position vertex attribute. The set of vertices making up the mesh.
+      * Same as calling vertexAttribute(Vertex). */
     def vertices:FloatBuffer
 
-    /** The set of normal vectors associated with each vertex. */
+    /** Shortcut to the normal vertex attribute. The set of normal vectors associated with each vertex.
+      * Same as calling vertexAttribute(Normal). */
     def normals:FloatBuffer = throw new RuntimeException("no normal attributes in this mesh")
 
-    /** The set of tangent vectors associated with each vertex and normal. */
+    /** Shortcut to the tangent vertex attribute. The set of tangent vectors associated with each vertex and normal.
+      * Same as calling vertexAttribute(Tangent). */
     def tangents:FloatBuffer = throw new RuntimeException("no tangent attributes in this mesh")
 
-    /** The set of bitangnet vectors associated with each vertex and normal. */
+    /** Shortcut to the bitangent vertex attribute. The set of bitangnet vectors associated with each vertex and normal.
+      * Same as calling vertexAttribute(Bitangent). */
     def bitangents:FloatBuffer = throw new RuntimeException("no bitangent attributes in this mesh")
 
     /** The set of colors for each vertex of the mesh. */
@@ -31,6 +52,9 @@ trait Mesh {
  
     /** The set of bone indices. */
     def bones:IntBuffer = throw new RuntimeException("no bone attributes in this mesh")
+
+    /** The set of bone weights. */
+ //   def weights:FloatBuffer = throw new RuntimeException("no weights attributes in this mesh")
 
     /** Indices in the attributes array, draw order. */
     def indices:IntBuffer = throw new RuntimeException("no indices in this mesh")
@@ -53,6 +77,12 @@ trait Mesh {
     /** Number of components per texture coordinate. */
     def texCoordComponents = 2
 
+    /** Number of components per bone index. */
+    def boneComponents = 1
+
+    /** Number of components per bone weight. Usually the same as boneComponents */
+//    def weightsComponents = boneComponents
+
     /** True if this mesh has a set of normals, associated with the vertices. */
     def hasNormals:Boolean = false
     
@@ -70,6 +100,9 @@ trait Mesh {
 
     /** True if this mesh has bone indices for each vertex. */
     def hasBones:Boolean = false
+
+    /** True if this mesh has weights indices for each vertex. */
+    def hasWeights:Boolean = false
     
     /** True if the mesh needs an index array to define which elements to draw. */
     def hasIndices:Boolean = false

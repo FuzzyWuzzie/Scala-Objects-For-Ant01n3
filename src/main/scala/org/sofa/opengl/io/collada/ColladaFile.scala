@@ -4,14 +4,17 @@ import scala.xml.NodeSeq
 import scala.collection.mutable.HashMap
 
 object ColladaFile{
+	/** Path to search for collada files. */
 	val path = new scala.collection.mutable.ArrayBuffer[String]()
 
+	/** System independant loader. */
 	var loader:ColladaLoader = new DefaultColladaLoader()
 }
 
 /** A Collada file, assets, library of elements and a scene. */
 class ColladaFile(root:NodeSeq) {
 
+	/** Try to load a file from the path. */
 	def this(resource:String) {
 		this(ColladaFile.loader.open(resource))
 	}
@@ -61,6 +64,9 @@ class Library(root:NodeSeq) {
 	
 	/** All the geometries. */
 	val geometries = new HashMap[String,Geometry]()
+
+	/** All the controllers. **/
+	val controllers = new HashMap[String,Controller]()
 	
 	/** All the scenes. */
 	val visualScenes = new HashMap[String,VisualScene]()
@@ -91,6 +97,11 @@ class Library(root:NodeSeq) {
 			val geometry = Geometry(node)
 			geometries += ((geometry.name, geometry))
 		}
+		// Controllers
+		(root \\ "library_controllers" \ "controller").foreach { node =>
+			val controller = Controller(node)
+			controllers += ((controller.name, controller))
+		}
 		// Visual Scenes
 		(root \\ "library_visual_scenes" \ "visual_scene").foreach { node =>
 			val visualScene = VisualScene(node)
@@ -108,6 +119,9 @@ class Library(root:NodeSeq) {
 		}
 		if(!geometries.isEmpty) {
 			geometries.foreach { item => builder.append(item._2.toString); builder.append("%n".format()) }
+		}
+		if(!controllers.isEmpty) {
+			controllers.foreach { item => builder.append(item._2.toString); builder.append("%n".format()) }
 		}
 		if(!visualScenes.isEmpty) {
 			visualScenes.foreach { item => builder.append(item._2.toString); builder.append("%n".format()) }

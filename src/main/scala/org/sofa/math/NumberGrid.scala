@@ -67,6 +67,21 @@ trait NumberGrid extends IndexedSeq[Double] {
 		
 		buf.toString
 	}
+
+	/** String representation of the matrix on one line. */
+	def toCompactString():String = {
+		val buf = new StringBuffer
+
+		buf.append("matrix( ")
+		for(row <- 0 until height) {
+			for(col <- 0 until width) {
+				buf.append("%.2f ".format(data(row+col*height)))
+			}
+			buf.append("| ")
+		}
+		buf.append(")")
+		buf.toString
+	}
 	
 	/** New number grid of the same size as this. */
 	protected def newInstance(width:Int, height:Int):ReturnType
@@ -151,7 +166,27 @@ trait NumberGrid extends IndexedSeq[Double] {
     def copy(other:NumberGrid) {
     	Platform.arraycopy(other.data, 0, data, 0, math.min(data.length, other.data.length))
     }
-    
+
+    def copy(floats:Array[Float], offset:Int) {
+    	if(floats.length-offset >= 16) {
+    		var i = 0
+    		while(i < 16) {
+    			data(i) = floats(i+offset)
+    			i += 1
+    		}
+    	}
+    }
+
+    def copy(doubles:Array[Double], offset:Int) {
+    	if(doubles.length-offset >= 16) {
+    		var i = 0
+    		while(i < 16) {
+    			data(i) = doubles(i+offset)
+    			i += 1
+    		}
+    	}
+    }
+
 	/** Copy `value` in each component. */
 	def fill(value:Double) {
 	   	val n = size

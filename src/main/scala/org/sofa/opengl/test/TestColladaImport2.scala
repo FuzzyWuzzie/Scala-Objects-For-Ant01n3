@@ -98,11 +98,11 @@ class TestColladaImport2 extends SurfaceRenderer {
 	}
 
 	protected def initTextures() {
-		colorTex = new Texture(gl, "Thing_Color.png", true)
+		colorTex = new Texture(gl, "CubicThing_Color.png", true)
 	    colorTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    colorTex.wrap(gl.REPEAT)
 
-		nMapTex = new Texture(gl, "Thing_NMap.png", true)
+		nMapTex = new Texture(gl, "CubicThing_NMap.png", true)
 	    nMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    nMapTex.wrap(gl.REPEAT)
 	}
@@ -139,11 +139,11 @@ class TestColladaImport2 extends SurfaceRenderer {
 	}
 	
 	def initThing() {
-		val model = new ColladaFile("Thing_001.dae")
+		val model = new ColladaFile("CubicThing_001.dae")
 
-		model.library.geometry("Thing").mesh.mergeVertices(true)
+		model.library.geometry("Cube").mesh.mergeVertices(true)
 
-		thingMesh = model.library.geometry("Thing").mesh.toMesh
+		thingMesh = model.library.geometry("Cube").mesh.toMesh
 
 		thingMesh.asInstanceOf[EditableMesh].autoComputeTangents(true)			// Also compute handedness and store 4-component tangents
 //		thingMesh.asInstanceOf[EditableMesh].autoComputeTangents(false,true)	// Also compute bitangentss
