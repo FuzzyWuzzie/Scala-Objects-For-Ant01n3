@@ -12,23 +12,68 @@ import org.sofa.math.Vector3
 import org.sofa.math.Vector2
 import java.awt.Color
 
-class BoneMesh extends Mesh with ColorableMesh with IndexedMesh {
+class BoneMesh extends Mesh {
 	protected lazy val V:FloatBuffer = allocateVertices
 	
 	protected lazy val C:FloatBuffer = allocateColors
 	
 	protected lazy val I:IntBuffer = allocateIndices
+
+	// -- Edition ------------------------------------------
 	
-	def vertices:FloatBuffer = V
-	
-	override def colors:FloatBuffer = C
+	def setColor(color:Color) {
+	    val n = 6 * 4
+	    val red   = color.getRed   / 255f
+        val green = color.getGreen / 255f
+        val blue  = color.getBlue  / 255f
+        val alpha = color.getAlpha / 255f
+
+	    for(i <- 0 until n by 4) {
+	        C(i+0) = red
+	        C(i+1) = green
+	        C(i+2) = blue
+	        C(i+3) = alpha
+	    }
+	}
+
+	// -- Mesh interface -----------------------------------
+
+	def attribute(name:String):FloatBuffer = {
+		VertexAttribute.withName(name) match {
+			case VertexAttribute.Vertex => V
+			case VertexAttribute.Color  => C
+			case _                      => throw new RuntimeException("mesh has no %s attribute".format(name))
+		}
+	}	
+
+	def attributeCount():Int = 2
+
+	def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Color.toString)
 	
 	override def indices:IntBuffer = I
-	
-	override def hasColors = true
-	
+		
 	override def hasIndices = true
+
+	def components(name:String):Int = {
+		VertexAttribute.withName(name) match {
+			case VertexAttribute.Vertex => 3
+			case VertexAttribute.Color  => 4
+			case _                      => throw new RuntimeException("mesh has no %s attribute".format(name))
+		}
+	}	
+
+	def has(name:String):Boolean = {
+		VertexAttribute.withName(name) match {
+			case VertexAttribute.Vertex => true
+			case VertexAttribute.Color  => true
+			case _                      => false
+		}
+	}	
+
+	def drawAs():Int = GL_TRIANGLES
 	
+	// -- Building ------------------------------------------
+
 	protected def allocateVertices:FloatBuffer = {
 	    val n = 6 * 3
 	    val buf = new FloatBuffer(n)
@@ -97,24 +142,5 @@ class BoneMesh extends Mesh with ColorableMesh with IndexedMesh {
 	    }
 	    
 	    buf
-	}
-	
-	def drawAs():Int = GL_TRIANGLES
-	
-//	def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors))
-	
-	def setColor(color:Color) {
-	    val n = 6 * 4
-	    val red   = color.getRed   / 255f
-        val green = color.getGreen / 255f
-        val blue  = color.getBlue  / 255f
-        val alpha = color.getAlpha / 255f
-
-	    for(i <- 0 until n by 4) {
-	        colors(i+0) = red
-	        colors(i+1) = green
-	        colors(i+2) = blue
-	        colors(i+3) = alpha
-	    }
 	}
 }

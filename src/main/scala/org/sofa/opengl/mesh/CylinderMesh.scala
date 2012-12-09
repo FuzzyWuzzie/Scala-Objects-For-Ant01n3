@@ -41,9 +41,7 @@ import org.sofa.math.{Vector2, Vector3, Rgba}
   *                                 
   * The triangles are given in CW order.
   */
-class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:Int = 1) extends Mesh 
-			with TangentSurfaceMesh with ColorableMesh with IndexedMesh
-			with TexturableMesh with AnimableMesh {
+class CylinderMesh(val radius:Float, height:Float, val segments:Int, val sections:Int = 1) extends Mesh {
     
     if(segments < 3)
         throw new RuntimeException("Cannot create cylinder with less than 3 sides")
@@ -60,37 +58,148 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
     
     protected lazy val I:IntBuffer   = allocateIndices
     
-    protected lazy val B:IntBuffer   = allocateBones
+    protected lazy val B:FloatBuffer = allocateBones
 
-    protected var textureRepeatS = 4
+    protected var textureRepeatS = 1
+
+    protected var textureRepeatT = 1
+
+    // -- Mesh edition -------------------------------------------------
     
-    protected var textureRepeatT = 4
+    /** Set the top disk color, this must be done before the vertex array is produced. */
+    def setTopDiskColor(color:Rgba) {
+        // The disk color.
+        
+        var start = segments * (2+sections) * 4
+        
+        for(s <- 0 until segments) {
+            C(start+0) = color.red.toFloat
+            C(start+1) = color.green.toFloat
+            C(start+2) = color.blue.toFloat
+            C(start+3) = color.alpha.toFloat
+            
+            start += 4
+        }
+        
+        start = ((3+sections) * segments * 4) + 4
+
+        // The central point color.
+        
+        C(start+0) = color.red.toFloat
+        C(start+1) = color.green.toFloat
+        C(start+2) = color.blue.toFloat
+        C(start+3) = color.alpha.toFloat
+    }
     
-    def vertices:FloatBuffer = V
+    /** Set the `disk` color, this must be done before the vertex array is produced. */
+    def setDiskColor(disk:Int, color:Rgba) {
+        // The disk color.
+        
+        var start = segments * (disk) * 4
+        
+        for(s <- 0 until segments) {
+            C(start+0) = color.red.toFloat
+            C(start+1) = color.green.toFloat
+            C(start+2) = color.blue.toFloat
+            C(start+3) = color.alpha.toFloat
+            
+            start += 4
+        }
+        
+    }
     
-    override def colors:FloatBuffer = C
+    /** Set the botom disk color, this must be done before the vertex array is produced. */
+    def setBottomDiskColor(color:Rgba) {
+        // The disk color.
+        
+        var start = 0
+        
+        for(s <- 0 until segments) {
+            C(start+0) = color.red.toFloat
+            C(start+1) = color.green.toFloat
+            C(start+2) = color.blue.toFloat
+            C(start+3) = color.alpha.toFloat
+            
+            start += 4
+        }
+        
+        start = ((3+sections) * segments * 4)
+
+        // The central point color.
+        
+        C(start+0) = color.red.toFloat
+        C(start+1) = color.green.toFloat
+        C(start+2) = color.blue.toFloat
+        C(start+3) = color.alpha.toFloat 
+    }
     
-    override def normals:FloatBuffer = N
+    /** Set the cylinder color, this must be done before a vertex array is produced. */
+    def setCylinderColor(color:Rgba) {
+        var start = segments * 4;
+        var end   = (2+sections) * segments * 4
+        
+        for(i <- start until end by 4) {
+            C(i+0) = color.red.toFloat
+            C(i+1) = color.green.toFloat
+            C(i+2) = color.blue.toFloat
+            C(i+3) = color.alpha.toFloat
+        }
+    }
     
-    override def tangents:FloatBuffer = T
-    
-    override def texCoords:FloatBuffer = X
-    
-    override def bones:IntBuffer = B
+    // -- Mesh interface -----------------------------------------
+
+    def attribute(name:String):FloatBuffer = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex   => V
+    		case VertexAttribute.Color    => C
+    		case VertexAttribute.Normal   => N
+    		case VertexAttribute.Tangent  => T
+    		case VertexAttribute.TexCoord => X
+    		case VertexAttribute.Bone     => B
+    		case _                        => throw new RuntimeException("mesh has no %s attribute".format(name))
+    	}
+    }
     
     override def indices:IntBuffer = I
+
+    def attributeCount():Int = 6
+
+    def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString,
+    											   VertexAttribute.Color.toString,
+    											   VertexAttribute.Normal.toString,
+    											   VertexAttribute.Tangent.toString,
+    											   VertexAttribute.TexCoord.toString,
+    											   VertexAttribute.Bone.toString)
      
-    override def hasColors = true
+    def components(name:String):Int = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex   => 3
+    		case VertexAttribute.Color    => 4
+    		case VertexAttribute.Normal   => 3
+    		case VertexAttribute.Tangent  => 3
+    		case VertexAttribute.TexCoord => 2
+    		case VertexAttribute.Bone     => 1
+    		case _                        => throw new RuntimeException("mesh has no %s attribute".format(name))
+    	}
+    }
+
+    def has(name:String):Boolean = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex   => true
+    		case VertexAttribute.Color    => true
+    		case VertexAttribute.Normal   => true
+    		case VertexAttribute.Tangent  => true
+    		case VertexAttribute.TexCoord => true
+    		case VertexAttribute.Bone     => true
+    		case _                        => false
+    	}
+    }
     
     override def hasIndices = true
-    
-    override def hasNormals = true
-    
-    override def hasTangents = true
-    
-    override def hasTexCoords = true
-    
-    override def hasBones = true
+
+    def drawAs():Int = GL_TRIANGLES
+
+    // -- Mesh building --------------------------------------------------
    
     protected def allocateVertices:FloatBuffer = {
         // There are 'segments' points per disc.
@@ -188,7 +297,7 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
         	
         	for(disk <- 1 until (2+sections)) {
         	    val start  = segments * 3 * disk
-        		val normal = Vector2(vertices(start+i), vertices(start+i+2))
+        		val normal = Vector2(V(start+i), V(start+i+2))
         	    
         		normal.normalize
         		
@@ -234,7 +343,7 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
         	
         	for(disk <- 1 until (2+sections)) {
         	    val start  = segments * 3 * disk
-        		val normal = Vector2(-vertices(start+i+2), vertices(start+i))
+        		val normal = Vector2(-V(start+i+2), V(start+i))
         	    
         		normal.normalize
         		
@@ -271,9 +380,9 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
         buf
     }
     
-    protected def allocateBones:IntBuffer = {
+    protected def allocateBones:FloatBuffer = {
         val n = segments * (3+sections)
-        val buf = IntBuffer(n+2)
+        val buf = FloatBuffer(n+2)
 
         // There are by default 'segments' bones
         
@@ -368,93 +477,5 @@ class Cylinder(val radius:Float, height:Float, val segments:Int, val sections:In
         assert(i == n)
         
         buf
-    }
-    
-//    def newVertexArray(gl:SGL) = new VertexArray(gl, indices, (0, 3, vertices), (1, 4, colors), (2, 3, normals), (3, 3, tangents), (4, 2, texCoords))
-//
-//    def newVertexArray(gl:SGL, attributeIndices:Tuple5[Int,Int,Int,Int,Int]) = {
-//    	new VertexArray(gl, indices, (attributeIndices._1, 3, vertices),
-//    	                             (attributeIndices._2, 4, colors),
-//    	                             (attributeIndices._3, 3, normals),
-//    	                             (attributeIndices._4, 3, tangents),
-//    	                             (attributeIndices._5, 2, texCoords))
-//    }
-
-    def drawAs():Int = GL_TRIANGLES
-    
-    def setTopDiskColor(color:Rgba) {
-        // The disk color.
-        
-        var start = segments * (2+sections) * 4
-        
-        for(s <- 0 until segments) {
-            colors(start+0) = color.red.toFloat
-            colors(start+1) = color.green.toFloat
-            colors(start+2) = color.blue.toFloat
-            colors(start+3) = color.alpha.toFloat
-            
-            start += 4
-        }
-        
-        start = ((3+sections) * segments * 4) + 4
-
-        // The central point color.
-        
-        colors(start+0) = color.red.toFloat
-        colors(start+1) = color.green.toFloat
-        colors(start+2) = color.blue.toFloat
-        colors(start+3) = color.alpha.toFloat
-    }
-    
-    def setDiskColor(disk:Int, color:Rgba) {
-        // The disk color.
-        
-        var start = segments * (disk) * 4
-        
-        for(s <- 0 until segments) {
-            colors(start+0) = color.red.toFloat
-            colors(start+1) = color.green.toFloat
-            colors(start+2) = color.blue.toFloat
-            colors(start+3) = color.alpha.toFloat
-            
-            start += 4
-        }
-        
-    }
-    
-    def setBottomDiskColor(color:Rgba) {
-        // The disk color.
-        
-        var start = 0
-        
-        for(s <- 0 until segments) {
-            colors(start+0) = color.red.toFloat
-            colors(start+1) = color.green.toFloat
-            colors(start+2) = color.blue.toFloat
-            colors(start+3) = color.alpha.toFloat
-            
-            start += 4
-        }
-        
-        start = ((3+sections) * segments * 4)
-
-        // The central point color.
-        
-        colors(start+0) = color.red.toFloat
-        colors(start+1) = color.green.toFloat
-        colors(start+2) = color.blue.toFloat
-        colors(start+3) = color.alpha.toFloat 
-    }
-    
-    def setCylinderColor(color:Rgba) {
-        var start = segments * 4;
-        var end   = (2+sections) * segments * 4
-        
-        for(i <- start until end by 4) {
-            colors(i+0) = color.red.toFloat
-            colors(i+1) = color.green.toFloat
-            colors(i+2) = color.blue.toFloat
-            colors(i+3) = color.alpha.toFloat
-        }
-    }
+    }    
 }

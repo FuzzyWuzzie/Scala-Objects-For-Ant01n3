@@ -5,11 +5,10 @@ import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
 import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Vector2, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
 
 import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture, TextureFramebuffer}
-import org.sofa.opengl.mesh.{Mesh, Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet, Cylinder, EditableMesh}
+import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, PointsMesh, WireCubeMesh, LinesMesh, AxisMesh, TrianglesMesh, CylinderMesh, EditableMesh, UnindexedTrianglesMesh, VertexAttribute}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent, ScrollEvent, MotionEvent}
 import org.sofa.opengl.io.collada.{ColladaFile}
-
 
 import javax.media.opengl.{GLProfile, GLCapabilities}
 
@@ -18,16 +17,12 @@ import scala.collection.mutable.ArrayBuffer
 import scala.math._
 
 object JuiceLauncher {
-	def main(args:Array[String]) = {
-		//GLProfile.initSingleton()
-		//Thread.sleep(1000)
-		(new JuiceLauncher).launch
-	}
+	def main(args:Array[String]) = { (new JuiceLauncher).launch }
 }
 
 class JuiceLauncher {
 	/** View point. */
-	var camera = new Camera()
+	var camera = Camera()
 
 	/** Interaction. */
 	var ctrl:BasicCameraController = null
@@ -236,20 +231,20 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	var ledWall:VertexArray = null
 	var triangles:VertexArray = null
 
-	var axisMesh = new Axis(10)
-	var groundMesh = new Plane(2, 2, playfield.x.toFloat, playfield.x.toFloat)
-	var particlesMesh:DynPointsMesh = null
-	var isoSurfaceMesh = new DynIndexedTriangleMesh(maxDynTriangles)
-	var isoPlaneMesh = new DynIndexedTriangleMesh(maxDynTriangles)
-	var isoContourMesh = new ColoredLineSet(maxDynLines)
-	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
-	var springsMesh = new ColoredLineSet(maxSprings)
-	var quadMesh = new Plane(2, 2, particleQuadSize, particleQuadSize, true)
-	var tubeMesh = new Cylinder(birouteSize*0.25f, birouteSize, 8, 1)
+	var axisMesh = new AxisMesh(10)
+	var groundMesh = new PlaneMesh(2, 2, playfield.x.toFloat, playfield.x.toFloat)
+	var particlesMesh:PointsMesh = null
+	var isoSurfaceMesh = new TrianglesMesh(maxDynTriangles)
+	var isoPlaneMesh = new TrianglesMesh(maxDynTriangles)
+	var isoContourMesh = new LinesMesh(maxDynLines)
+	var obstaclesMesh = new UnindexedTrianglesMesh(4)
+	var springsMesh = new LinesMesh(maxSprings)
+	var quadMesh = new PlaneMesh(2, 2, particleQuadSize, particleQuadSize, true)
+	var tubeMesh = new CylinderMesh(birouteSize*0.25f, birouteSize, 8, 1)
 	var wallMesh:Mesh = null
 	var birouteMesh:Mesh = null
-	var ledWallMesh:Plane = new Plane(2, 2, playfield.x.toFloat, playfield.x.toFloat/1.7f, true)
-	var trianglesMesh = new DynIndexedTriangleMesh(8)
+	var ledWallMesh:PlaneMesh = new PlaneMesh(2, 2, playfield.x.toFloat, playfield.x.toFloat/1.7f, true)
+	var trianglesMesh = new TrianglesMesh(8)
 
 	// -- Texture -------------------------------------------
 
@@ -283,11 +278,11 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 // == Init. ========================================================================
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-		Shader.includePath  += "src/com/chouquette/tests"
-		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/"
-		Texture.includePath += "textures/"
-		GLFont.path += "/Users/antoine/Library/Fonts"
+		Shader.path      += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path      += "src/com/chouquette/tests"
+		Texture.path     += "/Users/antoine/Documents/Programs/SOFA/"
+		Texture.path     += "textures/"
+		GLFont.path      += "/Users/antoine/Library/Fonts"
 		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
 
 		camera.viewport = (1280, 800)
@@ -426,48 +421,30 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	}
 	
 	protected def initGeometry() {
+		import VertexAttribute._
+
 		initParticles		
 		initSimu
 
 		// NMap shader
 
-		var v = nmapShad.getAttribLocation("position")
-	    var n = nmapShad.getAttribLocation("normal")
-	    var t = nmapShad.getAttribLocation("tangent")
-	    var u = nmapShad.getAttribLocation("texCoords")
-
-		//groundMesh.setColor(groundColor)
-		
+		//groundMesh.setColor(groundColor)		
 		groundMesh.setTextureRepeat(groundTexRepeat, groundTexRepeat)
-		ground = groundMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangents", t), ("texcoords", u))
-
-		biroute = birouteMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangents", t), ("texcoords", u))
+		
+		ground  = groundMesh.newVertexArray( gl, nmapShad, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
+		biroute = birouteMesh.newVertexArray(gl, nmapShad, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
 
 		// Phong shader
 		
-		v     = phongShad.getAttribLocation("position")
-		var c = phongShad.getAttribLocation("color")
-		n     = phongShad.getAttribLocation("normal")
-		
-		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		isoPlane   = isoPlaneMesh.newVertexArray(  gl, ("vertices", v), ("colors", c), ("normals", n))
-		obstacles  = obstaclesMesh.newVertexArray( gl, ("vertices", v), ("colors", c), ("normals", n))
+		isoSurface = isoSurfaceMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		isoPlane   = isoPlaneMesh.newVertexArray(  gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		obstacles  = obstaclesMesh.newVertexArray( gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 
-		// Phong uniform color shader
-
-		// v = phongNoClrShad.getAttribLocation("position")
-		// n = phongNoClrShad.getAttribLocation("normal")
-
-		// biroute = birouteMesh.newVertexArray(   gl, ("vertices", v), ("normals", n))
-		
 		// Plain shader
 		
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
-				
-		axis       = axisMesh.newVertexArray(      gl, ("vertices", v), ("colors", c))
-		springs    = springsMesh.newVertexArray(   gl, ("vertices", v), ("colors", c))
-		isoContour = isoContourMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		axis       = axisMesh.newVertexArray(      gl, plainShad, Vertex -> "position", Color -> "color")
+		springs    = springsMesh.newVertexArray(   gl, plainShad, Vertex -> "position", Color -> "color")
+		isoContour = isoContourMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 
 		// Init the triangles
 
@@ -496,20 +473,14 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 			i += 1
 		}	
 
-		triangles = trianglesMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		triangles = trianglesMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 
 		// Particles shader
 		
-		v = particlesShad.getAttribLocation("position")
-		c = particlesShad.getAttribLocation("color") 
-		
-		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("colors", c))
-
-		v = particlesQuadShad.getAttribLocation("position")
-		t = particlesQuadShad.getAttribLocation("texCoords")
+		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, particlesShad, Vertex -> "position", Color -> "color")
 
 		quadMesh.setTextureRepeat(1, 1)
-		quad = quadMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("texcoords", t))
+		quad = quadMesh.newVertexArray(gl, gl.STATIC_DRAW, particlesQuadShad, Vertex -> "position", TexCoord -> "texCoords")
 
 		for(i <- 0 until maxDynTriangles*3) {
 			isoSurfaceMesh.setPointColor(i, isoSurfaceColor)
@@ -522,19 +493,15 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 			springsMesh.setColor(i, springColor)
 		}
 
-		// Murs
+		// Walls
 	
-		v = phongTexShad.getAttribLocation("position")
-		n = phongTexShad.getAttribLocation("normal")
-		t = phongTexShad.getAttribLocation("texCoords")
-
 		ledWallMesh.setTextureRepeat(1,1)
-		wall = wallMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("texcoords", t))
-		ledWall = ledWallMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("texcoords", t))
+		wall    = wallMesh.newVertexArray(   gl, phongTexShad, Vertex -> "position", Normal -> "normal", TexCoord -> "texCoords")
+		ledWall = ledWallMesh.newVertexArray(gl, phongTexShad, Vertex -> "position", Normal -> "normal", TexCoord -> "texCoords")
 	}
 	
 	protected def initParticles {
-		particlesMesh = new DynPointsMesh(size) 
+		particlesMesh = new PointsMesh(size) 
 		
 		for(i <- 0 until size) {
 			particlesMesh.setPoint(i, 0, 200, 0) // make them invisible.
@@ -990,7 +957,7 @@ timer.measure("draw quads") {
 				}				
 			}
 			
-			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
+			isoSurfaceMesh.updateVertexArray(gl, true, true, true, false)
 		}
 	}
 
@@ -1005,7 +972,7 @@ timer.measure("draw quads") {
 				}
 			}
 
-			isoContourMesh.updateVertexArray(gl, "vertices", "colors")
+			isoContourMesh.updateVertexArray(gl, true, true)
 		}
 	}
 
@@ -1065,7 +1032,7 @@ triangleCount = 0
 
 //			assert(i == isoContourComp.triangleCount)
 
-			isoPlaneMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
+			isoPlaneMesh.updateVertexArray(gl, true, true, true, false)
 		}
 	}
 	

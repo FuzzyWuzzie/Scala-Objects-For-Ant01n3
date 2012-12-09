@@ -14,20 +14,49 @@ import GL3._
   * The vertex data must use indices. The cube is made of single lines and therefore must be
   * drawn using "line" mode. You can use colors with this mesh.
   */
-class WireCube(val side:Float)
-	extends Mesh with ColorableMesh with IndexedMesh {
+class WireCubeMesh(val side:Float) extends Mesh  {
     
     protected lazy val V:FloatBuffer = allocateVertices
     protected lazy val C:FloatBuffer = allocateColors
     protected lazy val I:IntBuffer = allocateIndices
 
-    def vertices:FloatBuffer = V
-    override def colors:FloatBuffer = C
-    override def indices:IntBuffer = I
-        
-    override def hasColors = true
+    // -- Mesh interface ------------------------------------
 
-    override def hasIndices = true
+    def attribute(name:String):FloatBuffer = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex => V
+    		case VertexAttribute.Color  => C
+    		case _                      => throw new RuntimeException("this mesh does not have attribute %s".format(name))
+    	}
+    }
+
+    override def indices:IntBuffer = I
+
+    def attributeCount() = 2
+
+    def attributes() = Array[String](VertexAttribute.Vertex.toString,VertexAttribute.Color.toString)
+
+    def components(name:String) = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex => 3
+    		case VertexAttribute.Color  => 4
+    		case _                      => throw new RuntimeException("this mesh does not have attribute %s".format(name))    		
+    	}
+    }
+
+    def has(name:String) = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex => true
+    		case VertexAttribute.Color  => true
+    		case _                      => false
+    	}    	
+    }
+
+    override def hasIndices():Boolean = true
+
+    def drawAs:Int = GL_LINES    
+
+	// -- Mesh building --------------------------------------------        
     
     protected def allocateVertices:FloatBuffer = {
         val s = side / 2f
@@ -86,6 +115,4 @@ class WireCube(val side:Float)
         2, 6,
         3, 7)
     }
-    
-    def drawAs:Int = GL_LINES    
 }

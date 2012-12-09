@@ -2,7 +2,7 @@ package org.sofa.opengl.mesh
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import org.sofa.nio.{FloatBuffer, IntBuffer}
-import org.sofa.math.{Rgba, NumberSeq3, NumberSeq2, Point3, Vector3, Point2}
+import org.sofa.math.{Rgba, NumberSeq4, NumberSeq3, NumberSeq2, Point3, Vector3, Point2}
 
 import javax.media.opengl.GL._
 import javax.media.opengl.GL2._
@@ -11,50 +11,42 @@ case class BadlyNestedBeginEnd(msg:String) extends Throwable(msg) {
 	def this() { this("Badly nested begin()/end()") }
 }
 
-object MeshDrawMode extends Enumeration {
-	val TRIANGLES = Value(GL_TRIANGLES)
-	val QUADS     = Value(GL_QUADS)
-}
+// TODO 
+// Treat the vertex buffer as other buffers, why an exception ??? It complexifies code.
+// Name default buffers with the same name as any mesh.
+// Simplify !!!
 
-/** A mesh class that mimics the way OpenGL 1 builds geometry.
-  *
-  * TODO document this, actually only TRIANGLES are completely supported (notably for
-  * the automatic construction of tangents and biTangents).
+/** A mesh class that mimics the way OpenGL 1 builds geometry for a triangle set.
   *
   * Took lot of inspiration for the tangent auto computation from :
   * http://www.terathon.com/code/tangent.html
   * Which is a very good and well explained tutorial on tangent space. */
 class EditableMesh extends Mesh {
-	import MeshDrawMode._
-	
-	/** Primitives to draw. */
-	protected var drawMode = TRIANGLES
-	
+	import VertexAttribute._
+
 	/** How to draw the primitives. */
 	protected var indexBuffer:ArrayBuffer[Int] = null
-	
-	/** Main vertex attributes, positions. */
-	protected val vertexBuffer = new MeshBuffer("vertex", 3)
-	
-	/** Optional vertex attributes. */
-	protected val otherBuffers:HashMap[String,MeshBuffer] = new HashMap[String,MeshBuffer]()
+		
+	/** Shortcut to the often used vertex buffer. This buffer is also referenced in `buffers`. */
+	protected val vertexBuffer:MeshBuffer = new MeshBuffer(Vertex, 3)
+
+	/** Vertex attribute buffers. */
+	protected val buffers:HashMap[String,MeshBuffer] = new HashMap[String,MeshBuffer]()
+    
+    /** Cache of NIO index buffer. */
+	protected var indexNioCache:IntBuffer = null
 	
 	/** Allow to check begin/end nesting. */
 	protected var beganVertex = false
 	
 	/** Allow to chech beginIndices/endIndices nesting. */
 	protected var beganIndex = false
-	
+
 	// --------------------------------------------------------------
 	// Access
 	
-	override def drawAs():Int = drawMode.id
+	override def drawAs():Int = GL_TRIANGLES
 	
-    override def tangentComponents = {
-    	val tangentBuffer = getTangentMeshBuffer
-    	if(tangentBuffer ne null) tangentBuffer.components else 3
-    }
-
 	// --------------------------------------------------------------
 	// Command, mesh building
 
@@ -63,11 +55,11 @@ class EditableMesh extends Mesh {
 	def begin() {
 		if(beganVertex) throw new BadlyNestedBeginEnd("cannot nest begin() calls");
 		
-		otherBuffers.clear
+		buffers.clear
 		vertexBuffer.clear
-		nioCache.clear
-
 		
+		buffers += ((Vertex,vertexBuffer))
+
 		beganVertex = true
 	}
 
@@ -83,11 +75,11 @@ class EditableMesh extends Mesh {
 	def vertex(x:Float, y:Float, z:Float) {
 		if(!beganVertex) throw new BadlyNestedBeginEnd
 		vertexBuffer.append(x, y, z)
-		otherBuffers.foreach { _._2.sync(vertexBuffer) }
+		buffers.foreach { buffer => if(buffer._2 ne vertexBuffer) buffer._2.sync(vertexBuffer) }
 	}
 	
 	/** Specify the color for the next vertex or vertices. */
-	def color(red:Float, green:Float, blue:Float, alpha:Float) { attribute("color", red, green, blue, alpha) }
+	def color(red:Float, green:Float, blue:Float, alpha:Float) { attribute(Color, red, green, blue, alpha) }
 	
 	/** Specify the color for the next vertex or vertices. */
 	def color(red:Float, green:Float, blue:Float) { color(red, green, blue, 1) }
@@ -96,31 +88,40 @@ class EditableMesh extends Mesh {
 	def color(rgba:Rgba) { color(rgba.red.toFloat, rgba.green.toFloat, rgba.blue.toFloat, rgba.alpha.toFloat) }
 	
 	/** Specify the normal for the next vertex or vertices. */
-	def normal(x:Float, y:Float, z:Float) { attribute("normal", x, y, z) }
+	def normal(x:Float, y:Float, z:Float) { attribute(Normal, x, y, z) }
 
 	/** Specify the normal for the next vertex or vertices. */
 	def normal(n:NumberSeq3) { normal(n.x.toFloat, n.y.toFloat, n.z.toFloat) }
 	
 	/** Specify the tangent for the next vertex or vertices. */
-	def tangent(x:Float, y:Float, z:Float) { attribute("tangent", x, y, z) }
+	def tangent(x:Float, y:Float, z:Float) { attribute(Tangent, x, y, z) }
 	
 	/** Specify the tangent for the next vertex or vertices. */
 	def tangent(t:NumberSeq3) { tangent(t.x.toFloat, t.y.toFloat, t.z.toFloat) }
 
 	/** Specify the bitangent for the next vertex or vertices. */
-	def bitangent(x:Float, y:Float, z:Float) { attribute("bitangent", x, y, z) }
+	def bitangent(x:Float, y:Float, z:Float) { attribute(Bitangent, x, y, z) }
 	
 	/** Specify the bitangent for the next vertex or vertices. */
 	def bitangent(t:NumberSeq3) { bitangent(t.x.toFloat, t.y.toFloat, t.z.toFloat) }
 
 	/** Specify the texture coordinates for the next vertex or vertices. */
-	def texCoord(u:Float, v:Float) { attribute("texcoord", u, v) }
+	def texCoord(u:Float, v:Float) { attribute(TexCoord, u, v) }
 
 	/** Specify the texture coordinates for the next vertex or vertices. */
 	def texCoord(uv:NumberSeq2) { texCoord(uv.x.toFloat, uv.y.toFloat) }
 	
-	/** Specify the bone index for the next vertex or vertices. */
-	def bone(b:Int) { attribute("bone", b) }
+	/** Specify the bone index (or indices, up to four) for the next vertex or vertices. */
+	def bone(a:Float, b:Float, c:Float, d:Float) { attribute(Bone, a, b, c, d) }
+
+	/** Specify the bone index (or indices, up to four) for the next vertex or vertices. */
+	def bone(b:NumberSeq4) { bone(b.x.toFloat, b.y.toFloat, b.z.toFloat, b.w.toFloat) }
+
+	/** Specify the bone weight (or weights, up to four) for the next vertex or vertices. */
+	def weight(a:Float, b:Float, c:Float, d:Float) { attribute(Weight, a, b, c, d) }
+
+	/** Specify the bone weight (or weights, up to four) for the next vertex or vertices. */
+	def weight(w:NumberSeq4) { weight(w.x.toFloat, w.y.toFloat, w.z.toFloat, w.w.toFloat) }
 	
 	/** Specify an arbitrary attribute for the next vertex or vertices. */
 	def attribute(name:String, values:Float*) {
@@ -128,7 +129,7 @@ class EditableMesh extends Mesh {
 
 		// Get the corresponding buffer, or create it if needed.
 
-		val buffer = otherBuffers.getOrElseUpdate(name, { new MeshBuffer(name, values.size, vertexBuffer, values:_*) })
+		val buffer = buffers.getOrElseUpdate(name, { new MeshBuffer(name, values.size, vertexBuffer, values:_*) })
 		
 		// We append only if the vertex buffer has the same number of elements.
 
@@ -147,21 +148,18 @@ class EditableMesh extends Mesh {
 		beganVertex = false
 	}
 	
-	/** The setup of primitives from the vertex attributes.
-	  * The draw mode tells how he vertex attributes are used to draw primitives. */
-	def beginIndices(drawMode:MeshDrawMode.Value) {
+	/** The setup of primitives from the vertex attributes. */
+	def beginIndices() {
 		if(beganIndex) throw new BadlyNestedBeginEnd("cannot nest beginIndices() calls");
 		
-		this.drawMode = drawMode
-
 		beganIndex = true
 		indexNioCache = null
 		indexBuffer = new ArrayBuffer[Int]()
 	}
 
 	/** Like a call to beginIndices(), calls to index(Int) inside the given code and a call to endIndices(). */
-	def buildIndices(drawMode:MeshDrawMode.Value)(code: => Unit) {
-		beginIndices(drawMode)
+	def buildIndices(code: => Unit) {
+		beginIndices
 		code
 		endIndices
 	}
@@ -190,7 +188,6 @@ class EditableMesh extends Mesh {
 		// Some verifications...
 		
 		if(beganIndex || beganVertex) throw new BadlyNestedBeginEnd("cannot call vertexToTriangle() inside begin/end")
-		if(drawMode != MeshDrawMode.TRIANGLES) throw new RuntimeException("vertexToTriangle() works only on triangles actually")
 		if(vertexBuffer.elements <= 0) throw new RuntimeException("vertexToTriangle() needs some vertices to operate upon")
 		if(indexBuffer.size <= 0) throw new RuntimeException("vertexToTriangle() needs some indices to operate upon")
 
@@ -263,27 +260,26 @@ class EditableMesh extends Mesh {
 		// Do some verifications.
 
 		if(beganIndex || beganVertex) throw new BadlyNestedBeginEnd("cannot call autoComputeTangents() inside begin/end")
-		if(drawMode != MeshDrawMode.TRIANGLES) throw new RuntimeException("autoComputeTangents() works only on triangles actually")
 		if(vertexBuffer.elements <= 0) throw new RuntimeException("autoComputeTangents() needs some vertices to operate upon")
 		if(indexBuffer.size <= 0) throw new RuntimeException("autoComputeTangents() needs some indices to operate upon")
-		val texcooBuffer = otherBuffers.get("texcoord").getOrElse(throw new RuntimeException("autoComputeTangents() needs some texture coordinates to operate upon"))
+		val texcooBuffer = buffers.get(VertexAttribute.TexCoord.toString).getOrElse(throw new RuntimeException("autoComputeTangents() needs some texture coordinates to operate upon"))
 		if(texcooBuffer.elements <= 0) throw new RuntimeException("autoComputeTangents() needs some texture coordinates to operate upon")
-		var normalBuffer = otherBuffers.get("normal").getOrElse(throw new RuntimeException("autoComputeTangents() needs some normals to operate upon"))
+		var normalBuffer = buffers.get(VertexAttribute.Normal.toString).getOrElse(throw new RuntimeException("autoComputeTangents() needs some normals to operate upon"))
 		if(normalBuffer.elements <= 0) throw new RuntimeException("autoComputeTangents() needs some normals to operate upon")
 
 		// Add (or replace) a tangent buffer.
 
 		if(storeHandedness)
-			 otherBuffers += (("tangent", new MeshBuffer("tangent", 4, null)))
-		else otherBuffers += (("tangent", new MeshBuffer("tangent", 3, null)))
+			 buffers += ((Tangent, new MeshBuffer(Tangent, 4, null)))
+		else buffers += ((Tangent, new MeshBuffer(Tangent, 3, null)))
 
-		val tangentBuffer = otherBuffers.get("tangent").get
+		val tangentBuffer = buffers.get(Tangent).get
 
 		var biTangentBuffer:MeshBuffer = null
 
 		if(alsoComputeBiTangents) {
-			otherBuffers += (("bitangent", new MeshBuffer("bitangent", 3, null)))
-			biTangentBuffer = otherBuffers.get("bitangent").get
+			buffers += ((Bitangent, new MeshBuffer(Bitangent, 3, null)))
+			biTangentBuffer = buffers.get(Bitangent).get
 		}
 
 		// Compute the relations between triangles and points.
@@ -384,7 +380,7 @@ class EditableMesh extends Mesh {
 		val normals  = getNormalMeshBuffer
 		val tangents = getTangentMeshBuffer
 		val n        = vertices.elements
-		val ntMesh   = new ColoredLineSet(n*2)
+		val ntMesh   = new LinesMesh(n*2)
 
 		while(point < n) {
 			val P = Point3(vertices(point*3), vertices(point*3+1), vertices(point*3+2))
@@ -405,52 +401,41 @@ class EditableMesh extends Mesh {
 	// --------------------------------------------------------------
 	// Access.
 
-	/** The internal storage for the vertex position attributes. */
+	/** Shortcut to get the internal storage for the vertex position attributes. */
 	def getVertexMeshBuffer():MeshBuffer = vertexBuffer
 
-	/** The internal storage for the vertex normal attributes (as many as vertices). It may be null. */
-	def getNormalMeshBuffer():MeshBuffer = otherBuffers.get("normal").getOrElse(null)
+	/** Shortcut to get the internal storage for the vertex normal attributes (as many as vertices). It may be null. */
+	def getNormalMeshBuffer():MeshBuffer = buffers.get(Normal).getOrElse(null)
 
-	/** The internal storage for the vertex tangent attributes (as many as vertices). It may be null.
+	/** Shortcut to get the internal storage for the vertex tangent attributes (as many as vertices). It may be null.
 	  * You can compute them automatically from the texture coordinates and normals, see
 	  * [[autoComputeTangents()]]. */
-	def getTangentMeshBuffer():MeshBuffer = otherBuffers.get("tangent").getOrElse(null)
+	def getTangentMeshBuffer():MeshBuffer = buffers.get(Tangent).getOrElse(null)
 
-	/** The internal storage for the vertex bitangent attributes (as many as vertices). It may be null.
+	/** Shortcut to get the internal storage for the vertex bitangent attributes (as many as vertices). It may be null.
 	  * You can compute them automatically from the texture coordinates and normals, see
 	  * [[autoComputeTangents()]]. */
-	def getBitangentMeshBuffer():MeshBuffer = otherBuffers.get("bitangent").getOrElse(null)
+	def getBitangentMeshBuffer():MeshBuffer = buffers.get(Bitangent).getOrElse(null)
 
-	/** The internal storage for the vertex color attributes (as many as vertices). It may be null. */
-	def getColorMeshBuffer():MeshBuffer = otherBuffers.get("color").getOrElse(null)
+	/** Shortcut to get the internal storage for the vertex color attributes (as many as vertices). It may be null. */
+	def getColorMeshBuffer():MeshBuffer = buffers.get(Color).getOrElse(null)
 
-	/** The internal storage for the vertex texture coordinate attributes (as many as vertices). It may be null. */
-	def getTexCoordMeshBuffer():MeshBuffer = otherBuffers.get("texcoord").getOrElse(null)
+	/** Shortcut to get the internal storage for the vertex texture coordinate attributes (as many as vertices). It may be null. */
+	def getTexCoordMeshBuffer():MeshBuffer = buffers.get(TexCoord).getOrElse(null)
 
-	// -----------------------------------------------------------------
-	// Mesh interface.
+	/** Shortcut to get the internal storage for the vertex bones attributes (as many as vertices). It may be null. */
+	def getBoneMeshBuffer():MeshBuffer = buffers.get(Bone).getOrElse(null)
 
-	/** Cache of NIO float buffers. */
-	protected val nioCache:HashMap[String,FloatBuffer] = new HashMap[String,FloatBuffer]()
-    
-	protected var indexNioCache:IntBuffer = null
+	/** Shortcut to get the internal storage for the vertex bone weights attributes (as many as vertices). It may be null. */
+	def getWeightMeshBuffer():MeshBuffer = buffers.get(Weight).getOrElse(null)
+
+	// -- Mesh interface ------------------------------------------------
+
+	/** Get the NIO buffer associated with any buffer. */
+    protected def getNioCache(name:String):FloatBuffer =
+    		buffers.get(name).getOrElse(throw new RuntimeException("no %s attribute in this mesh only { %s }".format(name, attributes.mkString(", ")))).nioBuffer
 	
-    protected def getCache(name:String):FloatBuffer = nioCache.getOrElseUpdate(name,
-    		{ new FloatBuffer(otherBuffers.get(name).getOrElse(throw new RuntimeException("no %s attributes in this mesh".format(name))).buffer) } )
-	
-	def vertices:FloatBuffer = nioCache.getOrElseUpdate("vertex", { new FloatBuffer(vertexBuffer.buffer) } )
-
-    override def normals:FloatBuffer = getCache("normal")
-
-    override def tangents:FloatBuffer = getCache("tangent")
-
-    override def bitangents:FloatBuffer = getCache("bitangent")
-
-    override def colors:FloatBuffer = getCache("color")
-
-    override def texCoords:FloatBuffer = getCache("texcoord")
- 
-    override def bones:IntBuffer = throw new RuntimeException("TODO")//getCache("bone")
+    def attribute(name:String):FloatBuffer = getNioCache(name)
 
     override def indices:IntBuffer = {
 		if(indexBuffer ne null) {
@@ -462,17 +447,30 @@ class EditableMesh extends Mesh {
 		}
     }
 
-    override def hasNormals:Boolean = otherBuffers.contains("normal")
-    
-    override def hasTangents:Boolean = otherBuffers.contains("tangent")
+    def attributeCount():Int = buffers.size
 
-    override def hasBitangents:Boolean = otherBuffers.contains("bitangent")
-    
-    override def hasColors:Boolean = otherBuffers.contains("color")
-    
-    override def hasTexCoords:Boolean = otherBuffers.contains("texcoord")
+    def attributes():Array[String] = {
+    	val attrs = new Array[String](attributeCount)
+    	var i     = 0
+    	
+    	buffers.foreach { buffer =>
+    		attrs(i) = buffer._2.name
+    		i += 1
+    	}
 
-    override def hasBones:Boolean = otherBuffers.contains("bone")
+    	attrs
+    }
+
+    def components(name:String):Int = {
+    	val buf = buffers.get(name).getOrElse(null)
+    	if(buf ne null) {
+    		buf.components
+    	} else {
+    		0
+    	}
+    }
+
+    def has(name:String):Boolean = buffers.contains(name)
     
     override def hasIndices:Boolean = (indexBuffer ne null)
 }
@@ -494,6 +492,9 @@ protected class MeshBuffer(val name:String, val components:Int, other:MeshBuffer
 	/** The buffer. */
 	val buffer = new ArrayBuffer[Float]
 	
+	/** The NIO buffer produced from this buffer, reset at each modification. */
+	protected var cachedNioBuffer:FloatBuffer = null
+
 	/** Number of elements in the buffer (tuples of components values). */
 	var elements = 0
 	
@@ -527,6 +528,15 @@ protected class MeshBuffer(val name:String, val components:Int, other:MeshBuffer
 
 	/** i-th element. */
 	def apply(i:Int):Float = buffer(i)
+
+	/** Create and cache a NIO buffer for this editable buffer. This NIO buffer is reset at each modification
+	  * of this buffer. */
+	def nioBuffer():FloatBuffer = {
+		if(cachedNioBuffer eq null)
+			cachedNioBuffer = new FloatBuffer(buffer)			
+
+		cachedNioBuffer
+	}
 	
 	// --------------------------------------------------------------
 	// Commands
@@ -535,6 +545,7 @@ protected class MeshBuffer(val name:String, val components:Int, other:MeshBuffer
 	def clear() {
 		elements = 0
 		buffer.clear
+		cachedNioBuffer = null
 	}
 
 	/** Iterate over each elements passing as many components */
@@ -578,6 +589,8 @@ protected class MeshBuffer(val name:String, val components:Int, other:MeshBuffer
 			}
 			elements += 1
 		}
+
+		cachedNioBuffer = null
 	}
 	
 	/** Append a set of values. This always appends exactly the number of values
@@ -590,6 +603,7 @@ protected class MeshBuffer(val name:String, val components:Int, other:MeshBuffer
 			i += 1
 		}
 		elements += 1
+		cachedNioBuffer = null
 	}
 	
 	override def toString():String = "Buffer(%s: %d elt, %d comps)".format(name, elements, components)

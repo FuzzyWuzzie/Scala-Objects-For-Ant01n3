@@ -3,7 +3,7 @@ package org.sofa.opengl.test
 import org.sofa.Timer
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
 import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, TextureFramebuffer}
-import org.sofa.opengl.mesh.{Plane, Cube, WireCube, Axis, DynPointsMesh}
+import org.sofa.opengl.mesh.{PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, PointsMesh, VertexAttribute}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
 import org.sofa.math.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject, Point3, Vector3, Vector4, Rgba, Matrix4}
@@ -24,9 +24,9 @@ class TestRenderToTexture extends SurfaceRenderer {
 	var axis:VertexArray = null
 	var cube:VertexArray = null
 	
-	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 4, 4)
-	var cubeMesh = new Cube(0.5f)
+	var axisMesh = new AxisMesh(10)
+	var planeMesh = new PlaneMesh(2, 2, 4, 4)
+	var cubeMesh = new CubeMesh(0.5f)
 	
 	var camera:Camera = null
 	var camera2:Camera = null
@@ -66,7 +66,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -108,25 +108,14 @@ class TestRenderToTexture extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
-		var v = phongShad.getAttribLocation("position")
-		var c = phongShad.getAttribLocation("color")
-		var n = phongShad.getAttribLocation("normal")
+		import VertexAttribute._
 
 		cubeMesh.setColor(Rgba.yellow)
-		cube = cubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
-		
-		//cube  = cubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))		
-
-		v = phongTexShad.getAttribLocation("position")
-		n = phongTexShad.getAttribLocation("normal")
-		c = phongTexShad.getAttribLocation("texCoords")
-
 		planeMesh.setTextureRepeat(1,1)
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("texcoords", c))
+
+		cube  = cubeMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		axis  = axisMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
+		plane = planeMesh.newVertexArray(gl, phongTexShad, Vertex -> "position", Normal -> "normal", TexCoord -> "texCoords")
 	}	
 
 	def display(surface:Surface) {

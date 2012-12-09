@@ -7,7 +7,7 @@ import java.awt.image.BufferedImage
 import java.io.{File, IOException, InputStream, FileInputStream}
 import org.sofa.math.{Rgba,Matrix4}
 import org.sofa.opengl.{SGL, Texture, TextureImageAwt, ShaderProgram, VertexArray, Camera}
-import org.sofa.opengl.mesh.{DynIndexedTriangleMesh}
+import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 
 object GLFont {
 	/** First character Unicode. */
@@ -303,7 +303,7 @@ class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
   */
 class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	/** Mesh used to build the triangles of the batch. */
-	protected val batchMesh = new DynIndexedTriangleMesh(maxCharCnt*2)
+	protected val batchMesh = new TrianglesMesh(maxCharCnt*2)
 
 	/** Vertex array of the triangles (by two to form a quad) for each character. */
 	protected var batch:VertexArray = null
@@ -329,10 +329,10 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	init
 
 	protected def init() {
+		import VertexAttribute._
+
 		shader = ShaderProgram(gl, "text shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
-		var v  = shader.getAttribLocation("position")
-		var t  = shader.getAttribLocation("texCoords")
-		batch  = batchMesh.newVertexArray(gl, ("vertices", v), ("texcoords", t))
+		batch  = batchMesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
 	}
 
 	/** Size of the string in pixels. */
@@ -388,7 +388,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 	/** End the definition of the new string. This can only be called if begin() has been called before. */
 	def end() {
-		batchMesh.updateVertexArray(gl, "vertices", null, null ,"texcoords")
+		batchMesh.updateVertexArray(gl, true, false, false, true)
 	}
 
 	def draw(camera:Camera) {

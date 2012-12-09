@@ -5,7 +5,7 @@ import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
 import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
 
 import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture}
-import org.sofa.opengl.mesh.{Plane, Cube, DynPointsMesh, WireCube, ColoredLineSet, Axis, DynTriangleMesh, DynIndexedTriangleMesh, TriangleSet, ColoredTriangleSet, ColoredSurfaceTriangleSet, Cylinder}
+import org.sofa.opengl.mesh.{PlaneMesh, CubeMesh, PointsMesh, WireCubeMesh, LinesMesh, AxisMesh, TrianglesMesh, CylinderMesh, UnindexedTrianglesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent}
 
 import javax.media.opengl.{GLProfile, GLCapabilities}
@@ -152,19 +152,19 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	var quad:VertexArray = null
 	var biroute:VertexArray = null
 
-	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 10, 10)
-	var particlesMesh:DynPointsMesh = null
-	var wcubeMesh:WireCube = null
-	var wcubeMesh2:WireCube = null
-	var wcubeMesh3:WireCube = null
-	var isoSurfaceMesh = new DynIndexedTriangleMesh(maxDynTriangles)
-	var isoPlaneMesh = new DynIndexedTriangleMesh(maxDynTriangles)
-	var isoContourMesh = new ColoredLineSet(maxDynLines)
-	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
-	var springsMesh = new ColoredLineSet(maxSprings)
-	var quadMesh = new Plane(2, 2, particleQuadSize, particleQuadSize, true)
-	var birouteMesh = new Cylinder(birouteSize*0.25f, birouteSize, 8, 1)
+	var axisMesh = new AxisMesh(10)
+	var planeMesh = new PlaneMesh(2, 2, 10, 10)
+	var particlesMesh:PointsMesh = null
+	var wcubeMesh:WireCubeMesh = null
+	var wcubeMesh2:WireCubeMesh = null
+	var wcubeMesh3:WireCubeMesh = null
+	var isoSurfaceMesh = new TrianglesMesh(maxDynTriangles)
+	var isoPlaneMesh = new TrianglesMesh(maxDynTriangles)
+	var isoContourMesh = new LinesMesh(maxDynLines)
+	var obstaclesMesh = new UnindexedTrianglesMesh(4)
+	var springsMesh = new LinesMesh(maxSprings)
+	var quadMesh = new PlaneMesh(2, 2, particleQuadSize, particleQuadSize, true)
+	var birouteMesh = new CylinderMesh(birouteSize*0.25f, birouteSize, 8, 1)
 
 	val random = new scala.util.Random()
 	var step = 0
@@ -186,9 +186,9 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	// Init.
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-		Shader.includePath += "src/com/chouquette/tests"
-		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/textures"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "src/com/chouquette/tests"
+		Texture.path += "/Users/antoine/Documents/Programs/SOFA/textures"
 			
 		initSimuParams
 		initGL(sgl)
@@ -239,54 +239,42 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	}
 	
 	protected def initGeometry() {
+		import VertexAttribute._
+
 		initParticles		
 		initSimu
 
-		// Phong shader
-		
-		var v = phongShad.getAttribLocation("position")
-		var c = phongShad.getAttribLocation("color")
-		var n = phongShad.getAttribLocation("normal")
-		
 		planeMesh.setColor(Rgba.red)
-		
-		plane      = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		isoPlane   = isoPlaneMesh.newVertexArray(gl, ("vertices",v), ("colors", c), ("normals", n))
-		obstacles  = obstaclesMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		biroute    = birouteMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		
-		// Plain shader
-		
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
-		
-		wcubeMesh = new WireCube(simu.spaceHash.bucketSize.toFloat)
-		wcubeMesh2 = new WireCube(isoCellSize.toFloat)
-		wcubeMesh3 = new WireCube(isoCellSize.toFloat)
+		wcubeMesh = new WireCubeMesh(simu.spaceHash.bucketSize.toFloat)
+		wcubeMesh2 = new WireCubeMesh(isoCellSize.toFloat)
+		wcubeMesh3 = new WireCubeMesh(isoCellSize.toFloat)
 		wcubeMesh.setColor(Rgba(1, 1, 1, 0.5))
 		wcubeMesh2.setColor(Rgba(1, 0, 0, 0.2))
 		wcubeMesh3.setColor(Rgba(0, 1, 0, 0.2))
-		wcube = wcubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
-		wcube2 = wcubeMesh2.newVertexArray(gl, ("vertices", v), ("colors", c))
-		wcube3 = wcubeMesh3.newVertexArray(gl, ("vertices", v), ("colors", c))
+		quadMesh.setTextureRepeat(1, 1)
+
+		// Phong shader
 		
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
-		springs = springsMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
-		isoContour = isoContourMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		plane      = planeMesh.newVertexArray(     gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		isoSurface = isoSurfaceMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		isoPlane   = isoPlaneMesh.newVertexArray(  gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		obstacles  = obstaclesMesh.newVertexArray( gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		biroute    = birouteMesh.newVertexArray(   gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		
+		// Plain shader
+		
+		wcube      = wcubeMesh.newVertexArray(     gl, plainShad, Vertex -> "position", Color -> "color")
+		wcube2     = wcubeMesh2.newVertexArray(    gl, plainShad, Vertex -> "position", Color -> "color")
+		wcube3     = wcubeMesh3.newVertexArray(    gl, plainShad, Vertex -> "position", Color -> "color")
+		axis       = axisMesh.newVertexArray(      gl, plainShad, Vertex -> "position", Color -> "color")
+		springs    = springsMesh.newVertexArray(   gl, plainShad, Vertex -> "position", Color -> "color")
+		isoContour = isoContourMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 
 		// Particles shader
-		
-		v = particlesShad.getAttribLocation("position")
-		c = particlesShad.getAttribLocation("color") 
-		
-		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("colors", c))
+				
+		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, particlesShad, Vertex -> "position", Color -> "color")
 
-		v = particlesQuadShad.getAttribLocation("position")
-		var t = particlesQuadShad.getAttribLocation("texCoords")
-
-		quadMesh.setTextureRepeat(1, 1)
-		quad = quadMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("texcoords", t))
+		quad = quadMesh.newVertexArray(gl, gl.STATIC_DRAW, particlesQuadShad, Vertex -> "position", TexCoord -> "texCoords")
 
 		for(i <- 0 until maxDynTriangles*3) {
 			isoSurfaceMesh.setPointColor(i, isoSurfaceColor)
@@ -301,7 +289,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	}
 	
 	protected def initParticles {
-		particlesMesh = new DynPointsMesh(size) 
+		particlesMesh = new PointsMesh(size) 
 		
 		for(i <- 0 until size) {
 			particlesMesh.setPoint(i, 0, 200, 0) // make them invisible.
@@ -611,7 +599,7 @@ timer.measure("draw quads") {
 				i += 1
 			}
 		
-			particlesMesh.updateVertexArray(gl, "vertices", "colors")
+			particlesMesh.updateVertexArray(gl, true, true)
 			gl.checkErrors
 		}
 
@@ -623,7 +611,7 @@ timer.measure("draw quads") {
 				i += 1
 			}
 
-			springsMesh.updateVertexArray(gl, "vertices", "colors")
+			springsMesh.updateVertexArray(gl, true, true)
 			gl.checkErrors
 		}
 		
@@ -666,7 +654,7 @@ timer.measure("draw quads") {
 				}				
 			}
 			
-			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
+			isoSurfaceMesh.updateVertexArray(gl, true, true, true, false)
 		}
 	}
 
@@ -681,7 +669,7 @@ timer.measure("draw quads") {
 				}
 			}
 
-			isoContourMesh.updateVertexArray(gl, "vertices", "colors")
+			isoContourMesh.updateVertexArray(gl, true, true)
 		}
 	}
 
@@ -741,7 +729,7 @@ triangleCount = 0
 
 //			assert(i == isoContourComp.triangleCount)
 
-			isoPlaneMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
+			isoPlaneMesh.updateVertexArray(gl, true, true, true, false)
 		}
 	}
 

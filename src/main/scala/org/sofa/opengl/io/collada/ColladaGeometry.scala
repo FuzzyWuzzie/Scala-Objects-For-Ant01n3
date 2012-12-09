@@ -2,7 +2,8 @@ package org.sofa.opengl.io.collada
 
 import scala.xml.{Node, NodeSeq}
 import scala.collection.mutable.{HashMap, ArrayBuffer}
-import org.sofa.opengl.mesh.{Mesh, EditableMesh, MeshDrawMode}
+import org.sofa.opengl.mesh.{Mesh, EditableMesh}
+import scala.math._
 
 /** Geometry feature companion object. */
 object Geometry {
@@ -15,6 +16,9 @@ object Geometry {
 class Geometry(node:Node) extends ColladaFeature {
 	/** Name of the geometry. */
 	var name = ""
+
+	/** Id of geometry. */
+	var id = ""
 	
 	/** The mesh. */
 	var mesh:ColladaMesh = null
@@ -22,11 +26,12 @@ class Geometry(node:Node) extends ColladaFeature {
 	parse(node)
 	
 	protected def parse(node:Node) {
+		id         = (node \ "@id").text
+		name       = (node \ "@name").text
 		val meshes = (node \\ "mesh")
-		name = (node \ "@name").text
 
 		if(meshes.size > 0) 
-			mesh = new ColladaMesh(meshes.head)
+			mesh = new ColladaMesh(id, meshes.head)
 		else {
 			// TODO conves_mesh or spline 
 			throw new RuntimeException("convex_mesh or spline not yet supported, no mesh in geometry")
@@ -39,7 +44,7 @@ class Geometry(node:Node) extends ColladaFeature {
 //------------------------------------------------------------------------------------------------------
 
 /** One source of data in a mesh (in OpenGL terms, a vertex attribute). */
-class MeshSource(node:Node) {
+class MeshSource() {
 	/** Unique identifier of the source. */
 	var id:String = ""
 	/** Optional name of the source. */
@@ -49,7 +54,15 @@ class MeshSource(node:Node) {
 	/** The raw data. */
 	var data:Array[Float] = null
 
-	parse(node)
+	def this(node:Node) { this(); parse(node) }
+
+	def this(id:String, name:String, stride:Int, data:Array[Float]) {
+		this()
+		this.id     = id
+		this.name   = name
+		this.stride = stride
+		this.data   = data
+	}
 	
 	/** Data stride. */
 	def getData(index:Int):Array[Float] = {
@@ -64,12 +77,15 @@ class MeshSource(node:Node) {
 		
 		res
 	}
+
+	/** Number of elements defined in the data (elements are made of `stride` components). */
+	def elementCount():Int = data.length / stride
 	
 	protected def parse(node:Node) {
 		id     = (node \ "@id").text
 		name   = (node \ "@name").text; if(name.length == 0) name = "noname"
 		stride = (node \ "technique_common" \ "accessor" \ "@stride").text.toInt
-		data   = (node \ "float_array").text.split(" ").map(_.toFloat)
+		data   = (node \ "float_array").text.trim.split("\\s+").map(_.toFloat)
 	}
 	
 	override def toString():String = "source(%s, stride %d, %d floats)".format(name, stride, data.length) 
@@ -85,6 +101,7 @@ object Input extends Enumeration {
 	val Tangent  = Value
 	val Color    = Value
 	val Bone     = Value
+	val Weight   = Value
 	val User     = Value
 }	
 
@@ -119,15 +136,46 @@ object Input extends Enumeration {
   * For each kind of input you can get the name of the source mesh where the data is defined.
   * */
 abstract class Faces(node:Node, val mesh:ColladaMesh) {
-	
+	// Some explanations of the (awefull) organisation of this class.
+	//
+	// First: THIS THING IS A GIANT SPAGHETTI BOWL.
+	//
+	// More seriously:
+	//
+	//  - The data array is a set of integer indices in various data sources in each MeshSource of the tied mesh.
+	//    If the mesh has 2 vertex attributes the data length will be twice the number of vertices. With an
+	//    index for the first and an index for the second vertex attribute : data is interleaved.
+	//
+	//  - Each input describes a kind of vertex attribute, It contains the enumeration value of this kind
+	//    of vertex attribute and the name of the source in order to find it in the Mesh sources.
+	//    The input thing is an array and vertex attributes are indexed in it using the same offset value
+	//    as the one given in the Collada file in the set of inputs of the polylist... excepted for added
+	//    sources (one that are generated), for example bones and weights that are merely appended to the
+	//    inputs but are not real inputs in the collada geometry and come from the collada controller.
+	//
+	//  - Each revInput describes the same vertex attributes, they are referenced by the constant describing
+	//    the vertex attribute and contains two ints. The first one is the offset if the data array of the
+	//    index pointing in one of the mesh sources. The second is the index of the vertex attribute in
+	//    the input array. They are both the same for data comming from collada geometry, but may differ in
+	//    data generated like bones and weights. For these two last ones, in fact the offset is the one of
+	//    the vertex data since they are the same. This means that data may contain less indices than there
+	//    are vertex attributes since some indices are shared. Pfew..
+	//
+	// Now you understand the spaghetti reference ? Ok, why doing such a complicated thing ? In oder to
+	// keep the collada data untouched. Since the goal of this part of the library is to allow generic
+	// collada import.
+
 	/** Number of faces. */
 	var count = 0
 	
+	/** Number of components that identify a vertex in data. */
+	var dataStride = 0
+
 	/** Face vertices reference several attributes in order (vertex, normal, tex-coords, etc.). */
-	var inputs:Array[(Input.Value,String)] = null
+	var inputs:ArrayBuffer[(Input.Value,String)] = null
 	
 	/** Reverse input types, give the type of input and get the offset (or position in the data). */
-	var revInputs = new HashMap[Input.Value,Int]()
+	var revInputs = new HashMap[Input.Value,(Int,Int)]()
 	
 	/** References to vertex attributes stored in the sources. This is an interleaved array,
 	  * where each element is composed of several integers, the vertex index in the sources,
@@ -138,14 +186,18 @@ abstract class Faces(node:Node, val mesh:ColladaMesh) {
 	/** Does the vertex attribute 'input' is provided for this face set ? */
 	def hasInput(input:Input.Value):Boolean = revInputs.contains(input)
 
-	/** Position of a given input type in the interleaved array. */
-	def offset(input:Input.Value):Int = revInputs.get(input).get
+	/** Position of a given input type in the interleaved data array. */
+	def dataOffset(input:Input.Value):Int = revInputs.get(input).get._1
 	
+	/** Position of the given input in the input array (This may differ from the dataOffset to share indices
+	  * in this data offset). */
+	def inputIndex(input:Input.Value):Int = revInputs.get(input).get._2
+
 	/** Get the i-th element in the array plus the offset of the given input type. */
-	def getData(i:Int, input:Input.Value):Int = if(hasInput(input)) data(i + offset(input)) else -1
+	def getData(i:Int, input:Input.Value):Int = if(hasInput(input)) data(i + dataOffset(input)) else -1
 	
 	/** Get the name of the source mesh for the given input. */
-	def getSource(input:Input.Value):String = inputs(revInputs.get(input).get)._2
+	def getSource(input:Input.Value):String = inputs(inputIndex(input))._2
 	
 	/** Get the index-th vertex. */
 	def getVertex(index:Int):Array[Float] = getAttribute(mesh.vertices, index)
@@ -158,20 +210,21 @@ abstract class Faces(node:Node, val mesh:ColladaMesh) {
 	protected def parse(node:Node) {
 		count = (node \ "@count").text.toInt
 		val in = (node \\ "input")
-		inputs = new Array[(Input.Value,String)](in.length)
+		dataStride = in.length
+		inputs = new ArrayBuffer[(Input.Value,String)](dataStride+10)
+		in.foreach { input => inputs += null }	// populate array, we will work with indices not in order, (horrible...)
 		in.foreach { input =>
 			val offset = (input \ "@offset").text.toInt
 			inputs(offset) = (input \ "@semantic").text match {
-				case "VERTEX"   => { revInputs += ((Input.Vertex,   offset)); (Input.Vertex,   (input \ "@source").text.substring(1)) }
-				case "NORMAL"   => { revInputs += ((Input.Normal,   offset)); (Input.Normal,   (input \ "@source").text.substring(1)) }
-				case "TEXCOORD" => { revInputs += ((Input.TexCoord, offset)); (Input.TexCoord, (input \ "@source").text.substring(1)) }
-				case "TANGENT"  => { revInputs += ((Input.Tangent,  offset)); (Input.Tangent,  (input \ "@source").text.substring(1)) }
-				case "COLOR"    => { revInputs += ((Input.Color,    offset)); (Input.Color,    (input \ "@source").text.substring(1)) }
-				case "JOINT"    => { revInputs += ((Input.Bone,     offset)); (Input.Bone,     (input \ "@source").text.substring(1)) }
-				case _          => { revInputs += ((Input.User,     offset)); (Input.User,     (input \ "@source").text.substring(1)) }
+				case "VERTEX"   => { revInputs += ((Input.Vertex,   (offset, offset))); (Input.Vertex,   (input \ "@source").text.substring(1)) }
+				case "NORMAL"   => { revInputs += ((Input.Normal,   (offset, offset))); (Input.Normal,   (input \ "@source").text.substring(1)) }
+				case "TEXCOORD" => { revInputs += ((Input.TexCoord, (offset, offset))); (Input.TexCoord, (input \ "@source").text.substring(1)) }
+				case "TANGENT"  => { revInputs += ((Input.Tangent,  (offset, offset))); (Input.Tangent,  (input \ "@source").text.substring(1)) }
+				case "COLOR"    => { revInputs += ((Input.Color,    (offset, offset))); (Input.Color,    (input \ "@source").text.substring(1)) }
+				case _          => { revInputs += ((Input.User,     (offset, offset))); (Input.User,     (input \ "@source").text.substring(1)) }
 			}
 		}
-		data = (node \ "p").text.split(" ").map(_.toInt)
+		data = (node \ "p").text.trim.split("\\s+").map(_.toInt)
 	}
 	
 	/** Transform this into a SOFA [[Mesh]], usable to draw in an OpenGL scene.
@@ -193,7 +246,7 @@ abstract class Faces(node:Node, val mesh:ColladaMesh) {
 
 			while(i < data.length) {
 				var vertex = new Vertex(this, getData(i, Input.Vertex), getData(i, Input.Normal), getData(i, Input.TexCoord),
-					getData(i, Input.Tangent), getData(i, Input.Color), getData(i, Input.Bone))
+					getData(i, Input.Tangent), getData(i, Input.Color), getData(i, Input.Bone), getData(i, Input.Weight))
 	
 //Console.err.print("%s".format(vertex))
 
@@ -210,24 +263,30 @@ abstract class Faces(node:Node, val mesh:ColladaMesh) {
 //Console.err.println("  -> old %d".format(index))
 				}
 			
-				i += inputs.length
+				i += dataStride
 			}
 			
-			val expected = data.length / inputs.length
+			val expected = data.length / dataStride
 			val obtained = unicity.size
 println("Collada Faces %d original elements %d unique elements (saved %d compressed %.2f%%)".format(expected, obtained, expected-obtained, (1-(obtained.toDouble/expected.toDouble))*100))
 		} else {		
 			var i = 0
 			while(i < data.length) {
 				var vertex = new Vertex(this, getData(i, Input.Vertex), getData(i, Input.Normal), getData(i, Input.TexCoord),
-					getData(i, Input.Tangent), getData(i, Input.Color), getData(i, Input.Bone))
+					getData(i, Input.Tangent), getData(i, Input.Color), getData(i, Input.Bone), getData(i, Input.Weight))
 	
 				val index = vertices.length
 				vertices += vertex
 				elements += index			
-				i += inputs.length
+				i += dataStride
 			}
 		}
+
+// var i = 0
+// vertices.foreach { vertex =>
+// 	println("vertex %d -> %s".format(i,vertex))
+// 	i+= 1
+// }
 
 		(elements, vertices)
 	}
@@ -248,6 +307,14 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 					val uv = getAttribute(Input.TexCoord, vertex.texcoord)
 					mesh.texCoord(uv(0), uv(1))
 				}
+				if(vertex.bone >= 0) {
+					val bone = getAttribute(Input.Bone, vertex.bone)
+					mesh.bone(bone(0),bone(1),bone(2),bone(3))
+				}
+				if(vertex.weight >= 0) {
+					val weight = getAttribute(Input.Weight, vertex.weight)
+					mesh.weight(weight(0),weight(1),weight(2),weight(3))
+				}
 				if(vertex.index >= 0) {
 					val vert = getVertex(vertex.index)
 
@@ -258,7 +325,7 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 			}
 		}
 		
-		mesh.buildIndices(MeshDrawMode.TRIANGLES) {
+		mesh.buildIndices {
 			elements.foreach { mesh.index(_) }
 		}
 		
@@ -272,7 +339,7 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
   *  - To represent the integer indices in the various vertex attribute arrays.
   *  - To easily hash and compare it in order to implement a the vertex merging
   *    to remove multiple versions of the same vertex. */
-class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int) {
+class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, val tangent:Int, val color:Int, val bone:Int, val weight:Int) {
 	/** Linear array of all the values associated with the vertex, the x, y, z positions, the normal, the color, tex coords,
 	  * etc.. */
 	protected var repr:Array[Float] = null
@@ -284,7 +351,7 @@ class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, v
 	  * allows fast (somewhat...) comparison, and hash value obtension. */
 	protected def computeRepr() {
 		if(repr eq null) {
-			repr = new Array[Float](17)
+			repr = new Array[Float](24)
 
 			if(index >=0) {
 				val vert = faces.getVertex(index)
@@ -318,7 +385,34 @@ class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, v
 				repr(15) = clr(3).toFloat
 			}
 			if(bone >= 0) {
-				repr(16) = faces.getAttribute(Input.Bone, bone)(0).toFloat
+				val boneSource = faces.mesh.sources.get(faces.getSource(Input.Bone)).get
+				val stride     = boneSource.stride
+
+				if(stride > 4) {
+					Console.err.println("WARNING : SOFA meshes do not support vertices that reference more than 4 bones.")
+				}
+
+				val bon = faces.getAttribute(Input.Bone, bone)
+
+				repr(16) = bon(0).toFloat
+				repr(17) = bon(1).toFloat	// We know the bone stride is 4
+				repr(18) = bon(2).toFloat
+				repr(19) = bon(3).toFloat
+			}
+			if(weight >= 0) {	
+				val weightSource = faces.mesh.sources.get(faces.getSource(Input.Weight)).get
+				val stride       = weightSource.stride
+
+				if(stride > 4) {
+					Console.err.println("WARNING : SOFA meshes do not support vertices that reference more than 4 weights.")
+				}
+
+				val wei = faces.getAttribute(Input.Weight, weight)
+
+				repr(20) = wei(0).toFloat
+				repr(21) = wei(1).toFloat	// We know the weight stride is 4
+				repr(22) = wei(2).toFloat
+				repr(23) = wei(3).toFloat
 			}
 		}
 	}
@@ -359,7 +453,7 @@ class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, v
 
 	override def toString():String = {
 		computeRepr
-		"vertex(%d, %d, %d, %d, %d, %d { %s })".format(index, normal, texcoord, tangent, color, bone, repr.mkString(", "))
+		"vertex(%d, %d, %d, %d, %d, %d, %d { %s })".format(index, normal, texcoord, tangent, color, bone, weight, repr.mkString(", "))
 	}
 }
 
@@ -383,7 +477,7 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	
 	protected override def parse(node:Node) {
 		super.parse(node)
-		vcount = (node \ "vcount").text.split(" ").map(_.toInt)
+		vcount = (node \ "vcount").text.trim.split("\\s+").map(_.toInt)
 	}
 	
 	override def toString():String = "polys(%d, [%s], vcount %d, data %d)".format(count, inputs.mkString(","), vcount.length, data.length)
@@ -433,7 +527,7 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 
 /** Describe a mesh (source (vertex attributes), and indices in the source under the form of faces.
   * This mesh format offer a convertion toward SOFA meshes */
-class ColladaMesh(node:Node) {
+class ColladaMesh(val id:String, node:Node) {
 	
 	/** Try to merge vertices with exactly the same values (for position, but also color, normals, etc.) */
 	var mergeVerticesMesh:Boolean = false
@@ -465,7 +559,50 @@ class ColladaMesh(node:Node) {
 	def blenderToOpenGL(on:Boolean) { blenderToOpenGLCoos = on }
 	
 	/** Set the optionnal controller on this geometry. */
-	def setController(c:Controller) { controller = c }
+	def setController(c:Controller) {
+		if(id != c.skin.source)
+			throw new RuntimeException("controller tied with the wrong mesh, ids do not match (controller(%s) != mesh(%s))".format(id, c.skin.source))
+
+		controller = c
+
+		// Form a bone array and a weight array from the controller.
+
+		val vertexAttr = sources.get(vertices).getOrElse(throw new RuntimeException("no vertex source??"))
+
+		if(controller.skin.vertexCount != vertexAttr.elementCount)
+			throw new RuntimeException("controller defines bones/weights for %d vertices, but mesh has %d vertices!".format(controller.skin.vertexCount, vertexAttr.elementCount))
+
+		val (bones, weights) = controller.skin.computeBonesAndWeights(4)	// Min stride of 4		
+		val stride = max(4, controller.skin.stride)
+		val n      = controller.skin.vertexCount
+		// Console.err.println("--stide = %d--------------".format(stride))
+		// for(i <- 0 until n) {
+		// 	Console.err.print("vertex %d -> bone( ".format(i))
+		// 	for(j <- 0 until stride) {
+		// 		Console.err.print("%.0f ".format(bones(i*stride+j)))
+		// 	}
+		// 	Console.err.print("  weight( ")
+		// 	for(j <- 0 until stride) {
+		// 		Console.err.print("%.3f ".format(weights(i*stride+j)))
+		// 	}
+		// 	Console.err.println(")")
+		// }
+
+		// Add them as sources.
+
+		sources += (("GeneratedBone",   new MeshSource("GeneratedBone",   "GeneratedBone",   stride, bones)))
+		sources += (("GeneratedWeight", new MeshSource("GeneratedWeight", "GeneratedWeight", stride, weights)))
+
+		// And tie them in the faces list.
+
+		val voffset = faces.dataOffset(Input.Vertex)
+		val offset  = faces.inputs.length
+
+		faces.inputs += ((Input.Bone, "GeneratedBone"))
+		faces.inputs += ((Input.Weight, "GeneratedWeight"))
+		faces.revInputs += ((Input.Bone, (voffset, offset)))		// Offset is the one of the vertex array.
+		faces.revInputs += ((Input.Weight, (voffset, offset+1)))	// Idem.
+	}
 
 	protected def parse(node:Node) {
 		processSources(node \\ "source")

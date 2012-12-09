@@ -2,8 +2,7 @@ package org.sofa.opengl.test
 
 import org.sofa.opengl.VertexArray
 import org.sofa.opengl.SGL
-import org.sofa.opengl.mesh.Plane
-import org.sofa.opengl.mesh.EditableMesh
+import org.sofa.opengl.mesh.{PlaneMesh, EditableMesh, VertexAttribute}
 import org.sofa.opengl.ShaderProgram
 import org.sofa.math.Matrix4
 import org.sofa.opengl.MatrixStack
@@ -22,7 +21,6 @@ import org.sofa.opengl.surface.SurfaceRenderer
 import org.sofa.math.Vector4
 import org.sofa.opengl.Shader
 import org.sofa.math.Vector3
-import org.sofa.opengl.mesh.MeshDrawMode
 import org.sofa.opengl.mesh.Mesh
 import org.sofa.opengl.io.collada.ColladaFile
 
@@ -44,7 +42,7 @@ class TestColladaImport extends SurfaceRenderer {
 	var plane:VertexArray = null
 	
 	var thingMesh:Mesh = null
-	val planeMesh = new Plane(2, 2, 4, 4)
+	val planeMesh = new PlaneMesh(2, 2, 4, 4)
 
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -80,7 +78,7 @@ class TestColladaImport extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -113,18 +111,12 @@ class TestColladaImport extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
+		import VertexAttribute._
+
 		initThing
 
-		var v = planeShad.getAttribLocation("position")
-		var c = planeShad.getAttribLocation("color")
-		var n = planeShad.getAttribLocation("normal")
-
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		
-		v = thingShad.getAttribLocation("position")
-		n = thingShad.getAttribLocation("normal")
-		
-		thing = thingMesh.newVertexArray(gl, ("vertices", v), ("normals", n))
+		plane = planeMesh.newVertexArray(gl, planeShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		thing = thingMesh.newVertexArray(gl, thingShad, Vertex -> "position", Normal -> "normal")
 	}
 	
 	def initThing() {

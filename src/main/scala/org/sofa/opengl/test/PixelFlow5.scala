@@ -39,8 +39,8 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
     var cube:VertexArray = null
     var plane:VertexArray = null
     
-    val planeMesh = new Plane(2, 2, 4, 4)
-    val cubeMesh = new Cube(1)
+    val planeMesh = new PlaneMesh(2, 2, 4, 4)
+    val cubeMesh = new CubeMesh(1)
     
     var cubeShad:ShaderProgram = null
     
@@ -81,6 +81,8 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
     def init(win:GLAutoDrawable) {
 //        gl = new backend.SGLJogl3(win.getGL.getGL3, GLU.createGLU)
         gl = new backend.SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU)
+
+		Shader.path  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
         
         gl.printInfos
         gl.clearColor(0f, 0f, 0f, 0f)
@@ -91,8 +93,8 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         gl.frontFace(gl.CW)
     
         cubeShad = new ShaderProgram(gl, "phong shader",
-                new VertexShader(gl, "phong", "src-scala/org/sofa/opengl/shaders/es2/pixelFlow4VertexShader.glsl"),
-                new FragmentShader(gl, "phong", "src-scala/org/sofa/opengl/shaders/es2/pixelFlow3FragmentShader.glsl"))
+                new VertexShader(gl, "phong", "/es2/pixelFlow4VertexShader.glsl"),
+                new FragmentShader(gl, "phong", "/es2/pixelFlow3FragmentShader.glsl"))
 //                new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow4VertexShader.glsl"),
 //                new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/pixelFlow3FragmentShader.glsl"))
 
@@ -103,9 +105,11 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         val p = cubeShad.getAttribLocation("position")
         val c = cubeShad.getAttribLocation("color")
         val n = cubeShad.getAttribLocation("normal")
-        
-        cube = new VertexArray(gl, cubeMesh.indices, ("vertices", p, 3, cubeMesh.vertices), ("colors", c, 4, cubeMesh.colors), ("normals", n, 3, cubeMesh.normals))
-        plane = new VertexArray(gl, planeMesh.indices, ("vertices", p, 3, planeMesh.vertices), ("colors", c, 4, planeMesh.colors), ("normals", n, 3, planeMesh.normals))
+
+        cube  = cubeMesh.newVertexArray( gl, (VertexAttribute.Vertex.toString, p), (VertexAttribute.Color.toString, c), (VertexAttribute.Normal.toString, n))
+        plane = planeMesh.newVertexArray(gl, (VertexAttribute.Vertex.toString, p), (VertexAttribute.Color.toString, c), (VertexAttribute.Normal.toString, n))   
+//        cube = new VertexArray(gl, cubeMesh.indices, ("vertices", p, 3, cubeMesh.vertices), ("colors", c, 4, cubeMesh.colors), ("normals", n, 3, cubeMesh.normals))
+//        plane = new VertexArray(gl, planeMesh.indices, ("vertices", p, 3, planeMesh.vertices), ("colors", c, 4, planeMesh.colors), ("normals", n, 3, planeMesh.normals))
     }
     
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {

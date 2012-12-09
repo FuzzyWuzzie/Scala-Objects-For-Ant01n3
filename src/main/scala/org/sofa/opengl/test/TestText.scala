@@ -3,7 +3,7 @@ package org.sofa.opengl.test
 import org.sofa.Timer
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
 import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, TextureFramebuffer}
-import org.sofa.opengl.mesh.{Plane, Cube, WireCube, Axis, DynPointsMesh}
+import org.sofa.opengl.mesh.{PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, PointsMesh, VertexAttribute}
 import org.sofa.opengl.text.{GLFont, GLString}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
@@ -23,8 +23,8 @@ class TestText extends SurfaceRenderer {
 	var plane:VertexArray = null
 	var axis:VertexArray = null
 	
-	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 10, 10)
+	var axisMesh = new AxisMesh(10)
+	var planeMesh = new PlaneMesh(2, 2, 10, 10)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -63,7 +63,7 @@ class TestText extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -110,16 +110,12 @@ class TestText extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
-		var v = textShad.getAttribLocation("position")
-		var c = textShad.getAttribLocation("texCoords")
+		import VertexAttribute._
 
 		planeMesh.setTextureRepeat(1,1)
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("texcoords", c))
-		
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
-		
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))		
+
+		plane = planeMesh.newVertexArray(gl, textShad, Vertex -> "position", TexCoord -> "texCoords")		
+		axis  = axisMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 	}	
 
 	def display(surface:Surface) {

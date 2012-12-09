@@ -1,25 +1,11 @@
 package org.sofa.opengl.test
 
-import org.sofa.opengl.surface.SurfaceRenderer
-import org.sofa.opengl.SGL
-import org.sofa.opengl.surface.Surface
-import org.sofa.math.Matrix4
-import org.sofa.opengl.MatrixStack
-import org.sofa.opengl.ShaderProgram
-import org.sofa.opengl.mesh.Plane
-import org.sofa.opengl.VertexArray
-import org.sofa.opengl.Camera
-import org.sofa.opengl.surface.BasicCameraController
-import org.sofa.math.Rgba
-import org.sofa.math.Vector4
-import javax.media.opengl.GLCapabilities
-import javax.media.opengl.GLProfile
-import org.sofa.math.Vector3
-import org.sofa.opengl.Shader
-import org.sofa.opengl.mesh.DynPointsMesh
+import org.sofa.math.{Point3, SpatialObject, SpatialPoint, SpatialCube, SpatialHash, Rgba, Matrix4, Vector3, Vector4}
+import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
+import org.sofa.opengl.{SGL, MatrixStack, ShaderProgram, Camera, VertexArray, Shader}
+import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute, PointsMesh, CubeMesh, WireCubeMesh, AxisMesh}
+import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.ArrayBuffer
-import org.sofa.opengl.mesh.{Cube, WireCube, Axis}
-import org.sofa.math.{Point3, SpatialObject, SpatialPoint, SpatialCube, SpatialHash}
 
 object TestSpatialHash {
 	def main(args:Array[String]) = (new TestSpatialHash).test
@@ -37,7 +23,6 @@ trait TestObject extends SpatialObject {
 		if(p.z > lim) { p.z = lim; v.z = -v.z }
 		else if(p.z < -lim) { p.z = -lim; v.z = -v.z }
 	}
-
 }
 
 class TestParticle(xx:Double, yy:Double, zz:Double) extends SpatialPoint with TestObject {
@@ -77,11 +62,11 @@ class TestSpatialHash extends SurfaceRenderer {
 	var wcube:VertexArray = null
 	var cube:VertexArray = null
 	
-	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 4, 4)
-	var particlesMesh:DynPointsMesh = null
-	var wcubeMesh:WireCube = null
-	var cubeMesh = new Cube(1)
+	var axisMesh = new AxisMesh(10)
+	var planeMesh = new PlaneMesh(2, 2, 4, 4)
+	var particlesMesh:PointsMesh = null
+	var wcubeMesh:WireCubeMesh = null
+	var cubeMesh = new CubeMesh(1)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -126,7 +111,7 @@ class TestSpatialHash extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -158,35 +143,23 @@ class TestSpatialHash extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
+		import VertexAttribute._
+
 		initParticles(size)
-		
-		var v = phongShad.getAttribLocation("position")
-		var c = phongShad.getAttribLocation("color")
-		var n = phongShad.getAttribLocation("normal")
-		
 		cubeMesh.setColor(Rgba.red)
-		
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		cube  = cubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
-		
-		wcubeMesh = new WireCube(bucketSize.toFloat)
+		wcubeMesh = new WireCubeMesh(bucketSize.toFloat)
 		wcubeMesh.setColor(new Rgba(1, 1, 1, 0.1))
-		wcube = wcubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 		
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
-		
-		v = particlesShad.getAttribLocation("position")
-		c = particlesShad.getAttribLocation("color") 
-		
-		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("colors", c))
+		plane     = planeMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		cube      = cubeMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")		
+		wcube     = wcubeMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
+		axis      = axisMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
+		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, particlesShad, Vertex -> "position", Color -> "color")
 	}
 	
 	protected def initParticles(n:Int) {
 		simu = new ArrayBuffer[TestParticle](size)
-		particlesMesh = new DynPointsMesh(n) 
+		particlesMesh = new PointsMesh(n) 
 		
 		for(i <- 0 until n) {
 			val p = new TestParticle(random.nextFloat, random.nextFloat, random.nextFloat)
@@ -278,7 +251,7 @@ class TestSpatialHash extends SurfaceRenderer {
 		spaceHash.move(simuCube)
 		spaceHash.move(simuCube2)
 		
-		particlesMesh.updateVertexArray(gl, "vertices", "colors")
+		particlesMesh.updateVertexArray(gl, true, true)
 		gl.checkErrors
 	}
 	

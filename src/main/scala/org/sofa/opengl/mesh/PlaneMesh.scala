@@ -34,38 +34,93 @@ import GL3._
   * 
   * Triangles are in CW order.
   */
-class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, var isXY:Boolean)
-	extends Mesh with ColorableMesh with TangentSurfaceMesh
-		with IndexedMesh with TexturableMesh {
-    
+class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, var isXY:Boolean) extends Mesh {
+    import VertexAttribute._
+
     protected lazy val V:FloatBuffer = allocateVertices
+    
     protected lazy val C:FloatBuffer = allocateColors
+    
     protected lazy val N:FloatBuffer = allocateNormals
+    
     protected lazy val T:FloatBuffer = allocateTangents
+    
     protected lazy val X:FloatBuffer = allocateTexCoords
+    
     protected lazy val I:IntBuffer = allocateIndices
+
+    protected var textureRepeatS:Int = 1
+
+    protected var textureRepeatT:Int = 1
 
     def this(nVertX:Int, nVertZ:Int, width:Float, depth:Float) { this(nVertX, nVertZ, width, depth, false) }
 
-    def vertices:FloatBuffer = V
-    override def colors:FloatBuffer = C
-    override def normals:FloatBuffer = N
-    override def tangents:FloatBuffer = T
-    override def texCoords:FloatBuffer = X
+	/** Define how many times the texture repeats along the S and T coordinates. This must be
+	  * done before the plane is transformed to a mesh. */    
+    def setTextureRepeat(S:Int, T:Int) {
+        textureRepeatS = S
+        textureRepeatT = T
+    }
+
+	/** Set the color of the whole plane. This must be done before the plane is transformed to a mesh. */    
+    def setColor(color:Rgba) {
+        val n     = nVertX * nVertZ * 4
+        
+        for(i <- 0 until n by 4) {
+            C(i+0) = color.red.toFloat
+            C(i+1) = color.green.toFloat
+            C(i+2) = color.blue.toFloat
+            C(i+3) = color.alpha.toFloat
+        }
+    }
+
+    // -- Mesh interface --------------------------------------------------------
+
+    def attribute(name:String):FloatBuffer = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex   => V
+    		case VertexAttribute.Color    => C
+    		case VertexAttribute.Normal   => N
+    		case VertexAttribute.Tangent  => T
+    		case VertexAttribute.TexCoord => X
+    		case _                        => throw new RuntimeException("This mesh does not have a vertex attribute %s".format(name))
+    	}
+    }
+
+    def attributeCount:Int = 5
+
+    def attributes() = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString,
+    		VertexAttribute.Tangent.toString, VertexAttribute.TexCoord.toString, VertexAttribute.Color.toString)
+
+    def components(name:String):Int = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex   => 3
+    		case VertexAttribute.Color    => 4
+    		case VertexAttribute.Normal   => 3
+    		case VertexAttribute.Tangent  => 3
+    		case VertexAttribute.TexCoord => 2
+    		case _                        => throw new RuntimeException("This mesh does not have a vertex attribute %s".format(name))
+    	}
+    }
+
+    def has(name:String):Boolean = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex   => true
+    		case VertexAttribute.Color    => true
+    		case VertexAttribute.Normal   => true
+    		case VertexAttribute.Tangent  => true
+    		case VertexAttribute.TexCoord => true
+    		case _                        => false
+    	}    	
+    }
+
+    override def hasIndices():Boolean = true
+    
     override def indices:IntBuffer = I
     
-    protected var textureRepeatS:Int = 4
-    protected var textureRepeatT:Int = 4
+    def drawAs():Int = GL_TRIANGLES
 
-    override def hasColors = true
-    
-    override def hasIndices = true
-    
-    override def hasNormals = true
-    
-    override def hasTangents = true
-    
-    override def hasTexCoords = true
+    // -- Building ----------------------------------------------------------
     
     protected def allocateVertices:FloatBuffer = {
         val buf = new FloatBuffer(nVertX * nVertZ * 3)
@@ -103,11 +158,6 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, va
         }
         
         buf
-    }
-    
-    def setTextureRepeat(S:Int, T:Int) {
-        textureRepeatS = S
-        textureRepeatT = T
     }
     
     protected def allocateTexCoords:FloatBuffer = {
@@ -197,17 +247,4 @@ class Plane(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, va
 
         buf
     }
-    
-    def setColor(color:Rgba) {
-        val n     = nVertX * nVertZ * 4
-        
-        for(i <- 0 until n by 4) {
-            colors(i+0) = color.red.toFloat
-            colors(i+1) = color.green.toFloat
-            colors(i+2) = color.blue.toFloat
-            colors(i+3) = color.alpha.toFloat
-        }
-    }
-    
-    def drawAs():Int = GL_TRIANGLES
 }

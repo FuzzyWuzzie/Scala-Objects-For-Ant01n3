@@ -2,7 +2,7 @@ package org.sofa.opengl.test
 
 import org.sofa.opengl.VertexArray
 import org.sofa.opengl.SGL
-import org.sofa.opengl.mesh.Plane
+import org.sofa.opengl.mesh.PlaneMesh
 import org.sofa.opengl.mesh.EditableMesh
 import org.sofa.opengl.ShaderProgram
 import org.sofa.math.Matrix4
@@ -22,8 +22,7 @@ import org.sofa.opengl.surface.SurfaceRenderer
 import org.sofa.math.Vector4
 import org.sofa.opengl.Shader
 import org.sofa.math.Vector3
-import org.sofa.opengl.mesh.MeshDrawMode
-import org.sofa.opengl.mesh.DynTriangleMesh
+import org.sofa.opengl.mesh.UnindexedTrianglesMesh
 
 object TestDynTriangleMesh {
 	def main(args:Array[String]):Unit = { (new TestDynTriangleMesh).test }
@@ -43,8 +42,8 @@ class TestDynTriangleMesh extends SurfaceRenderer {
 	var plane:VertexArray = null
 	
 	val maxTriangles = 10
-	val thingMesh = new DynTriangleMesh(maxTriangles)
-	val planeMesh = new Plane(2, 2, 4, 4)
+	val thingMesh = new UnindexedTrianglesMesh(maxTriangles)
+	val planeMesh = new PlaneMesh(2, 2, 4, 4)
 
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -79,7 +78,7 @@ class TestDynTriangleMesh extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "src-scala/org/sofa/opengl/shaders"
+		Shader.path += "src-scala/org/sofa/opengl/shaders"
 			
 		initGL(sgl)
 		initShaders
@@ -180,7 +179,7 @@ class TestDynTriangleMesh extends SurfaceRenderer {
 			thingMesh.autoComputeNormal(i)
 		}
 		
-		thingMesh.updateVertexArray(gl, "vertices", "colors", "normals")
+		thingMesh.updateVertexArray(gl, true, true, true)
 	}
 	
 	def reshape(surface:Surface) {

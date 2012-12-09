@@ -1,7 +1,7 @@
 package org.sofa.opengl.test
 
 import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Camera, Shader, Texture}
-import org.sofa.opengl.mesh.{Plane, EditableMesh, MeshDrawMode, Mesh}
+import org.sofa.opengl.mesh.{PlaneMesh, EditableMesh, Mesh, VertexAttribute}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
 import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3}
 import org.sofa.opengl.io.collada.{ColladaFile}
@@ -28,7 +28,7 @@ class TestColladaImport2 extends SurfaceRenderer {
 	var normals:VertexArray = null
 
 	var thingMesh:Mesh = null
-	val planeMesh = new Plane(2, 2, 4, 4)
+	val planeMesh = new PlaneMesh(2, 2, 4, 4)
 	var normalsMesh:Mesh = null
 
 	var colorTex:Texture = null
@@ -68,8 +68,8 @@ class TestColladaImport2 extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/textures"
+		Shader.path  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Texture.path += "/Users/antoine/Documents/Programs/SOFA/textures"
 		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
 
 		initGL(sgl)
@@ -115,27 +115,13 @@ class TestColladaImport2 extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
+		import VertexAttribute._
+
 		initThing
 	
-		var v = nMapShad.getAttribLocation("position")
-	    var n = nMapShad.getAttribLocation("normal")
-	    var t = nMapShad.getAttribLocation("tangent")
-//	    var b = nMapShad.getAttribLocation("bitangent")
-	    var u = nMapShad.getAttribLocation("texCoords")
-
-//		thing = thingMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangents", t), ("bitangents", b), ("texCoords", u))
-		thing = thingMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangents", t), ("texCoords", u))
-	
-		v     = phongShad.getAttribLocation("position")
-		var c = phongShad.getAttribLocation("color")
-		n     = phongShad.getAttribLocation("normal")
-
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
-
-		normals = normalsMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		thing   = thingMesh.newVertexArray(gl, nMapShad, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
+		plane   = planeMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		normals = normalsMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 	}
 	
 	def initThing() {
@@ -146,7 +132,6 @@ class TestColladaImport2 extends SurfaceRenderer {
 		thingMesh = model.library.geometry("Cube").mesh.toMesh
 
 		thingMesh.asInstanceOf[EditableMesh].autoComputeTangents(true)			// Also compute handedness and store 4-component tangents
-//		thingMesh.asInstanceOf[EditableMesh].autoComputeTangents(false,true)	// Also compute bitangentss
 
 		// Now show the normals and tangents
 

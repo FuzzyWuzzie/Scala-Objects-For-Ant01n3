@@ -11,7 +11,7 @@ object Shader {
     val includeMatcher = "#include\\s+<([^>]+)>\\s*".r
 
     /** The set of paths to try to load a shader. */
-    val includePath = scala.collection.mutable.ArrayBuffer[String]()
+    val path = scala.collection.mutable.ArrayBuffer[String]()
 
     /** A way to load a shader source. */
     var loader:ShaderLoader = new DefaultShaderLoader()
@@ -58,7 +58,7 @@ class DefaultShaderLoader extends ShaderLoader {
         } else {
             val sep = sys.props.get("file.separator").get
 
-            Shader.includePath.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
+            Shader.path.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
                 case path:Some[String] => {new FileInputStream(new File("%s%s%s".format(path.get,sep,resource))) }
                 case None => { throw new IOException("cannot locate shader %s".format(resource)) }
             }

@@ -16,36 +16,85 @@ import GL3._
   * 
   * Triangles are in CW order.
   */
-class Cube(val side:Float)
-	extends Mesh with ColorableMesh with IndexedMesh
-	with SurfaceMesh with TexturableMesh with TangentSurfaceMesh {
+class CubeMesh(val side:Float) extends Mesh {
     
     protected lazy val V:FloatBuffer = allocateVertices
     protected lazy val C:FloatBuffer = allocateColors
     protected lazy val N:FloatBuffer = allocateNormals
-    protected lazy val I:IntBuffer = allocateIndices
     protected lazy val X:FloatBuffer = allocateTexCoords
     protected lazy val T:FloatBuffer = allocateTangents
+    protected lazy val I:IntBuffer = allocateIndices
 
     protected var textureRepeatS:Int = 1
+    
     protected var textureRepeatT:Int = 1
 
-    def vertices:FloatBuffer = V
-    override def colors:FloatBuffer = C
-    override def normals:FloatBuffer = N
-    override def indices:IntBuffer = I
-    override def texCoords:FloatBuffer = X
-    override def tangents:FloatBuffer = T
-        
-    override def hasColors = true
+	/** Define how many times the texture repeats along the S and T coordinates. This must be
+	  * done before the plane is transformed to a mesh. */    
+    def setTextureRepeat(S:Int, T:Int) {
+        textureRepeatS = S
+        textureRepeatT = T
+    }
 
-    override def hasIndices = true
+    /** Set the color of each face. This must be done before a mesh is produced. */
+    def setColor(color:Rgba) {
+    	val n = 6 * 4 * 4
+    	
+    	for(i <- 0 until n by 4) {
+    		C(i+0) = color.red.toFloat
+    		C(i+1) = color.green.toFloat
+    		C(i+2) = color.blue.toFloat
+    		C(i+3) = color.alpha.toFloat
+    	}
+    }
+
+    // -- Mesh interface ---------------------------------------------
+
+    def attribute(name:String):FloatBuffer = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex   => V
+    		case VertexAttribute.Color    => C
+    		case VertexAttribute.Normal   => N
+    		case VertexAttribute.TexCoord => X
+    		case VertexAttribute.Tangent  => T
+    		case _                        => throw new RuntimeException("mesh has no attribute %s".format(name))
+    	}
+    }
+
+    override def indices:IntBuffer = I
+
+    def attributeCount():Int = 5
+
+    def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString,
+    		VertexAttribute.Tangent.toString, VertexAttribute.TexCoord.toString, VertexAttribute.Color.toString)
+
+    def components(name:String):Int = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex   => 3
+    		case VertexAttribute.Color    => 4
+    		case VertexAttribute.Normal   => 3
+    		case VertexAttribute.TexCoord => 2
+    		case VertexAttribute.Tangent  => 3
+    		case _                        => throw new RuntimeException("mesh has no attribute %s".format(name))
+    	}    	
+    }
+
+	def has(name:String):Boolean = {
+    	VertexAttribute.withName(name) match {
+    		case VertexAttribute.Vertex   => true
+    		case VertexAttribute.Color    => true
+    		case VertexAttribute.Normal   => true
+    		case VertexAttribute.TexCoord => true
+    		case VertexAttribute.Tangent  => true
+    		case _                        => false
+    	}
+	}
+
+    override def hasIndices():Boolean = true
     
-    override def hasNormals = true
-    
-    override def hasTexCoords = true
-    
-    override def hasTangents = true
+    def drawAs:Int = GL_TRIANGLES    
+
+	// -- Building ---------------------------------------------------
     
     protected def allocateVertices:FloatBuffer = {
         val s = side / 2f
@@ -131,18 +180,6 @@ class Cube(val side:Float)
         }
         
         buf
-    }
-    
-    /** Set the color of each face. */
-    def setColor(color:Rgba) {
-    	val n = 6 * 4 * 4
-    	
-    	for(i <- 0 until n by 4) {
-    		C(i+0) = color.red.toFloat
-    		C(i+1) = color.green.toFloat
-    		C(i+2) = color.blue.toFloat
-    		C(i+3) = color.alpha.toFloat
-    	}
     }
 
     protected def allocateNormals:FloatBuffer = {
@@ -234,6 +271,4 @@ class Cube(val side:Float)
         20, 22, 21,
         20, 23, 22)
     }
-    
-    def drawAs:Int = GL_TRIANGLES    
 }

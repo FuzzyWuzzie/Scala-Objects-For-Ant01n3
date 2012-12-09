@@ -3,7 +3,7 @@ package org.sofa.opengl.test
 import org.sofa.Timer
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
 import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, TextureFramebuffer}
-import org.sofa.opengl.mesh.{Plane, Cube, WireCube, Axis, DynPointsMesh, DynIndexedTriangleMesh}
+import org.sofa.opengl.mesh.{PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, PointsMesh, TrianglesMesh, VertexAttribute}
 import org.sofa.opengl.text.{GLFont, GLString}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
@@ -24,9 +24,9 @@ class TestSpyceDisplay extends SurfaceRenderer {
 	var spyceShad:ShaderProgram = null
 	var textShad:ShaderProgram = null
 
-	val wallMesh:Array[Plane] = new Array[Plane](4)	
-	val axisMesh = new Axis(10)
-	var trianglesMesh = new DynIndexedTriangleMesh(8)
+	val wallMesh:Array[PlaneMesh] = new Array[PlaneMesh](4)	
+	val axisMesh = new AxisMesh(10)
+	var trianglesMesh = new TrianglesMesh(8)
 
 	var wall:Array[VertexArray] = new Array[VertexArray](8)
 	var axis:VertexArray = null
@@ -77,7 +77,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -151,29 +151,15 @@ class TestSpyceDisplay extends SurfaceRenderer {
 	val LeftWall = 3
 
 	def initGeometry() {
-		wallMesh(Ground)    = new Plane(2, 2, 2, 1, false)
-		wallMesh(BackWall)  = new Plane(2, 2, 2, 1, true)
+		import VertexAttribute._
+
+		wallMesh(Ground)    = new PlaneMesh(2, 2, 2, 1, false)
+		wallMesh(BackWall)  = new PlaneMesh(2, 2, 2, 1, true)
 		wallMesh(RightWall) = null
 		wallMesh(LeftWall)  = null
 
-		var v = phongShad.getAttribLocation("position")
-		var c = phongShad.getAttribLocation("color")
-		var n = phongShad.getAttribLocation("normal")
-
 		wallMesh(Ground).setColor(Rgba.black)
-		wall(Ground) = wallMesh(Ground).newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		
-		v = phtexShad.getAttribLocation("position")
-		n = phtexShad.getAttribLocation("normal")
-		c = phtexShad.getAttribLocation("texCoords")
-
 		wallMesh(BackWall).setTextureRepeat(1,1)
-		wall(BackWall) = wallMesh(BackWall).newVertexArray(gl, ("vertices", v), ("normals", n), ("texcoords", c))
-
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
-		
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 
 		// Init the triangles
 
@@ -202,7 +188,12 @@ class TestSpyceDisplay extends SurfaceRenderer {
 			i += 1
 		}	
 
-		triangles = trianglesMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		// Creater VAs
+
+		wall(Ground) = wallMesh(Ground).newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")		
+		wall(BackWall) = wallMesh(BackWall).newVertexArray(gl, phtexShad, Vertex -> "position", Normal -> "normal", TexCoord -> "texCoords")
+		axis = axisMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
+		triangles = trianglesMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 	}	
 
 	var angle = 0.0

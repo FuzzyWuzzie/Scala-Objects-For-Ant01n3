@@ -7,7 +7,7 @@ import org.sofa.opengl.surface.Surface
 import org.sofa.math.Matrix4
 import org.sofa.opengl.MatrixStack
 import org.sofa.opengl.ShaderProgram
-import org.sofa.opengl.mesh.Plane
+import org.sofa.opengl.mesh.PlaneMesh
 import org.sofa.opengl.VertexArray
 import org.sofa.opengl.Camera
 import org.sofa.opengl.surface.BasicCameraController
@@ -17,13 +17,12 @@ import javax.media.opengl.GLCapabilities
 import javax.media.opengl.GLProfile
 import org.sofa.math.Vector3
 import org.sofa.opengl.Shader
-import org.sofa.opengl.mesh.DynPointsMesh
+import org.sofa.opengl.mesh.PointsMesh
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
 import org.sofa.math.Point3
-import org.sofa.opengl.mesh.Cube
-import org.sofa.opengl.mesh.WireCube
-import org.sofa.opengl.mesh.WireCube
-import org.sofa.opengl.mesh.Axis
+import org.sofa.opengl.mesh.CubeMesh
+import org.sofa.opengl.mesh.WireCubeMesh
+import org.sofa.opengl.mesh.AxisMesh
 import org.sofa.math.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject}
 
 object TestSpatialHashNeighboring {
@@ -84,11 +83,11 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 	var wcube:VertexArray = null
 	var cube:VertexArray = null
 	
-	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 4, 4)
-	var particlesMesh:DynPointsMesh = null
-	var wcubeMesh:WireCube = null
-	var cubeMesh = new Cube(1)
+	var axisMesh = new AxisMesh(10)
+	var planeMesh = new PlaneMesh(2, 2, 4, 4)
+	var particlesMesh:PointsMesh = null
+	var wcubeMesh:WireCubeMesh = null
+	var cubeMesh = new CubeMesh(1)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -132,7 +131,7 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -178,7 +177,7 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 		v = plainShad.getAttribLocation("position")
 		c = plainShad.getAttribLocation("color")
 		
-		wcubeMesh = new WireCube(bucketSize.toFloat)
+		wcubeMesh = new WireCubeMesh(bucketSize.toFloat)
 		wcubeMesh.setColor(new Rgba(1, 1, 1, 0.1))
 		wcube = wcubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
 		
@@ -192,7 +191,7 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 	
 	protected def initParticles(n:Int) {
 		simu = new ArrayBuffer[TestParticle2](size)
-		particlesMesh = new DynPointsMesh(n) 
+		particlesMesh = new PointsMesh(n) 
 		
 		var p = new TestParticle2(0, 0, 1, 0); simu += p; spaceHash.add(p); particlesMesh.setPoint(0, p.x); particlesMesh.setColor(0, Rgba.red)
 		val angle = (math.Pi*2) / (n-1)
@@ -305,7 +304,7 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 		simuCube.move()
 		spaceHash.move(simuCube)
 		
-		particlesMesh.updateVertexArray(gl, "vertices", "colors")
+		particlesMesh.updateVertexArray(gl, true, true)
 		gl.checkErrors
 	}
 	

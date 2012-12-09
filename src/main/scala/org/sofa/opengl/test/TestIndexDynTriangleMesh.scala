@@ -2,7 +2,7 @@ package org.sofa.opengl.test
 
 import org.sofa.opengl.VertexArray
 import org.sofa.opengl.SGL
-import org.sofa.opengl.mesh.Plane
+import org.sofa.opengl.mesh.PlaneMesh
 import org.sofa.opengl.mesh.EditableMesh
 import org.sofa.opengl.ShaderProgram
 import org.sofa.math.Matrix4
@@ -22,9 +22,7 @@ import org.sofa.opengl.surface.SurfaceRenderer
 import org.sofa.math.Vector4
 import org.sofa.opengl.Shader
 import org.sofa.math.Vector3
-import org.sofa.opengl.mesh.MeshDrawMode
-import org.sofa.opengl.mesh.DynTriangleMesh
-import org.sofa.opengl.mesh.DynIndexedTriangleMesh
+import org.sofa.opengl.mesh.TrianglesMesh
 
 object TestIndexedDynTriangleMesh {
 	def main(args:Array[String]):Unit = { (new TestIndexedDynTriangleMesh).test }
@@ -44,8 +42,8 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 	var plane:VertexArray = null
 	
 	val maxTriangles = 9
-	val thingMesh = new DynIndexedTriangleMesh(maxTriangles)
-	val planeMesh = new Plane(2, 2, 4, 4)
+	val thingMesh = new TrianglesMesh(maxTriangles)
+	val planeMesh = new PlaneMesh(2, 2, 4, 4)
 
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -80,7 +78,7 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -217,7 +215,7 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 		thingMesh.setPointNormal(8, 0, 0, 1)
 		thingMesh.setPointNormal(9, 0, 0, 1)
 		
-		thingMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
+		thingMesh.updateVertexArray(gl, true, true ,true, false)
 	}
 	
 	def reshape(surface:Surface) {

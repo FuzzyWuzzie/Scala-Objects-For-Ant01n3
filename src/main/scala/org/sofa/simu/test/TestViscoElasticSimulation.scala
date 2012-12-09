@@ -6,7 +6,7 @@ import org.sofa.opengl.surface.Surface
 import org.sofa.math.Matrix4
 import org.sofa.opengl.MatrixStack
 import org.sofa.opengl.ShaderProgram
-import org.sofa.opengl.mesh.Plane
+import org.sofa.opengl.mesh.PlaneMesh
 import org.sofa.opengl.VertexArray
 import org.sofa.opengl.Camera
 import org.sofa.opengl.surface.BasicCameraController
@@ -16,28 +16,26 @@ import javax.media.opengl.GLCapabilities
 import javax.media.opengl.GLProfile
 import org.sofa.math.Vector3
 import org.sofa.opengl.Shader
-import org.sofa.opengl.mesh.DynPointsMesh
+import org.sofa.opengl.mesh.PointsMesh
 import scala.collection.mutable.ArrayBuffer
 import org.sofa.math.Point3
-import org.sofa.opengl.mesh.Cube
-import org.sofa.opengl.mesh.WireCube
-import org.sofa.opengl.mesh.ColoredLineSet
-import org.sofa.opengl.mesh.Axis
+import org.sofa.opengl.mesh.CubeMesh
+import org.sofa.opengl.mesh.WireCubeMesh
+import org.sofa.opengl.mesh.LinesMesh
+import org.sofa.opengl.mesh.AxisMesh
 import org.sofa.math.SpatialPoint
 import org.sofa.math.SpatialCube
 import org.sofa.math.SpatialHash
 import org.sofa.opengl.Texture
 import org.sofa.math.IsoSurfaceSimple
-import org.sofa.opengl.mesh.DynTriangleMesh
+import org.sofa.opengl.mesh.TrianglesMesh
+import org.sofa.opengl.mesh.UnindexedTrianglesMesh
 import org.sofa.opengl.surface.KeyEvent
 import org.sofa.math.IsoSurface
-import org.sofa.opengl.mesh.DynIndexedTriangleMesh
+import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 import org.sofa.simu.ViscoElasticSimulation
 import org.sofa.simu.Particle
 import org.sofa.simu.QuadWall
-import org.sofa.opengl.mesh.TriangleSet
-import org.sofa.opengl.mesh.ColoredTriangleSet
-import org.sofa.opengl.mesh.ColoredSurfaceTriangleSet
 import org.sofa.Environment
 
 object TestViscoElasticSimulation {
@@ -105,14 +103,14 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	var obstacles:VertexArray = null
 	var springs:VertexArray = null
 	
-	var axisMesh = new Axis(10)
-	var planeMesh = new Plane(2, 2, 10, 10)
-	var particlesMesh:DynPointsMesh = null
-	var wcubeMesh:WireCube = null
-	var wcubeMesh2:WireCube = null
-	var isoSurfaceMesh = new DynIndexedTriangleMesh(maxDynTriangles)
-	var obstaclesMesh = new ColoredSurfaceTriangleSet(4)
-	var springsMesh = new ColoredLineSet(maxSprings)
+	var axisMesh = new AxisMesh(10)
+	var planeMesh = new PlaneMesh(2, 2, 10, 10)
+	var particlesMesh:PointsMesh = null
+	var wcubeMesh:WireCubeMesh = null
+	var wcubeMesh2:WireCubeMesh = null
+	var isoSurfaceMesh = new TrianglesMesh(maxDynTriangles)
+	var obstaclesMesh = new UnindexedTrianglesMesh(4)
+	var springsMesh = new LinesMesh(maxSprings)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -158,8 +156,8 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-		Shader.includePath += "src/com/chouquette/tests"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "src/com/chouquette/tests"
 			
 		initSimuParams
 		initGL(sgl)
@@ -198,43 +196,33 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	}
 	
 	protected def initGeometry() {
+		import VertexAttribute._
+
 		initParticles		
 		initSimu
 
-		// Phong shader
-		
-		var v = phongShad.getAttribLocation("position")
-		var c = phongShad.getAttribLocation("color")
-		var n = phongShad.getAttribLocation("normal")
-		
 		planeMesh.setColor(Rgba.red)
-		
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		obstacles = obstaclesMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		wcubeMesh = new WireCubeMesh(simu.spaceHash.bucketSize.toFloat)
+		wcubeMesh2 = new WireCubeMesh(isoCellSize.toFloat)
+		wcubeMesh.setColor(Rgba(1, 1, 1, 0.5))
+		wcubeMesh2.setColor(Rgba(1, 0, 0, 0.2))
+
+		// Phong shader
+				
+		plane      = planeMesh.newVertexArray(     gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		isoSurface = isoSurfaceMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		obstacles  = obstaclesMesh.newVertexArray( gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 		
 		// Plain shader
 		
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
-		
-		wcubeMesh = new WireCube(simu.spaceHash.bucketSize.toFloat)
-		wcubeMesh2 = new WireCube(isoCellSize.toFloat)
-		wcubeMesh.setColor(Rgba(1, 1, 1, 0.5))
-		wcubeMesh2.setColor(Rgba(1, 0, 0, 0.2))
-		wcube = wcubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
-		wcube2 = wcubeMesh2.newVertexArray(gl, ("vertices", v), ("colors", c))
-		
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
-		
-		springs = springsMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		wcube   = wcubeMesh.newVertexArray(  gl, plainShad, Vertex -> "position", Color -> "color")
+		wcube2  = wcubeMesh2.newVertexArray( gl, plainShad, Vertex -> "position", Color -> "color")
+		axis    = axisMesh.newVertexArray(   gl, plainShad, Vertex -> "position", Color -> "color")		
+		springs = springsMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 
 		// Particles shader
 		
-		v = particlesShad.getAttribLocation("position")
-		c = particlesShad.getAttribLocation("color") 
-		
-		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("colors", c))
+		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, particlesShad, Vertex -> "position", Color -> "color")
 
 		for(i <- 0 until maxDynTriangles*3) {
 			isoSurfaceMesh.setPointColor(i, isoSurfaceColor)
@@ -247,7 +235,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	}
 	
 	protected def initParticles {
-		particlesMesh = new DynPointsMesh(size) 
+		particlesMesh = new PointsMesh(size) 
 		
 		for(i <- 0 until size) {
 			particlesMesh.setPoint(i, 0, 200, 0) // make them invisible.
@@ -447,7 +435,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 				i += 1
 			}
 		
-			particlesMesh.updateVertexArray(gl, "vertices", "colors")
+			particlesMesh.updateVertexArray(gl, true, true)
 			gl.checkErrors
 		}
 
@@ -459,7 +447,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 				i += 1
 			}
 
-			springsMesh.updateVertexArray(gl, "vertices", "colors")
+			springsMesh.updateVertexArray(gl, true, true)
 			gl.checkErrors
 		}
 		
@@ -486,7 +474,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 				}				
 			}
 			
-			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
+			isoSurfaceMesh.updateVertexArray(gl, true, true, true, false)
 		}
 	}
 	

@@ -1,7 +1,7 @@
 package org.sofa.opengl.test
 
 import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Camera, Shader, Texture}
-import org.sofa.opengl.mesh.{Mesh, Plane, EditableMesh, ColoredLineSet, MeshDrawMode}
+import org.sofa.opengl.mesh.{Mesh, PlaneMesh, EditableMesh, LinesMesh}
 import org.sofa.opengl.surface.{Surface, BasicCameraController, SurfaceRenderer}
 import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3, Point3}
 import javax.media.opengl.{GLProfile, GLAutoDrawable, GLCapabilities, GLEventListener}
@@ -29,7 +29,7 @@ class TestEditableMesh2 extends SurfaceRenderer {
 	var normals:VertexArray = null
 	
 	val thingMesh = new EditableMesh()
-	val planeMesh = new Plane(2, 2, 4, 4)
+	val planeMesh = new PlaneMesh(2, 2, 4, 4)
 	var normalsMesh:Mesh = null
 
 	var colorTex:Texture = null
@@ -70,8 +70,8 @@ class TestEditableMesh2 extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-		Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/textures/"
+		Shader.path  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Texture.path += "/Users/antoine/Documents/Programs/SOFA/textures/"
 
 		initGL(sgl)
 		initTextures
@@ -155,7 +155,7 @@ class TestEditableMesh2 extends SurfaceRenderer {
 			thingMesh.vertex(1, 2, 0)	// 4
 		}
 		
-		thingMesh.buildIndices(MeshDrawMode.TRIANGLES) {
+		thingMesh.buildIndices {
 			thingMesh.index(0)
 			thingMesh.index(1)
 			thingMesh.index(2)

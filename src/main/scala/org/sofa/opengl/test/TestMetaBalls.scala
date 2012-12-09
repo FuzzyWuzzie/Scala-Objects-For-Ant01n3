@@ -1,37 +1,11 @@
 package org.sofa.opengl.test
 
-import org.sofa.opengl.surface.SurfaceRenderer
-import org.sofa.opengl.SGL
-import org.sofa.opengl.surface.Surface
-import org.sofa.math.Matrix4
-import org.sofa.opengl.MatrixStack
-import org.sofa.opengl.ShaderProgram
-import org.sofa.opengl.mesh.Plane
-import org.sofa.opengl.VertexArray
-import org.sofa.opengl.Camera
-import org.sofa.opengl.surface.BasicCameraController
-import org.sofa.math.Rgba
-import org.sofa.math.Vector4
-import javax.media.opengl.GLCapabilities
-import javax.media.opengl.GLProfile
-import org.sofa.math.Vector3
-import org.sofa.opengl.Shader
-import org.sofa.opengl.mesh.DynPointsMesh
+import org.sofa.opengl.{SGL, MatrixStack, ShaderProgram, VertexArray, Camera, Shader}
+import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController, KeyEvent}
+import org.sofa.opengl.mesh.{PlaneMesh, PointsMesh, CubeMesh, AxisMesh, WireCubeMesh, TrianglesMesh, VertexAttribute}
+import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurfaceSimple, IsoSurface, IsoCube}
+import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.ArrayBuffer
-import org.sofa.math.Point3
-import org.sofa.opengl.mesh.Cube
-import org.sofa.opengl.mesh.WireCube
-import org.sofa.opengl.mesh.WireCube
-import org.sofa.opengl.mesh.Axis
-import org.sofa.math.SpatialPoint
-import org.sofa.math.SpatialCube
-import org.sofa.math.SpatialHash
-import org.sofa.math.IsoSurfaceSimple
-import org.sofa.opengl.mesh.DynTriangleMesh
-import org.sofa.math.IsoSurface
-import org.sofa.opengl.mesh.DynIndexedTriangleMesh
-import org.sofa.opengl.surface.KeyEvent
-import org.sofa.math.IsoCube
 
 object TestMetaBalls {
 	def main(args:Array[String]) = (new TestMetaBalls).test
@@ -126,11 +100,11 @@ class TestMetaBalls extends SurfaceRenderer {
 	var wcubeIso2:VertexArray = null
 	var isoSurface:VertexArray = null
 	
-	var axisMesh = new Axis(10)
-	var particlesMesh:DynPointsMesh = null
-	var wcubeMesh:WireCube = null
-	var wcubeIsoMesh:WireCube = null
-	var isoSurfaceMesh:DynIndexedTriangleMesh = new DynIndexedTriangleMesh(maxDynTriangles)
+	var axisMesh = new AxisMesh(10)
+	var particlesMesh:PointsMesh = null
+	var wcubeMesh:WireCubeMesh = null
+	var wcubeIsoMesh:WireCubeMesh = null
+	var isoSurfaceMesh:TrianglesMesh = new TrianglesMesh(maxDynTriangles)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -170,7 +144,7 @@ class TestMetaBalls extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -204,35 +178,27 @@ class TestMetaBalls extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
+		import VertexAttribute._
+
 		initBalls(metaBallCount)
 
-		var v = phongShad.getAttribLocation("position")
-		var c = phongShad.getAttribLocation("color")
-		var n = phongShad.getAttribLocation("normal")
+		isoSurface = isoSurfaceMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 		
-		isoSurface = isoSurfaceMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-
-		v = plainShad.getAttribLocation("position")
-		c = plainShad.getAttribLocation("color")
-		
-		wcubeMesh = new WireCube(bucketSize.toFloat)
-		wcube = wcubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		wcubeMesh = new WireCubeMesh(bucketSize.toFloat)
+		wcube = wcubeMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 		
 		wcubeMesh.setColor(Rgba(1, 1, 1, 0.1))
-		wcubeIsoMesh = new WireCube(isoCellSize.toFloat)
+		wcubeIsoMesh = new WireCubeMesh(isoCellSize.toFloat)
 		
 		wcubeIsoMesh.setColor(Rgba(1, 0, 0, 0.2))
-		wcubeIso1 = wcubeIsoMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		wcubeIso1 = wcubeIsoMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 		
 		wcubeIsoMesh.setColor(Rgba(0, 0, 1, 0.2))
-		wcubeIso2 = wcubeIsoMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		wcubeIso2 = wcubeIsoMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 		
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		axis = axisMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 		
-		v = particlesShad.getAttribLocation("position")
-		c = particlesShad.getAttribLocation("color") 
-		
-		particles = particlesMesh.newVertexArray(gl, gl.STATIC_DRAW, ("vertices", v), ("colors", c))
+		particles = particlesMesh.newVertexArray(gl, particlesShad, Vertex -> "position", Color -> "color")
 
 		for(i <- 0 until maxDynTriangles*3) {
 			isoSurfaceMesh.setPointColor(i, surfaceColor)
@@ -241,7 +207,7 @@ class TestMetaBalls extends SurfaceRenderer {
 	
 	protected def initBalls(n:Int) {
 		balls = new ArrayBuffer[MetaBall](n)
-		particlesMesh = new DynPointsMesh(n) 
+		particlesMesh = new PointsMesh(n) 
 		
 		for(i <- 0 until n) {
 			val p = new MetaBall(random.nextDouble*2-1, random.nextDouble*2-1, random.nextDouble*2-1)
@@ -378,7 +344,7 @@ class TestMetaBalls extends SurfaceRenderer {
 				}
 			}
 			
-			isoSurfaceMesh.updateVertexArray(gl, "vertices", "colors", "normals", null)
+			isoSurfaceMesh.updateVertexArray(gl, true, true, true, false)
 		}
 	}
 	
@@ -416,7 +382,7 @@ class TestMetaBalls extends SurfaceRenderer {
 			i += 1
 		}
 		
-		particlesMesh.updateVertexArray(gl, "vertices", "colors")
+		particlesMesh.updateVertexArray(gl, true, true)
 		
 		buildIsoSurface
 		

@@ -3,7 +3,7 @@ package org.sofa.opengl.test
 import org.sofa.Timer
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
 import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, TextureFramebuffer}
-import org.sofa.opengl.mesh.{Plane, Cube, WireCube, Axis, DynPointsMesh}
+import org.sofa.opengl.mesh.{PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, PointsMesh, VertexAttribute}
 import org.sofa.opengl.text.{GLFont, GLString}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
@@ -60,7 +60,7 @@ class TestText2 extends SurfaceRenderer {
 	var plainShad:ShaderProgram = null
 	
 	var axis:VertexArray = null	
-	var axisMesh = new Axis(10)
+	var axisMesh = new AxisMesh(10)
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -97,7 +97,7 @@ class TestText2 extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -143,10 +143,9 @@ class TestText2 extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
-		val v = plainShad.getAttribLocation("position")
-		val c = plainShad.getAttribLocation("color")
+		import VertexAttribute._
 		
-		axis = axisMesh.newVertexArray(gl, ("vertices", v), ("colors", c))		
+		axis = axisMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")		
 	}	
 
 	def display(surface:Surface) {

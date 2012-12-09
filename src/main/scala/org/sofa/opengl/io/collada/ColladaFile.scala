@@ -9,6 +9,8 @@ object ColladaFile{
 
 	/** System independant loader. */
 	var loader:ColladaLoader = new DefaultColladaLoader()
+
+	def apply(resource:String):ColladaFile = new ColladaFile(resource)
 }
 
 /** A Collada file, assets, library of elements and a scene. */
@@ -62,8 +64,11 @@ class Library(root:NodeSeq) {
 	/** All the lights. */
 	val lights = new HashMap[String,Light]()
 	
-	/** All the geometries. */
+	/** All the geometries by name. */
 	val geometries = new HashMap[String,Geometry]()
+
+	/** all the geometries by id. */
+	val geometriesById = new HashMap[String,Geometry]()
 
 	/** All the controllers. **/
 	val controllers = new HashMap[String,Controller]()
@@ -96,6 +101,7 @@ class Library(root:NodeSeq) {
 		(root \\ "library_geometries" \ "geometry").foreach { node =>
 			val geometry = Geometry(node)
 			geometries += ((geometry.name, geometry))
+			geometriesById += ((geometry.id, geometry))
 		}
 		// Controllers
 		(root \\ "library_controllers" \ "controller").foreach { node =>
@@ -106,6 +112,19 @@ class Library(root:NodeSeq) {
 		(root \\ "library_visual_scenes" \ "visual_scene").foreach { node =>
 			val visualScene = VisualScene(node)
 			visualScenes += ((visualScene.name, visualScene))
+		}
+
+		tieControllersWithGeomtries
+	}
+
+	protected def tieControllersWithGeomtries() {
+		controllers.foreach { controller =>
+			val geometry = geometriesById.get(controller._2.skin.source).getOrElse({
+				throw new RuntimeException("Cannot tie controller (%s (%s)) skin with geometry %s, no such geometry id".format(
+					controller._2.name, controller._2.id, controller._2.skin.source))
+			})
+
+			geometry.mesh.setController(controller._2)
 		}
 	}
 	

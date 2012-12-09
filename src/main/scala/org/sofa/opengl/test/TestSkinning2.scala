@@ -12,7 +12,7 @@ import org.sofa.math.{Rgba, Vector3, Vector4}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
-import org.sofa.opengl.mesh.{Plane, Mesh, BoneMesh, EditableMesh}
+import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute}
 import org.sofa.opengl.mesh.skeleton._
 
 object TestSkinning2 {
@@ -33,11 +33,11 @@ class TestSkinning2 extends SurfaceRenderer {
 // Geometry
 
     var ground:VertexArray = null
-    var tube:VertexArray = null
+    var thing:VertexArray = null
     var bone:VertexArray = null
     
-    val groundMesh = new Plane(2, 2, 4 , 4)
-    var tubeMesh:Mesh = null
+    val groundMesh = new PlaneMesh(2, 2, 4 , 4)
+    var thingMesh:Mesh = null
     val boneMesh = new BoneMesh()
     
     var skeleton:Bone = null
@@ -55,6 +55,7 @@ class TestSkinning2 extends SurfaceRenderer {
     
     var groundColor:Texture = null
     var groundNMap:Texture = null
+    var thingColor:Texture = null
 
 // Go
         
@@ -85,8 +86,8 @@ class TestSkinning2 extends SurfaceRenderer {
 // Rendering
     
 	def initializeSuface(gl:SGL, surface:Surface) {
-	    Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-	    Texture.includePath += "/Users/antoine/Documents/Programs/SOFA/textures"
+	    Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+	    Texture.path += "/Users/antoine/Documents/Programs/SOFA/textures"
 		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
 
 	    initGL(gl)
@@ -131,7 +132,7 @@ class TestSkinning2 extends SurfaceRenderer {
 	}
 	
 	protected def initShaders() {
-	    phongShader = ShaderProgram(gl, "phong",       "es2/phonghi.vert.glsl",      "es2/phonghi.frag.glsl")
+	    phongShader = ShaderProgram(gl, "phong tex",   "es2/phonghitex.vert.glsl",   "es2/phonghitex.frag.glsl")
 	    nmapShader  = ShaderProgram(gl, "phong n-map", "es2/phonghinmapw.vert.glsl", "es2/phonghinmapw.frag.glsl")
 	    plainShader = ShaderProgram(gl, "plain",       "es2/plainColor.vert.glsl",   "es2/plainColor.frag.glsl")
 	//	boneShader  = ShaderProgram(gl, "phong bones", "es2/phonghibone.vert.glsl",  "es2/phonghibone.frag.glsl")
@@ -151,28 +152,20 @@ Console.err.println("%s".format(model))
 		model.library.geometry("Cube").mesh.mergeVertices(true)
 		model.library.geometry("Cube").mesh.blenderToOpenGL(true)
 
-		tubeMesh = model.library.geometry("Cube").mesh.toMesh
+		thingMesh = model.library.geometry("Cube").mesh.toMesh
 
-		tubeMesh.asInstanceOf[EditableMesh].autoComputeTangents(true)
+		thingMesh.asInstanceOf[EditableMesh].autoComputeTangents(true)
 	}
 	
 	protected def initGeometry() {
-	    var v = nmapShader.getAttribLocation("position")
-	    var n = nmapShader.getAttribLocation("normal")
-	    var t = nmapShader.getAttribLocation("tangent")
-	    var u = nmapShader.getAttribLocation("texCoords")
+		import VertexAttribute._
 
-	    ground = groundMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangent", t), ("texcoords", u))
+		groundMesh.setTextureRepeat(30, 30)
 
-	    v     = phongShader.getAttribLocation("position")
-	    n     = phongShader.getAttribLocation("normal")
-	    var c = phongShader.getAttribLocation("color")
-
-	    tube = tubeMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("colors", c))
+	    ground = groundMesh.newVertexArray(gl, nmapShader, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
+	    thing   = thingMesh.newVertexArray(gl, phongShader, Vertex -> "position", Normal -> "normal", TexCoord -> "texCoords")
 	    
-	    // TODO
-
-	    bone  = boneMesh.newVertexArray(gl)
+//	    bone  = boneMesh.newVertexArray(gl)
 	}
 	
 	protected def initTextures() {
@@ -184,9 +177,9 @@ Console.err.println("%s".format(model))
 	    groundNMap.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    groundNMap.wrap(gl.REPEAT)
 
-	    // tubeColor = new Texture(gl, "textures/Armature_Color.png", true)
-	    // tubeColor.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
-	    // tubeColor.wrap(gl.REPEAT)
+	    thingColor = new Texture(gl, "textures/Armature_Color_001.png", true)
+	    thingColor.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    thingColor.wrap(gl.REPEAT)
 
 	    // tubeNMap = new Texture(gl, "textures/Armature_NMap.png", true)
 	    // tubeNMap.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
@@ -206,32 +199,52 @@ Console.err.println("%s".format(model))
 	    
 	    camera.viewLookAt
 
-	    nmapShader.use
-	    useLights(nmapShader)
-	    useTextures(nmapShader)
-	    camera.uniformMVP(nmapShader)
-	    gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
-	    ground.draw(groundMesh.drawAs)
-	    
 /*
 	    gl.polygonMode(gl.FRONT_AND_BACK, gl.LINE)
 	    plainShader.use
 	    camera.pushpop {
 	        skeleton.drawSkeleton(gl, camera, plainShader, "uniformColor")
 	    }
-	    
+
 	    boneShader.use
 	    useLights(boneShader)
 	    camera.pushpop {
 	    	setBonesColor(1)
-	        skeleton.drawModel(gl, camera, tubeMesh, tube, boneShader)	        
+	        skeleton.drawModel(gl, camera, thingMesh, thing, boneShader)	        
 	    	gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    	setBonesColor(0.5f)
-	    	gl.enable(gl.BLEND)
-	    	skeleton.drawModel(gl, camera, tubeMesh, tube, boneShader)
-	    	gl.disable(gl.BLEND)
+	    	skeleton.drawModel(gl, camera, thingMesh, thing, boneShader)
+			gl.disable(gl.BLEND)
 	    }
 */	    
+		// Thing just phong textured.
+
+		phongShader.use
+		useLights(phongShader)
+	    thingColor.bindTo(gl.TEXTURE0)
+	    phongShader.uniform("texColor", 0)
+		gl.frontFace(gl.CCW)
+		camera.pushpop {
+			camera.translateModel(0, 0.5, 0)
+			camera.scaleModel(0.5, 0.5, 0.5)
+			camera.uniformMVP(phongShader)
+			thing.draw(thingMesh.drawAs)
+		}
+		gl.frontFace(gl.CW)
+
+		// Ground
+
+	  	gl.enable(gl.BLEND)
+	    nmapShader.use
+	    useLights(nmapShader)
+	    useTextures(nmapShader)
+	    camera.uniformMVP(nmapShader)
+	    //gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
+	    ground.draw(groundMesh.drawAs)
+		gl.disable(gl.BLEND)
+	    
+	    // Ok
+
 	    surface.swapBuffers
 	    gl.checkErrors
 	    animate
@@ -279,16 +292,16 @@ Console.err.println("%s".format(model))
 	}
 	
 	def useLights(shader:ShaderProgram) {
-	    shader.uniform("lights[0].pos", Vector3(camera.modelview.top * light1))
-	    shader.uniform("lights[0].intensity", 5f)
-	    shader.uniform("lights[0].ambient", 0.1f)
-	    shader.uniform("lights[0].specular", 16f)
+	    shader.uniform("light.pos", Vector3(camera.modelview.top * light1))
+		shader.uniform("light.intensity", 5f)
+		shader.uniform("light.ambient", 0.1f)
+		shader.uniform("light.specular", 16f)
 	}
 	
 	def useTextures(shader:ShaderProgram) {
 	    groundColor.bindTo(gl.TEXTURE0)
-	    shader.uniform("tex.color", 0)
+	    shader.uniform("texColor", 0)
 	    groundNMap.bindTo(gl.TEXTURE1)
-	    shader.uniform("tex.normal", 1)
+	    shader.uniform("texNormal", 1)
 	}
 }

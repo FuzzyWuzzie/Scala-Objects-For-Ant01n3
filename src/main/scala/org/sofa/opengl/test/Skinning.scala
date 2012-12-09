@@ -31,8 +31,8 @@ class Skinning extends SurfaceRenderer {
     
 // Geometry
     
-    val planeMesh = new Plane(2, 2, 4 , 4)
-    val tubeMesh = new Cylinder(0.5f, 3, 16, 3)
+    val planeMesh = new PlaneMesh(2, 2, 4 , 4)
+    val tubeMesh = new CylinderMesh(0.5f, 3, 16, 3)
     val boneMesh = new BoneMesh()
     var plane:VertexArray = null
     var tube:VertexArray = null
@@ -78,7 +78,7 @@ class Skinning extends SurfaceRenderer {
 // Rendering
     
 	def initializeSuface(gl:SGL, surface:Surface) {
-	    Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+	    Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 	    
 	    initGL(gl)
 	    initSkeleton
@@ -121,22 +121,18 @@ class Skinning extends SurfaceRenderer {
 	}
 	
 	protected def initShaders() {
-Console.err.println("A")
 	    nmapShader = new ShaderProgram(gl, "phong n-map",
 	            new VertexShader(gl, "nmap", "stock/phongNmap.vert.glsl"),
 	            new FragmentShader(gl, "nmap", "stock/phongNmap.frag.glsl"))
 	    
-Console.err.println("B")
 	    plainShader = new ShaderProgram(gl, "plain", 
 	            new VertexShader(gl, "uniform", "uniformColor.vert"),
 	            new FragmentShader(gl, "uniform", "uniformColor.frag"))
 	    
-Console.err.println("C") // The error seems to appear in the vertex shader at compilation.
 		boneShader = ShaderProgram(gl, "phong n-map with bones", "bonePhong.vert.glsl", "bonePhong.frag.glsl")
 //	    boneShader = new ShaderProgram(gl, "phong n-map with bones",
 //	            new VertexShader(gl, "bone", "bonePhong.vert.glsl"),
 //	            new FragmentShader(gl, "bone", "bonePhong.frag.glsl"))
-Console.err.println("D")
 
 	    boneShader.uniform("bone[0].color", skeleton.color)
 	    boneShader.uniform("bone[1].color", skeleton(0).color)
@@ -146,21 +142,15 @@ Console.err.println("D")
 	}
 	
 	protected def initGeometry() {
+		import VertexAttribute._
+
 	    tubeMesh.setBottomDiskColor(Rgba.red)
 	    tubeMesh.setCylinderColor(Rgba.blue)
 	    tubeMesh.setTopDiskColor(Rgba.red)
 	    
-	    plane = planeMesh.newVertexArray(gl)//new VertexArray(gl, planeMesh.indices,
-//	    			(nmapShader.getAttribLocation("pos"),     3, planeMesh.vertices),
-//	    			(nmapShader.getAttribLocation("normal"),  3, planeMesh.normals),
-//	    			(nmapShader.getAttribLocation("tangent"), 3, planeMesh.normals),
-//	    			(nmapShader.getAttribLocation("texPos"),  2, planeMesh.normals))
-	    tube  = new VertexArray(gl, tubeMesh.indices,
-	            	("vertices", boneShader.getAttribLocation("position"),  3, tubeMesh.vertices),
-	            	("normals", boneShader.getAttribLocation("normal"),    3, tubeMesh.normals),
-	            	("bones", boneShader.getAttribLocation("boneIndex"), 1, tubeMesh.bones))
-	    bone  = boneMesh.newVertexArray(gl)//new VertexArray(gl, boneMesh.indices,
-	    		//	(plainShader.getAttribLocation("position"), 3, boneMesh.vertices))
+	    plane = planeMesh.newVertexArray(gl, nmapShader, Vertex -> "pos", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texPos")
+	    tube  = tubeMesh.newVertexArray(gl, boneShader, Vertex -> "position", Normal -> "normal", Bone -> "boneIndex")
+	    bone  = boneMesh.newVertexArray(gl, boneShader, Vertex -> "position")
 	}
 	
 	protected def initTextures() {

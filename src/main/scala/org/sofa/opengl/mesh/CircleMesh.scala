@@ -17,12 +17,47 @@ import scala.math._
   * The data is usable to draw directly the vertices or to use indices. Vertices are given in
   * order, following the trigonometric direction. They must be drawn in "line loop" mode.
   */
-class Circle(radius:Double, sides:Int) extends Mesh with IndexedMesh {
+class CircleMesh(radius:Double, sides:Int) extends Mesh {
+	
 	protected lazy val V:FloatBuffer = allocateVertices
+    
     protected lazy val I:IntBuffer = allocateIndices
 
-    override def hasIndices = true
+    // -- Mesh interface -------------------------------
+
+	def attribute(name:String):FloatBuffer = {
+		VertexAttribute.withName(name) match {
+			case VertexAttribute.Vertex => V
+			case _                      => throw new RuntimeException("mesh has no %s attribute".format(name))
+		}
+	}
+
+	def attributeCount():Int = 1
+
+	def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString)
     
+    override def indices:IntBuffer = I
+
+    override def hasIndices = true
+
+	def components(name:String):Int = {
+		VertexAttribute.withName(name) match {
+			case VertexAttribute.Vertex => 3
+			case _                      => throw new RuntimeException("mesh has no %s attribute".format(name))
+		}
+	}
+
+	def has(name:String):Boolean = {
+		VertexAttribute.withName(name) match {
+			case VertexAttribute.Vertex => true
+			case _                      => false
+		}
+	}
+    
+    override def drawAs:Int = GL_LINE_LOOP
+    
+    // -- Building -------------------------------------
+
     protected def allocateVertices():FloatBuffer = {
 	    var size = (sides) * 3
 	    val buf = new FloatBuffer(size)
@@ -49,12 +84,4 @@ class Circle(radius:Double, sides:Int) extends Mesh with IndexedMesh {
 	    
 	    buf
 	}
-    
-    def vertices:FloatBuffer = V
-    
-    override def indices:IntBuffer = I
-    
-    override def drawAs:Int = GL_LINE_LOOP
-    
-//    def newVertexArray(gl:SGL):VertexArray = new VertexArray(gl, indices, (0, 3, vertices))
 }

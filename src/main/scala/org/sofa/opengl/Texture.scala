@@ -12,7 +12,7 @@ import java.io.{File, IOException}
   * the current environment (depending on the loader). */
 object Texture {
     /** Set of paths where texture images are to be searched. */
-    var includePath = new scala.collection.mutable.ArrayBuffer[String]()
+    var path = new scala.collection.mutable.ArrayBuffer[String]()
 
     /** Loaded, dependant on the underlying system that allows to find, read
       * and transform an image into an input stream. */
@@ -165,9 +165,9 @@ class DefaultTextureLoader extends TextureLoader {
         } else {
             val sep = sys.props.get("file.separator").get
 
-            Texture.includePath.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
+            Texture.path.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
                 case path:Some[String] => { new TextureImageAwt(ImageIO.read(new File("%s%s%s".format(path.get,sep,resource)))) }
-                case None => { throw new IOException("cannot locate texture %s (path %s)".format(resource, Texture.includePath.mkString(":"))) }
+                case None => { throw new IOException("cannot locate texture %s (path %s)".format(resource, Texture.path.mkString(":"))) }
             }
         }
     }

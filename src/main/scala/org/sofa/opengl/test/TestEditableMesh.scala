@@ -1,28 +1,14 @@
 package org.sofa.opengl.test
 
-import org.sofa.opengl.VertexArray
-import org.sofa.opengl.SGL
-import org.sofa.opengl.mesh.Plane
-import org.sofa.opengl.mesh.EditableMesh
-import org.sofa.opengl.ShaderProgram
-import org.sofa.math.Matrix4
-import org.sofa.opengl.MatrixStack
-import javax.media.opengl.GLAutoDrawable
-import javax.media.opengl.GLProfile
-import javax.media.opengl.GLCapabilities
+import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3}
+import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Camera, Shader}
+import org.sofa.opengl.mesh.{PlaneMesh, EditableMesh, VertexAttribute}
+import org.sofa.opengl.surface.{Surface, BasicCameraController, SurfaceRenderer}
+
+import javax.media.opengl.{GLAutoDrawable, GLProfile, GLCapabilities, GLEventListener}
 import com.jogamp.newt.opengl.GLWindow
 import com.jogamp.opengl.util.FPSAnimator
 import com.jogamp.newt.event.WindowAdapter
-import javax.media.opengl.GLEventListener
-import org.sofa.opengl.surface.Surface
-import org.sofa.opengl.surface.BasicCameraController
-import org.sofa.opengl.Camera
-import org.sofa.math.Rgba
-import org.sofa.opengl.surface.SurfaceRenderer
-import org.sofa.math.Vector4
-import org.sofa.opengl.Shader
-import org.sofa.math.Vector3
-import org.sofa.opengl.mesh.MeshDrawMode
 
 object TestEditableMesh {
 	def main(args:Array[String]):Unit = { (new TestEditableMesh).test }
@@ -42,7 +28,7 @@ class TestEditableMesh extends SurfaceRenderer {
 	var plane:VertexArray = null
 	
 	val thingMesh = new EditableMesh()
-	val planeMesh = new Plane(2, 2, 4, 4)
+	val planeMesh = new PlaneMesh(2, 2, 4, 4)
 
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
@@ -77,7 +63,7 @@ class TestEditableMesh extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.includePath += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 		
 		initGL(sgl)
 		initShaders
@@ -110,14 +96,12 @@ class TestEditableMesh extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
-		var v = planeShad.getAttribLocation("position")
-		var c = planeShad.getAttribLocation("color")
-		var n = planeShad.getAttribLocation("normal")
+		import VertexAttribute._
 
 		initThing
 		
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-		thing = thingMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		plane = planeMesh.newVertexArray(gl, planeShad, Vertex -> "position", Color -> "color", Normal -> "normal")
+		thing = thingMesh.newVertexArray(gl, planeShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 	}
 	
 	def initThing() {
@@ -131,7 +115,7 @@ class TestEditableMesh extends SurfaceRenderer {
 			thingMesh.vertex(-1, 2, 0)	// 3
 			thingMesh.vertex(1, 2, 0)	// 4
 		thingMesh.end
-		thingMesh.beginIndices(MeshDrawMode.TRIANGLES)
+		thingMesh.beginIndices
 			thingMesh.index(0)
 			thingMesh.index(1)
 			thingMesh.index(2)

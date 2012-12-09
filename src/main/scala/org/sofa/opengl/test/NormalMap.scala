@@ -21,9 +21,9 @@ class NormalMap extends SurfaceRenderer {
     
     var nmapShader:ShaderProgram = null 
     
-    val planeMesh = new Plane(2, 2, 4, 4)
+    val planeMesh = new PlaneMesh(2, 2, 4, 4)
     var plane:VertexArray = null
-    val tubeMesh = new Cylinder(0.5f, 1, 16, 1)
+    val tubeMesh = new CylinderMesh(0.5f, 1, 16, 1)
     var tube:VertexArray = null
     
     var uvTex:Texture = null
@@ -41,8 +41,8 @@ class NormalMap extends SurfaceRenderer {
 //	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.get(GLProfile.GL3))
 	    val caps = new javax.media.opengl.GLCapabilities(GLProfile.getGL2ES2)
 
-		Texture.includePath += "textures/"	    
-		Shader.includePath += "src/main/scala/org/sofa/opengl/shaders/"
+		Texture.path += "textures/"	    
+		Shader.path += "src/main/scala/org/sofa/opengl/shaders/"
 
 	    caps.setDoubleBuffered(true)
 	    caps.setHardwareAccelerated(true)
@@ -83,6 +83,8 @@ class NormalMap extends SurfaceRenderer {
 	}
 	
 	def setup(surface:Surface) {
+		import VertexAttribute._
+
 	    camera.viewCartesian(2, 2, 2)
 	    
 	    nmapShader = new ShaderProgram(gl, "normal map phong",
@@ -90,11 +92,6 @@ class NormalMap extends SurfaceRenderer {
 	            new FragmentShader(gl, "nmap phong", "es2/nmapPhong.frag"))
 //	            new VertexShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.vert"),
 //	            new FragmentShader(gl, "src-scala/org/sofa/opengl/shaders/nmapPhong.frag"))
-
-	    val p = nmapShader.getAttribLocation("position")
-	    val n = nmapShader.getAttribLocation("normal")
-	    val t = nmapShader.getAttribLocation("tangent")
-	    val u = nmapShader.getAttribLocation("texCoords")
 	    
 	    reshape(surface)
 	    
@@ -104,12 +101,11 @@ class NormalMap extends SurfaceRenderer {
 	    tubeMesh.setCylinderColor(Rgba.blue);
 	    planeMesh.setColor(Rgba.magenta)
 	    
-	    plane = new VertexArray(gl, planeMesh.indices, ("vertices", p, 3, planeMesh.vertices), 
-    			("normals", n, 3, planeMesh.normals), ("tangents", t, 3, planeMesh.tangents), ("texcoords", u, 2, planeMesh.texCoords))
-    	tube  = new VertexArray(gl, tubeMesh.indices, ("vertices", p, 3, tubeMesh.vertices),
-    			("normals", n, 3, tubeMesh.normals), ("tangents", t, 3, tubeMesh.tangents), ("texcoords", u, 2, tubeMesh.texCoords))
-	    
-	    uvTex = new Texture(gl, "stone_wall__.jpg", true)
+	    plane = planeMesh.newVertexArray(gl, nmapShader, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
+	    tube  = tubeMesh.newVertexArray( gl, nmapShader, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
+
+	    uvTex = new Texture(gl, "color.png", true)	    
+//	    uvTex = new Texture(gl, "stone_wall__.jpg", true)
 //	    uvTex = new Texture(gl, "textures/face.jpg", true)
 	    uvTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    uvTex.wrap(gl.REPEAT)
@@ -119,9 +115,9 @@ class NormalMap extends SurfaceRenderer {
 	    specTex.wrap(gl.REPEAT)
 	    
 //	    nmapTex = new Texture(gl, "NormalFlat.png", false)
-//	    nmapTex = new Texture(gl, "normal.jpg", true)
-		nmapTex = new Texture(gl, "JuiceGroundNormalMap.png", true)
 //	    nmapTex = new Texture(gl, "facenrm.jpg", true)
+//	    nmapTex = new Texture(gl, "stone_wall_normal_map__.jpg", true)
+		nmapTex = new Texture(gl, "normal.png", true)
 	    nmapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    nmapTex.wrap(gl.REPEAT)
 	}
