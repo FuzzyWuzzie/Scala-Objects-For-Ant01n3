@@ -20,6 +20,6 @@ class ColladaInput {
 		val file = ColladaFile("Suzanne.dae")
 		
 		println(file)
-		println(file.library.geometry("Monkey").mesh.toMesh)
+		println(file.library.geometry("Monkey").get.mesh.toMesh)
 	}
 }

@@ -411,11 +411,11 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		val wallModel    = new ColladaFile("MurJuice.dae")
 		val birouteModel = new ColladaFile("Bruce_004.dae")
 	
-		birouteModel.library.geometry("BirouteLowPoly").mesh.mergeVertices(true)
-		birouteModel.library.geometry("BirouteLowPoly").mesh.blenderToOpenGL(true)
+		birouteModel.library.geometry("BirouteLowPoly").get.mesh.mergeVertices(true)
+		birouteModel.library.geometry("BirouteLowPoly").get.mesh.blenderToOpenGL(true)
 
-		wallMesh    = wallModel.library.geometry("Plane.007").mesh.toMesh	
-		birouteMesh = birouteModel.library.geometry("BirouteLowPoly").mesh.toMesh
+		wallMesh    = wallModel.library.geometry("Plane.007").get.mesh.toMesh	
+		birouteMesh = birouteModel.library.geometry("BirouteLowPoly").get.mesh.toMesh
 
 		birouteMesh.asInstanceOf[EditableMesh].autoComputeTangents
 	}

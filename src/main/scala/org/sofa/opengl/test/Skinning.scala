@@ -111,11 +111,11 @@ class Skinning extends SurfaceRenderer {
 	    skeleton.addChild(1)
 	    //skeleton.orientationScale(0.3333, 0.3333, 0.3333)
 	    skeleton.color = Rgba.red
-	    skeleton(0).orientationTranslate(0, 1, 0)
+	    skeleton(0).poseTranslate(0, 1, 0)
 	    skeleton(0).color = Rgba.green
 	    skeleton(0).addChild(2)
 //	    skeleton(0).rotate(Pi/8, 0, 0, 1)
-	    skeleton(0)(0).orientationTranslate(0, 1, 0)
+	    skeleton(0)(0).poseTranslate(0, 1, 0)
 	    skeleton(0)(0).color = Rgba.blue
 //	    skeleton(0)(0).rotate(Pi/8, 0, 0, 1)
 	}
@@ -192,11 +192,15 @@ class Skinning extends SurfaceRenderer {
 	    useLights(boneShader)
 	    camera.pushpop {
 	    	setBonesColor(1)
-	        skeleton.drawModel(gl, camera, tubeMesh, tube, boneShader)	        
+	        skeleton.uniform(boneShader)
+	        camera.uniformMVP(boneShader)
+	        tube.draw(tubeMesh.drawAs)
 	    	gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    	setBonesColor(0.5f)
 	    	gl.enable(gl.BLEND)
-	    	skeleton.drawModel(gl, camera, tubeMesh, tube, boneShader)
+	        skeleton.uniform(boneShader)
+	        camera.uniformMVP(boneShader)
+	        tube.draw(tubeMesh.drawAs)
 	    	gl.disable(gl.BLEND)
 	    }
 	    

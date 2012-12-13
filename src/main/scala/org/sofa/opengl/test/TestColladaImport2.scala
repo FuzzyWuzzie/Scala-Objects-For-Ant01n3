@@ -127,9 +127,9 @@ class TestColladaImport2 extends SurfaceRenderer {
 	def initThing() {
 		val model = new ColladaFile("CubicThing_001.dae")
 
-		model.library.geometry("Cube").mesh.mergeVertices(true)
+		model.library.geometry("Cube").get.mesh.mergeVertices(true)
 
-		thingMesh = model.library.geometry("Cube").mesh.toMesh
+		thingMesh = model.library.geometry("Cube").get.mesh.toMesh
 
 		thingMesh.asInstanceOf[EditableMesh].autoComputeTangents(true)			// Also compute handedness and store 4-component tangents
 
@@ -172,10 +172,10 @@ class TestColladaImport2 extends SurfaceRenderer {
 	    nMapShad.uniform("texColor", 0)	// Texture Unit 0
 	    nMapTex.bindTo(gl.TEXTURE2)
 	    nMapShad.uniform("texNormal", 2)	// Texture Unit 2
-			nMapShad.uniform("lightPos", Vector3(camera.modelview.top * light1))
-		    nMapShad.uniform("lightIntensity", 2f)
-		    nMapShad.uniform("ambientIntensity", 0.2f)
-		    nMapShad.uniform("specularPow", 256f)
+			nMapShad.uniform("whitelight.pos", Vector3(camera.modelview.top * light1))
+		    nMapShad.uniform("whitelight.intensity", 2f)
+		    nMapShad.uniform("whitelight.ambient", 0.2f)
+		    nMapShad.uniform("whitelight.specular", 256f)
 		camera.uniformMVP(nMapShad)
 //		thing.draw(thingMesh.drawAs)
 		camera.pushpop {

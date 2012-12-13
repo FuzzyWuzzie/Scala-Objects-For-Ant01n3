@@ -77,14 +77,18 @@ class Library(root:NodeSeq) {
 	val visualScenes = new HashMap[String,VisualScene]()
 
 	parse(root)
+
+	// All this get or runtime exception is quite bad .... Use option !!!
 	
-	def geometry(name:String):Geometry = geometries.get(name).getOrElse(throw new RuntimeException("geometry %s not found".format(name)))
+	def geometry(name:String):Option[Geometry] = geometries.get(name)
 
-	def light(name:String):Light = lights.get(name).getOrElse(throw new RuntimeException("light %s not found".format(name)))
+	def light(name:String):Option[Light] = lights.get(name)
 
-	def camera(name:String):Camera = cameras.get(name).getOrElse(throw new RuntimeException("camera %s not found".format(name)))
+	def camera(name:String):Option[Camera] = cameras.get(name)
 
-	def visualScene(name:String):VisualScene = visualScenes.get(name).getOrElse(throw new RuntimeException("visual scene %s not found".format(name)))
+	def controller(name:String):Option[Controller] = controllers.get(name)
+
+	def visualScene(name:String):Option[VisualScene] = visualScenes.get(name)
 
 	def parse(root:NodeSeq) {
 		// Cameras

@@ -71,6 +71,9 @@ class Skin(node:Node) {
 
 	parse(node)
 
+	/** The joint corresponding to the given name. */
+	def joint(name:String):Option[Joint] = { joints.find(item => item.name == name) }
+
 	protected def parse(node:Node) {
 		source = (node \ "@source").text.substring(1)
 		bindShape = matrixFromFloats((node \ "bind_shape_matrix").text, 0)
@@ -103,8 +106,9 @@ class Skin(node:Node) {
 		var i = 0
 
 		names.foreach { name =>
-			joints(i) = new Joint()
-			joints(i).name = name
+			joints(i)       = new Joint()
+			joints(i).name  = name
+			joints(i).index = i
 			i += 1
 		}
 	}
@@ -122,6 +126,7 @@ class Skin(node:Node) {
 		
 		while(i < count) {
 			joints(i).pose = Matrix4(data, i*16)
+			joints(i).pose.transpose()
 			i += 1
 		}
 	}
@@ -196,6 +201,8 @@ class Skin(node:Node) {
 }
 
 class Joint {
+	var index:Int = -1
+
 	var name:String = null
 
 	var pose:Matrix4 = null

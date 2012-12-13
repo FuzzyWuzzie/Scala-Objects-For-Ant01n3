@@ -144,3 +144,28 @@ class BoneMesh extends Mesh {
 	    buf
 	}
 }
+
+class BoneLineMesh extends BoneMesh {
+
+	override def drawAs():Int = GL_LINES
+		
+	override protected def allocateIndices:IntBuffer = {
+	    val n = 6 * 4
+	    val buf = new IntBuffer(n)
+	    
+	    var t=0
+	    
+	    for(i <- 0 until 4) {
+	        buf(t+0) = 4 // (i)%4
+	        buf(t+1) = i%4
+	        buf(t+2) = i%4
+	        buf(t+3) = 5
+	        buf(t+4) = i%4
+	        buf(t+5) = (i+1)%4
+	        
+	        t += 6
+	    }
+	    
+	    buf
+	}
+}

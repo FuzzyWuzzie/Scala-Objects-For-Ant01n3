@@ -15,11 +15,11 @@ import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute}
 import org.sofa.opengl.mesh.skeleton._
 
-object TestSkinning2 {
-    def main(args:Array[String]):Unit = (new TestSkinning2)
+object TestSkinning4 {
+    def main(args:Array[String]):Unit = (new TestSkinning4)
 }
 
-class TestSkinning2 extends SurfaceRenderer {
+class TestSkinning4 extends SurfaceRenderer {
 // General
     
     var gl:SGL = null
@@ -117,16 +117,13 @@ class TestSkinning2 extends SurfaceRenderer {
 	}
 	
 	protected def initShaders() {
-	    phongShader = ShaderProgram(gl, "phong tex",   "es2/phonghitex.vert.glsl",   "es2/phonghitex.frag.glsl")
 	    nmapShader  = ShaderProgram(gl, "phong n-map", "es2/phonghinmapw.vert.glsl", "es2/phonghinmapw.frag.glsl")
 	    plainShader = ShaderProgram(gl, "plain",       "es2/plainColor.vert.glsl",   "es2/plainColor.frag.glsl")
-		boneShader  = ShaderProgram(gl, "basic bones", "es2/bone.vert.glsl",         "es2/bone.frag.glsl")
+		boneShader  = ShaderProgram(gl, "basic bones", "es2/phongbone.vert.glsl",    "es2/phongbone.frag.glsl")
 
-	    boneShader.uniform("bone[0].color", Rgba.red)
-	    boneShader.uniform("bone[1].color", Rgba.green)
-	    boneShader.uniform("bone[2].color", Rgba.blue)
-	    
-	//    plainShader.uniform("uniformColor", Rgba.white)
+	    boneShader.uniform("bone[0].color", Rgba(1, 0.1, 0, 1))
+	    boneShader.uniform("bone[1].color", Rgba(1, 0.6, 0.1, 1))
+	    boneShader.uniform("bone[2].color", Rgba(0.7, 0.2, 0.7, 1))
 	}
 
 	protected def initModels() {
@@ -134,8 +131,6 @@ class TestSkinning2 extends SurfaceRenderer {
 
 		model.library.geometry("Cylinder").get.mesh.mergeVertices(true)
 		model.library.geometry("Cylinder").get.mesh.blenderToOpenGL(true)
-
-		//Console.err.println("%s".format(model))
 
 		// Build a SOFA bone hierarchy and a SOFA mesh from the Collada data.
 
@@ -155,8 +150,7 @@ class TestSkinning2 extends SurfaceRenderer {
 		groundMesh.setTextureRepeat(30, 30)
 
 	    ground = groundMesh.newVertexArray(gl, nmapShader,  Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
-//	    thing  = thingMesh.newVertexArray( gl, phongShader, Vertex -> "position", Normal -> "normal", TexCoord -> "texCoords")
-	    thing  = thingMesh.newVertexArray( gl, boneShader, Vertex -> "position", Bone -> "boneIndex", Weight -> "boneWeight")
+	    thing  = thingMesh.newVertexArray( gl, boneShader, Vertex -> "position", Normal -> "normal", Bone -> "boneIndex", Weight -> "boneWeight")
 	    bone   = boneMesh.newVertexArray(  gl, plainShader, Vertex -> "position", Color -> "color")
 	}
 	
@@ -211,59 +205,25 @@ class TestSkinning2 extends SurfaceRenderer {
 	    ground.draw(groundMesh.drawAs)
 		gl.disable(gl.BLEND)
 
-		// Thing just phong textured.
-
-		// gl.enable(gl.BLEND)
-		// phongShader.use
-		// useLights(phongShader)
-	 //    thingColor.bindTo(gl.TEXTURE0)
-	 //    phongShader.uniform("texColor", 0)
-	 //    //gl.disable(gl.CULL_FACE)
-		// gl.frontFace(gl.CCW)
-		// camera.pushpop {
-		// 	//camera.translateModel(0, 0.5, 0)
-		// 	//camera.scaleModel(0.5, 0.5, 0.5)
-		// 	camera.uniformMVP(phongShader)
-		// 	thing.draw(thingMesh.drawAs)
-		// }
-		// gl.frontFace(gl.CW)
-		// gl.disable(gl.BLEND)
-		// //gl.enable(gl.CULL_FACE)
-
 		animate
 
 		gl.enable(gl.BLEND)
 		gl.frontFace(gl.CCW)
 	    boneShader.use
+	    light1.uniform(boneShader, camera)
 	    camera.pushpop {
-			skeleton.uniform(boneShader)
-			camera.setUniformMVP(boneShader)
-			thing.draw(thingMesh.drawAs)
+	    	skeleton.uniform(boneShader)
+	    	camera.uniformMVP(boneShader)
+	    	thing.draw(thingMesh.drawAs)
 	    }
 		gl.disable(gl.BLEND)
 		gl.frontFace(gl.CW)
-
 	    
 	    // Ok
 
 	    surface.swapBuffers
 	    gl.checkErrors
 	}
-
-	// def setBonesColor(alpha:Float) {
-	//    if(alpha == 1) {
-	// 	   boneShader.uniform("bone[0].color", skeleton.color)
-	// 	   boneShader.uniform("bone[1].color", skeleton(0).color)
-	// 	   boneShader.uniform("bone[2].color", (skeleton(0))(0).color)
-	//    } else {
-	// 	   val c1 = skeleton.color
-	// 	   val c2 = skeleton(0).color
-	// 	   val c3 = skeleton(0)(0).color
-	// 	   boneShader.uniform("bone[0].color", Rgba(c1.red, c1.green, c1.blue, alpha))
-	// 	   boneShader.uniform("bone[1].color", Rgba(c2.red, c2.green, c2.blue, alpha))
-	// 	   boneShader.uniform("bone[2].color", Rgba(c3.red, c3.green, c3.blue, alpha))
-	//    }
-	// }
 
 	var join0 = 0.0
 	var join1 = 0.0
@@ -290,13 +250,6 @@ class TestSkinning2 extends SurfaceRenderer {
 	    skeleton(0)(0).rotate(join2, 1, 0, 0)
 	    //skeleton(0)(0).scale(0.7, 1, 0.7)
 	}
-	
-	// def useLights(shader:ShaderProgram) {
-	//     shader.uniform("light.pos", Vector3(camera.modelview.top * light1))
-	// 	shader.uniform("light.intensity", 5f)
-	// 	shader.uniform("light.ambient", 0.1f)
-	// 	shader.uniform("light.specular", 16f)
-	// }
 	
 	def useTextures(shader:ShaderProgram) {
 	    groundColor.bindTo(gl.TEXTURE0)

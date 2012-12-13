@@ -209,3 +209,146 @@ class Point3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
       */
     def -->(other:Point3):Vector3 = new Vector3(other.x-x, other.y-y, other.z-z)
 }
+
+//===================================================
+
+object Point4 {
+    implicit def point4ToTuple(v:Point4):(Double, Double, Double, Double) = (v.x, v.y, v.z, v.w)
+
+    def apply(x:Double, y:Double, z:Double, w:Double) = new Point4(x, y, z, w)
+    def apply() = new Point4()
+    def apply(other:NumberSeq) = {
+        if(other.size < 1) // Nooooo !!!
+             new Point4()
+        else if(other.size < 2)
+             new Point4(other.data(0), 0, 0, 0)
+        else if(other.size < 3)
+             new Point4(other.data(0), other.data(1), 0, 0)
+        else if(other.size < 4)
+             new Point4(other.data(0), other.data(1), other.data(2), 0)
+        else new Point4(other.data(0), other.data(1), other.data(2), other.data(3))
+    }
+    def apply(xyzw:(Double, Double, Double, Double))    = new Point4(xyzw._1, xyzw._2, xyzw._3, xyzw._4)
+    def apply(xyz:(Double, Double, Double), w:Double)   = new Point4(xyz._1, xyz._2, xyz._3, w)
+    def apply(x:Double, yzw:(Double, Double, Double))   = new Point4(x, yzw._1, yzw._2, yzw._3)
+    def apply(xy:(Double, Double), zw:(Double, Double)) = new Point4(xy._1, xy._2, zw._1, zw._2)
+    def apply(xy:(Double,Double), z:Double, w:Double)   = new Point4(xy._1, xy._2, z, w)
+    def apply(x:Double, yz:(Double,Double), w:Double)   = new Point4(x, yz._1, yz._2, w)
+    def apply(x:Double, y:Double, zw:(Double,Double))   = new Point4(x, y, zw._1, zw._2)
+}
+
+class Point4(xInit:Double, yInit:Double, zInit:Double, wInit:Double) extends NumberSeq4 {
+
+    type ReturnType = Point4
+    
+    protected[math] final val data = Array[Double](xInit, yInit, zInit, wInit)
+
+    def this(other:Point4) = this(other.x, other.y, other.z, other.w)
+
+    def this() = this(0, 0, 0, 0)
+
+    def newInstance = new Point4
+
+    override final def size:Int = 4
+
+    /** Create a new point linear interpolation of this and `other`.
+      * 
+	  * The new point is located between this and `other` if
+	  * `factor` is between 0 and 1 (0 yields this point, 1 yields
+	  * the `other` point). 
+	  */
+	def interpolate(other:Point4, factor:Double):Point4 = {
+	    val result = newInstance.asInstanceOf[Point4]
+		result.data(0) = data(0) + ((other.data(0) - data(0)) * factor);
+		result.data(1) = data(1) + ((other.data(1) - data(1)) * factor);
+		result.data(2) = data(2) + ((other.data(2) - data(2)) * factor);
+		result.data(3) = data(3) + ((other.data(3) - data(3)) * factor);
+		result
+	}
+
+    /** Distance between this and `other`. */
+    def distance(other:NumberSeq):Double = {
+        if(other.data.length > 3) {
+            val xx = other.data(0) - data(0)
+            val yy = other.data(1) - data(1)
+            val zz = other.data(2) - data(2)
+            val ww = other.data(3) - data(3)
+            sqrt(xx*xx + yy*yy + zz*zz + ww*ww)
+        } else {
+            0
+        }
+    }
+
+	/** Distance between this and `other`. */
+	def distance(other:Point4):Double = {
+		val xx = other.data(0) - data(0)
+		val yy = other.data(1) - data(1)
+		val zz = other.data(2) - data(2)
+		val ww = other.data(3) - data(3)
+		abs(sqrt((xx * xx) + (yy * yy) + (zz * zz) + (ww * ww)))
+	}
+	
+	/** Distance between this and point (`x`,`y`,`z`,`w`). */
+	def distance(x:Double, y:Double, z:Double, w:Double):Double = {
+		val xx = x - data(0)
+		val yy = y - data(1)
+		val zz = z - data(2)
+		val ww = w - data(3)
+		abs(sqrt((xx * xx) + (yy * yy) + (zz * zz) + (ww * ww)))
+	}
+
+    def +(other:Point4):ReturnType = {
+        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
+        result.addBy(other)
+        result
+    }
+    
+    override def +(value:Double):ReturnType = {
+        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
+        result.addBy(value)
+        result
+    }
+
+    def -(other:Point4):ReturnType = {
+        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
+        result.subBy(other)
+        result
+    }
+    
+    override def -(value:Double):ReturnType = {
+        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
+        result.subBy(value)
+        result
+    }
+
+    def *(other:Point4):ReturnType = {
+        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
+        result.multBy(other)
+        result
+    }
+    
+    override def *(value:Double):ReturnType = {
+        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
+        result.multBy(value)
+        result
+    }
+
+    def /(other:Point4):ReturnType = {
+        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
+        result.divBy(other)
+        result
+    }
+    
+    override def /(value:Double):ReturnType = {
+        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
+        result.divBy(value)
+        result
+    }
+
+    /** Vector between this and an `other` point. 
+      *
+      * The direction goes from this to `other`. The length of the vector is
+      * the distance between the two points.
+      */
+    def -->(other:Point4):Vector4 = new Vector4(other.x-x, other.y-y, other.z-z, other.w-w)
+}
