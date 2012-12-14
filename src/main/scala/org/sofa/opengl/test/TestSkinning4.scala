@@ -51,7 +51,7 @@ class TestSkinning4 extends SurfaceRenderer {
     var plainShader:ShaderProgram = null
     var boneShader:ShaderProgram = null
     
-    var light1 = WhiteLight(2, 2, 2,  5f, 16f, 0.1f)
+    var light1 = WhiteLight(0, 2, 2,  5f, 16f, 0.1f)
     
     var groundColor:Texture = null
     var groundNMap:Texture = null
@@ -227,27 +227,45 @@ class TestSkinning4 extends SurfaceRenderer {
 	var join0 = 0.0
 	var join1 = 0.0
 	var join2 = 0.0
+	var join1Scale = 1.0
 	var join0Dir = +0.005
 	var join1Dir = +0.05
 	var join2Dir = +0.1
+	var join1ScaleDir = +0.01
+
+	var lightRadius = 2.0
+	var lightDir = +0.1
+	var lightx = 0.0
+	var lighty = 2.0
 	
 	def animate() {
 //	    join0 += join1Dir
 	    join1 += join1Dir
 	    join2 += join2Dir
 	    
+	    join1Scale += join1ScaleDir
+
 //	    if(join0 > Pi/20 || join1 < -Pi/20) join0Dir = -join0Dir
 	    if(join1 > Pi/4 || join1 < -Pi/4) join1Dir = -join1Dir
 	    if(join2 > Pi/4 || join2 < -Pi/4) join2Dir = -join2Dir
+	    if(join1Scale > 1.2 || join1Scale < 0.8) join1ScaleDir = -join1ScaleDir 
 
 //	    skeleton.identity
 //	    skeleton.rotate(join0, 1, 0, 0)
 	    skeleton(0).identity
 	    skeleton(0).rotate(join1, 0, 0, 1)
+	    skeleton(0).scale(join1Scale, 1, join1Scale)
 	    //skeleton(0).scale(0.7, 1, 0.7)
 	    skeleton(0)(0).identity
 	    skeleton(0)(0).rotate(join2, 1, 0, 0)
 	    //skeleton(0)(0).scale(0.7, 1, 0.7)
+
+	    lightx += lightDir
+
+	    if(lightx > 2*Pi)
+	    	lightx = 0.0
+
+	    light1.pos.set(cos(lightx)*lightRadius, lighty, sin(lightx)*lightRadius)
 	}
 	
 	def useTextures(shader:ShaderProgram, color:Texture, nmap:Texture) {

@@ -18,13 +18,6 @@ object Bone {
     var bone:VertexArray = null
 }
 
-// TODO this bone class makes more computation than needed
-// the or=parent.orientation*orientation is done at each step of animation, but could be done only once !
-// the or.inverse is also done at each step but could be done only once !
-// -> save them in the bone once and for all !
-//    -> keep inverseOrientation but not not compute it at each step.
-//    -> add pose = parent.orientation*orientation 
-
 /** A simple bone hierarchy. */
 class Bone(val id:Int) {
 // Attributes
@@ -196,7 +189,6 @@ class Bone(val id:Int) {
 	    	Bone.bone = Bone.boneMesh.newVertexArray(gl, shader, VertexAttribute.Vertex -> "position", VertexAttribute.Color -> "color")
 	    
 	    camera.pushpop {
-//println("drawing bone %s :%n%s".format(name, orientation))
 	        camera.transformModel(orientation)
 	        camera.transformModel(animation)
 
