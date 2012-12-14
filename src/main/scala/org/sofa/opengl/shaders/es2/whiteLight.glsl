@@ -19,10 +19,9 @@ vec4 singleWhiteLight(vec3 P, vec3 N, vec4 C) {
 
 	vec3  SS = vec3(1, 1, 1);
 	vec3  CC = C.rgb;
-	float A  = C.a;
 
 	return vec4(
 			  ((CC * D * whitelight.intensity) / d)
 			+ ((SS * S * whitelight.intensity) / d)
-			+ ( CC * whitelight.ambient), A);
+			+ ( CC * whitelight.ambient), C.a);
 }

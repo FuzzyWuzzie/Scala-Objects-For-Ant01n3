@@ -56,6 +56,7 @@ class TestSkinning4 extends SurfaceRenderer {
     var groundColor:Texture = null
     var groundNMap:Texture = null
     var thingColor:Texture = null
+    var thingNMap:Texture = null
 
 // Go
         
@@ -119,7 +120,7 @@ class TestSkinning4 extends SurfaceRenderer {
 	protected def initShaders() {
 	    nmapShader  = ShaderProgram(gl, "phong n-map", "es2/phonghinmapw.vert.glsl", "es2/phonghinmapw.frag.glsl")
 	    plainShader = ShaderProgram(gl, "plain",       "es2/plainColor.vert.glsl",   "es2/plainColor.frag.glsl")
-		boneShader  = ShaderProgram(gl, "basic bones", "es2/phongbone.vert.glsl",    "es2/phongbone.frag.glsl")
+		boneShader  = ShaderProgram(gl, "basic bones", "es2/phongtexbone.vert.glsl", "es2/phongtexbone.frag.glsl")
 
 	    boneShader.uniform("bone[0].color", Rgba(1, 0.1, 0, 1))
 	    boneShader.uniform("bone[1].color", Rgba(1, 0.6, 0.1, 1))
@@ -150,7 +151,7 @@ class TestSkinning4 extends SurfaceRenderer {
 		groundMesh.setTextureRepeat(30, 30)
 
 	    ground = groundMesh.newVertexArray(gl, nmapShader,  Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
-	    thing  = thingMesh.newVertexArray( gl, boneShader, Vertex -> "position", Normal -> "normal", Bone -> "boneIndex", Weight -> "boneWeight")
+	    thing  = thingMesh.newVertexArray( gl, boneShader, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords", Bone -> "boneIndex", Weight -> "boneWeight")
 	    bone   = boneMesh.newVertexArray(  gl, plainShader, Vertex -> "position", Color -> "color")
 	}
 	
@@ -163,13 +164,13 @@ class TestSkinning4 extends SurfaceRenderer {
 	    groundNMap.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    groundNMap.wrap(gl.REPEAT)
 
-	    thingColor = new Texture(gl, "textures/Armature_Color_001.png", true)
+	    thingColor = new Texture(gl, "textures/Armature_Color_002.png", true)
 	    thingColor.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    thingColor.wrap(gl.REPEAT)
 
-	    // tubeNMap = new Texture(gl, "textures/Armature_NMap.png", true)
-	    // tubeNMap.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
-	    // tubeNMap.wrap(gl.REPEAT)
+	    thingNMap = new Texture(gl, "textures/Armature_NMap_002.png", true)
+	    thingNMap.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+	    thingNMap.wrap(gl.REPEAT)
 	}
 	
 	def reshape(surface:Surface) {
@@ -187,7 +188,6 @@ class TestSkinning4 extends SurfaceRenderer {
 
  		// Skeleton
 
-		//gl.polygonMode(gl.FRONT_AND_BACK, gl.LINE)
 	    plainShader.use
 	    camera.pushpop {
 	        skeleton.drawSkeleton(gl, camera, plainShader)
@@ -198,19 +198,18 @@ class TestSkinning4 extends SurfaceRenderer {
 	  	gl.enable(gl.BLEND)
 	    nmapShader.use
 	    light1.uniform(nmapShader, camera)
-	    //useLights(nmapShader)
-	    useTextures(nmapShader)
+	    useTextures(nmapShader, groundColor, groundNMap)
 	    camera.uniformMVP(nmapShader)
-	    //gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    ground.draw(groundMesh.drawAs)
 		gl.disable(gl.BLEND)
 
 		animate
 
-		gl.enable(gl.BLEND)
 		gl.frontFace(gl.CCW)
+		gl.enable(gl.BLEND)
 	    boneShader.use
 	    light1.uniform(boneShader, camera)
+	    useTextures(boneShader, thingColor, thingNMap)
 	    camera.pushpop {
 	    	skeleton.uniform(boneShader)
 	    	camera.uniformMVP(boneShader)
@@ -251,10 +250,10 @@ class TestSkinning4 extends SurfaceRenderer {
 	    //skeleton(0)(0).scale(0.7, 1, 0.7)
 	}
 	
-	def useTextures(shader:ShaderProgram) {
-	    groundColor.bindTo(gl.TEXTURE0)
+	def useTextures(shader:ShaderProgram, color:Texture, nmap:Texture) {
+	   	color.bindTo(gl.TEXTURE0)
 	    shader.uniform("texColor", 0)
-	    groundNMap.bindTo(gl.TEXTURE1)
+	    nmap.bindTo(gl.TEXTURE1)
 	    shader.uniform("texNormal", 1)
 	}
 }

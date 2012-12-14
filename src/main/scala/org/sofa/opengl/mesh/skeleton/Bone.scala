@@ -38,7 +38,7 @@ class Bone(val id:Int) {
 	
 	/** The matrix that animates the bone. */
 	val animation:Matrix4 = Matrix4()
-	
+
 	/** Inverse of [[orientation]] matrix. This matrix will not change during animation once the
 	  * skeleton is set up in its initial pose. */
 	val inverseOrientation:Matrix4 = Matrix4()
@@ -57,6 +57,12 @@ class Bone(val id:Int) {
 
 	/** Bone lenth (from base (joint) to childs base). */
 	var length = 1.0
+
+	/** Set to false after a call to computePose(). This step will trigger
+	  * th computation of the orientation and inverseOrientation. They will
+	  * remain unchanged until the pose (which is usually only setup at start)
+	  * is changed anew. */
+	var needRecomputePose = true
 
 // Construction
 	
@@ -112,39 +118,6 @@ class Bone(val id:Int) {
 	    recursiveDrawSkeleton(gl, camera, shader, null)
 	}
 	
-	/** Draw the model deformed by bones animations.
-	  * The given `shader` must define a bone structure that at least contains two
-	  * fields `MV` for the animation matrix and `MV3x3` for the upper 3x3 matrix
-	  * extracted from `MV`.
-	  *      
-	  *     struct Bone {
-	  *         mat4 MV;
-	  *         mat3 MV3x3;
-	  *     };
-	  * 
-	  *  In addition the shader must define an uniform variable named 'bone'
-	  *  which is an array of the form:
-	  *  
-	  *      uniform Bone bone[n];
-	  *  
-	  *  Where `n` is the max number of bones used in the skeleton. The [[Camera]] class
-	  *  being used, the shader must also define:
-	  *  
-	  *      uniform mat4 MV;    // Model-View matrix.
-	  *      uniform mat3 MV3x3; // Upper 3x3 model-view matrix.
-	  *      uniform mat4 MVP;   // Projection-Model-View matrix.
-	  */
-	// def drawModel(gl:SGL, camera:Camera, model:Mesh, modelInstance:VertexArray, shader:ShaderProgram) {
-	// 	val orientation = Matrix4(); orientation.setIdentity
-	//     val forward = Matrix4(); forward.setIdentity
-	    
-	//     recursiveComputeMatrices(orientation, forward)
-	//     recursiveUniformMatrices(shader, camera)
-	//     camera.uniformMVP(shader)
-	//     //camera.setUniformMVP(shader)
-	//     modelInstance.draw(model.drawAs)
-	// }
-	
 	/** Install the bones matrices in the given `shader`.
 	  * The given `shader` must define a bone structure that at least contains two
 	  * fields `MV` for the animation matrix and `MV3x3` for the upper 3x3 matrix
@@ -163,10 +136,11 @@ class Bone(val id:Int) {
 	  *  Where `n` is the max number of bones used in the skeleton.
 	  */
 	def uniform(shader:ShaderProgram) {
-		val orientation = Matrix4(); orientation.setIdentity
-	    val forward = Matrix4(); forward.setIdentity
-	    
-	    recursiveComputeMatrices(orientation, forward)
+	    val forward = Matrix4()
+
+	    forward.setIdentity
+		computePose	    
+	    recursiveComputeAnimation(forward)
 	    recursiveUniformMatrices(shader)
 	}
 
@@ -177,34 +151,24 @@ class Bone(val id:Int) {
 
 		recursiveComputeLength(orientation * from) 
 	}
-
-	protected def recursiveComputeLength(from:Point4) {
-		if(!children.isEmpty) {
-			val to = children.head.orientation * from
-			length = from.distance(to)
-			children.foreach { _.recursiveComputeLength(to) }
-		} else {
-			length = 1.0 /// How to compute last bone length ??
-		}
-	}
 	
 // Orientation -- Allow to give the initial pose of bones.
 	
-	def poseIdentity() = orientation.setIdentity
+	def poseIdentity() = { needRecomputePose = true; orientation.setIdentity }
 	
-	def poseTranslate(tx:Double, ty:Double, tz:Double) = orientation.translate(tx, ty, tz)
+	def poseTranslate(tx:Double, ty:Double, tz:Double) = { needRecomputePose = true; orientation.translate(tx, ty, tz) }
 	
-	def poseTranslate(t:NumberSeq3) = orientation.translate(t)
+	def poseTranslate(t:NumberSeq3) = { needRecomputePose = true; orientation.translate(t) }
 	    
-	def poseScale(sx:Double, sy:Double, sz:Double) = orientation.scale(sx, sy, sz)
+	def poseScale(sx:Double, sy:Double, sz:Double) = { needRecomputePose = true; orientation.scale(sx, sy, sz) }
 	
-	def poseScale(s:NumberSeq3) = orientation.scale(s)
+	def poseScale(s:NumberSeq3) = { needRecomputePose = true; orientation.scale(s) }
 
-	def poseRotate(angle:Double, x:Double, y:Double, z:Double) = orientation.rotate(angle, x, y, z)
+	def poseRotate(angle:Double, x:Double, y:Double, z:Double) = { needRecomputePose = true; orientation.rotate(angle, x, y, z) }
 	
-	def poseRotate(angle:Double, axis:NumberSeq3) = orientation.rotate(angle, axis)
+	def poseRotate(angle:Double, axis:NumberSeq3) = { needRecomputePose = true; orientation.rotate(angle, axis) }
 
-	def setPose(matrix:Matrix4) = orientation.copy(matrix)
+	def setPose(matrix:Matrix4) = { needRecomputePose = true; orientation.copy(matrix) }
 	
 // Animation -- Allow to deform the model.
 	
@@ -249,12 +213,8 @@ class Bone(val id:Int) {
 	    }
 	}
 	
-	/** Compute the [[orientation]], [[inverseOrientation]], [[TX]] matrices for this sub-skeleton. */
-	protected def recursiveComputeMatrices(orientation:Matrix4, forward:Matrix4) {
-	    // Concatenate the parents bone orientation with this bone orientation.
-	    val localOrientation = orientation * this.orientation 	// TODO we could save this matrix to go faster !
-	    // Save the inverse.
-	    inverseOrientation.copy(localOrientation.inverse)		// TODO we could save this matrix to go faster !
+	/** Compute the animation matrix for this sub-skeleton. This must be done at each modification of the animation. */
+	protected def recursiveComputeAnimation(forward:Matrix4) {
 	    // Concatenate to the whole transformation (orientation + animation) this bone orientation...
 	    val localForward = forward * this.orientation
 	    // ... and this bone animation.
@@ -264,9 +224,59 @@ class Bone(val id:Int) {
 	    TX.copy(localForward * inverseOrientation)
 	    // Process the children.
 	    children.foreach { child =>
-	    	child.recursiveComputeMatrices(localOrientation, localForward)
+			child.recursiveComputeAnimation(localForward)
 	    }
 	    // At the end of the process each bone as a TX matrix setup. 
+	}
+
+	/** Recursivelly compute the lenth of each bone excepted the last one that
+	  * cannot be computed using this method. */
+	protected def recursiveComputeLength(from:Point4) {
+		if(!children.isEmpty) {
+			val to = children.head.orientation * from
+			length = from.distance(to)
+			children.foreach { _.recursiveComputeLength(to) }
+		} else {
+			length = 1.0 /// How to compute last bone length ??
+		}
+	}
+
+	/** Compute the main orientation inverse matrix used while animating for the whole
+	  * bone hierarchy. This matrix is also often called inverse bind matrix. If this
+	  * method is called from a bone that is not root of a hierarchy, the root is first
+	  * searched to start at it. */
+	protected def computePose() {
+		if(needRecomputePose) {
+			// Go to the root of the hierachy if needed.
+
+			var me = this
+
+			while(me.parent ne null)
+				me = me.parent 			
+
+			// Now compute the pose (the inverseOrientation matrices (or inverse bind matrices)).
+
+			val orientation = Matrix4()
+			orientation.setIdentity
+			me.recursiveComputePose(orientation)
+		}
+	}
+
+	/** Recursively compute the inverse orientation matrices for the hierarchy. Mark
+	  * each bone `needRecomputePose` flag when done to avoid recomputing the inverse
+	  * until the initial pose change. Usually this is done only once. */
+	protected def recursiveComputePose(orientation:Matrix4) {
+	    // Concatenate the parents bone orientation with this bone orientation.
+	    val localOrientation = orientation * this.orientation
+	    
+	    // Save the inverse.
+	    inverseOrientation.copy(localOrientation.inverse)
+
+	    // Compute recursivelly.
+		children.foreach { _.recursiveComputePose(localOrientation) }
+		
+		// Mark as done.
+		needRecomputePose = false
 	}
 	
 	/** Apply the [[TX]] matrix as `MV` and `MV3x3` for this sub-skeleton. */
