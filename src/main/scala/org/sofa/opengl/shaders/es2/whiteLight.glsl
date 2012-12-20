@@ -1,3 +1,9 @@
+#ifndef WHITE_LIGHT
+#define WHITE_LIGHT
+#include <es2/light.glsl>
+
+// -- PHONG -------------------------------------------
+
 /** Compute the color of vertex at position P, with normal N with absolute color C.
   *
   * This is a basic goureau (if called in the vertex shader) or phong
@@ -8,12 +14,13 @@
   *
   * Return: the lighted color.
   */
-vec4 singleWhiteLight(vec3 P, vec3 N, vec4 C) {
+vec4 singleWhiteLightPhong(vec3 P, vec3 N, vec4 C) {
 	vec3  L  = whitelight.pos - P;
 	float d  = length(L);
-	float D  = max(dot(N, L), 0.0);
-	vec3  R  = normalize(reflect(-L, N));
-	float S  = pow(max(dot(N, R), 0.0), whitelight.specular);
+	      L = normalize(L);
+	      N = normalize(N);
+	float D  = diffuse(N, L);
+	float S  = specular(N, L, whitelight.specular);
 	vec3  SS = vec3(1, 1, 1);
 	vec3  CC = C.rgb;
 
@@ -36,13 +43,13 @@ vec4 singleWhiteLight(vec3 P, vec3 N, vec4 C) {
   *
   * Return: the lighted color.
   */
-vec4 singleWhiteLight(in vec3 P, in vec3 N, in vec4 C, in mat3 TBN) {
+vec4 singleWhiteLightPhong(in vec3 P, in vec3 N, in vec4 C, in mat3 TBN) {
 	vec3  L  = whitelight.pos - P;
 	float d  = length(L);
 	      L  = normalize(TBN * L);
-	float D  = max(dot(N, L), 0);
-	vec3  R  = normalize(reflect(-L, N));
-	float S  = pow(max(dot(N, R), 0), whitelight.specular);
+	      N  = normalize(N);
+	float D  = diffuse(N, L);
+	float S  = specular(N, L, whitelight.specular);
 	vec3  CC = C.rgb;
 	vec3  SS = vec3(1,1,1);
 
@@ -53,3 +60,30 @@ vec4 singleWhiteLight(in vec3 P, in vec3 N, in vec4 C, in mat3 TBN) {
 	  + ((SS * S * whitelight.intensity) / d)
 	  + ( CC * whitelight.ambient), C.a);
 }
+
+// -- MATTE ------------------------------------------------
+
+/** Compute the color of vertex at position P, with normal N with absolute color C.
+  *
+  * In order to work a uniform "WhiteLight whitelight;" must be declared using the
+  * structure in "whiteLightStruct.glsl".
+  *
+  * Return: the lighted color.
+  */
+vec4 singleWhiteLightMatte(vec3 P, vec3 N, vec4 C) {
+	vec3  L  = whitelight.pos - P;
+	float d  = length(L);
+	      L  = normalize(L);
+	      N  = normalize(N);
+	float D  = diffuse(N, L);
+	vec3  CC = C.rgb;
+
+	d = d * d;
+
+	return vec4(
+			  ((CC * D * whitelight.intensity) / d)
+			+ ( CC * whitelight.ambient), C.a);
+}
+
+
+#endif WHITE_LIGHT

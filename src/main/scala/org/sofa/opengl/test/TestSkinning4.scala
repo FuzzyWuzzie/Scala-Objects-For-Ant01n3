@@ -170,7 +170,7 @@ class TestSkinning4 extends SurfaceRenderer {
 
 	    thingNMap = new Texture(gl, "textures/Armature_NMap_002.png", true)
 	    thingNMap.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
-	    thingNMap.wrap(gl.REPEAT)
+	    thingNMap.wrap(gl.CLAMP_TO_EDGE)
 	}
 	
 	def reshape(surface:Surface) {
@@ -188,10 +188,8 @@ class TestSkinning4 extends SurfaceRenderer {
 
  		// Skeleton
 
-	    plainShader.use
-	    camera.pushpop {
-	        skeleton.drawSkeleton(gl, camera, plainShader)
-	    }
+//	    plainShader.use
+//	    skeleton.drawSkeleton(gl, camera, plainShader)
 
 		// Ground
 
@@ -206,16 +204,12 @@ class TestSkinning4 extends SurfaceRenderer {
 		animate
 
 		gl.frontFace(gl.CCW)
-		gl.enable(gl.BLEND)
 	    boneShader.use
 	    light1.uniform(boneShader, camera)
 	    useTextures(boneShader, thingColor, thingNMap)
-	    camera.pushpop {
-	    	skeleton.uniform(boneShader)
-	    	camera.uniformMVP(boneShader)
-	    	thing.draw(thingMesh.drawAs)
-	    }
-		gl.disable(gl.BLEND)
+	    skeleton.uniform(boneShader)
+	    camera.uniformMVP(boneShader)
+	    thing.draw(thingMesh.drawAs)
 		gl.frontFace(gl.CW)
 	    
 	    // Ok

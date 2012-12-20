@@ -10,5 +10,5 @@ uniform vec4 color;
 #include <es2/hemiLight.glsl>
 
 void main(void) {
-	gl_FragColor = hemiLight(P, N, color);
+	gl_FragColor = hemiLight(hemilight, P, N, color, vec4(0,0,0,1));
 }

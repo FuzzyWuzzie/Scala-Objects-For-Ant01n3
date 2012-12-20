@@ -104,8 +104,18 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
         
         if(!getShaderCompileStatus(oid)) {
             val log = getShaderInfoLog(oid)
-        	Console.err.println(log)
-        	throw new RuntimeException("Cannot compile shader %s:%n%s".format(name, log))
+
+            val logLines = log.split("\n")
+            val errMatch = "ERROR:\\s*(\\d+):\\s*(\\d+):(.*)".r
+
+            logLines.foreach { line =>
+            	errMatch.findFirstIn(line) match {
+            		case Some(errMatch(col,line,msg)) => printError(col.toInt, line.toInt-1, msg)
+            		case None                         => Console.err.println("# %s".format(line))
+            	}
+            }
+        	//Console.err.println(log)
+        	throw new RuntimeException("Cannot compile shader %s".format(name))
         }
     }
     
@@ -114,6 +124,15 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
         checkId
         deleteShader(oid)
         super.dispose
+    }
+
+    protected def printError(col:Int, line:Int, msg:String) {
+    	Console.err.println("%4d:%4d > %s".format(col,line,msg))
+    	if(line>0)
+    		Console.err.print("          |   %s".format(source(line-1)))
+    	Console.err.print("          | * %s".format(source(line)))
+    	if(line+1 < source.length)
+    		Console.err.print("          |   %s".format(source(line+1)))    	
     }
 }
 

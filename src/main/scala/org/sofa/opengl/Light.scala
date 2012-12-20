@@ -2,7 +2,15 @@ package org.sofa.opengl
 
 import org.sofa.math.{Vector3, Vector4, NumberSeq3, Rgba}
 
-class Light {}
+trait Light {
+	def uniform(shader:ShaderProgram, camera:Camera)
+
+	def uniformPosition(shader:ShaderProgram, camera:Camera)
+
+	def uniform(index:Int, shader:ShaderProgram, camera:Camera)
+
+	def uniformPosition(index:Int, shader:ShaderProgram, camera:Camera)
+}
 
 /** WhiteLight companion object. */
 object WhiteLight {
@@ -64,6 +72,61 @@ class WhiteLight(x:Double, y:Double, z:Double, var intensity:Float, var specular
 	}
 }
 
+object ColoredLight {
+	def apply(x:Double, y:Double, z:Double, diffuse:Rgba, specular:Rgba, ambient:Rgba, Kd:Double, Ks:Double, Ka:Double, roughness:Double, constAtt:Double, linAtt:Double, quadAtt:Double):ColoredLight = {
+		new ColoredLight(x,y,z, diffuse, specular, ambient, Kd, Ks, Ka, roughness, constAtt, linAtt, quadAtt)
+	}
+}
+
+class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:Rgba, val ambient:Rgba, val Kd:Double, val Ks:Double, val Ka:Double, val roughness:Double, val constAtt:Double, val linAtt:Double, val quadAtt:Double) extends Light {
+	val pos = Vector4(x, y, z, 1)
+
+	def this(p:NumberSeq3, diffuse:Rgba, specular:Rgba, ambient:Rgba, Kd:Double, Ks:Double, Ka:Double, roughness:Double, constAtt:Double, linAtt:Double, quadAtt:Double) {
+		this(p.x, p.y, p.z, diffuse, specular, ambient, Kd, Ks, Ka, roughness, constAtt, linAtt, quadAtt)
+	}
+
+	def this(p:NumberSeq3, diffuse:Rgba, Kd:Double, Ks:Double, Ka:Double, roughness:Double, quadAtt:Double) {
+		this(p.x, p.y, p.z, diffuse, Rgba.white, diffuse, Kd, Ks, Ka, roughness, 0.0, 1.0, quadAtt)
+	}
+
+	def uniform(shader:ShaderProgram, camera:Camera) {
+		shader.uniform("light.pos", Vector3(camera.modelview.top * pos))
+		shader.uniform("light.diffuse", diffuse)
+		shader.uniform("light.specular", specular)
+		shader.uniform("light.ambient", ambient)
+		shader.uniform("light.Kd", Kd.toFloat)
+		shader.uniform("light.Ks", Ks.toFloat)
+		shader.uniform("light.Ka", Ka.toFloat)
+		shader.uniform("light.roughness", roughness.toFloat)
+		shader.uniform("light.constAtt", constAtt.toFloat)
+		shader.uniform("light.linAtt", linAtt.toFloat)
+		shader.uniform("light.quadAtt", quadAtt.toFloat)
+	}
+
+	def uniformPosition(shader:ShaderProgram, camera:Camera) {
+		shader.uniform("light.pos", Vector3(camera.modelview.top * pos))
+	}
+
+	def uniform(index:Int, shader:ShaderProgram, camera:Camera) {
+		shader.uniform("light[%d].pos".format(index), Vector3(camera.modelview.top * pos))
+		shader.uniform("light[%d].diffuse".format(index), diffuse)
+		shader.uniform("light[%d].specular".format(index), specular)
+		shader.uniform("light[%d].ambient".format(index), ambient)
+		shader.uniform("light[%d].Kd".format(index), Kd.toFloat)
+		shader.uniform("light[%d].Ks".format(index), Ks.toFloat)
+		shader.uniform("light[%d].Ka".format(index), Ka.toFloat)
+		shader.uniform("light[%d].roughness".format(index), roughness.toFloat)
+		shader.uniform("light[%d].constAtt".format(index), constAtt.toFloat)
+		shader.uniform("light[%d].linAtt".format(index), linAtt.toFloat)
+		shader.uniform("light[%d].quadAtt".format(index), quadAtt.toFloat)
+
+	}
+
+	def uniformPosition(index:Int, shader:ShaderProgram, camera:Camera) {
+		shader.uniform("light[%d].pos".format(index), Vector3(camera.modelview.top * pos))
+	}
+}
+
 /** A simple hemisphere ligh modelisation.
   *
   * To use the [[uniform()]] methods, your shader must have a `HemisphereLight` structure
@@ -76,7 +139,7 @@ class WhiteLight(x:Double, y:Double, z:Double, var intensity:Float, var specular
   * Furthermore the hemisphere light must be declared as:
   *     HemisphereLight hemilight;
   */
-class HemisphereLight(x:Double, y:Double, z:Double, val skyColor:Rgba, val groundColor:Rgba) {
+class HemisphereLight(x:Double, y:Double, z:Double, val skyColor:Rgba, val groundColor:Rgba) extends Light {
 	/** Light position. */
 	val pos = Vector4(x, y, z, 1)
 
@@ -90,7 +153,17 @@ class HemisphereLight(x:Double, y:Double, z:Double, val skyColor:Rgba, val groun
 		shader.uniform("hemilight.groundColor", groundColor)
 	}
 
-	def uniformPosition(index:Int, shader:ShaderProgram, camera:Camera) {
+	def uniformPosition(shader:ShaderProgram, camera:Camera) {
 		shader.uniform("hemilight.pos", Vector3(camera.modelview.top * pos))
+	}
+
+	def uniform(index:Int, shader:ShaderProgram, camera:Camera) {
+		shader.uniform("hemilight[%d].pos".format(index),         Vector3(camera.modelview.top * pos))
+		shader.uniform("hemilight[%d].skyColor".format(index),    skyColor)
+		shader.uniform("hemilight[%d].groundColor".format(index), groundColor)
+	}
+
+	def uniformPosition(index:Int, shader:ShaderProgram, camera:Camera) {
+		shader.uniform("hemilight[%d].pos".format(index), Vector3(camera.modelview.top * pos))
 	}
 }
