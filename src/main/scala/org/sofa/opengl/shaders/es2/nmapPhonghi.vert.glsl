@@ -1,4 +1,6 @@
-#version 120
+#version 110
+precision highp float;
+precision highp int;
 
 // Input:
 attribute vec3 position;

@@ -1,4 +1,6 @@
-#version 120
+#version 110
+//precision highp float;
+//precision highp int;
 #include <es2/lightStruct.glsl>
 
 varying vec3 vNormal;
@@ -15,9 +17,9 @@ void main(void) {
 	D         = length(l);								// Light distance
 	l         = normalize(l);
 	vec3    n = normalize(vNormal);
-	float   d = max(dot(n, l), 0);						// Diffuse
+	float   d = max(dot(n, l), 0.0);						// Diffuse
 	vec3    r = normalize(reflect(-l, n));				// Reflection vector
-	float   s = pow(max(dot(n, r), 0), light.specular);	// Specular
+	float   s = pow(max(dot(n, r), 0.0), light.specular);	// Specular
 	float  DD = D * D;									// D^2
 
 

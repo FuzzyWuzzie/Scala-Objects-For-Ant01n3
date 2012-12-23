@@ -1,4 +1,4 @@
-#version 120
+#version 110
 
 // Input:
 varying vec3 N;		// Normal,

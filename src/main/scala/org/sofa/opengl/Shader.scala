@@ -20,7 +20,7 @@ object Shader {
     def fileToArrayOfStrings(file:String):Array[String] = {
         streamToArrayOfStrings(loader.open(file))
     }
-    /** Transform a text file from a stream into an array of strings. */
+    /** Transform a text file from a stream into an array of strings, one cell in the array per line. */
     def streamToArrayOfStrings(in:InputStream):Array[String] = {
         val buf = new scala.collection.mutable.ArrayBuffer[String]
         val src = new scala.io.BufferedSource(in)
@@ -105,17 +105,22 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
         if(!getShaderCompileStatus(oid)) {
             val log = getShaderInfoLog(oid)
 
-            val logLines = log.split("\n")
-            val errMatch = "ERROR:\\s*(\\d+):\\s*(\\d+):(.*)".r
+            val logLines     = log.split("\n")
+            val errMatch     = ".*".r
+            val osxMatch     = "ERROR:\\s*(\\d+):\\s*(\\d+):(.*)".r
+            val androidMatch = "(\\d+):(\\d+):[^:]+:(.*)".r
+
+            printErrorHeader(logLines.length)
 
             logLines.foreach { line =>
             	errMatch.findFirstIn(line) match {
-            		case Some(errMatch(col,line,msg)) => printError(col.toInt, line.toInt-1, msg)
-            		case None                         => Console.err.println("# %s".format(line))
+            		case Some(osxMatch(col,line,msg))     => printError(col.toInt, line.toInt-1, msg)
+            		case Some(androidMatch(col,line,msg)) => printError(col.toInt, line.toInt-1, msg)
+            		case None                             => Console.err.println("# %s".format(line))
             	}
             }
         	//Console.err.println(log)
-        	throw new RuntimeException("Cannot compile shader %s".format(name))
+        	throw new RuntimeException("Cannot compile shader %s (see log above)".format(name))
         }
     }
     
@@ -124,6 +129,10 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
         checkId
         deleteShader(oid)
         super.dispose
+    }
+
+    protected def printErrorHeader(count:Int) {
+    	Console.err.println("Found %d errors in shader '%s':".format(count, name))
     }
 
     protected def printError(col:Int, line:Int, msg:String) {

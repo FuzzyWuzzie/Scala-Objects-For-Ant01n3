@@ -1,4 +1,4 @@
-#version 120
+#version 110
 #include <es2/lightStruct.glsl>
 
 attribute vec3 position;

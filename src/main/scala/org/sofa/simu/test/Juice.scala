@@ -283,7 +283,9 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		Texture.path     += "/Users/antoine/Documents/Programs/SOFA/"
 		Texture.path     += "textures/"
 		GLFont.path      += "/Users/antoine/Library/Fonts"
+		GLFont.path      += "fonts/"
 		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
+		ColladaFile.path += "meshes/"
 
 		camera.viewport = (1280, 800)
 		cameraTex = new Camera(); cameraTex.viewport = (fbWidth, fbHeight)
@@ -689,6 +691,7 @@ var angle = 0.0
 	}
 
 	protected def drawWalls() {
+		gl.enable(gl.DEPTH_TEST)
 		gl.frontFace(gl.CCW)
 		phongTexShad.use
 		wallTex.bindTo(gl.TEXTURE0)
@@ -722,11 +725,13 @@ var angle = 0.0
 			gl.bindTexture(gl.TEXTURE_2D, 0)
 		}
 
+		gl.disable(gl.DEPTH_TEST)
 	}
 
 val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 
 	protected def drawBiroutes() {
+		gl.enable(gl.DEPTH_TEST)
 		gl.disable(gl.CULL_FACE)
 		gl.frontFace(gl.CW)
 		//phongNoClrShad.use
@@ -751,6 +756,7 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 		drawBiroute(player1)
 		drawBiroute(player2)
 		gl.enable(gl.CULL_FACE)
+		gl.disable(gl.DEPTH_TEST)
 	}
 
 	protected def drawBiroute(player:Player) {

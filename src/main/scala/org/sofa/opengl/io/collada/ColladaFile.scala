@@ -55,7 +55,6 @@ class DefaultColladaLoader extends ColladaLoader {
     }
 }
 
-
 /** Library of elements used an referenced inside a Collada file. */
 class Library(root:NodeSeq) {
 	/** All the cameras. */
