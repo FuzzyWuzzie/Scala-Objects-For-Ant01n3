@@ -7,7 +7,7 @@ import org.sofa.opengl.text.{GLFont, GLFontLoader, TextureRegion}
 
 import scala.math._
 
-class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader {
+class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with AndroidLoader {
 	def load(gl:SGL, resource:String, size:Int, padX:Int, padY:Int, font:GLFont) {
 		font.fontPadX = padX
 		font.fontPadY = padY
@@ -141,21 +141,5 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader {
 				case None => { throw new java.io.IOException("cannot open font resource %s".format(resource)) }
 			}
 		}
-	}
-
-	protected def exists(path:String, resource:String):Boolean = {
-		// We cut the path/resource name anew, since the resource can also contain path
-		// separators.
-		
-		val fileName = if(path.length>0) "%s/%s".format(path, resource) else resource
-		val pos      = fileName.lastIndexOf('/')
-		var newName  = fileName
-		var newPath  = ""
-		if(pos >= 0) {
-			newPath = fileName.substring(0, pos)
-			newName = fileName.substring(pos+1)
-		}		
-
-		resources.getAssets.list(newPath).contains(newName)
 	}
 }
