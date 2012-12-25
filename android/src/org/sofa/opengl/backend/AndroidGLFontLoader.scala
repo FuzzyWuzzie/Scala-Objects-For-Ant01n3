@@ -129,17 +129,5 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 		}
 	}
 
-	protected def loadFont(resource:String):Typeface = Typeface.createFromAsset(resources.getAssets, openFont(resource))
-		// AWTFont.createFont(AWTFont.TRUETYPE_FONT, openFont(resource))
-
-	protected def openFont(resource:String):String = {
-		if(exists("", resource)) {
-			resource //resources.getAssets.open(resource)
-		} else {
-			GLFont.path.find(path => exists(path, resource)) match {
-				case path:Some[String] => { "%s/%s".format(path.get,resource) }
-				case None => { throw new java.io.IOException("cannot open font resource %s".format(resource)) }
-			}
-		}
-	}
+	protected def loadFont(resource:String):Typeface = Typeface.createFromAsset(resources.getAssets, searchInAssets(resource, GLFont.path))
 }

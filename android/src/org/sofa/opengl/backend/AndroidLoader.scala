@@ -23,4 +23,18 @@ trait AndroidLoader {
 
 		resources.getAssets.list(newPath).contains(newName)
 	}	
+
+	/** Search for the given resource in the set of pathes. Return the
+	  * first full path that is present in the assets or throw an IO exception
+	  * if not found. */
+	protected def searchInAssets(resource:String, path:Seq[String]):String = {
+		if(exists("", resource)) {
+			resource
+		} else {
+			path.find(path => exists(path, resource)) match {
+				case path:Some[String] => { "%s/%s".format(path.get,resource) }
+				case None => { throw new java.io.IOException("cannot open resource %s".format(resource)) }
+			}
+		}
+	}
 }

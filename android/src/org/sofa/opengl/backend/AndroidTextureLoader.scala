@@ -8,14 +8,7 @@ import android.graphics.{Bitmap, BitmapFactory}
 
 class AndroidTextureLoader(val resources:Resources) extends TextureLoader with AndroidLoader {
 	def open(resource:String):TextureImage = {
-		if(exists("", resource)) {
-			new TextureImageAndroid(BitmapFactory.decodeStream(resources.getAssets.open(resource)))
-		} else {
-			Texture.path.find(path => exists(path, resource)) match {
-				case path:Some[String] => { new TextureImageAndroid(BitmapFactory.decodeStream(resources.getAssets.open("%s/%s".format(path.get,resource)))) }
-				case None => { throw new IOException("cannot open shader resource %s".format(resource)) }
-			}
-		}
+		new TextureImageAndroid(BitmapFactory.decodeStream(resources.getAssets.open(searchInAssets(resource, Texture.path))))
 	}
 }
 
