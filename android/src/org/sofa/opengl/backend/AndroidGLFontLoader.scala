@@ -1,6 +1,7 @@
 package org.sofa.opengl.backend
 
 import org.sofa.opengl.{SGL, Texture}
+import org.sofa.backend.AndroidLoader
 import android.content.res.Resources
 import android.graphics.{Bitmap, Canvas, Paint, Typeface}
 import org.sofa.opengl.text.{GLFont, GLFontLoader, TextureRegion}

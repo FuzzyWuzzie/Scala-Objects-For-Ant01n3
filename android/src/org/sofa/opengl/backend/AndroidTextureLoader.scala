@@ -5,6 +5,7 @@ import java.io.{InputStream, IOException}
 import android.content.res.Resources
 import android.opengl.{GLUtils, GLES20}
 import android.graphics.{Bitmap, BitmapFactory}
+import org.sofa.backend.AndroidLoader
 
 class AndroidTextureLoader(val resources:Resources) extends TextureLoader with AndroidLoader {
 	def open(resource:String):TextureImage = {

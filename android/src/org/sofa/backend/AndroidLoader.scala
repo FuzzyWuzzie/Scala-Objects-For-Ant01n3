@@ -1,4 +1,4 @@
-package org.sofa.opengl.backend
+package org.sofa.backend
 
 import android.content.res.Resources
 
