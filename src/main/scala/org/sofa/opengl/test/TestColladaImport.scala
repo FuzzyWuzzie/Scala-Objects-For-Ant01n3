@@ -80,6 +80,9 @@ class TestColladaImport extends SurfaceRenderer {
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
 		Shader.path  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path  += "shaders/"
+		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
+		ColladaFile.path += "meshes/"
 			
 		initGL(sgl)
 		initShaders
@@ -96,6 +99,7 @@ class TestColladaImport extends SurfaceRenderer {
 		gl.clearColor(clearColor)
 		gl.clearDepth(1f)
 		gl.enable(gl.DEPTH_TEST)
+		gl.depthFunc(gl.LEQUAL)
 		
 		gl.enable(gl.CULL_FACE)
 		gl.cullFace(gl.BACK)
@@ -118,7 +122,8 @@ class TestColladaImport extends SurfaceRenderer {
 	}
 	
 	def initThing() {
-		val model = new ColladaFile(scala.xml.XML.loadFile("/Users/antoine/Documents/Art/Sculptures/Blender/Suzanne2.dae").child)
+		val model = new ColladaFile("Suzanne2.dae")
+		model.library.geometry("Monkey").get.mesh.mergeVertices(true)
 		thingMesh = model.library.geometry("Monkey").get.mesh.toMesh 
 	}
 	
@@ -137,6 +142,7 @@ class TestColladaImport extends SurfaceRenderer {
 
 		// Thing
 		
+		gl.enable(gl.DEPTH_TEST)
 		gl.frontFace(gl.CCW)
 		thingShad.uniform("color", thingColor)
 		hemiLight.uniform(thingShad, camera)

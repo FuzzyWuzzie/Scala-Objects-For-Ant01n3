@@ -41,6 +41,15 @@ class SGLJogl3(val gl:GL3, val glu:GLU) extends SGL {
     val FILL:Int = GL2GL3.GL_FILL
     val LINE:Int = GL2GL3.GL_LINE
     val UNPACK_ALIGNMENT:Int = GL.GL_UNPACK_ALIGNMENT
+
+	val NEVER:Int = GL_NEVER
+	val LESS:Int = GL_LESS
+	val EQUAL:Int = GL_EQUAL
+	val LEQUAL:Int = GL_LEQUAL
+	val GREATER:Int = GL_GREATER
+	val NOTEQUAL:Int = GL_NOTEQUAL
+	val GEQUAL:Int = GL_GEQUAL
+	val ALWAYS:Int = GL_ALWAYS
     
     val TEXTURE_2D:Int = GL.GL_TEXTURE_2D
     val TEXTURE0:Int = GL.GL_TEXTURE0
@@ -351,6 +360,7 @@ class SGLJogl3(val gl:GL3, val glu:GLU) extends SGL {
     // def pointSize(size:Double) = glPointSize(size.toFloat)
     def blendEquation(mode:Int) = glBlendEquation(mode)
     def blendFunc(src:Int, dst:Int) = glBlendFunc(src, dst)
+    def depthFunc(op:Int) = glDepthFunc(op)
     def polygonMode(face:Int, mode:Int) = glPolygonMode(face, mode)
 
     def pixelStore(param:Int, value:Int) = glPixelStorei(param, value)

@@ -13,7 +13,11 @@ class AndroidTextureLoader(val resources:Resources) extends TextureLoader with A
 	}
 }
 
+/** A texture image class for Android. */
 class TextureImageAndroid(val data:Bitmap) extends TextureImage {
+	// We can use the wonderfull GLUtils.texImage2D ... thank you
+	// Android for being a descent API. Shame on you, JDK.
+
 	protected val imgFormat = verify
 
 	protected def verify():ImageFormat.Value = {

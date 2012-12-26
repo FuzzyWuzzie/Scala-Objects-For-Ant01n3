@@ -30,7 +30,7 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
 
     def build(camera:Camera, renderer:SurfaceRenderer) {
         setEGLContextClientVersion(2)
-        setEGLConfigChooser(8,8,8,8,0,0)
+        setEGLConfigChooser(8,8,8,8,16,0)
         this.camera = camera
         this.renderer = renderer
     

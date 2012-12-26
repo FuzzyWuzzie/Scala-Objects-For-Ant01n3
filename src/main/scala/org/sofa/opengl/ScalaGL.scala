@@ -50,6 +50,15 @@ abstract class SGL {
     val FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:Int
     val FRAMEBUFFER_UNSUPPORTED:Int
     
+	val NEVER:Int
+	val LESS:Int 
+	val EQUAL:Int 
+	val LEQUAL:Int 
+	val GREATER:Int 
+	val NOTEQUAL:Int 
+	val GEQUAL:Int 
+	val ALWAYS:Int 
+
     val UNSIGNED_BYTE:Int
     val UNSIGNED_INT:Int
     val UNSIGNED_SHORT:Int
@@ -204,6 +213,7 @@ abstract class SGL {
     // def pointSize(size:Double)
     def blendEquation(mode:Int)
     def blendFunc(src:Int, dst:Int)
+    def depthFunc(op:Int)
     def polygonMode(face:Int, mode:Int)
     def pixelStore(param:Int, value:Int)
     

@@ -46,7 +46,7 @@ class Camera {
     var viewportPx = Vector2(800, 600)
     
     /** Maximum depth of the view (far clip-plane position). */
-    var maxDepth = 1000.0
+    var maxDepth = 100.0
     
     def zoom_= (value:Double):Unit = { sphericalEye.z = value; cartesianFromSpherical }
     

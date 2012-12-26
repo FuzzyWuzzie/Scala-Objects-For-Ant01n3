@@ -29,6 +29,15 @@ class SGLAndroidES20 extends SGL {
     val FILL:Int = -1
     val LINE:Int = -1
     val UNPACK_ALIGNMENT:Int = GLES20.GL_UNPACK_ALIGNMENT
+
+	val NEVER:Int = GLES20.GL_NEVER
+	val LESS:Int = GLES20.GL_LESS
+	val EQUAL:Int = GLES20.GL_EQUAL
+	val LEQUAL:Int = GLES20.GL_LEQUAL
+	val GREATER:Int = GLES20.GL_GREATER
+	val NOTEQUAL:Int = GLES20.GL_NOTEQUAL
+	val GEQUAL:Int = GLES20.GL_GEQUAL
+	val ALWAYS:Int = GLES20.GL_ALWAYS
     
     val TEXTURE_2D:Int = GLES20.GL_TEXTURE_2D
     val TEXTURE0:Int = GLES20.GL_TEXTURE0
@@ -322,6 +331,7 @@ class SGLAndroidES20 extends SGL {
     def lineWidth(width:Double) = GLES20.glLineWidth(width.toFloat)
     def blendEquation(mode:Int) = GLES20.glBlendEquation(mode)
     def blendFunc(src:Int, dst:Int) = GLES20.glBlendFunc(src, dst)
+    def depthFunc(op:Int) = GLES20.glDepthFunc(op)
     def polygonMode(face:Int, mode:Int) = throw new RuntimeException("no polygonMode in GL ES 20, too bad")
 
     def pixelStore(param:Int, value:Int) = GLES20.glPixelStorei(param, value)

@@ -7,6 +7,6 @@ import org.sofa.backend.AndroidLoader
 
 class AndroidColladaLoader(val resources:Resources) extends ColladaLoader with AndroidLoader {
     def open(resource:String):NodeSeq = {
-    	scala.xml.XML.load(searchInAssets(resource, ColladaFile.path)).child
+    	scala.xml.XML.load(resources.getAssets.open(searchInAssets(resource, ColladaFile.path))).child
     }
 }

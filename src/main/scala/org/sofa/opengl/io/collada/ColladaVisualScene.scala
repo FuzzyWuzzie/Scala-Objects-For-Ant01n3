@@ -120,6 +120,7 @@ class SceneNode(node:Node) {
 		sid  = (node \ "@sid").text
 
 		(node \ "@type").text match {
+			case ""       => nodeType = SceneNodeType.NodeType
 			case "NODE"   => nodeType = SceneNodeType.NodeType
 			case "JOINT"  => nodeType = SceneNodeType.JointType
 			case x:String => throw new RuntimeException("unknow scene node type %s".format(x))

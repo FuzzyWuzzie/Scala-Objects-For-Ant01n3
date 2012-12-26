@@ -40,6 +40,15 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     val LINE:Int = GL2GL3.GL_LINE
     val UNPACK_ALIGNMENT:Int = GL.GL_UNPACK_ALIGNMENT
     
+    val NEVER:Int = GL.GL_NEVER
+	val LESS:Int = GL.GL_LESS
+	val EQUAL:Int = GL.GL_EQUAL
+	val LEQUAL:Int = GL.GL_LEQUAL
+	val GREATER:Int = GL.GL_GREATER
+	val NOTEQUAL:Int = GL.GL_NOTEQUAL
+	val GEQUAL:Int = GL.GL_GEQUAL
+	val ALWAYS:Int = GL.GL_ALWAYS
+
     val TEXTURE_2D:Int = GL.GL_TEXTURE_2D
     val TEXTURE0:Int = GL.GL_TEXTURE0
     val TEXTURE1:Int = GL.GL_TEXTURE1
@@ -353,6 +362,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     // def pointSize(size:Double) = glPointSize(size.toFloat)
     def blendEquation(mode:Int) = glBlendEquation(mode)
     def blendFunc(src:Int, dst:Int) = glBlendFunc(src, dst)
+    def depthFunc(op:Int) = glDepthFunc(op)
     def polygonMode(face:Int, mode:Int) = throw new RuntimeException("no polygon mode for GL ES 2.0 too bad")
 
     def pixelStore(param:Int, value:Int) = glPixelStorei(param, value)

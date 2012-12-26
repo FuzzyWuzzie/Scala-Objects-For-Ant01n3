@@ -20,7 +20,7 @@ trait AndroidLoader {
 			newPath = fileName.substring(0, pos)
 			newName = fileName.substring(pos+1)
 		}		
-
+Console.err.println("## looking for '%s / %s' in {%s}".format(newPath, newName, resources.getAssets.list(newPath).mkString(",")))
 		resources.getAssets.list(newPath).contains(newName)
 	}	
 
