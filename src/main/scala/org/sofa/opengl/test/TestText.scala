@@ -99,9 +99,10 @@ class TestText extends SurfaceRenderer {
 
 		GLFont.path += "/Users/antoine/Library/Fonts"
 
-		font = new GLFont(gl, "DroidSerif-Italic.ttf", 100, 0, 0)
-//		font = new GLFont(gl, "SourceSansPro-Black.ttf", 100, 0, 0)
-		text = new GLString(gl, font, 256)
+		font = new GLFont(gl, "Ubuntu-R.ttf", 40)
+//		font = new GLFont(gl, "DroidSerif-Italic.ttf", 100)
+//		font = new GLFont(gl, "SourceSansPro-Black.ttf", 100)
+		text = new GLString(gl, font, 256, textShad)
 
 		font.minMagFilter(gl.LINEAR, gl.LINEAR)
 
@@ -140,7 +141,7 @@ class TestText extends SurfaceRenderer {
 			textShad.use
 			font.texture.bindTo(gl.TEXTURE0)
 	    	textShad.uniform("texColor", 0)	// Texture Unit 0
-	    	textShad.uniform("textColor", Rgba.black)
+	    //textShad.uniform("textColor", Rgba.black)
 	    	//camera.scaleModel(scale, scale, scale)
 			camera.setUniformMVP(textShad)
 			plane.draw(planeMesh.drawAs)

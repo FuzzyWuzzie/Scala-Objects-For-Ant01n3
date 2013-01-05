@@ -88,7 +88,6 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
     protected def imageDataRGBA(image:BufferedImage, align:Int):ByteBuffer = {
         val width  = image.getWidth
         val height = image.getHeight
-        val pad    = (align - (width % align)) % align
         
         // val dataBuffer     = image.getRaster.getDataBuffer
         // val buf:ByteBuffer = dataBuffer match {
@@ -96,15 +95,15 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
         //     case _ => null
         // }
         
-        val buf = new ByteBuffer((width + pad) * height * 4, true)
+        val buf = new ByteBuffer(width * height * 4, true)
         
         // Very inefficient.
         
         var b = 0
-        var y = height-1
+        var y = 0
         var x = 0
 
-        while(y >= 0) {
+        while(y < height) {
             x = 0
             while(x < width) {
                 val rgba = image.getRGB(x,y)
@@ -115,16 +114,15 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
                 x += 1
                 b += 4
             }
-            b += pad
-            y -= 1
+            y += 1
         }
         
         buf
     }
     
     protected def imageDataGray(image:BufferedImage, align:Int):ByteBuffer = {
-        val width  = data.getWidth
-        val height = data.getHeight
+        val width  = image.getWidth
+        val height = image.getHeight
         val pad    = (align - (width % align)) % align
         val buf    = new ByteBuffer((width + pad) * height, true)   // Take care to pad data on 4 bytes.
         

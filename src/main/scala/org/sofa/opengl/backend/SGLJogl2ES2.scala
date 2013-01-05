@@ -26,6 +26,9 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 	val DEPTH_TEST:Int = GL.GL_DEPTH_TEST
 	val BLEND:Int = GL.GL_BLEND
     val SRC_ALPHA:Int = GL.GL_SRC_ALPHA
+    val BLEND_SRC:Int = GL.GL_BLEND_SRC
+    val BLEND_DST:Int = GL.GL_BLEND_DST
+    val ONE:Int = GL.GL_ONE
     val ONE_MINUS_SRC_ALPHA:Int = GL.GL_ONE_MINUS_SRC_ALPHA
     val CULL_FACE:Int = GL.GL_CULL_FACE
     val BACK:Int = GL.GL_BACK
@@ -38,6 +41,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
     val FRONT_FACE:Int = GL.GL_FRONT_FACE
     val FILL:Int = GL2GL3.GL_FILL
     val LINE:Int = GL2GL3.GL_LINE
+    val LINE_SMOOTH:Int = GL.GL_LINE_SMOOTH
     val UNPACK_ALIGNMENT:Int = GL.GL_UNPACK_ALIGNMENT
     
     val NEVER:Int = GL.GL_NEVER

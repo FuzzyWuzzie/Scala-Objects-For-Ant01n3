@@ -20,8 +20,10 @@ trait AndroidLoader {
 			newPath = fileName.substring(0, pos)
 			newName = fileName.substring(pos+1)
 		}		
-Console.err.println("## looking for '%s / %s' in {%s}".format(newPath, newName, resources.getAssets.list(newPath).mkString(",")))
-		resources.getAssets.list(newPath).contains(newName)
+
+		val paths = resources.getAssets.list(newPath)
+		
+		paths.contains(newName)
 	}	
 
 	/** Search for the given resource in the set of pathes. Return the

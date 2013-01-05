@@ -340,18 +340,18 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	}
 
 	protected def initFonts() {
-		heaFont = new GLFont(gl, "Ubuntu-B.ttf", 40, 0, 0)
-		subFont = new GLFont(gl, "Ubuntu-B.ttf", 30, 0, 0)
-		stdFont = new GLFont(gl, "Ubuntu-B.ttf", 25, 0, 0)
+		heaFont = new GLFont(gl, "Ubuntu-B.ttf", 40)
+		subFont = new GLFont(gl, "Ubuntu-B.ttf", 30)
+		stdFont = new GLFont(gl, "Ubuntu-B.ttf", 25)
 		
 		heaFont.minMagFilter(gl.LINEAR, gl.LINEAR)
 		subFont.minMagFilter(gl.LINEAR, gl.LINEAR)
 		stdFont.minMagFilter(gl.LINEAR, gl.LINEAR)
 
-		text(0) = new GLString(gl, heaFont, 256);	text(4) = new GLString(gl, heaFont, 256)
-		text(1) = new GLString(gl, subFont, 256);	text(5) = new GLString(gl, subFont, 256)
-		text(2) = new GLString(gl, stdFont, 256);	text(6) = new GLString(gl, stdFont, 256)
-		text(3) = new GLString(gl, stdFont, 256);	text(7) = new GLString(gl, stdFont, 256)
+		text(0) = new GLString(gl, heaFont, 256, textShad);	text(4) = new GLString(gl, heaFont, 256, textShad)
+		text(1) = new GLString(gl, subFont, 256, textShad);	text(5) = new GLString(gl, subFont, 256, textShad)
+		text(2) = new GLString(gl, stdFont, 256, textShad);	text(6) = new GLString(gl, stdFont, 256, textShad)
+		text(3) = new GLString(gl, stdFont, 256, textShad);	text(7) = new GLString(gl, stdFont, 256, textShad)
 
 		for(i <- 0 until text.length) {
 			text(i).setColor(Rgba.white)

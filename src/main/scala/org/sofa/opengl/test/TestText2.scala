@@ -3,72 +3,56 @@ package org.sofa.opengl.test
 import org.sofa.Timer
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
 import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, TextureFramebuffer}
-import org.sofa.opengl.mesh.{PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, PointsMesh, VertexAttribute}
+import org.sofa.opengl.mesh.{PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.text.{GLFont, GLString}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
 import org.sofa.math.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject, Point3, Vector3, Vector4, Rgba, Matrix4}
 
 object TestText2 {
-	def main(args:Array[String]) = (new TestText2).test
+	def main(args:Array[String]) = {
+		val desktopHints = java.awt.Toolkit.getDefaultToolkit.getDesktopProperty("awt.font.desktophints")
 
-	val lorem = Array[String](
-		"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-		"Sed non risus. Suspendisse lectus tortor, dignissim sit",
-		"amet, adipiscing, nec, ultricies sed, dolor. Cras",
-		"elementum ultrices diam. Maecenas ligula massa, varius a,",
-		"semper congue, euismod non, mi. Proin porttitor, orci nec",
-		"nonummy molestie, enim est eleifend mi, non fermentum",
-		"diam nisl sit amet erat. Duis semper. Duis arcu massa,",
-		"scelerisque vitae, consequat in, pretium a, enim.",
-		"Pellentesque congue. Ut in risus volutpat libero pharetra",
-		"tempor. Cras vestibulum bibendum augue. Praesent egestas",
-		"leo in pede. Praesent blandit odio eu enim. Pellentesque",
-		"sed dui ut augue blandit sodales. Vestibulum ante ipsum",
-		"primis in faucibus orci luctus et ultrices posuere cubilia",
-		"Curae; Aliquam nibh. Mauris ac mauris sed pede pellentesque",
-		"fermentum. Maecenas adipiscing ante non diam sodales",
-		"hendrerit. Ut velit mauris, egestas sed, gravida nec, ornare",
-		"ut, mi. Aenean ut orci vel massa suscipit pulvinar. Nulla",
-		"sollicitudin. Fusce varius, ligula non tempus aliquam, nunc",
-		"turpis ullamcorper nibh, in tempus sapien eros vitae ligula.",
-		"Pellentesque rhoncus nunc et augue. Integer id felis.",
-		"Curabitur aliquet pellentesque diam. Integer quis metus",
-		"vitae elit lobortis egestas. Lorem ipsum dolor sit amet,",
-		"consectetuer adipiscing elit. Morbi vel erat non mauris",
-		"convallis vehicula. Nulla et sapien. Integer tortor tellus,",
-		"aliquam faucibus, convallis id, congue eu, quam. Mauris",
-		"ullamcorper felis vitae erat. Proin feugiat, augue non",
-		"elementum posuere, metus purus iaculis lectus, et tristique",
-		"ligula justo vitae magna. Aliquam convallis sollicitudin",
-		"purus. Praesent aliquam, enim at fermentum mollis, ligula",
-		"massa adipiscing nisl, ac euismod nibh nisl eu lectus.",
-		"Fusce vulputate sem at sapien. Vivamus leo. Aliquam euismod",
-		"libero eu enim. Nulla nec felis sed leo placerat imperdiet.",
-		"Aenean suscipit nulla in justo. Suspendisse cursus rutrum",
-		"augue. Nulla tincidunt tincidunt mi. Curabitur iaculis,",
-		"lorem vel rhoncus faucibus, felis magna fermentum augue,",
-		"et ultricies lacus lorem varius purus. Curabitur eu amet."
-	)
+		Console.err.println(desktopHints)
+
+		(new TestText2).test
+	}
+
+	val cyrano = Array[String](
+		"RAGUENEAU, devant la cheminée",
+		"Ma Muse, éloigne-toi, pour que tes yeux charmants",
+		"N'aillent pas se rougir au feu de ces sarments !",
+		"À un pâtissier, lui montrant des pains.",
+		"Vous avez mal placé la fente de ces miches",
+		"Au milieu la césure, -entre les hémistiches !",
+		"À un autre, lui montrant un pâté inachevé.",
+		"À ce palais de croûte, il faut, vous, mettre un toit...",
+		"À un jeune apprenti, qui, assis par terre, embroche des volailles.",
+		"Et toi, sur cette broche interminable, toi,",
+		"Le modeste poulet et la dinde superbe,",
+		"Alterne-les, mon fils, comme le vieux Malherbe",
+		"Alternait les grands vers avec les plus petits,",
+		"Et fais tourner au feu des strophes de rôtis !"
+		)
 }
 
 class TestText2 extends SurfaceRenderer {
 	var gl:SGL = null
 	var surface:Surface = null
 	
-	var textShad:ShaderProgram = null
+	val linesMesh = new LinesMesh(3000)
+	var lines:VertexArray = null
+
 	var plainShad:ShaderProgram = null
-	
-	var axis:VertexArray = null	
-	var axisMesh = new AxisMesh(10)
+	var textShad:ShaderProgram = null
 	
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
 	val clearColor = Rgba.white
 
-	var font:GLFont = null
-	var text:Array[GLString] = new Array[GLString](TestText2.lorem.length)
+	var fonts = new Array[GLFont](3)
+	var text:Array[GLString] = new Array[GLString](TestText2.cyrano.length)
 		
 	def test() {
 		val caps = new GLCapabilities(GLProfile.getGL2ES2)
@@ -82,7 +66,7 @@ class TestText2 extends SurfaceRenderer {
 		caps.setHardwareAccelerated(true)
 		caps.setSampleBuffers(true)
 		
-		camera         = new Camera()
+		camera         = new Camera(); camera.viewportPx.set(1280, 800)
 		ctrl           = new MyCameraController(camera, null)
 		initSurface    = initializeSurface
 		frame          = display
@@ -98,11 +82,15 @@ class TestText2 extends SurfaceRenderer {
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
 		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-			
+Console.err.println("Init surface")
 		initGL(sgl)
+Console.err.println("after initGL")
 		initShaders
+Console.err.println("after initShaders")
 		initGLText
+Console.err.println("after initGLText")
 		initGeometry
+Console.err.println("after initGeometry")
 		
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
@@ -122,30 +110,41 @@ class TestText2 extends SurfaceRenderer {
 	}
 	
 	def initShaders() {
-		textShad = ShaderProgram(gl, "phong shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
 		plainShad = ShaderProgram(gl, "plain shader", "es2/plainColor.vert.glsl", "es2/plainColor.frag.glsl")
+		textShad  = ShaderProgram(gl, "phong shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
 	}
 
 	def initGLText() {
-		println("unpack alignment = %d".format(gl.getInteger(gl.UNPACK_ALIGNMENT)))
+//		println("unpack alignment = %d".format(gl.getInteger(gl.UNPACK_ALIGNMENT)))
 
 		GLFont.path += "/Users/antoine/Library/Fonts"
+		GLFont.path += "Fonts"
 
-//		font = new GLFont(gl, "DroidSerif-Italic.ttf", 12, 0, 0)
-		font = new GLFont(gl, "SourceSansPro-Black.ttf", 20, 0, 0)
-//		font.minMagFilter(gl.LINEAR, gl.LINEAR)
+//		font = new GLFont(gl, "NoticiaText-Italic.ttf", 40)
+//		font = new GLFont(gl, "Ubuntu-RI.ttf", 40)
+		fonts(0) = new GLFont(gl, "Ubuntu-R.ttf", 45)
+//		fonts(1) = new GLFont(gl, "Ubuntu-RI.ttf", 45)
+		fonts(2) = new GLFont(gl, "Ubuntu-L.ttf", 40)
 
-		for(i <- 0 until text.length) {
-			text(i) = new GLString(gl, font, 256)
-			text(i).setColor(Rgba.grey20)
-			text(i).build(TestText2.lorem(i))
+		fonts(0).minMagFilter(gl.LINEAR, gl.LINEAR)
+//		fonts(1).minMagFilter(gl.LINEAR, gl.LINEAR)
+		fonts(2).minMagFilter(gl.LINEAR, gl.LINEAR)
+
+		text(0) = new GLString(gl, fonts(0), TestText2.cyrano(0).length, textShad)
+		text(0).setColor(Rgba.red)
+		text(0).build(TestText2.cyrano(0))
+
+		for(i <- 1 until text.length) {
+			text(i) = new GLString(gl, fonts(2), TestText2.cyrano(i).length, textShad)
+			text(i).setColor(Rgba.black)
+			text(i).build(TestText2.cyrano(i))
 		}
 	}
 	
 	def initGeometry() {
 		import VertexAttribute._
-		
-		axis = axisMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")		
+		linesMesh.horizontalRuler(0, 0, 10, 100, 10, 2, Rgba.black, Rgba(0.6, 0, 0, 1), Rgba(0.3, 0, 0, 1))
+		lines = linesMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 	}	
 
 	def display(surface:Surface) {
@@ -154,13 +153,16 @@ class TestText2 extends SurfaceRenderer {
 		gl.frontFace(gl.CW)
 		
 		camera.viewIdentity
-		
-		// Axis
-		
+
 		gl.enable(gl.BLEND)
+//		gl.disable(gl.LINE_SMOOTH)
+		gl.lineWidth(1)
+		
+		// Ruler
+
 		plainShad.use
 		camera.setUniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
+		lines.draw(linesMesh.drawAs)		
 
 		// GLString
 
@@ -169,7 +171,7 @@ class TestText2 extends SurfaceRenderer {
 			camera.pushpop {
 				//val scale = 5.0 / text(0).advance
 				//camera.scaleModel(scale, scale, scale)
-				camera.translateModel(0, (text.length-i)*font.cellHeight, 0)
+				camera.translateModel(10, (text.length-i)*fonts(2).height, 0)
 				text(i).draw(camera)
 			}
 			gl.enable(gl.DEPTH_TEST)
@@ -182,6 +184,7 @@ class TestText2 extends SurfaceRenderer {
 	}
 	
 	def reshape(surface:Surface) {
+Console.err.println("### Surface (%d x %d)".format(surface.width, surface.height))
 		camera.viewportPx(surface.width, surface.height)
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
 		camera.orthographic(0, surface.width, 0, surface.height, -1, 1)

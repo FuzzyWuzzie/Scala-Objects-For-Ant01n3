@@ -38,28 +38,27 @@ object GLFont {
 	var loader:GLFontLoader = new GLFontLoaderAWT()
 }
 
-class GLFont(val gl:SGL, file:String, val size:Int, padX:Int, padY:Int) {
-	// TODO this strangePad allows to adjust the way we pick a rectangle around
-	// each glyph. Knowing that each glyph is drawn on a very large rectangle, and
-	// some part of a glyph may overlap another (descent, slanted font, etc.). We in
-	// general do not draw the full rectangle of a glyph but only a part of it.
-	// However the technique is bad, we should use the font metrics.
-	val strangePad = size / 50.0f
+// TODO: This thing is actually only able to understand characters in a very limited range
+// However we could imagine "blocks" that maps to unicode blocks and that are textures,
+// rendered on demand, when needing some characters.
 
-	/** Font X padding (pixels, on each side, doubled on X axis) */
-	var fontPadX = 0
-
-	/** Font Y padding (pixels, on each side, doubled on Y axis). */
-	var fontPadY = 0
-
+/** A font allowing to draw text in OpenGL.
+  *
+  * This code is derived and largely inspired by the implementation of Fractious:
+  * http://fractiousg.blogspot.fr/2012/04/rendering-text-in-opengl-on-android.html
+  */
+class GLFont(val gl:SGL, file:String, val size:Int) {
 	/** Font height (actual, pixels). */
-	var fontHeight = 0f
+	var height = 0f
 
 	/** Font ascent (above baseline, pixels). */
-	var fontAscent = 0f
+	var ascent = 0f
 
 	/** Font descent (below baseline, pixels). */
-	var fontDescent = 0f
+	var descent = 0f
+
+	/** Padding arround each character. */
+	var pad = 0f
 
 	//---------------------
 
@@ -98,8 +97,11 @@ class GLFont(val gl:SGL, file:String, val size:Int, padX:Int, padY:Int) {
 
 	/** Number of columns in the texture. */
 	var colCnt = 0
-	
-	GLFont.loader.load(gl, file, size, padX, padY, this)
+
+	/** True if the texture contains bitmaps with premultiplied alpha. */
+	var isAlphaPremultiplied = false
+
+	GLFont.loader.load(gl, file, size, this)
 
 	/** Set the minification and magnification filters for the glyph
 	  * texture. For 2D pixel perfect use, the NEAREST-LINEAR mode is better.
@@ -130,13 +132,14 @@ class GLFont(val gl:SGL, file:String, val size:Int, padX:Int, padY:Int) {
 }
 
 trait GLFontLoader {
-	def load(gl:SGL, file:String, size:Int, padX:Int, padY:Int, font:GLFont)
+	def load(gl:SGL, file:String, size:Int, font:GLFont)
 }
 
 class GLFontLoaderAWT extends GLFontLoader {
-	def load(gl:SGL, resource:String, size:Int, padX:Int, padY:Int, font:GLFont) {
-		font.fontPadX = padX
-		font.fontPadY = padY
+	def load(gl:SGL, resource:String, size:Int, font:GLFont) {
+		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
+
+		font.isAlphaPremultiplied = false
 
 		// Load the font.
 
@@ -144,35 +147,39 @@ class GLFontLoaderAWT extends GLFontLoader {
 		var awtFont = theFont.deriveFont(AWTFont.PLAIN, size.toFloat)
 
 		// Java2D forces me to create an image before I have access to font metrics
-		// However, I need font metrics to know the size of the image ... hum ... interesting.
+		// However, I need font metrics to know the size of the image ... hum ...
 
-		val w = size*1.2 + 2*padX       // 1.2 factor to make some room.
-		val h = size*1.2 + 2*padY 		// idem
-		val textureSize = math.sqrt(w * h * GLFont.CharCnt).toInt
+		val w = size*1.4 		// factor to make some room.
+		val h = size*1.4 		// idem
+		val textureSize = math.sqrt((w*1.1) * (h*1.1) * GLFont.CharCnt).toInt
 		
-		val image = new BufferedImage(textureSize, textureSize, BufferedImage.TYPE_BYTE_GRAY);
-		val gfx   = image.getGraphics.asInstanceOf[AWTGraphics2D]
+//		val image = new BufferedImage(textureSize, textureSize, BufferedImage.TYPE_BYTE_GRAY)
+		val image = new BufferedImage(textureSize, textureSize, BufferedImage.TYPE_4BYTE_ABGR)	// <- Do not know yet why,
+		val gfx   = image.getGraphics.asInstanceOf[AWTGraphics2D]								// but rendering is far better.
+
+		gfx.setRenderingHints(java.awt.Toolkit.getDefaultToolkit.getDesktopProperty("awt.font.desktophints").asInstanceOf[java.util.Map[String,String]])
 
 //		gfx.setColor(new AWTColor(0.2f, 0f, 0f, 1))
 //		gfx.fillRect(0, 0, textureSize, textureSize)
 
 		gfx.setFont(awtFont)
 		gfx.setRenderingHint(AWTRenderingHints.KEY_TEXT_ANTIALIASING,
+//		                     AWTRenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB)
  	 	 				     AWTRenderingHints.VALUE_TEXT_ANTIALIAS_ON)
 
 		val metrics = gfx.getFontMetrics(awtFont)
 
 		// Get Font metrics.
 
-		font.fontHeight  = metrics.getHeight
-		font.fontAscent  = metrics.getAscent
-		font.fontDescent = metrics.getDescent
+		font.height  = metrics.getHeight
+		font.ascent  = metrics.getAscent
+		font.descent = metrics.getDescent
 
 		// Determine the width of each character (including unnown character)
 		// also determine the maximum character width.
 
 		font.charWidthMax = 0
-		font.charHeight   = font.fontHeight
+		font.charHeight   = font.height
 
 		var c = GLFont.CharStart 
 		var cnt = 0
@@ -186,10 +193,10 @@ class GLFontLoaderAWT extends GLFontLoader {
 			c += 1
 		}
 
-		// Font the maximum size, validate, and setup cell sizes.
+		// Find the maximum size, validate, and setup cell sizes.
 
-		font.cellWidth  = (font.charWidthMax + 2 * font.fontPadX).toInt
-		font.cellHeight = (font.charHeight + 2 * font.fontPadY).toInt
+		font.cellWidth  = w.toInt;//font.charWidthMax.toInt
+		font.cellHeight = h.toInt;//font.charHeight.toInt
 
 		val maxSize = if(font.cellWidth > font.cellHeight) font.cellWidth else font.cellHeight
 
@@ -205,8 +212,8 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 		// Render each of the character to the image.
 
-		var x = font.fontPadX
-		var y = ((font.cellHeight - 1) - font.fontDescent - font.fontPadY).toInt
+		var x = padX
+		var y = ((font.cellHeight - 1) - font.descent).toInt
 
 		c = GLFont.CharStart
 
@@ -217,8 +224,8 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 			x += font.cellWidth
 
-			if((x + font.cellWidth - font.fontPadX) >= textureSize) {
-				x  = font.fontPadX
+			if((x + font.cellWidth) >= textureSize) {
+				x  = padX
 				y += font.cellHeight
 			}
 
@@ -233,22 +240,27 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 		// Setup the array of character texture regions.
 
-		x = 0
+		x = padX
 		y = 0
 		c = 0
 
-		while(c < GLFont.CharCnt) {
-			// Why we remove size/5 -> because the cell size is often too large for
-			// italic text and some parts of the characters just aside will appear. Se we restrain
-			// the area of the character. We do the same thing in GLString when drawing characters
-			// to compensate.
-			font.charRgn(c) = new TextureRegion(textureSize, textureSize, x, y, font.cellWidth-font.strangePad, font.cellHeight-font.strangePad)
+		font.pad = font.charWidthMax * 0.1f
 
+		assert(font.pad < padX)
+
+		while(c < GLFont.CharCnt) {
+			// We define the texture region with padding at left and at right since most of the characters
+			// go outside of their advance (hence the fond.pad, also used in when drawing in GLString).
+			font.charRgn(c) = new TextureRegion(textureSize, x-font.pad, y,
+									font.charWidths(c)+font.pad*2, font.cellHeight)//, font.descent)
 			x += font.cellWidth
 
-			if((x + font.cellWidth - font.fontPadX) >= textureSize) {
-				x  = font.fontPadX
+			if((x + font.cellWidth) >= textureSize) {
+				x  = padX
 				y += font.cellHeight
+
+				if(y > textureSize && c+1 < GLFont.CharCnt)
+					throw new RuntimeException("out of texture bounds!")
 			}
 
 			c += 1
@@ -281,14 +293,13 @@ class GLFontLoaderAWT extends GLFontLoader {
 class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
 
 	/** Calculate U,V coordinate from specified texture coordinates.
-	  * @param texWidth The width of the texture region
-	  * @param texHeight The height of the texture region
-	  * @param x The left of the texture region in pixels
+	  * @param texSize The width and height of the texture region.
+	  * @param x The left of the texture region in pixels.
 	  * @param y The top of the texture region in pixels.
 	  * @param width The width of the texture region in pixels.
 	  * @param height The height of the texture region in pixels. */
-	def this(texWidth:Float, texHeight:Float, x:Float, y:Float, width:Float, height:Float) {
-		this((x/texWidth), (y/texHeight), ((x/texWidth) + (width/texWidth)), ((y/texHeight) + (height/texHeight)))
+	def this(texSize:Float, x:Float, y:Float, width:Float, height:Float) {
+		this(x/texSize, y/texSize, (x+width)/texSize, (y+height)/texSize)
 	}
 }
 
@@ -301,7 +312,7 @@ class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
   * TODO: Right-to-Left, Top-to-Bottom advance.
   * TODO: Multi-line string.
   */
-class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
+class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:ShaderProgram) {
 	/** Mesh used to build the triangles of the batch. */
 	protected val batchMesh = new TrianglesMesh(maxCharCnt*2)
 
@@ -323,15 +334,12 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	/** Current y. */
 	protected var y = 0f
 
-	/** Shader used for text compositing. */
-	protected var shader:ShaderProgram = null
-
 	init
 
 	protected def init() {
 		import VertexAttribute._
 
-		shader = ShaderProgram(gl, "text shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
+//		shader = ShaderProgram(gl, "text shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
 		batch  = batchMesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
 	}
 
@@ -381,7 +389,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		val width = font.charWidth(c)
 		val rgn   = font.charTextureRegion(c)
 
-		addCharTriangles(rgn)
+		addCharTriangles(rgn, width)
 
 		x += width  	// Triangles may overlap.
 	}
@@ -407,18 +415,33 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	/** Draw the string with the baseline at (0,0). Use translation of the current MVP. */
 	def draw(mvp:Matrix4) {
 		shader.use
+
+		val src = gl.getInteger(gl.BLEND_SRC) 
+		val dst = gl.getInteger(gl.BLEND_DST)
+
+		if(font.isAlphaPremultiplied)
+			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+		else gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
 		font.texture.bindTo(gl.TEXTURE0)
 	    shader.uniform("texColor", 0)
 	    shader.uniform("textColor", color)
 	    shader.uniformMatrix("MVP", mvp)
 		batch.draw(batchMesh.drawAs, p)
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?
+
+		gl.blendFunc(src, dst)
 	}
 
-	protected def addCharTriangles(rgn:TextureRegion) {
-		val w = font.cellWidth-font.strangePad
-		val h = font.cellHeight-font.strangePad
-		val d = font.fontDescent-font.strangePad
+	/** Define two triangles for a character at current `x` position.
+	  * The `x` position is a point at the baseline of the character just
+	  * at the left of the start of the character. The character may extend before
+	  * and after, above and under this position. */
+	protected def addCharTriangles(rgn:TextureRegion, width:Float) {
+		val W = width + font.pad*2 // rgn.width 		// Overall character drawing width
+		val H = font.cellHeight // rgn.height 			// Overall character drawing height
+		val X = x - font.pad                            // Real X start of drawing.
+		val Y = y - font.descent                        // Real Y start of drawing.
 
 		//  u1 --> u2
 		//  
@@ -434,13 +457,13 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 		// Vertices
 
-		batchMesh.setPoint(p,   x,   y-d,   0)
-		batchMesh.setPoint(p+1, x+w, y-d,   0)
-		batchMesh.setPoint(p+2, x+w, y-d+h, 0)
+		batchMesh.setPoint(p,   X,   Y,   0)
+		batchMesh.setPoint(p+1, X+W, Y,   0)
+		batchMesh.setPoint(p+2, X+W, Y+H, 0)
 
-		batchMesh.setPoint(p+3, x,   y-d,   0)
-		batchMesh.setPoint(p+4, x+w, y-d+h, 0)
-		batchMesh.setPoint(p+5, x,   y-d+h, 0)
+		batchMesh.setPoint(p+3, X,   Y,   0)
+		batchMesh.setPoint(p+4, X+W, Y+H, 0)
+		batchMesh.setPoint(p+5, X,   Y+H, 0)
 
 		// TexCoords
 

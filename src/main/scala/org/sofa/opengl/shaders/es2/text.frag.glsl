@@ -1,17 +1,13 @@
 #version 110
 
-//precision highp float;
-//precision highp int;
-
 varying vec2 vTexCoords;
 
 uniform sampler2D texColor;
 uniform vec4 textColor;
 
+/** Shader suitable for text with the JDK. */
 void main(void) {
-	vec3  CC = textColor.rgb;
-	float at = texture2D(texColor, vTexCoords.st).a;
-	float ac = textColor.a;
+	vec4 C = texture2D(texColor, vTexCoords.st);
 
-	gl_FragColor = vec4(CC.r, CC.g, CC.b, at*ac);
+	gl_FragColor = vec4(C.r-(1.0-textColor.r), C.g-(1.0-textColor.g), C.b-(1.0-textColor.b), C.a*textColor.a);
 }

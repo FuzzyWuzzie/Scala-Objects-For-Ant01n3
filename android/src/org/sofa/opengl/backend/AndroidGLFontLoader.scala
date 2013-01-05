@@ -8,10 +8,12 @@ import org.sofa.opengl.text.{GLFont, GLFontLoader, TextureRegion}
 
 import scala.math._
 
+/** Font loader for Android using the bitmap and canvas method to retrieve the font texture. */
 class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with AndroidLoader {
-	def load(gl:SGL, resource:String, size:Int, padX:Int, padY:Int, font:GLFont) {
-		font.fontPadX = padX
-		font.fontPadY = padY
+	def load(gl:SGL, resource:String, size:Int, font:GLFont) {
+		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
+
+		font.isAlphaPremultiplied = false
 
 		// Load the font.
 
@@ -19,6 +21,7 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 		var paint   = new Paint()
 
 		paint.setAntiAlias(true)
+		paint.setSubpixelText(true)
 		paint.setTextSize(size.toFloat)
 		paint.setColor(0xFFFFFFFF)
 		paint.setTypeface(theFont)
@@ -27,15 +30,15 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 
 		// Get Font metrics.
 
-		font.fontHeight  = abs(metrics.bottom) + abs(metrics.top)
-		font.fontAscent  = abs(metrics.ascent)
-		font.fontDescent = abs(metrics.descent)
+		font.height  = abs(metrics.bottom) + abs(metrics.top)
+		font.ascent  = abs(metrics.ascent)
+		font.descent = abs(metrics.descent)
 
 		// Determine the width of each character (including unnown character)
 		// also determine the maximum character width.
 
 		font.charWidthMax = 0
-		font.charHeight   = font.fontHeight
+		font.charHeight   = font.height
 
 		var cnt = 0
 		var c = GLFont.CharStart 
@@ -52,10 +55,21 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 			c += 1
 		}
 
+		// Create the bitmap
+
+		val w = size*1.2       // 1.2 factor to make some room.
+		val h = size*1.2 		// idem
+		val textureSize = math.sqrt((w*1.1) * (h*1.1) * GLFont.CharCnt).toInt
+		val bitmap = Bitmap.createBitmap(textureSize, textureSize, Bitmap.Config.ALPHA_8)
+//		val bitmap = Bitmap.createBitmap(textureSize, textureSize, Bitmap.Config.ARGB_8888)
+      	val image  = new Canvas(bitmap)
+      	
+      	bitmap.eraseColor(0x00000000)			// Set Transparent Background (ARGB)
+
 		// Find the maximum size, validate, and setup cell sizes.
 
-		font.cellWidth  = (font.charWidthMax + 2 * font.fontPadX).toInt
-		font.cellHeight = (font.charHeight + 2 * font.fontPadY).toInt
+		font.cellWidth  = w.toInt;//font.charWidthMax.toInt
+		font.cellHeight = h.toInt;//font.charHeight.toInt
 
 		val maxSize = if(font.cellWidth > font.cellHeight) font.cellWidth else font.cellHeight
 
@@ -64,15 +78,6 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 		if(maxSize > GLFont.FontSizeMax)
 			throw new RuntimeException("Cannot create a font this large (%d>%d)".format(maxSize, GLFont.FontSizeMax))
 
-		// Create the bitmap
-
-		val w = size*1.2 + 2*padX       // 1.2 factor to make some room.
-		val h = size*1.2 + 2*padY 		// idem
-		val textureSize = math.sqrt(w * h * GLFont.CharCnt).toInt
-		val bitmap = Bitmap.createBitmap(textureSize, textureSize, Bitmap.Config.ALPHA_8)
-      	val image  = new Canvas(bitmap)
-      	
-      	bitmap.eraseColor(0x00000000)			// Set Transparent Background (ARGB)
 
 		// Calculate number of rows / columns.
 
@@ -81,8 +86,8 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 
 		// Render each of the character to the image.
 
-		var x = font.fontPadX
-		var y = ((font.cellHeight - 1) - font.fontDescent - font.fontPadY).toInt
+		var x = padX
+		var y = ((font.cellHeight - 1) - font.descent).toInt
 
 		c = GLFont.CharStart
 
@@ -92,8 +97,8 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 
 			x += font.cellWidth
 
-			if((x + font.cellWidth - font.fontPadX) >= textureSize) {
-				x  = font.fontPadX
+			if((x + font.cellWidth) >= textureSize) {
+				x  = padX
 				y += font.cellHeight
 			}
 
@@ -108,21 +113,19 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 
 		// Setup the array of character texture regions.
 
-		x = 0
+		x = padX
 		y = 0
 		c = 0
 
-		while(c < GLFont.CharCnt) {
-			// Why we remove size/5 -> because the cell size is often too large for
-			// italic text and some parts of the characters just aside will appear. Se we restrain
-			// the area of the character. We do the same thing in GLString when drawing characters
-			// to compensate.
-			font.charRgn(c) = new TextureRegion(textureSize, textureSize, x, y, font.cellWidth-font.strangePad, font.cellHeight-font.strangePad)
+		font.pad = font.charWidthMax * 0.1f
 
+		while(c < GLFont.CharCnt) {
+			font.charRgn(c) = new TextureRegion(textureSize, x-font.pad, y,
+								     font.charWidths(c)+font.pad*2, font.cellHeight)
 			x += font.cellWidth
 
-			if((x + font.cellWidth - font.fontPadX) >= textureSize) {
-				x  = font.fontPadX
+			if((x + font.cellWidth) >= textureSize) {
+				x  = padX
 				y += font.cellHeight
 			}
 

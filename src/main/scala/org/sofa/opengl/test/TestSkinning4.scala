@@ -16,7 +16,7 @@ import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttr
 import org.sofa.opengl.mesh.skeleton._
 
 object TestSkinning4 {
-    def main(args:Array[String]):Unit = (new TestSkinning4)
+    def main(args:Array[String]):Unit = (new TestSkinning4).test
 }
 
 class TestSkinning4 extends SurfaceRenderer {
@@ -60,9 +60,7 @@ class TestSkinning4 extends SurfaceRenderer {
 
 // Go
         
-    build()
-
-    private def build() {
+    def test() {
 	    camera   = Camera(); camera.viewportPx(1280,800)
 	    val caps = new GLCapabilities(GLProfile.get(GLProfile.GL2ES2))
 	    
@@ -72,7 +70,7 @@ class TestSkinning4 extends SurfaceRenderer {
 		caps.setNumSamples(4)
 
         ctrl           = new MyCameraController(camera, light1.pos)
-	    initSurface    = initializeSuface
+	    initSurface    = initializeSurface
 	    frame          = display
 	    surfaceChanged = reshape
 	    close          = { surface => sys.exit }
@@ -86,10 +84,13 @@ class TestSkinning4 extends SurfaceRenderer {
     
 // Rendering
     
-	def initializeSuface(gl:SGL, surface:Surface) {
+	def initializeSurface(gl:SGL, surface:Surface) {
 	    Shader.path      += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+	    Shader.path      += "shaders/"
 	    Texture.path     += "/Users/antoine/Documents/Programs/SOFA/textures"
+	    Texture.path     += "textures/"
 		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
+		ColladaFile.path += "meshes/"
 
 	    initGL(gl)
 	    initTextures
@@ -118,8 +119,8 @@ class TestSkinning4 extends SurfaceRenderer {
 	}
 	
 	protected def initShaders() {
-	    nmapShader  = ShaderProgram(gl, "phong n-map", "es2/phonghinmapw.vert.glsl", "es2/phonghinmapw.frag.glsl")
 	    plainShader = ShaderProgram(gl, "plain",       "es2/plainColor.vert.glsl",   "es2/plainColor.frag.glsl")
+	    nmapShader  = ShaderProgram(gl, "phong n-map", "es2/phonghinmapw.vert.glsl", "es2/phonghinmapw.frag.glsl")
 		boneShader  = ShaderProgram(gl, "basic bones", "es2/phongtexbone.vert.glsl", "es2/phongtexbone.frag.glsl")
 
 	    boneShader.uniform("bone[0].color", Rgba(1, 0.1, 0, 1))
@@ -151,7 +152,7 @@ class TestSkinning4 extends SurfaceRenderer {
 		groundMesh.setTextureRepeat(30, 30)
 
 	    ground = groundMesh.newVertexArray(gl, nmapShader,  Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
-	    thing  = thingMesh.newVertexArray( gl, boneShader, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords", Bone -> "boneIndex", Weight -> "boneWeight")
+	    thing  = thingMesh.newVertexArray( gl, boneShader,  Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords", Bone -> "boneIndex", Weight -> "boneWeight")
 	    bone   = boneMesh.newVertexArray(  gl, plainShader, Vertex -> "position", Color -> "color")
 	}
 	

@@ -58,35 +58,28 @@ class LinesMesh(val count:Int) extends Mesh {
 
     // -- Edition -----------------------------------------------------
 
-	/** Set the i-th line as the line between points `a` and `b`. */    
-    def setLine(i:Int, a:Point3, b:Point3) {
+    /** Set the i-th line as the line between points (`x0`,`y0`,`z0`) and (`x1`,`y1`,`z1`). */
+    def setLine(i:Int, x0:Float, y0:Float, z0:Float, x1:Float, y1:Float, z1:Float) {
         val pos = i*3*2
         
-        V(pos+0) = a.x.toFloat
-        V(pos+1) = a.y.toFloat
-        V(pos+2) = a.z.toFloat
-        V(pos+3) = b.x.toFloat
-        V(pos+4) = b.y.toFloat
-        V(pos+5) = b.z.toFloat
+        V(pos+0) = x0
+        V(pos+1) = y0
+        V(pos+2) = z0
+        V(pos+3) = x1
+        V(pos+4) = y1
+        V(pos+5) = z1
 
         if(i < vbeg) vbeg = i
-        if(i+1 > vend) vend = i+1
+        if(i+1 > vend) vend = i+1    	
     }
+
+	/** Set the i-th line as the line between points `a` and `b`. */    
+    def setLine(i:Int, a:Point3, b:Point3) {
+    	setLine(i, a.x.toFloat, a.y.toFloat, a.z.toFloat, b.x.toFloat, b.y.toFloat, b.z.toFloat) }
 
     /** Set the i-th line as the line between points `p` and `p+v`. */
     def setLine(i:Int, p:Point3, v:Vector3) {
-    	val pos = i*3*2
-
-    	V(pos+0) = p.x.toFloat
-    	V(pos+1) = p.y.toFloat
-    	V(pos+2) = p.z.toFloat
-    	V(pos+3) = (p.x+v.x).toFloat
-    	V(pos+4) = (p.y+v.y).toFloat
-    	V(pos+5) = (p.z+v.z).toFloat
-
-        if(i < vbeg) vbeg = i
-        if(i+1 > vend) vend = i+1
-    }
+    	setLine(i, p.x.toFloat, p.y.toFloat, p.z.toFloat, (p.x+v.x).toFloat, (p.y+v.y).toFloat, (p.z+v.z).toFloat) }
 
     def setColor(i:Int, c:Rgba) { setColor(i, c, c) }
 
@@ -116,6 +109,35 @@ class LinesMesh(val count:Int) extends Mesh {
         if(i < cbeg) cbeg = i
         if(i+1 > cend) cend = i+1
     }
+
+    /** Create an Horizontal ruler.
+      *
+      * The left bottom edge is positionned at (`xStart`, `yStart`), and graduations go from `yStart` to `yStart`+`height`.
+      * Each `bigMarkers` graduation the graduation will have 2*`height` and each `smallMarkers` graduation the
+      * graduation will have 1.5*`height`. The `space` count the number of units between graduations. The `color` is the
+      * color for all lines, excepted big and small graduations which are colored by `colorBig` and `colorSmall`
+      * respectively. */
+    def horizontalRuler(xStart:Float, yStart:Float, height:Float, bigMarkers:Int, smallMarkers:Int, space:Int, color:Rgba, colorBig:Rgba, colorSmall:Rgba) {
+		var i = 0
+		var x = xStart
+		val y = yStart
+
+		while(i < count) {
+			if(i % bigMarkers == 0) {
+				setLine(i, x+0.5f, y, 0, x+0.5f, y+height*2f, 0)
+				setColor(i, colorBig)
+			} else if(i % smallMarkers == 0) {
+				setLine(i, x+0.5f, y, 0, x+0.5f, y+height*1.5f, 0)
+				setColor(i, colorSmall)
+			} else {
+				setLine(i, x+0.5f, y, 0, x+0.5f, y+height, 0)			
+				setColor(i, color)
+			}
+			
+			i += 1
+			x += space
+		}
+	}
 
     // -- Dynamic mesh --------------------------------------------------
 

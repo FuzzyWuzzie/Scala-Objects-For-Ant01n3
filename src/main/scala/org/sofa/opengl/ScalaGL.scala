@@ -13,6 +13,9 @@ abstract class SGL {
     val DEPTH_TEST:Int
     val BLEND:Int
     val SRC_ALPHA:Int
+    val BLEND_SRC:Int
+    val BLEND_DST:Int
+    val ONE:Int
     val ONE_MINUS_SRC_ALPHA:Int
     val CULL_FACE:Int
     val BACK:Int
@@ -25,6 +28,7 @@ abstract class SGL {
     val FRONT_FACE:Int
     val FILL:Int
     val LINE:Int
+    val LINE_SMOOTH:Int
     val UNPACK_ALIGNMENT:Int
 
     val TEXTURE_2D:Int

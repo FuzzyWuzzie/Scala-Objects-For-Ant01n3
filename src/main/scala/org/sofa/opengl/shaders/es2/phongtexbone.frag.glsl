@@ -21,5 +21,5 @@ void main(void) {							// TBN and not TNB since most nmap textures uses Z up, t
 	vec3  n   = normalize((2 * (texture2D(texNormal, X.st).rgb)) - 1);
 	vec4  c   = texture2D(texColor, X.st);
 
-	gl_FragColor = singleWhiteLight(P, n, c, TBN);
+	gl_FragColor = singleWhiteLightPhong(P, n, c, TBN);
 }
