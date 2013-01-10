@@ -65,7 +65,7 @@ class TextureImageAndroid(val data:Bitmap) extends TextureImage {
         // alignment. Furthermore there is a old bug in Bitmap
         // on Android, where 8 bit grey bitmaps getPixel or
         // getPixels always return black... No luck.
-
+Console.err.println("## Be careful very slow texImage2D for grey bitmap with unpack align != 4")
         val bytes = new ByteBuffer(width*height, true)
         image.copyPixelsToBuffer(bytes.buffer) 
 

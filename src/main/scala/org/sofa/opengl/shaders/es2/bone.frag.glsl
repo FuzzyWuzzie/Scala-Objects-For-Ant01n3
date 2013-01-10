@@ -1,7 +1,7 @@
-#version 110
+#version 120
 
-varying vec4 ex_Color;
+uniform vec4 color;
 
 void main(void) {
-	gl_FragColor = ex_Color;
+	gl_FragColor = color;
 }

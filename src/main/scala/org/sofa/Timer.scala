@@ -10,14 +10,24 @@ class Timer(val out:PrintStream) {
 	/** The set of measures, identified by names. */
 	val measures = new HashMap[String,Measures]()
 
+	var T1 = 0L
+
 	/** Measure a code block execution time. The name gives the code block name, allowing to take
 	  * several measures of the same block and compute average times. */
 	def measure(name:String)(code: => Unit) {
 		val measure = measures.get(name).getOrElse({val m = new Measures(name); measures += ((name,m)); m})
-		val T1 = System.nanoTime
+		T1 = System.nanoTime
 		code
 		measure.addMeasure(System.nanoTime - T1)
 		//measure.printLast(out)
+	}
+
+	def measureStart() { T1 = System.nanoTime }
+
+	def measureEnd(name:String) {
+		val T2 = System.nanoTime
+		val measure = measures.get(name).getOrElse({val m = new Measures(name); measures += ((name,m)); m})
+		measure.addMeasure(T2 - T1)
 	}
 
 	/** Print all the average times of all measures. The header is a string to print before all the measures. */

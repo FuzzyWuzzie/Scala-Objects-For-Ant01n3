@@ -292,10 +292,10 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 
 		initSimuParams
 		initGL(sgl)
-		initFonts
 		initTextures
 		initTextureFB
 		initShaders
+		initFonts
 		initMeshes
 		initGeometry
 		initCamera(surface)

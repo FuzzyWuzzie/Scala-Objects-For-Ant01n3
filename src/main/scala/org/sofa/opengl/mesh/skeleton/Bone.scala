@@ -1,6 +1,6 @@
 package org.sofa.opengl.mesh.skeleton
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, HashMap}
 import org.sofa.opengl.{VertexArray, SGL, Camera, ShaderProgram}
 import org.sofa.opengl.mesh.{VertexAttribute, Mesh, BoneLineMesh}
 import org.sofa.math.{Matrix4, Rgba, NumberSeq3, Point4}
@@ -48,6 +48,9 @@ class Bone(val id:Int) {
 	/** Child bones. */
 	val children = new ArrayBuffer[Bone]()
 
+	/** Children by their name. */
+	val byName = new HashMap[String,Int]()
+
 	/** Bone lenth (from base (joint) to childs base). */
 	var length = 1.0
 
@@ -66,15 +69,33 @@ class Bone(val id:Int) {
 	
 // Commands
 	
+	/** Called when a child name changed. */
+	protected def childRenamed(oldName:String, newName:String) {
+		byName.get(oldName) match {
+			case Some(x) => { byName.remove(oldName); byName += ((newName, x)) }
+			case _ => throw new RuntimeException("no such bone %s in parent %s".format(oldName, name))
+		}
+	}
+
 	/** Change the bone name. The default name is "bone". Names need not be unique. */
-	def setName(newName:String) { name = newName }
+	def setName(newName:String) { 
+		val oldName = name
+		name = newName
+		if(parent ne null)
+			parent.childRenamed(oldName, newName)
+	}
 
 	/** Add a child bone to the hierarchy. The child matrices are untouched. */
 	def addChild(id:Int):Bone = {
 	    val child = new Bone(id)
 	    
+	    child.setName("%d".format(id))
+	    
+	    val index = children.size
 	    children += child
 	    child.parent = this
+	    byName += ((child.name, index)) 
+
 	    child
 	}
 
@@ -82,12 +103,22 @@ class Bone(val id:Int) {
 	  * child must not already have a parent. */
 	def addChild(bone:Bone) {
 		assert(bone.parent eq null)
+		val index = children.size
 		children += bone
+	    byName += ((bone.name, index)) 
 		bone.parent = this
 	}
 	
 	/** Child bone `index`. */
 	def apply(index:Int):Bone = children(index)
+
+	/** Child bone by `name` or throw an exception if not found. */
+	def apply(name:String):Bone = {
+		byName.get(name) match {
+			case Some(x) => children(x)
+			case _       => throw new RuntimeException("no such bone %s in parent %s".format(name, this.name))
+		}
+	}
 
 // Render
 	
@@ -106,6 +137,14 @@ class Bone(val id:Int) {
 	    recursiveDrawSkeleton(gl, camera, shader, uniformColorName)
 	}
 
+	/** Draw a representation of the skeleton.
+	  * 
+	  * The [[Camera]] class being used, the shader must define:
+	  *  
+	  *      uniform mat4 MV;    // Model-View matrix.
+	  *      uniform mat3 MV3x3; // Upper 3x3 model-view matrix.
+	  *      uniform mat4 MVP;   // Projection-Model-View matrix.
+	  */
 	def drawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram) {
 	    camera.setUniformMVP(shader)
 	    recursiveDrawSkeleton(gl, camera, shader, null)
@@ -140,9 +179,9 @@ class Bone(val id:Int) {
 	/** Compute the length of this bone and recursively all its children from joint positions.
 	  * The last bone has always a length of 1 since we have no way to compute it. */
 	def computeLength() {
-		val from = Point4(0, 0, 0, 1)
+		val local = Matrix4(orientation)
 
-		recursiveComputeLength(orientation * from) 
+		recursiveComputeLength(local)
 	}
 	
 // Orientation -- Allow to give the initial pose of bones.
@@ -160,9 +199,11 @@ class Bone(val id:Int) {
 	def poseRotate(angle:Double, x:Double, y:Double, z:Double) = { needRecomputePose = true; orientation.rotate(angle, x, y, z) }
 	
 	def poseRotate(angle:Double, axis:NumberSeq3) = { needRecomputePose = true; orientation.rotate(angle, axis) }
+	
+	def poseMultBy(matrix:Matrix4) = { needRecomputePose = true; orientation.multBy(matrix) }
 
 	def setPose(matrix:Matrix4) = { needRecomputePose = true; orientation.copy(matrix) }
-	
+
 // Animation -- Allow to deform the model.
 	
 	def identity() = animation.setIdentity
@@ -194,7 +235,7 @@ class Bone(val id:Int) {
 
 	        if(uniformColorName ne null) shader.uniform(uniformColorName, color)
 	        camera.pushpop {
-	        	camera.scaleModel(1, length, 1)
+		       	camera.scaleModel(1, length, 1)
 		        camera.setUniformMVP(shader)
 		        Bone.bone.draw(Bone.boneMesh.drawAs)
 	        }
@@ -223,11 +264,14 @@ class Bone(val id:Int) {
 
 	/** Recursivelly compute the lenth of each bone excepted the last one that
 	  * cannot be computed using this method. */
-	protected def recursiveComputeLength(from:Point4) {
-		if(!children.isEmpty) {
-			val to = children.head.orientation * from
-			length = from.distance(to)
-			children.foreach { _.recursiveComputeLength(to) }
+	protected def recursiveComputeLength(local:Matrix4) {
+		if(! children.isEmpty) {
+			val from = local * Point4(0,0,0,1)
+			local   *= children.head.orientation
+			val to   = local * Point4(0,0,0,1)
+			length   = from.distance(to)
+
+			children.foreach { _.recursiveComputeLength(local) }
 		} else {
 			length = 1.0 /// How to compute last bone length ??
 		}

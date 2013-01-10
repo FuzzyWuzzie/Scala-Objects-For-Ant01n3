@@ -7,7 +7,7 @@ layout(location=1) in float boneIndex;
 uniform mat4 MV;
 uniform mat3 MV3x3;
 uniform mat4 MVP;
-uniform Bone bone[3];
+uniform Bone bone[6];
 
 smooth out vec4 ex_Color;
 

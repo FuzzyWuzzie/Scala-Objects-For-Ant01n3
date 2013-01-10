@@ -13,7 +13,7 @@ attribute vec4 boneWeight;
 uniform mat4 MVP;		// Perspective * View * Model,
 uniform mat4 MV;		// View * Model,
 uniform mat3 MV3x3;		// Upper 3x3 matrix of MV, without scaling or translation,
-uniform Bone bone[3];	// Set of bone matrices.
+uniform Bone bone[6];	// Set of bone matrices.
 
 // Output:
 varying vec3 N;		// Normal,

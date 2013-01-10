@@ -1,5 +1,6 @@
 package org.sofa.opengl.backend
 
+import org.sofa.Timer
 import org.sofa.opengl.{SGL, Texture}
 import org.sofa.backend.AndroidLoader
 import android.content.res.Resources
@@ -27,6 +28,7 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 		paint.setTypeface(theFont)
 
 		val metrics = paint.getFontMetrics
+
 
 		// Get Font metrics.
 
@@ -57,9 +59,10 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 
 		// Create the bitmap
 
-		val w = size*1.2       // 1.2 factor to make some room.
-		val h = size*1.2 		// idem
-		val textureSize = math.sqrt((w*1.1) * (h*1.1) * GLFont.CharCnt).toInt
+		val w = size*1.3       // 1.2 factor to make some room.
+		val h = size*1.3 		// idem
+		var textureSize = math.sqrt((w*1.1) * (h*1.1) * GLFont.CharCnt).toInt
+		textureSize += (4 - (textureSize % 4)) % 4	// avoid unpack alignment problems due to 8 bit bitmap ;-)
 		val bitmap = Bitmap.createBitmap(textureSize, textureSize, Bitmap.Config.ALPHA_8)
 //		val bitmap = Bitmap.createBitmap(textureSize, textureSize, Bitmap.Config.ARGB_8888)
       	val image  = new Canvas(bitmap)

@@ -82,15 +82,11 @@ class TestText2 extends SurfaceRenderer {
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
 		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-Console.err.println("Init surface")
+
 		initGL(sgl)
-Console.err.println("after initGL")
 		initShaders
-Console.err.println("after initShaders")
 		initGLText
-Console.err.println("after initGLText")
 		initGeometry
-Console.err.println("after initGeometry")
 		
 		camera.setFocus(0, 0, 0)
 		reshape(surface)

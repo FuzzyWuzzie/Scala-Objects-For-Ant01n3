@@ -55,7 +55,7 @@ void applyBonesWithColor(inout vec4 P, inout vec3 N, inout vec4 C) {
   * The inout parameter P will contain the new vertex position, as deformed by bones.
   * The inout parameter N will contain the new vertex normal, as deformed by bones.
   */
-void applyBones(inout vec4 P, inout vec3 N) {
+void applyBones(in vec3 position, in vec3 normal, out vec4 P, out vec3 N) {
 	int   b0 = int(boneIndex.x);
 	int   b1 = int(boneIndex.y);
 	int   b2 = int(boneIndex.z);

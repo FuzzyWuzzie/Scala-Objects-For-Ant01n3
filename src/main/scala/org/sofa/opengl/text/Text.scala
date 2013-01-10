@@ -41,6 +41,8 @@ object GLFont {
 // TODO: This thing is actually only able to understand characters in a very limited range
 // However we could imagine "blocks" that maps to unicode blocks and that are textures,
 // rendered on demand, when needing some characters.
+//
+// Also we could get rid of the configuration by a static object ?
 
 /** A font allowing to draw text in OpenGL.
   *
@@ -137,6 +139,7 @@ trait GLFontLoader {
 
 class GLFontLoaderAWT extends GLFontLoader {
 	def load(gl:SGL, resource:String, size:Int, font:GLFont) {
+
 		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
 
 		font.isAlphaPremultiplied = false
@@ -308,7 +311,6 @@ class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
   * The string is stored as a vertex array of quads each one representing
   * a character.
   *
-  * TODO: per character color.
   * TODO: Right-to-Left, Top-to-Bottom advance.
   * TODO: Multi-line string.
   */
