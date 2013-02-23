@@ -1,27 +1,14 @@
 package org.sofa.opengl.test
 
-import org.sofa.opengl.VertexArray
+import org.sofa.opengl.{VertexArray, ShaderProgram, Camera, Shader, MatrixStack}
 import org.sofa.opengl.{SGL, HemisphereLight}
-import org.sofa.opengl.mesh.{PlaneMesh, EditableMesh, VertexAttribute}
-import org.sofa.opengl.ShaderProgram
-import org.sofa.math.Matrix4
-import org.sofa.opengl.MatrixStack
-import javax.media.opengl.GLAutoDrawable
-import javax.media.opengl.GLProfile
-import javax.media.opengl.GLCapabilities
+import org.sofa.opengl.mesh.{Mesh, PlaneMesh, EditableMesh, VertexAttribute}
+import org.sofa.math.{Matrix4,Vector4, Vector3, Rgba} 
+import javax.media.opengl.{GLAutoDrawable, GLProfile, GLCapabilities, GLEventListener}
 import com.jogamp.newt.opengl.GLWindow
 import com.jogamp.opengl.util.FPSAnimator
 import com.jogamp.newt.event.WindowAdapter
-import javax.media.opengl.GLEventListener
-import org.sofa.opengl.surface.Surface
-import org.sofa.opengl.surface.BasicCameraController
-import org.sofa.opengl.Camera
-import org.sofa.math.Rgba
-import org.sofa.opengl.surface.SurfaceRenderer
-import org.sofa.math.Vector4
-import org.sofa.opengl.Shader
-import org.sofa.math.Vector3
-import org.sofa.opengl.mesh.Mesh
+import org.sofa.opengl.surface.{Surface, BasicCameraController, SurfaceRenderer}
 import org.sofa.opengl.io.collada.ColladaFile
 
 object TestColladaImport {

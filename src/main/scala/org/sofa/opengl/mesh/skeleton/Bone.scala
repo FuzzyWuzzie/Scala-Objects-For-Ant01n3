@@ -58,7 +58,7 @@ class Bone(val id:Int) {
 	  * th computation of the orientation and inverseOrientation. They will
 	  * remain unchanged until the pose (which is usually only setup at start)
 	  * is changed anew. */
-	var needRecomputePose = true
+	private var needRecomputePose = true
 
 // Construction
 	

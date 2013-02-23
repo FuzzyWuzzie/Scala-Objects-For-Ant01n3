@@ -15,11 +15,11 @@ import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute}
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
 
-object TestSkinning6 {
-    def main(args:Array[String]):Unit = (new TestSkinning6).test
+object TestSkinning7 {
+    def main(args:Array[String]):Unit = (new TestSkinning7).test
 }
 
-class TestSkinning6 extends SurfaceRenderer {
+class TestSkinning7 extends SurfaceRenderer {
 // General
     
     var gl:SGL = null
@@ -103,9 +103,7 @@ class TestSkinning6 extends SurfaceRenderer {
 
 	protected def initGL(sgl:SGL) {
 	    gl = sgl
-
-println("initGL Inside thread %s".format(Thread.currentThread.getName))
-
+	    
         gl.clearColor(clearColor)
 	    gl.clearDepth(1f)
 	    gl.enable(gl.DEPTH_TEST)
@@ -125,7 +123,7 @@ println("initGL Inside thread %s".format(Thread.currentThread.getName))
 	}
 
 	protected def initModels() {
-		val model = new ColladaFile("Cross.dae")
+		val model = new ColladaFile("Cross_001.dae")
 
 		model.library.geometry("Cross").get.mesh.mergeVertices(true)
 		model.library.geometry("Cross").get.mesh.blenderToOpenGL(true)
@@ -142,7 +140,8 @@ println("initGL Inside thread %s".format(Thread.currentThread.getName))
 		thingMesh.asInstanceOf[EditableMesh].autoComputeTangents(true)
 
 		skeleton.color = Rgba(1.0, 0.1, 0.0, 1)
-		skeleton("Body").color = Rgba(1.0, 0.6, 0.1, 1)
+		skeleton("Leg").color = Rgba(1.0, 0.6, 0.1, 1)
+		skeleton("Body").color = Rgba(1.0, 0.6, 0.5, 1)
 		skeleton("Body")("Chest").color = Rgba(0.7, 0.2, 0.7, 1)
 		skeleton("Body")("Chest")("LeftArm").color = Rgba(0.3, 0.1, 1.0, 1)
 		skeleton("Body")("Chest")("RightArm").color = Rgba(0.1, 0.4, 1.0, 1)
@@ -183,15 +182,11 @@ println("initGL Inside thread %s".format(Thread.currentThread.getName))
         
         gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
         camera.frustum(-ratio, ratio, -1, 1, 2)
-
-println("Reshape Inside thread %s".format(Thread.currentThread.getName))
 	}
 	
 	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-println("Display Inside thread %s".format(Thread.currentThread.getName))
-
+	    
 	    camera.viewLookAt
 
 		// Ground

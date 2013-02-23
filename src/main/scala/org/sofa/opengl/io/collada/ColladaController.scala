@@ -166,11 +166,16 @@ class Skin(node:Node) {
 	  * we could obtain two arrays of four components, the two first components indentify
 	  * the first vertex, the two last components identify the second vertex.
 	  * As some vertices are influenced by less bones than other, value -1 in the
-	  * two arrays tell that there are no more bone / weight. */
-	def computeBonesAndWeights(minStride:Int):(Array[Float],Array[Float]) = {
+	  * two arrays tell that there are no more bone / weight.
+	  *
+	  * It is sometimes usefull to limit the number of bone affecting a vertex. This is 
+	  * the meaning of `stride`, if it is less than `realStride` the arrays are rearanged
+	  * so that only the `stride` most influent bones are used and the weights are
+	  * re-normalized. TODO */
+	def computeBonesAndWeights(stride:Int, realStride:Int):(Array[Float],Array[Float]) = {
 		val n       = vertexCount
-		val bones   = new Array[Float](minStride*n)
-		val weights = new Array[Float](minStride*n)
+		val bones   = new Array[Float](stride*n)
+		val weights = new Array[Float](stride*n)
 		var i       = 0		// Current vertex
 		var v       = 0		// Current vertex in vdata
 
@@ -178,15 +183,29 @@ class Skin(node:Node) {
 
 		while(i < n) {
 			val cnt = vcount(i)
-			val idx = i*minStride		// Position in bones and weights array (advance by stride)
+			val idx = i*stride		// Position in bones and weights array (advance by stride)
 
-			for(s <- 0 until minStride) {
-				if(s < cnt) {
-					bones(idx+s)   = vdata(v*2+s*2)
-					weights(idx+s) = weightData(vdata(v*2+s*2+1))
-				} else {
-					bones(idx+s)   = -1
-					weights(idx+s) = -1
+			if(cnt <= stride) {
+				// There is less or exactly stride bones affecting this vertex, ok.
+				for(s <- 0 until stride) {
+					if(s < cnt) {
+						bones(idx+s)   = vdata(v*2+s*2)
+						weights(idx+s) = weightData(vdata(v*2+s*2+1))
+					} else {
+						bones(idx+s)   = -1
+						weights(idx+s) = -1
+					}
+				}
+			} else {
+				Console.err.println("Vertex %d has more than 4 bones affecting it, rescaling to 4".format(i))
+				// There are more bones affecting this vertex than stride, we must
+				// select the most influent bones.
+
+				val newBones = lessBones(cnt, stride, v*2)
+
+				for(s <- 0 until stride) {
+					bones(idx+s)   = newBones(s)._1
+					weights(idx+s) = newBones(s)._2
 				}
 			}
 
@@ -195,6 +214,43 @@ class Skin(node:Node) {
 		}
 
 		(bones, weights)
+	}
+
+	/** Take a set of (bone,weight) pairs whose size is larger than `stride` and
+	  * return a new set of (bone,weight) pairs where the first `stride` bones are
+	  * the most influent ones, and their weight sum up to 1 (other bones are 
+	  * included in the result, at the end, but can be ignored, their weight are not
+	  * valid). */
+	protected def lessBones(realStride:Int, stride:Int, start:Int):Array[(Float,Float)] = {
+		assert(realStride > stride)
+		
+		// Get the (bone,weight) by pairs to sort them.
+
+		var values = new Array[(Float,Float)](realStride)
+		
+		for(s <- 0 until realStride) {
+			values(s) = (vdata(start+s*2), weightData(vdata(start+s*2+1)))
+		}
+
+		// Sort the (bone,weight) pairs so that the most influent bones are at start.
+		
+		values = values.sortWith { (a,b) => a._2 > b._2 }
+		
+		// Normalize the 'stride' first weights.
+
+		var i = 0
+		var w = 0f
+		
+		while(i < stride) { w += values(i)._2; i += 1 }
+		
+		w = 1f / w
+		i = 0
+		
+		while(i < stride) { values(i) = (values(i)._1, values(i)._2 * w); i+= 1 }
+		
+		// Ok the 'stride' first weights should sum up to 1.
+
+		values
 	}
 
 	override def toString():String = "skin(%s, bindShape(%s), { %s }, vcount(%s), v(%s), weights(%s))".format(source, bindShape.toCompactString, joints.mkString(", "), vcount.mkString(", "), vdata.mkString(", "), weightData.mkString(", "))

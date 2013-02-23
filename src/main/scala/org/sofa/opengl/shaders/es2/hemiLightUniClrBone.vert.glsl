@@ -9,7 +9,7 @@ attribute vec4 boneWeight;
 uniform mat4 MVP;
 uniform mat4 MV;
 uniform mat3 MV3x3;
-uniform Bone bone[6];
+uniform Bone bone[8];
 
 varying vec3 N;
 varying vec3 P;

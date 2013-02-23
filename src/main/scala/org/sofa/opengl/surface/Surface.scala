@@ -25,6 +25,11 @@ abstract trait Surface {
     
     /** Surface height in pixels. */
     def height:Int
+
+    /** Invoke some code to be executed while the OpenGL context is current,
+      * after a call to the SurfaceRenderer.display() method. The given code
+      * must return true if the code does not changed the framebuffer. */
+    def invoke(code:(Surface)=>Boolean)
 }
 
 /** Rendering and event managing class associated to a rendering surface.

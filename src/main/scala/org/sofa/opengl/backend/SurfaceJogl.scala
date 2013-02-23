@@ -6,7 +6,7 @@ import javax.media.opengl.{GLCapabilities, GLEventListener, GLAutoDrawable}
 import com.jogamp.newt.opengl.GLWindow
 import com.jogamp.newt.event.{KeyEvent=>JoglKeyEvent, MouseEvent=>JoglMouseEvent, MouseListener=>JoglMouseListener, WindowListener=>JoglWindowListener, KeyListener=>JoglKeyListener, WindowEvent=>JoglWindowEvent, WindowUpdateEvent=>JoglWindowUpdateEvent}
 import java.awt.{Frame=>AWTFrame}
-import javax.media.opengl.GLDrawableFactory
+import javax.media.opengl.{GLDrawableFactory, GLRunnable}
 import javax.media.opengl.awt.GLCanvas
 import java.awt.event.{MouseListener=>AWTMouseListener,KeyListener=>AWTKeyListener,WindowListener=>AWTWindowListener, KeyEvent=>AWTKeyEvent, MouseEvent=>AWTMouseEvent, WindowEvent=>AWTWindowEvent, MouseWheelListener=>AWTMouseWheelListener, MouseWheelEvent=>AWTMouseWheelEvent}
 import com.jogamp.opengl.util.FPSAnimator
@@ -19,7 +19,7 @@ object SurfaceNewtGLBackend extends Enumeration {
 
 class SurfaceGLCanvas(
     val renderer:SurfaceRenderer,
-    val camera:Camera,
+    var w:Int, var h:Int,
     val title:String,
     val caps:GLCapabilities,
     val backend:SurfaceNewtGLBackend.Value)
@@ -30,12 +30,18 @@ class SurfaceGLCanvas(
     with AWTMouseWheelListener
     with GLEventListener {
 
+    def this(renderer:SurfaceRenderer,
+    		 camera:Camera,
+    		 title:String,
+    		 caps:GLCapabilities,
+             backend:SurfaceNewtGLBackend.Value) { 
+    	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt, title, caps, backend) 
+    }	
+
     protected var fps = 30
     protected var win:AWTFrame = null
     protected var anim:FPSAnimator = null
     protected var sgl:SGL = null
-    protected var w:Int = 0
-    protected var h:Int = 0
 
     protected var canvas:GLCanvas = null
 
@@ -45,8 +51,6 @@ class SurfaceGLCanvas(
         canvas = new GLCanvas(caps)
         win    = new AWTFrame()
         anim   = new FPSAnimator(canvas, fps)
-        w      = camera.viewportPx.x.toInt
-        h      = camera.viewportPx.y.toInt
         sgl    = null
 
         canvas.addGLEventListener(this)
@@ -79,6 +83,8 @@ class SurfaceGLCanvas(
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) { w = width; h = height; if(renderer.surfaceChanged ne null) renderer.surfaceChanged(this) }
     def display(win:GLAutoDrawable) { if(renderer.frame ne null) renderer.frame(this) }
     def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
+
+    def invoke(code:(Surface)=>Boolean) { val me=this; canvas.invoke(false, new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { code(me) } } ) }
 
     def windowActivated(e:AWTWindowEvent) {}
     def windowClosed(e:AWTWindowEvent) {}
@@ -146,7 +152,7 @@ class MotionEventAWT(source:AWTMouseEvent, pressed:Boolean, released:Boolean) ex
 
 class SurfaceNewt(
     val renderer:SurfaceRenderer,
-    val camera:Camera,
+    var w:Int, var h:Int,
     val title:String,
     val caps:GLCapabilities,
     val backend:SurfaceNewtGLBackend.Value)
@@ -156,20 +162,24 @@ class SurfaceNewt(
 	with    JoglMouseListener
 	with    GLEventListener {
 
+    def this(renderer:SurfaceRenderer,
+    		 camera:Camera,
+    		 title:String,
+    		 caps:GLCapabilities,
+             backend:SurfaceNewtGLBackend.Value) { 
+    	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt, title, caps, backend) 
+    }	
+
     protected var fps = 30
     protected var win:GLWindow = null
     protected var anim:FPSAnimator = null
     protected var sgl:SGL = null
-    protected var w:Int = 0
-    protected var h:Int = 0
     
     build(backend)
     
     protected def build(backend:SurfaceNewtGLBackend.Value) {
         win  = GLWindow.create(caps)
         anim = new FPSAnimator(win, fps)
-        w    = camera.viewportPx.x.toInt
-        h    = camera.viewportPx.y.toInt
         sgl  = null
 
 	    win.addWindowListener(this)
@@ -201,6 +211,8 @@ class SurfaceNewt(
     def display(win:GLAutoDrawable) { if(renderer.frame ne null) renderer.frame(this) }
     def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
     
+    def invoke(code:(Surface)=>Boolean) { val me=this; win.invoke(false, new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { code(me) } } ) }
+
     def windowDestroyNotify(ev:JoglWindowEvent) {}
     def windowDestroyed(e:JoglWindowEvent) {}
     def windowGainedFocus(e:JoglWindowEvent) {} 

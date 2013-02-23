@@ -134,12 +134,28 @@ class Camera {
     
     /** Obtain the current view-port width / height ratio. */
     def viewportRatio:Double = viewportPx.x / viewportPx.y
+
+    /** Erase the projection matrix with a new projection using the given frustum
+      * specifications. */
+    def frustum(axes:Axes) {
+        projection.setIdentity
+        maxDepth = axes.z.from
+        projection.frustum(axes.x.from, axes.x.to, axes.y.from, axes.y.to, axes.z.to, axes.z.from)
+    }
     
     /** Erase the projection matrix with a new projection using the given frustum
       * specifications. */
     def frustum(left:Double, right:Double, bottom:Double, top:Double, near:Double) {
         projection.setIdentity
         projection.frustum(left, right, bottom, top, near, maxDepth)
+    }
+
+    /** Erase the projection matrix with a new projection using the given orthographic
+      * specifications. */
+    def orthographic(axes:Axes) {
+    	projection.setIdentity
+    	maxDepth = axes.z.from
+    	projection.orthographic(axes.x.from, axes.x.to, axes.y.from, axes.y.to, axes.z.to, axes.z.from)
     }
 
     /** Erase the projection matrix with a new projection using the given orthographic
@@ -248,7 +264,5 @@ class Camera {
     	
     def setUniformMV(shader:ShaderProgram) { shader.uniformMatrix("MV", modelview.top) }
     
-    def setUniformMV3x3(shader:ShaderProgram) { shader.uniformMatrix("MV3x3", modelview.top3x3) }
-    
-    
+    def setUniformMV3x3(shader:ShaderProgram) { shader.uniformMatrix("MV3x3", modelview.top3x3) }   
 }

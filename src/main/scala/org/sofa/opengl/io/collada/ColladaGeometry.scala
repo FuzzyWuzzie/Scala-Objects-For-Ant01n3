@@ -66,6 +66,7 @@ class MeshSource() {
 	
 	/** Data stride. */
 	def getData(index:Int):Array[Float] = {
+//Console.err.println("mesh %s get data stride = %d".format(name, stride))
 		val res = new Array[Float](stride)
 		var i   = 0
 		var p   = index * stride
@@ -572,8 +573,8 @@ class ColladaMesh(val id:String, node:Node) {
 		if(controller.skin.vertexCount != vertexAttr.elementCount)
 			throw new RuntimeException("controller defines bones/weights for %d vertices, but mesh has %d vertices!".format(controller.skin.vertexCount, vertexAttr.elementCount))
 
-		val (bones, weights) = controller.skin.computeBonesAndWeights(4)	// Min stride of 4		
-		val stride = max(4, controller.skin.stride)
+		val (bones, weights) = controller.skin.computeBonesAndWeights(4, controller.skin.stride)	// Max stride of 4		
+		val stride = 4
 		val n      = controller.skin.vertexCount
 		// Console.err.println("--stide = %d--------------".format(stride))
 		// for(i <- 0 until n) {
