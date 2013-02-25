@@ -3,14 +3,17 @@ package org.sofa.simu.oberon.renderer
 import scala.collection.mutable.HashMap
 
 import org.sofa.math.{Rgba, Axes, AxisRange}
-import org.sofa.opengl.Camera
+import org.sofa.opengl.{Camera, Texture, ShaderProgram}
+import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute}
+
+case class NoSuchScreenException(msg:String) extends Exception(msg)
 
 /** A screen in the game.
   *
   * A screen is necessarily (actually) occupying the whole display.
   * Only one screen is active and rendered at a time.
   */
-abstract class Screen(val renderer:Renderer) extends Renderable {
+abstract class Screen(val name:String, val renderer:Renderer) extends Renderable {
 	/** OpenGL. */
 	val gl = renderer.gl
 
@@ -26,8 +29,54 @@ abstract class Screen(val renderer:Renderer) extends Renderable {
 	/** Set of child avatars. */
 	protected val avatars = new HashMap[String,Avatar]()
 
-	/** The display changed appearance. */
-	def reshape()
+	/** Set to true after begin() and reset to false after end(). */
+	protected var rendering = false
+
+	/** Something changed in the screen. */
+	def change(axis:String, values:AnyRef*)
+
+	/** Change the axes and therefore the size of the drawing space in the screen (not related
+	  * with the real pixel width). */
+	def changeAxes(newAxes:Axes) {
+		axes = newAxes
+
+		if(rendering) {
+			reshape
+		}
+Console.err.println("screen(%s) new axes = %s".format(name, axes))
+	}
+
+	/** Something changed in an avatar of this screen. */
+	def changeAvatar(name:String, axis:String, values:AnyRef*) {
+		avatars.get(name).getOrElse(throw NoSuchAvatarException("screen %s does not contain avatar %s".format(name))).change(axis, values:_*)
+	}
+
+	// Renderable
+
+	def begin() {
+		rendering = true
+		beginAvatars
+	}	
+
+	def render() {
+		renderAvatars
+	}
+
+	def reshape() {
+		camera.viewportPx(surface.width, surface.height)
+		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
+	}
+
+	def animate() {
+		animateAvatars
+	}
+
+	def end() {
+		endAvatars
+		rendering = false
+	}
+
+	// Avatars.
 
 	/** Add an avatar. */
 	def addAvatar(name:String, avatar:Avatar) { avatars += (name -> avatar) }
@@ -36,7 +85,9 @@ abstract class Screen(val renderer:Renderer) extends Renderable {
 	def removeAvatar(name:String) { avatars -= name }
 
 	/** Get an avatar by its name. */
-	def avatar(name:String):Avatar = avatars.get(name).getOrElse(throw NoSuchAvatar(name))
+	def avatar(name:String):Avatar = avatars.get(name).getOrElse(throw NoSuchAvatarException(name))
+
+	// For implementers.
 
 	/** Initialize the avatars. */
 	protected def beginAvatars() { avatars.foreach { _._2.begin } }
@@ -51,10 +102,16 @@ abstract class Screen(val renderer:Renderer) extends Renderable {
 	protected def endAvatars() { avatars.foreach { _._2.end } }
 }
 
-class MenuScreen(renderer:Renderer) extends Screen(renderer) {
+class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) {
 	val clearColor = Rgba(1, 0, 0, 1)
 
-	def begin() {
+	val background = new PlaneMesh(2, 2, 1, 1, true)
+
+	var backgroundShader:ShaderProgram =null
+
+	var backgroundImage:Texture = null
+
+	override def begin() {
 		gl.clearColor(clearColor)
 		gl.clearDepth(1f)
 	    
@@ -67,22 +124,64 @@ class MenuScreen(renderer:Renderer) extends Screen(renderer) {
         gl.disable(gl.BLEND)
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
-        beginAvatars
+        reshape
+
+        beginShader
+        beginGeometry
+
+		super.begin
 	}	
 
-	def render() {
+	protected def beginShader() {
+		backgroundShader = renderer.libraries.shaders.get(gl, "image-shader")
+	}
+
+	protected def beginGeometry() {
+		import VertexAttribute._
+        background.newVertexArray(gl, backgroundShader, Vertex -> "position", TexCoord -> "texCoords")
+	}
+
+	def change(axis:String, values:AnyRef*) {
+		axis match {
+			case "background-image" => {
+				backgroundImage = renderer.libraries.textures.get(gl, values(0).asInstanceOf[String])
+Console.err.println("Screen(%s) -> new background %s -> %s".format(name, values(0), backgroundImage))
+			}
+			case _ => {
+				throw NoSuchAxisException(axis)
+			}
+		}
+	}
+
+	override def render() {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-		renderAvatars
+		renderBackground
+		super.render
 	}
 
-	def reshape() {
+	override def reshape() {
+Console.err.println("Screen(%s) surface (%d x %d)".format(name, surface.width, surface.height))
+		super.reshape
+		camera.orthographic(axes)
 	}
 
-	def animate() {
-		animateAvatars
+	override def animate() {
+		super.animate
 	}
 
-	def end() {
-		endAvatars
+	override def end() {
+		super.end
+	}
+
+	protected def renderBackground() {
+		if(backgroundImage ne null) {
+			backgroundShader.use
+			backgroundImage.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
+			camera.pushpop {
+				camera.translateModel(0.5, 0.5, 0.5)
+				camera.setUniformMVP(backgroundShader)
+				background.lastVertexArray.draw(background.drawAs)
+			}
+		}
 	}
 }

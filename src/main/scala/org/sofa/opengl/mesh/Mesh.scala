@@ -31,15 +31,15 @@ object VertexAttribute extends Enumeration {
 
 /** A mesh is a set of vertex data.
   * 
-  * A mesh is a set of vertex attribute data with is an array of float associated with an
-  * optionnal set of indidces in these attributes to tell how to draw the data.
+  * A mesh is a set of vertex attribute data. They are roughly composed of one or
+  * more arrays of floats associated with an optionnal set of indices in these
+  * attributes to tell how to draw the data.
   *
   * The mesh is not usable as is in an OpenGL program, you must transform it into a
   * [[VertexArray]]. The mesh acts as a factory to produce vertex arrays. You can create
-  * as many vertex arrays as you need with one mesh.
-  *
-  * All meshes remember the last vertex array produced. Some mesh are dynamic and allow to
-  * update this last vertex array with changes on their data. */
+  * as many vertex arrays as you need with one mesh. However dynamic meshes, that is
+  * meshes that are able to update their attribute data in time, always remember the
+  * last produced vertex array to allow to update it. */
 trait Mesh {
 	import VertexAttribute._
 

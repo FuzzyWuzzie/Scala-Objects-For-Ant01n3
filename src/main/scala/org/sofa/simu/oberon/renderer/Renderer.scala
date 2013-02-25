@@ -21,10 +21,10 @@ import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
 import scala.concurrent.duration._
 import org.sofa.simu.oberon.SurfaceExecutorService
 
-import org.sofa.simu.oberon.Game
+import org.sofa.simu.oberon.{Game}
 
 // ================================================================================================================
-// The rendere actor.
+// The renderer actor.
 
 /** Create the renderer actor and associate it with the rendering thread uniquely. */
 object RendererActor {
@@ -33,18 +33,27 @@ object RendererActor {
 	/** Start the renderer animation loop. */
 	case class Start(fps:Int)
 	
+	/** Define a new resource in the renderer. */
+	case class AddResource(res:ResourceDescriptor[AnyRef])
+
 	/** A a new avatar in the current screen. */
 	case class AddAvatar(name:String, avatarType:String)
 	
 	/** Add a new screen. */
-	case class AddScreen(name:String, screen:Screen)
+	case class AddScreen(name:String, screenType:String)
 	
 	/** Change the current screen. The end message is sent to the current screen and all its avatar. The
 	  * begin message is sent to the new screen and all its avatars. */
 	case class SwitchScreen(name:String)
 	
 	/** Change the current screen user size. This set the environment space where avatars can be positionned. */
-	case class ScreenSize(axes:Axes)
+	case class ChangeScreenSize(axes:Axes)
+
+	/** Change some value for a screen. Possible axes depend on the screen type. */
+	case class ChangeScreen(axis:String, values:AnyRef*)
+
+	/** Change some value for an avatar. Possible axes depend on the avatar type. */
+	case class ChangeAvatar(name:String, axis:String, values:AnyRef*)
 
 	//== Creation ===========================================
 
@@ -67,11 +76,49 @@ object RendererActor {
   * the real renderer object. */
 class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) extends Actor {
 	def receive() = {
-		case RendererActor.Start(fps)              ⇒ { context.setReceiveTimeout(fps milliseconds) }
-		case RendererActor.AddScreen(name, screen) ⇒ { renderer.addScreen(name, screen) }
-		case RendererActor.SwitchScreen(name)      ⇒ { renderer.switchToScreen(name) }
-		case RendererActor.AddAvatar(name,atype)   ⇒ { renderer.screen.addAvatar(name, avatarFactory.avatarFor(name, atype)) }
-		case ReceiveTimeout                        ⇒ { renderer.animate }
+		case RendererActor.Start(fps) ⇒ {
+			context.setReceiveTimeout(fps milliseconds)
+		}
+		case RendererActor.AddScreen(name, stype) ⇒ {
+			renderer.addScreen(name, avatarFactory.screenFor(name, stype))
+		}
+		case RendererActor.SwitchScreen(name) ⇒ {
+			renderer.switchToScreen(name)
+		}
+		case RendererActor.ChangeScreenSize(axes) ⇒ {
+			if(renderer.screen ne null) {
+				renderer.screen.changeAxes(axes)
+			} else {
+				throw NoSuchScreenException("no current screen in renderer")
+			}
+		}
+		case RendererActor.AddAvatar(name,atype) ⇒ {
+			if(renderer.screen ne null) {
+				renderer.screen.addAvatar(name, avatarFactory.avatarFor(name, atype)) 
+			} else {
+				throw NoSuchScreenException("no current screen in renderer")
+			}
+		}
+		case RendererActor.ChangeScreen(axis,values) ⇒ {
+			if(renderer.screen ne null) {
+				renderer.screen.change(axis, values)
+			} else {
+				throw new NoSuchScreenException("no current screen in renderer")
+			}
+		}
+		case RendererActor.ChangeAvatar(name,axis,values) ⇒ {
+			if(renderer.screen ne null) {
+				renderer.screen.changeAvatar(name, axis, values)
+			} else {
+				throw new NoSuchScreenException("no current screen in renderer")
+			}
+		}
+		case RendererActor.AddResource(res) ⇒ {
+			renderer.libraries.addResource(res)
+		}
+		case ReceiveTimeout ⇒ {
+			renderer.animate
+		}
 	}
 }
 
@@ -96,6 +143,11 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 	/** Current screen. */
 	var screen:Screen = null
    
+// == Resources ==============================
+
+	/** The set of shaders. */
+	var libraries:Libraries = null
+
 // == Init. ==================================
         
     /** Initialize the surface with its size, and optionnal title (on
@@ -119,6 +171,8 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
 	    					initialWidth, initialHeight, title, caps,
 	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
+
+	    libraries = Libraries(gl)
 	}
 
 // == Surface events ===========================
@@ -130,15 +184,6 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 // == Rendering ================================
     
 	def initRenderer(gl:SGL, surface:Surface) {
-	    Shader.path      += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-	    Shader.path      += "shaders/"
-	    
-	    Texture.path     += "/Users/antoine/Documents/Programs/SOFA/textures"
-	    Texture.path     += "textures/"
-		
-		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
-		ColladaFile.path += "meshes/"
-
 		this.gl = gl
 	}
 	

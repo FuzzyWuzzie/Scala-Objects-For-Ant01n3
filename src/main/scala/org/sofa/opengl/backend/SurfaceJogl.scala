@@ -146,9 +146,9 @@ class MotionEventAWT(source:AWTMouseEvent, pressed:Boolean, released:Boolean) ex
     def sourceEvent:AnyRef = source
 }
 
-// ========================================================================
-// == NEWT ================================================================
-// ========================================================================
+// =======================================================================================================================================
+// == NEWT ===============================================================================================================================
+// =======================================================================================================================================
 
 class SurfaceNewt(
     val renderer:SurfaceRenderer,
@@ -267,7 +267,7 @@ class KeyEventJogl(val source:JoglKeyEvent) extends KeyEvent {
 }
 
 class ScrollEventJogl(source:JoglMouseEvent) extends ScrollEvent {
-    def amount:Int = source.getWheelRotation
+    def amount:Int = source.getWheelRotation.toInt
 }
 
 class MotionEventJogl(source:JoglMouseEvent, pressed:Boolean, released:Boolean) extends MotionEvent {

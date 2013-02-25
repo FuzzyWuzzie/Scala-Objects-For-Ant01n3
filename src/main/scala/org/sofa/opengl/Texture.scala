@@ -194,6 +194,7 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     
     def this(gl:SGL, image:TextureImage, generateMipmaps:Boolean) {
         this(gl, gl.TEXTURE_2D, image.width, image.height, 0)
+Console.err.println("loaded image %d x %d".format(image.width, image.height))
         image.texImage2D(gl, mode, generateMipmaps)
        checkErrors
     }
@@ -236,7 +237,21 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
         activeTexture(textureUnit)
         bindTexture(mode, oid)
     }
-    
+
+    /** Bind the texture, specify to witch texture unit it binds, and set
+      * the given uniform in the given shader to this texture unit. */
+	def bindUniform(textureUnit:Int, shader:ShaderProgram, uniformName:String) {
+		val pos = textureUnit match {
+			case gl.TEXTURE0 => 0
+			case gl.TEXTURE1 => 1
+			case gl.TEXTURE2 => 2
+			case _ => throw new RuntimeException("cannot handle more than 3 texture unit yet")
+		}
+
+		activeTexture(textureUnit)
+		bindTexture(mode, oid)
+		shader.uniform(uniformName, pos)
+	}    
 }
 
 /** An alternate frame buffer that renders in a texture that can then be used onto onto objects. */

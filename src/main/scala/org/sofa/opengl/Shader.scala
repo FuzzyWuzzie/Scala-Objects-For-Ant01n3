@@ -5,6 +5,10 @@ import scala.collection.mutable._
 import org.sofa.math._
 import org.sofa.nio._
 
+case class ShaderCompilationException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
+case class ShaderLinkException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
+case class ShaderAttributeException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
+
 /** Shader companion object. */
 object Shader {
     /** A regular expression that matches any line that contains an include. */
@@ -120,7 +124,7 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
             	}
             }
         	//Console.err.println(log)
-        	throw new RuntimeException("Cannot compile shader %s (see log above)".format(name))
+        	throw ShaderCompilationException("Cannot compile shader %s (see log above)".format(name))
         }
     }
     
@@ -195,7 +199,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
             val log = "error"
             //val log = getProgramInfoLog(oid)
             //Console.err.println(log)
-            throw new RuntimeException("Cannot link shaders program %s:%n%s".format(name, log))
+            throw ShaderLinkException("Cannot link shaders program %s:%n%s".format(name, log))
         }
         
         checkErrors
@@ -313,7 +317,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
             uniformMatrix3(loc, 1, false, matrix)
         else if(matrix.size == 16)
             uniformMatrix4(loc, 1, false, matrix)
-        else throw new RuntimeException("matrix must be 9 (3x3) or 16 (4x4) floats");
+        else throw ShaderAttributeException("matrix must be 9 (3x3) or 16 (4x4) floats");
     }
 
     def uniformMatrix(variable:String, matrix:Array[Float]) {
@@ -323,7 +327,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
             uniformMatrix3(loc, 1, false, matrix)
         else if(matrix.length == 16)
             uniformMatrix4(loc, 1, false, matrix)
-        else throw new RuntimeException("matrix must be 9 (3x3) or 16 (4x4) floats");
+        else throw ShaderAttributeException("matrix must be 9 (3x3) or 16 (4x4) floats");
     }
     
     def getAttribLocation(variable:String):Int = {
@@ -335,7 +339,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
             if(l >= 0) {
             	attributeLocations.put(variable, l)
             } else {
-            	throw new RuntimeException("Cannot find attribute %s in program %s".format(variable, name))
+            	throw ShaderAttributeException("Cannot find attribute %s in program %s".format(variable, name))
             }
             l
         }
@@ -351,7 +355,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
             if(l >= 0) {
             	uniformLocations.put(variable, l)
             } else {
-            	throw new RuntimeException("Cannot find uniform %s in program %s".format(variable, name))
+            	throw ShaderAttributeException("Cannot find uniform %s in program %s".format(variable, name))
             }
             l
         }

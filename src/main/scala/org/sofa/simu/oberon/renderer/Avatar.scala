@@ -3,10 +3,14 @@ package org.sofa.simu.oberon.renderer
 import org.sofa.math.Rgba
 
 /** When an avatar is not found. */
-case class NoSuchAvatar(msg:String) extends Exception(msg)
+case class NoSuchAvatarException(msg:String) extends Exception(msg)
+
+/** When an axis does not exist in an avatar or screen. */
+case class NoSuchAxisException(msg:String) extends Exception(msg)
 
 /** Create actor representators. */
 trait AvatarFactory {
+	def screenFor(name:String, screenType:String):Screen
 	def avatarFor(name:String, avatarType:String):Avatar
 }
 
@@ -26,12 +30,17 @@ trait Renderable {
 }
 
 /** Graphical representation of an actor in the renderer. */
-trait Avatar extends Renderable {
+abstract class Avatar(val name:String) extends Renderable {
+	def change(axis:String, values:AnyRef*)
 }
 
 /** Specific avatar that implements a clickable element. */
-class Button(screen:Screen) extends Avatar {
+class Button(name:String, screen:Screen) extends Avatar(name) {
 	def begin() {
+
+	}
+
+	def change(axis:String, values:AnyRef*) {
 
 	}
 
@@ -44,6 +53,6 @@ class Button(screen:Screen) extends Avatar {
 	}
 
 	def end() {
-		
+
 	}
 }

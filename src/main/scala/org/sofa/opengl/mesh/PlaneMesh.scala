@@ -166,7 +166,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
         var nw  = textureRepeatS / (nVertX-1).toFloat
         var nd  = textureRepeatT / (nVertZ-1).toFloat
         var xx  = 0f
-        var zz  = 1f
+        var zz  = 0f
         var i   = 0
         
         for(d <- 0 until nVertZ) {
@@ -177,7 +177,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
                 i  += 2
             }
             xx  = 0
-            zz -= nd
+            zz += nd
         }
         
         buf
