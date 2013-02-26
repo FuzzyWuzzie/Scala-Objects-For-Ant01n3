@@ -91,15 +91,21 @@ class ShaderLibrary(gl:SGL) extends Library[ShaderProgram](gl) {}
 
 // == Textures ============================================
 
-class TextureResource(name:String, val fileName:String, val mipmaps:Boolean=false) extends ResourceDescriptor[Texture](name) {
+class TextureResource(name:String, val fileName:String, val mipmaps:Boolean=false, var minFilter:Int= -1, var magFilter:Int= -1) extends ResourceDescriptor[Texture](name) {
 	private var data:Texture = null
+
+	def this(name:String, fileName:String) { this(name, fileName, false, -1, -1) }
+
+	def this(name:String, fileName:String, mipmaps:Boolean) { this(name, fileName, mipmaps, -1, -1) }
 
 	def value(gl:SGL):Texture = {
 		if(data eq null) {
 			try {
+				if(minFilter < 0) minFilter = gl.LINEAR
+				if(magFilter < 0) magFilter = gl.LINEAR
+
 				data = new Texture(gl, fileName, mipmaps)
-// XXX TODO allow to paramterize XXX
-				data.minMagFilter(gl.LINEAR, gl.LINEAR)
+				data.minMagFilter(minFilter, magFilter)
 	    		data.wrap(gl.REPEAT)
 			} catch {
 				case e:IOException => throw NoSuchResourceException(e.getMessage, e)

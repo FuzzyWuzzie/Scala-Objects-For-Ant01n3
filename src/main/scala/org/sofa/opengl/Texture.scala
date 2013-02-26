@@ -36,6 +36,8 @@ trait TextureImage {
     def width:Int
     /** Height in pixels. */
     def height:Int
+    /** Shortcut to width/height ratio. */
+    def ratio:Double = (width.toDouble / height.toDouble)
     /** Image type. */
     def format:ImageFormat.Value 
     /** Initialize the current texture with this image data. */
@@ -251,7 +253,10 @@ Console.err.println("loaded image %d x %d".format(image.width, image.height))
 		activeTexture(textureUnit)
 		bindTexture(mode, oid)
 		shader.uniform(uniformName, pos)
-	}    
+	}
+
+	/** Ratio width over height. */
+	def ratio:Double = width.toDouble / height.toDouble
 }
 
 /** An alternate frame buffer that renders in a texture that can then be used onto onto objects. */

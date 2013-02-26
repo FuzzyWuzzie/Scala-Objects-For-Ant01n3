@@ -6,6 +6,7 @@ import org.sofa.math.{Rgba, Axes, AxisRange}
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute}
 
+/** Sent when a screen is not found. */
 case class NoSuchScreenException(msg:String) extends Exception(msg)
 
 /** A screen in the game.
@@ -40,10 +41,7 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	def changeAxes(newAxes:Axes) {
 		axes = newAxes
 
-		if(rendering) {
-			reshape
-		}
-Console.err.println("screen(%s) new axes = %s".format(name, axes))
+		if(rendering) reshape
 	}
 
 	/** Something changed in an avatar of this screen. */
@@ -53,24 +51,29 @@ Console.err.println("screen(%s) new axes = %s".format(name, axes))
 
 	// Renderable
 
+	/** Set the `rendering` flag to true and send a begin signal to all child avatars. */
 	def begin() {
 		rendering = true
 		beginAvatars
 	}	
 
+	/** By default renders all the child avatars. */
 	def render() {
 		renderAvatars
 	}
 
+	/** By default sets the size of the viewport to the size in pixels of the surface. */
 	def reshape() {
 		camera.viewportPx(surface.width, surface.height)
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
 	}
 
+	/** By default animate each avatar. */
 	def animate() {
 		animateAvatars
 	}
 
+	/** By default send the end signal to all child avatars. */
 	def end() {
 		endAvatars
 		rendering = false
@@ -78,11 +81,23 @@ Console.err.println("screen(%s) new axes = %s".format(name, axes))
 
 	// Avatars.
 
-	/** Add an avatar. */
-	def addAvatar(name:String, avatar:Avatar) { avatars += (name -> avatar) }
+	/** Add an avatar (and send it the begin signal if the screen is rendering). */
+	def addAvatar(name:String, avatar:Avatar) {
+		avatars += (name -> avatar)
 
-	/** Remove and avatar. */
-	def removeAvatar(name:String) { avatars -= name }
+		if(rendering) avatar.begin
+	}
+
+	/** Remove and avatar (and send it the end signal if the screen is rendering).
+	  * Does nothing if the avatar does not exist. */
+	def removeAvatar(name:String) { 
+		val avatar = avatars.get(name).getOrElse(null)
+
+		if(avatar ne null) {
+			avatar.end
+			avatars -= name
+		}
+	}
 
 	/** Get an avatar by its name. */
 	def avatar(name:String):Avatar = avatars.get(name).getOrElse(throw NoSuchAvatarException(name))
@@ -102,13 +117,25 @@ Console.err.println("screen(%s) new axes = %s".format(name, axes))
 	protected def endAvatars() { avatars.foreach { _._2.end } }
 }
 
+/** A screen where an image serve as the background and several button sprites
+  * can be added.
+  *
+  * The screen dimensions are given by the axes (user units) and the screen viewport in pixels.
+  * The height of the screen in user units, is the one given. The width of the screen in user
+  * units is the one given times the ratio width/height in pixels of the screen. This ensures
+  * The full height is always visible, and most of the time, more than the width is visible as
+  * screens will be used un landscape mode. */
 class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) {
+	/** Color for parts not covered by the background image. */
 	val clearColor = Rgba(1, 0, 0, 1)
 
+	/** The background plane. */
 	val background = new PlaneMesh(2, 2, 1, 1, true)
 
+	/** The background shader. */
 	var backgroundShader:ShaderProgram =null
 
+	/** The background imagE. */
 	var backgroundImage:Texture = null
 
 	override def begin() {
@@ -130,7 +157,7 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
         beginGeometry
 
 		super.begin
-	}	
+	}
 
 	protected def beginShader() {
 		backgroundShader = renderer.libraries.shaders.get(gl, "image-shader")
@@ -145,7 +172,6 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 		axis match {
 			case "background-image" => {
 				backgroundImage = renderer.libraries.textures.get(gl, values(0).asInstanceOf[String])
-Console.err.println("Screen(%s) -> new background %s -> %s".format(name, values(0), backgroundImage))
 			}
 			case _ => {
 				throw NoSuchAxisException(axis)
@@ -160,9 +186,9 @@ Console.err.println("Screen(%s) -> new background %s -> %s".format(name, values(
 	}
 
 	override def reshape() {
-Console.err.println("Screen(%s) surface (%d x %d)".format(name, surface.width, surface.height))
 		super.reshape
-		camera.orthographic(axes)
+		val ratio = camera.viewportRatio
+		camera.orthographic(axes.x.from*(ratio), axes.x.to*(ratio), axes.y.from, axes.y.to, axes.z.to, axes.z.from)
 	}
 
 	override def animate() {
@@ -174,11 +200,12 @@ Console.err.println("Screen(%s) surface (%d x %d)".format(name, surface.width, s
 	}
 
 	protected def renderBackground() {
+		// Origin is in the middle of the screen and of the image.
 		if(backgroundImage ne null) {
 			backgroundShader.use
 			backgroundImage.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
 			camera.pushpop {
-				camera.translateModel(0.5, 0.5, 0.5)
+				camera.scaleModel(backgroundImage.ratio, 1, 1)
 				camera.setUniformMVP(backgroundShader)
 				background.lastVertexArray.draw(background.drawAs)
 			}

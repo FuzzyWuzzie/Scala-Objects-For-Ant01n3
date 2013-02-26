@@ -78,7 +78,7 @@ class MenuActor extends Actor {
 			rendererActor = rActor
 			rendererActor!RendererActor.AddScreen("menu", "menu")
 			rendererActor!RendererActor.SwitchScreen("menu")
-			rendererActor!RendererActor.ChangeScreenSize(Axes((0., 1.), (0., 1.), (-1., 1.)))
+			rendererActor!RendererActor.ChangeScreenSize(Axes((-.5, .5), (-.5, .5), (-1., 1.)))
 			rendererActor!RendererActor.ChangeScreen("background-image", "intro-screen")
 		}
 	}
