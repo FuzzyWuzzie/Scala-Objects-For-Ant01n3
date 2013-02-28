@@ -105,6 +105,12 @@ class SurfaceGLCanvas(
     def keyPressed(e:AWTKeyEvent) {}
     def keyReleased(e:AWTKeyEvent) {}
     def keyTyped(e:AWTKeyEvent) { if(renderer.key ne null) renderer.key(this, new KeyEventAWT(e)) }
+
+    def resize(newWidth:Int, newHeight:Int) {
+    	win.setSize(newWidth, newHeight)
+    	w = newWidth
+    	h = newHeight
+    }
 }
 
 class KeyEventAWT(val source:AWTKeyEvent) extends KeyEvent {
@@ -155,7 +161,9 @@ class SurfaceNewt(
     var w:Int, var h:Int,
     val title:String,
     val caps:GLCapabilities,
-    val backend:SurfaceNewtGLBackend.Value)
+    val backend:SurfaceNewtGLBackend.Value,
+    var decorated:Boolean
+     = true)
 	extends Surface
 	with    JoglWindowListener
 	with    JoglKeyListener
@@ -182,13 +190,22 @@ class SurfaceNewt(
         anim = new FPSAnimator(win, fps)
         sgl  = null
 
+        win.setUndecorated(!decorated)
+	   	win.setVisible(true)	
+	   	// XXX The jogl specs tell to create the window before setting the size in order to know the native
+	   	// XXX decoration insets. However it clearly do not work. Subsequent messages when the window is
+	   	// resized will send the correct size, leading to an incoherent behavior (the sizes given cannot
+	   	// to be trusted, when the window appear, the reshape receives the size with the insets, subsequent
+	   	// resets will receive a size without the insets ... how to tell when ?).
+		// Is this only on Os X ?
+
+	    win.setSize(w+win.getInsets.getTotalWidth, h+win.getInsets.getTotalHeight)
+	    win.setTitle(title)
+
 	    win.addWindowListener(this)
-	    win.addGLEventListener(this)
 	    win.addMouseListener(this)
 	    win.addKeyListener(this)
-	    win.setSize(w, h)
-	    win.setTitle(title)
-	    win.setVisible(true)
+	    win.addGLEventListener(this)
 
 	    anim.start
     }
@@ -219,7 +236,7 @@ class SurfaceNewt(
     def windowLostFocus(e:JoglWindowEvent) {} 
     def windowMoved(e:JoglWindowEvent) {}
     def windowRepaint(e:JoglWindowUpdateEvent) {} 
-    def windowResized(e:JoglWindowEvent) {} 
+    def windowResized(e:JoglWindowEvent) {Console.err.println("resized w=%d h=%d".format(win.getWidth, win.getHeight))} 
     
 	def keyPressed(e:JoglKeyEvent) {} 
 	def keyReleased(e:JoglKeyEvent) {}
@@ -239,6 +256,12 @@ class SurfaceNewt(
     def mouseDragged(e:JoglMouseEvent) { if(renderer.motion ne null) renderer.motion(this, new MotionEventJogl(e, false, false)) }
     def mouseReleased(e:JoglMouseEvent) { if(renderer.motion ne null) renderer.motion(this, new MotionEventJogl(e, false, true)) }
     def mouseWheelMoved(e:JoglMouseEvent) { if(renderer.scroll ne null) renderer.scroll(this, new ScrollEventJogl(e)) }
+
+    def resize(newWidth:Int, newHeight:Int) {
+    	win.setSize(newWidth, newHeight)
+    	w = newWidth
+    	h = newHeight
+    }
 }
 
 class KeyEventJogl(val source:JoglKeyEvent) extends KeyEvent {
@@ -282,4 +305,5 @@ class MotionEventJogl(source:JoglMouseEvent, pressed:Boolean, released:Boolean) 
     def pressure(pointer:Int):Double = source.getPressure(pointer)
     def pointerCount:Int = source.getPointerCount
     def sourceEvent:AnyRef = source
+    override def toString():String = "motion[%s%.1f, %.1f (%d)]".format(if(isStart) ">" else if(isEnd) "<" else "", x, y, pointerCount)
 }

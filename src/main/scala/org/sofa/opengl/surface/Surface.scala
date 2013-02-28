@@ -26,6 +26,9 @@ abstract trait Surface {
     /** Surface height in pixels. */
     def height:Int
 
+    /** Try to change the surface width and height. */
+    def resize(newWidth:Int, newHeight:Int)
+
     /** Invoke some code to be executed while the OpenGL context is current,
       * after a call to the SurfaceRenderer.display() method. The given code
       * must return true if the code does not changed the framebuffer. */

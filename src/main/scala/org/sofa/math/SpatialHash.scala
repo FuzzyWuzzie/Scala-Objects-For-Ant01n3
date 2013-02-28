@@ -133,10 +133,10 @@ class Bucket[T<:SpatialObject,P<:SpatialPoint,V<:SpatialCube](val position:HashP
 	}
 
 	/** Number of points in the bucket. */
-	def pointCount:Int = points.size
+	def pointCount:Int = if(points ne null) points.size else 0
 	
 	/** Number of volume objects in the bucket. */
-	def volumeCount:Int = volumes.size
+	def volumeCount:Int = if(volumes ne null) volumes.size else 0
 
 	/** No element in the bucket ? */
 	def isEmpty():Boolean = (((points eq null) || points.isEmpty) && ((volumes eq null) || volumes.isEmpty))
@@ -153,7 +153,11 @@ class Bucket[T<:SpatialObject,P<:SpatialPoint,V<:SpatialCube](val position:HashP
 		}
 		result
 	}
+
+	override def toString():String = "Bucket(%d pts, %d vols)[%s]".format(pointCount, volumeCount, position)
 }
+
+case class SpatialHashException(msg:String) extends Exception(msg)
 
 /** A spatial indexing that place objects in cubic areas or "buckets"
   * that have a given side size.
@@ -200,6 +204,10 @@ class Bucket[T<:SpatialObject,P<:SpatialPoint,V<:SpatialCube](val position:HashP
   * for neighbors that is the most time consuming). */
 class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketSize:Double) {
 
+	protected var points:Int = 0
+
+	protected var volumes:Int = 0
+
 	/** Set of buckets. */
 	val buckets = new HashMap[HashPoint3,Bucket[T,P,V]]()
 
@@ -218,7 +226,22 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		
 		new HashPoint3(xx.toInt, yy.toInt, zz.toInt)
 	}
-	
+
+	/** Number of points and volumes inside the hash. */
+	def size():Int = (points + volumes)
+
+	/** Number of points in the hash (not counting volumes). */
+	def pointCount():Int = points
+
+	/** Number of volumes in the hash (not counting points). */
+	def volumeCount():Int =  volumes
+
+	/** See add(). */
+	def += (thing:T) { add(thing) }
+
+	/** See remove(). */
+	def -= (thing:T) { remove(thing) }
+
 	/** Add a new object in the spatial index. If the object is point,
 	  * it will occupy only one bucket (creating it if needed). If the object
 	  * is a volume, it will occupy all the buckets it intersects. */
@@ -239,6 +262,8 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 					}
 				}
 			}
+
+			volumes += 1
 		} else {
 			val p = hash(thing.from)
 			var b = buckets.get(p).getOrElse(new Bucket(p))
@@ -246,6 +271,8 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 			b.addPoint(thing.asInstanceOf[P])
 			thing.addBucket(b.asInstanceOf[Bucket[SpatialObject,SpatialPoint,SpatialCube]])
 			buckets += ((p,b))
+
+			points += 1
 		}
 	}
 	
@@ -264,6 +291,9 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		// 		buckets.remove(bucket.position)
 		// 	}
 		// }
+
+		if(thing.isVolume) volumes -= 1
+		else points -= 1
 	}
 	
 	/** Remove and re-add the given thing, therefore updating the
@@ -345,8 +375,6 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		
 		result
 	}
-
-
 
 	def neighborsInBox(thing:T, size:Double, points:ArrayBuffer[P], volumes:HashSet[V]) {
 		val s2 = size/2

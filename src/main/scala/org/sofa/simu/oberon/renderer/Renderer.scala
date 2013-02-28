@@ -10,12 +10,12 @@ import com.jogamp.newt.event._
 import com.jogamp.newt.opengl._
 
 import org.sofa.nio._
-import org.sofa.math.{Rgba, Vector3, Vector4, Axes}
+import org.sofa.math.{Rgba, Vector3, Vector4, Axes, Point3, NumberSeq3}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, MotionEvent, KeyEvent, ScrollEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute}
-import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
+import org.sofa.opengl.mesh.skeleton.{Bone ⇒ SkelBone}
 
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
 import scala.concurrent.duration._
@@ -23,8 +23,18 @@ import org.sofa.simu.oberon.SurfaceExecutorService
 
 import org.sofa.simu.oberon.{Game}
 
+case class RendererException(msg:String) extends Exception(msg)
+
 // ================================================================================================================
 // The renderer actor.
+
+trait Size {}
+
+case class SizeTriplet(x:Double, y:Double, z:Double) extends Size {}
+
+case class SizeFromTextureWidth(scale:Double, fromTexture:String) extends Size {}
+
+case class SizeFromTextureHeight(scale:Double, fromTexture:String) extends Size {}
 
 /** Create the renderer actor and associate it with the rendering thread uniquely. */
 object RendererActor {
@@ -36,10 +46,13 @@ object RendererActor {
 	/** Define a new resource in the renderer. */
 	case class AddResource(res:ResourceDescriptor[AnyRef])
 
-	/** A a new avatar in the current screen. */
-	case class AddAvatar(name:String, avatarType:String)
+	/** A a new avatar in the current screen. The name of the avatar is free. Its type
+	  * depends on the [[AvatarFactory]], and the indexed flag tells if the screen must
+	  * index the avatar position to send it touch events.  */
+	case class AddAvatar(name:String, avatarType:String, indexed:Boolean)
 	
-	/** Add a new screen. */
+	/** Add a new screen. The name of the screen is free. The type depends on
+	  * the [[AvatarFactory]]. */
 	case class AddScreen(name:String, screenType:String)
 	
 	/** Change the current screen. The end message is sent to the current screen and all its avatar. The
@@ -51,6 +64,12 @@ object RendererActor {
 
 	/** Change some value for a screen. Possible axes depend on the screen type. */
 	case class ChangeScreen(axis:String, values:AnyRef*)
+
+	/** Change an avatar position. */
+	case class ChangeAvatarPosition(name:String, newPos:Point3)
+
+	/** Change an avatar size. */
+	case class ChangeAvatarSize(name:String, newSize:Size)
 
 	/** Change some value for an avatar. Possible axes depend on the avatar type. */
 	case class ChangeAvatar(name:String, axis:String, values:AnyRef*)
@@ -92,9 +111,9 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 				throw NoSuchScreenException("no current screen in renderer")
 			}
 		}
-		case RendererActor.AddAvatar(name,atype) ⇒ {
+		case RendererActor.AddAvatar(name,atype,indexed) ⇒ {
 			if(renderer.screen ne null) {
-				renderer.screen.addAvatar(name, avatarFactory.avatarFor(name, atype)) 
+				renderer.screen.addAvatar(name, avatarFactory.avatarFor(name, atype, indexed)) 
 			} else {
 				throw NoSuchScreenException("no current screen in renderer")
 			}
@@ -102,6 +121,20 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 		case RendererActor.ChangeScreen(axis,values) ⇒ {
 			if(renderer.screen ne null) {
 				renderer.screen.change(axis, values)
+			} else {
+				throw new NoSuchScreenException("no current screen in renderer")
+			}
+		}
+		case RendererActor.ChangeAvatarPosition(name, newPos) ⇒ {
+			if(renderer.screen ne null) {
+				renderer.screen.changeAvatarPosition(name, newPos)
+			} else {
+				throw new NoSuchScreenException("no current screen in renderer")
+			}
+		}
+		case RendererActor.ChangeAvatarSize(name, newSize) ⇒ {
+			if(renderer.screen ne null) {
+				renderer.screen.changeAvatarSize(name, renderer.toTriplet(newSize))
 			} else {
 				throw new NoSuchScreenException("no current screen in renderer")
 			}
@@ -164,13 +197,13 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 	    initSurface    = initRenderer
 	    frame          = render
 	    surfaceChanged = reshape
-	    close          = { surface => gameActor ! Game.Exit }
+	    close          = { surface ⇒ gameActor ! Game.Exit }
 	    key            = onKey
 	    motion         = onMotion
 	    scroll         = onScroll
 	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
 	    					initialWidth, initialHeight, title, caps,
-	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
+	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2, false/*undecorated*/)
 
 	    libraries = Libraries(gl)
 	}
@@ -179,7 +212,11 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 
 	def onScroll(surface:Surface, e:ScrollEvent) {} 
 	def onKey(surface:Surface, e:KeyEvent) {}
-	def onMotion(surface:Surface, e:MotionEvent) {}
+	def onMotion(surface:Surface, e:MotionEvent) {
+		if(screen ne null) {
+			screen.motion(e)
+		} 
+	}
 
 // == Rendering ================================
     
@@ -217,7 +254,7 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 		if(!screens.contains(name)) {
 			screens += (name -> screen)
 		} else {
-			Console.err.println("Cannot add screen %s, already present".format(name))
+			throw RendererException("Cannot add screen %s, already present".format(name))
 		}
 	}
 
@@ -231,5 +268,24 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 		screen = screens.get(name).getOrElse(null)
 
 		if(screen ne null) { screen.begin }
+	}
+
+// == Utility ===================================
+
+	/** Transforms a Size into a triplet of values. */
+	def toTriplet(sz:Size):NumberSeq3 = {
+		sz match {
+			case fromTex:SizeFromTextureWidth => {
+				val tex = libraries.textures.get(gl, fromTex.fromTexture)
+				val ratio = (tex.height.toDouble / tex.width.toDouble)
+				Vector3(fromTex.scale, fromTex.scale * ratio, 0.01)
+			}
+			case fromTex:SizeFromTextureHeight => {
+				val tex = libraries.textures.get(gl, fromTex.fromTexture)
+				val ratio = tex.ratio
+				Vector3(fromTex.scale * ratio, fromTex.scale, 0.01)
+			}
+			case triplet:SizeTriplet => { Vector3(triplet.x, triplet.y, triplet.z) }
+		}
 	}
 }

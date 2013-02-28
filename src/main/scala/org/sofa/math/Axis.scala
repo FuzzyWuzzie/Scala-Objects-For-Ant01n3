@@ -1,5 +1,7 @@
 package org.sofa.math
 
+import scala.math._
+
 object AxisRange { def apply(r:(Double,Double)):AxisRange = AxisRange(r._1, r._2) }
 
 /** Range along an axis, the from part is smaller thant the to part.
@@ -9,6 +11,9 @@ case class AxisRange(from:Double, to:Double) {
 
 	/** Center on the axis according to the range. */
 	def origin:Double = ((to - from) / 2.0)
+
+	/** Length of the axe. */
+	def length:Double = abs(to - from)
 
 	override def toString():String = "axis(%.3f -> %.3f)".format(from, to)
 }

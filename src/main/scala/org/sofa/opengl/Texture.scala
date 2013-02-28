@@ -196,7 +196,6 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     
     def this(gl:SGL, image:TextureImage, generateMipmaps:Boolean) {
         this(gl, gl.TEXTURE_2D, image.width, image.height, 0)
-Console.err.println("loaded image %d x %d".format(image.width, image.height))
         image.texImage2D(gl, mode, generateMipmaps)
        checkErrors
     }

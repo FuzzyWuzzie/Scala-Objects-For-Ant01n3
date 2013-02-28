@@ -59,17 +59,18 @@ class Libraries(gl:SGL) {
 	/** Add a new resource in the corresponding library. */
 	def addResource(res:ResourceDescriptor[AnyRef]) {
 		res match {
-			case r:ShaderResource  => shaders.add(r)
-			case r:TextureResource => textures.add(r)
-			case r:ModelResource   => models.add(r)
-			case r:FontResource    => fonts.add(r)
-			case _ => throw NoSuchResourceException("unknown kind of resource %s".format(res))
+			case r:ShaderResource  ⇒ shaders.add(r)
+			case r:TextureResource ⇒ textures.add(r)
+			case r:ModelResource   ⇒ models.add(r)
+			case r:FontResource    ⇒ fonts.add(r)
+			case _ ⇒ throw NoSuchResourceException("unknown kind of resource %s".format(res))
 		}
 	}
 }
 
 // == Shaders ============================================
 
+object ShaderResource { def apply(name:String, vertex:String, fragment:String):ShaderResource = new ShaderResource(name, vertex, fragment) }
 class ShaderResource(name:String, val vertex:String, val fragment:String) extends ResourceDescriptor[ShaderProgram](name) {
 	private var data:ShaderProgram = null
 
@@ -78,7 +79,7 @@ class ShaderResource(name:String, val vertex:String, val fragment:String) extend
 			try {
 				data = ShaderProgram(gl, name, vertex, fragment)
 			} catch {
-				case e:Exception => throw NoSuchResourceException(e.getMessage, e)
+				case e:Exception ⇒ throw NoSuchResourceException(e.getMessage, e)
 			}
 		}
 
@@ -91,6 +92,7 @@ class ShaderLibrary(gl:SGL) extends Library[ShaderProgram](gl) {}
 
 // == Textures ============================================
 
+object TextureResource { def apply(name:String,fileName:String,mipmaps:Boolean=false,minFilter:Int= -1,magFilter:Int= -1):TextureResource = new TextureResource(name, fileName, mipmaps, minFilter, magFilter) }
 class TextureResource(name:String, val fileName:String, val mipmaps:Boolean=false, var minFilter:Int= -1, var magFilter:Int= -1) extends ResourceDescriptor[Texture](name) {
 	private var data:Texture = null
 
@@ -108,7 +110,7 @@ class TextureResource(name:String, val fileName:String, val mipmaps:Boolean=fals
 				data.minMagFilter(minFilter, magFilter)
 	    		data.wrap(gl.REPEAT)
 			} catch {
-				case e:IOException => throw NoSuchResourceException(e.getMessage, e)
+				case e:IOException ⇒ throw NoSuchResourceException(e.getMessage, e)
 			}
 		}
 
@@ -121,6 +123,7 @@ class TextureLibrary(gl:SGL) extends Library[Texture](gl) {}
 
 // == Models ============================================
 
+object ModelResource { def apply(name:String,fileName:String):ModelResource = new ModelResource(name,fileName) }
 class ModelResource(name:String, val fileName:String) extends ResourceDescriptor[Mesh](name) {
 	private var data:Mesh = null
 
@@ -134,6 +137,7 @@ class ModelLibrary(gl:SGL) extends Library[Mesh](gl) {}
 
 // == Fonts ============================================
 
+object FontResource { def apply(name:String,fontName:String,size:Int):FontResource = new FontResource(name,fontName,size) }
 class FontResource(name:String, val fontName:String, val size:Int) extends ResourceDescriptor[GLFont](name) {
 	private var data:GLFont = null
 

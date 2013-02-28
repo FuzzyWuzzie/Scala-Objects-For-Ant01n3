@@ -48,7 +48,7 @@ class TestGLWindow
 	}
 
     def init(win:GLAutoDrawable) {}
-    def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {}
+    def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) { Console.err.println("height=%d".format(height)) }
     def display(win:GLAutoDrawable) {}
     def dispose(win:GLAutoDrawable) {}
     
