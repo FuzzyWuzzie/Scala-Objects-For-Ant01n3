@@ -1,6 +1,7 @@
 package org.sofa.simu.oberon.renderer
 
 import scala.collection.mutable.{HashMap, HashSet}
+import akka.actor.{ActorRef}
 
 import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3, SpatialHash, SpatialObject, SpatialPoint}
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
@@ -61,11 +62,17 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 
 		spash.getThings(null, things, xx - 0.001, yy - 0.001, xx + 0.001, yy + 0.001)
 		
-		things = things.filter(thing => thing.contains(xx, yy, 0))
+		things = things.filter(thing ⇒ thing.contains(xx, yy, 0))
 
-		if(e.isStart)    println(">| %s [%s]/%d".format(e, things.mkString(", "), spash.volumeCount))
-		else if(e.isEnd) println("<| %s [%s]/%d".format(e, things.mkString(", "), spash.volumeCount))	
-		else             println(" | %s [%s]/%d".format(e, things.mkString(", "), spash.volumeCount))	
+		// // XXX Debug ========
+		// if(e.isStart)    println(">| (%.2f,%.2f) { %s }".format(xx, yy, things.mkString(", ")))
+		// else if(e.isEnd) println("<| (%.2f,%.2f) { %s }".format(xx, yy, things.mkString(", ")))	
+		// else             println(" | (%.2f,%.2f) { %s }".format(xx, yy, things.mkString(", ")))	
+		// // XXX Debug ========
+
+		things.foreach { thing ⇒
+			thing.touched(xx, yy, 0, e.isStart, e.isEnd)
+		}
 	}
 
 	// Renderable
@@ -115,7 +122,7 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Remove and avatar (and send it the end signal if the screen is rendering).
 	  * Does nothing if the avatar does not exist. */
 	def removeAvatar(name:String) { 
-		avatars.get(name).foreach { avatar =>
+		avatars.get(name).foreach { avatar ⇒
 			avatar.end
 			
 			if(avatar.isIndexed) {
@@ -129,23 +136,26 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 
 	/** An avatar changed position. */
 	def changeAvatarPosition(name:String, newPos:NumberSeq3) {
-		val avatar = avatars.get(name).getOrElse(throw NoSuchAvatarException("sceen %s does not contain avatar %s".format(this.name,name)))
-		avatar.changePosition(newPos)
+		avatar(name).changePosition(newPos)
 	}
 
 	/** An avatar changed size. */
 	def changeAvatarSize(name:String, newSize:NumberSeq3) {
-		val avatar = avatars.get(name).getOrElse(throw NoSuchAvatarException("sceen %s does not contain avatar %s".format(this.name,name)))
-		avatar.changeSize(newSize)
+		avatar(name).changeSize(newSize)
 	}
 
 	/** Something changed in an avatar of this screen. */
-	def changeAvatar(name:String, axis:String, values:AnyRef*) {
-		avatars.get(name).getOrElse(throw NoSuchAvatarException("screen %s does not contain avatar %s".format(this.name,name))).change(axis, values:_*)
+	def changeAvatar(name:String, state:AvatarState) {
+		avatar(name).change(state)
+	}
+
+	/** Ask the avatar `name` to send events to `acquaintance`. */
+	def addAvatarAcquaintance(name:String, acquaintance:ActorRef) {
+		avatar(name).addAcquaintance(acquaintance)
 	}
 
 	/** Get an avatar by its name. */
-	def avatar(name:String):Avatar = avatars.get(name).getOrElse(throw NoSuchAvatarException(name))
+	def avatar(name:String):Avatar = avatars.get(name).getOrElse(throw NoSuchAvatarException("screen %s does not contain avatar %s".format(this.name,name)))
 
 	// For implementers.
 

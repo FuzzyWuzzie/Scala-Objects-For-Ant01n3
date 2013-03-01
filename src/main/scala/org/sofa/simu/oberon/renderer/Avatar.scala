@@ -1,6 +1,10 @@
 package org.sofa.simu.oberon.renderer
 
+import scala.collection.mutable.{ArrayBuffer}
+import akka.actor.{ActorRef}
+
 import org.sofa.math.{Vector3, Point3, NumberSeq3, Rgba, SpatialCube, SpatialHash, SpatialHashException}
+import org.sofa.simu.oberon.{Acquaintance}
 
 /** When an avatar is not found. */
 case class NoSuchAvatarException(msg:String) extends Exception(msg)
@@ -10,6 +14,12 @@ case class NoSuchAxisException(msg:String) extends Exception(msg)
 
 /** When a value change on an axis failed. */
 case class InvalidValuesException(msg:String) extends Exception(msg)
+
+/** All specific messages */
+trait AvatarState {}
+
+/** When an avatar cannot change to a given state. */
+case class NoSuchStateException(msg:String) extends Exception(msg)
 
 /** Create actor representators. */
 trait AvatarFactory {
@@ -32,6 +42,11 @@ trait Renderable {
 	def end()
 }
 
+/** Event sent when the avatar is touched. */
+case class TouchEvent(x:Double, y:Double, z:Double, isStart:Boolean, isEnd:Boolean) {
+	override def toString():String = "touch[%.2f %.2f %.2f%s]".format(x,y,z, if(isStart)" start"else if(isEnd)" end" else "")
+}
+
 /** Graphical representation of an actor in the renderer. */
 abstract class Avatar(val name:String) extends Renderable {
 
@@ -43,6 +58,9 @@ abstract class Avatar(val name:String) extends Renderable {
 
 	/** True after begin and before end. */
 	protected var rendering = false
+
+	/** Set of actors interested in events from this avatar. */
+	protected val acquaintances = new ArrayBuffer[ActorRef]()
 
 	/** Change the avatar position. */
 	def changePosition(newPos:NumberSeq3) {
@@ -57,8 +75,8 @@ abstract class Avatar(val name:String) extends Renderable {
 	}
 
 	/** By default throw a NoSuchAxisException for any axis. */
-	def change(axis:String, values:AnyRef*) {
-		throw NoSuchAxisException("avatar %s has no axis named %s".format(name, axis))
+	def change(state:AvatarState) {
+		throw NoSuchAxisException("avatar %s has no such state named %s".format(name, state))
 	}
 
 	/** By default set the rendering flag to true. */
@@ -72,6 +90,17 @@ abstract class Avatar(val name:String) extends Renderable {
 
 	/**  The avatar index, if present (see isIndexed()) the avatar needs spatial indexing. */
 	def index():AvatarIndex = { throw SpatialHashException("this avatar does not support indexation") }
+
+	// == Interaction ==========================================================
+
+	/** The avatar has been touched. By default this send the event to all acquaintances. */
+	def touched(e:TouchEvent) { acquaintances.foreach { _ ! Acquaintance.TouchEvent(name, e.isStart, e.isEnd) } }
+
+	/** Add an actor as listener for events on this avatar. */
+	def addAcquaintance(a:ActorRef) { acquaintances += a }
+
+	/** Remove an actor as listener for events on this avatar. */
+	def removeAcquaintance(a:ActorRef) { acquaintances -= a }
 
 	// == Utility ==============================================================
 
@@ -113,6 +142,13 @@ class AvatarIndex(val avatar:Avatar) extends SpatialCube {
 		&& z >= from.z && z <= to.z)
 	}
 
+	/** Called if a touch is detected inside the avatar bounding box. This
+	  * in turn calls the avatar passing it the coordinates inside the bounding box,
+	  * not inside the screen. */
+	def touched(x:Double, y:Double, z:Double, isStart:Boolean, isEnd:Boolean) { 
+		avatar.touched(TouchEvent(x-from.x, y-from.y, z-from.z, isStart, isEnd)) 
+	}
+
 	/** Update the `from` and `to` fields from the `pos` and `size` fields of the avatar. */
 	protected def updateFromTo() {
 		val pos = avatar.pos
@@ -120,7 +156,7 @@ class AvatarIndex(val avatar:Avatar) extends SpatialCube {
 
 		from.set(pos.x - siz.x/2, pos.y - siz.y/2, pos.z - siz.z/2)
 		to.set(  pos.x + siz.x/2, pos.y + siz.y/2, pos.z + siz.z/2)
-Console.err.println("(%s) %s -> %s".format(avatar.name, from, to))
+
 		if(spash ne null) {
 			spash.move(this)
 		}

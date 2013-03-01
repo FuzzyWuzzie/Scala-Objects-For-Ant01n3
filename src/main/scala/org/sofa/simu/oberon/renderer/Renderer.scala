@@ -66,13 +66,16 @@ object RendererActor {
 	case class ChangeScreen(axis:String, values:AnyRef*)
 
 	/** Change an avatar position. */
-	case class ChangeAvatarPosition(name:String, newPos:Point3)
+	case class ChangeAvatarPosition(name:String, newPos:NumberSeq3)
 
 	/** Change an avatar size. */
 	case class ChangeAvatarSize(name:String, newSize:Size)
 
 	/** Change some value for an avatar. Possible axes depend on the avatar type. */
-	case class ChangeAvatar(name:String, axis:String, values:AnyRef*)
+	case class ChangeAvatar(name:String, state:AvatarState)
+
+	/** Ask the avatar `name` to send messages to `acquaintance` when something occurs. */
+	case class AddAvatarAcquaintance(name:String, acqaintance:ActorRef)
 
 	//== Creation ===========================================
 
@@ -94,59 +97,40 @@ object RendererActor {
   * All the messages of this specific actor are executed in the same thread as
   * the real renderer object. */
 class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) extends Actor {
+	import RendererActor._
+
 	def receive() = {
-		case RendererActor.Start(fps) ⇒ {
+		case Start(fps) ⇒ {
 			context.setReceiveTimeout(fps milliseconds)
 		}
-		case RendererActor.AddScreen(name, stype) ⇒ {
+		case AddScreen(name, stype) ⇒ {
 			renderer.addScreen(name, avatarFactory.screenFor(name, stype))
 		}
-		case RendererActor.SwitchScreen(name) ⇒ {
+		case SwitchScreen(name) ⇒ {
 			renderer.switchToScreen(name)
 		}
-		case RendererActor.ChangeScreenSize(axes) ⇒ {
-			if(renderer.screen ne null) {
-				renderer.screen.changeAxes(axes)
-			} else {
-				throw NoSuchScreenException("no current screen in renderer")
-			}
+		case ChangeScreenSize(axes) ⇒ {
+			renderer.currentScreen.changeAxes(axes)
 		}
-		case RendererActor.AddAvatar(name,atype,indexed) ⇒ {
-			if(renderer.screen ne null) {
-				renderer.screen.addAvatar(name, avatarFactory.avatarFor(name, atype, indexed)) 
-			} else {
-				throw NoSuchScreenException("no current screen in renderer")
-			}
+		case AddAvatar(name,atype,indexed) ⇒ {
+			renderer.currentScreen.addAvatar(name, avatarFactory.avatarFor(name, atype, indexed)) 
 		}
-		case RendererActor.ChangeScreen(axis,values) ⇒ {
-			if(renderer.screen ne null) {
-				renderer.screen.change(axis, values)
-			} else {
-				throw new NoSuchScreenException("no current screen in renderer")
-			}
+		case ChangeScreen(axis,values) ⇒ {
+			renderer.currentScreen.change(axis, values)
 		}
-		case RendererActor.ChangeAvatarPosition(name, newPos) ⇒ {
-			if(renderer.screen ne null) {
-				renderer.screen.changeAvatarPosition(name, newPos)
-			} else {
-				throw new NoSuchScreenException("no current screen in renderer")
-			}
+		case ChangeAvatarPosition(name, newPos) ⇒ {
+			renderer.currentScreen.changeAvatarPosition(name, newPos)
 		}
-		case RendererActor.ChangeAvatarSize(name, newSize) ⇒ {
-			if(renderer.screen ne null) {
-				renderer.screen.changeAvatarSize(name, renderer.toTriplet(newSize))
-			} else {
-				throw new NoSuchScreenException("no current screen in renderer")
-			}
+		case ChangeAvatarSize(name, newSize) ⇒ {
+			renderer.currentScreen.changeAvatarSize(name, renderer.toTriplet(newSize))
 		}
-		case RendererActor.ChangeAvatar(name,axis,values) ⇒ {
-			if(renderer.screen ne null) {
-				renderer.screen.changeAvatar(name, axis, values)
-			} else {
-				throw new NoSuchScreenException("no current screen in renderer")
-			}
+		case ChangeAvatar(name, state) ⇒ {
+			renderer.currentScreen.changeAvatar(name, state)
 		}
-		case RendererActor.AddResource(res) ⇒ {
+		case AddAvatarAcquaintance(name,acqaintance) ⇒ {
+			renderer.currentScreen.addAvatarAcquaintance(name, acqaintance)
+		}
+		case AddResource(res) ⇒ {
 			renderer.libraries.addResource(res)
 		}
 		case ReceiveTimeout ⇒ {
@@ -206,6 +190,15 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2, false/*undecorated*/)
 
 	    libraries = Libraries(gl)
+	}
+
+	/** The current screen or a NoSuchScreenException if no screen is current. */
+	def currentScreen():Screen = {
+		if(screen ne null) {
+			screen
+		} else {
+			throw NoSuchScreenException("renderer has no current screen")
+		}
 	}
 
 // == Surface events ===========================
