@@ -42,6 +42,16 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Set to true after begin() and reset to false after end(). */
 	protected var rendering = false
 
+	// Acccess
+
+	/** Width of the screen in game units. This is the maximum visible space, independant of any camera zoom. */
+	def width:Double = axes.x.length
+
+	/** Height of the screen in game units. This is the maximum visible space, independant of any camera zoom. */
+	def height:Double = axes.y.length
+
+	// Modification
+
 	/** Something changed in the screen. */
 	def change(axis:String, values:AnyRef*)
 
@@ -203,6 +213,10 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	/** The background imagE. */
 	var background:Texture = null
 
+	var w:Double = 1
+
+	var h:Double = 1
+
 	// == Debug ==============================
 
 	var debug = true	
@@ -210,6 +224,12 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	var gridShader:ShaderProgram = null
 	
 	val grid = new LinesMesh(40)
+
+	// == Access ============================
+
+	override def width:Double = w
+
+	override def height:Double = h
 
 	// == Avatar ============================
 
@@ -252,6 +272,8 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 			case "background-image" ⇒ {
 				if(values(0).isInstanceOf[String]) {
 					background = renderer.libraries.textures.get(gl, values(0).asInstanceOf[String])
+					h = axes.y.length
+					w = h * background.ratio
 				}
 			}
 			case _ ⇒ {
@@ -287,7 +309,7 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 			backgroundShader.use
 			background.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
 			camera.pushpop {
-				camera.scaleModel(background.ratio, 1, 1)
+				camera.scaleModel(w, h, 1)
 				camera.setUniformMVP(backgroundShader)
 				backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
 			}

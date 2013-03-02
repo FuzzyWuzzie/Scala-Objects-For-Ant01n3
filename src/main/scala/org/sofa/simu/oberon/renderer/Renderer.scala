@@ -28,15 +28,8 @@ case class RendererException(msg:String) extends Exception(msg)
 // ================================================================================================================
 // The renderer actor.
 
-trait Size {}
-
-case class SizeTriplet(x:Double, y:Double, z:Double) extends Size {}
-
-case class SizeFromTextureWidth(scale:Double, fromTexture:String) extends Size {}
-
-case class SizeFromTextureHeight(scale:Double, fromTexture:String) extends Size {}
-
-/** Create the renderer actor and associate it with the rendering thread uniquely. */
+/** Create the renderer actor and associate it with the rendering thread uniquely.
+  * Also define all the messages the renderer actor can receive. */
 object RendererActor {
 	// == Accepted messages ================================
 
@@ -268,17 +261,31 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 	/** Transforms a Size into a triplet of values. */
 	def toTriplet(sz:Size):NumberSeq3 = {
 		sz match {
-			case fromTex:SizeFromTextureWidth => {
+			case fromTex:SizeFromTextureWidth ⇒ {
 				val tex = libraries.textures.get(gl, fromTex.fromTexture)
-				val ratio = (tex.height.toDouble / tex.width.toDouble)
-				Vector3(fromTex.scale, fromTex.scale * ratio, 0.01)
+				Vector3(fromTex.scale, fromTex.scale / tex.ratio, 0.01)
 			}
-			case fromTex:SizeFromTextureHeight => {
+			case fromTex:SizeFromTextureHeight ⇒ {
 				val tex = libraries.textures.get(gl, fromTex.fromTexture)
-				val ratio = tex.ratio
-				Vector3(fromTex.scale * ratio, fromTex.scale, 0.01)
+				Vector3(fromTex.scale * tex.ratio, fromTex.scale, 0.01)
 			}
-			case triplet:SizeTriplet => { Vector3(triplet.x, triplet.y, triplet.z) }
+			case fromScreen:SizeFromScreenWidth ⇒ {
+				if(screen ne null) {
+					val tex = libraries.textures.get(gl, fromScreen.fromTexture)
+					Vector3((fromScreen.scale * screen.width), (fromScreen.scale * screen.width) / tex.ratio, 0.01)
+				} else {
+					throw NoSuchScreenException("cannot use SizeFromScreenWidth since there is no current screen")
+				}
+			}
+			case fromScreen:SizeFromScreenHeight ⇒ {
+				if(screen ne null) {
+					val tex = libraries.textures.get(gl, fromScreen.fromTexture)
+					Vector3((fromScreen.scale * screen.height) * tex.ratio, (fromScreen.scale * screen.height), 0.01)
+				} else {
+					throw NoSuchScreenException("cannot use SizeFromScreenHeight since there is no current screen")
+				}
+			}
+			case triplet:SizeTriplet ⇒ { Vector3(triplet.x, triplet.y, triplet.z) }
 		}
 	}
 }
