@@ -94,7 +94,7 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 
 	def receive() = {
 		case Start(fps) ⇒ {
-			context.setReceiveTimeout(fps milliseconds)
+		//	context.setReceiveTimeout(fps milliseconds)
 		}
 		case AddScreen(name, stype) ⇒ {
 			renderer.addScreen(name, avatarFactory.screenFor(name, stype))
@@ -126,9 +126,9 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 		case AddResource(res) ⇒ {
 			renderer.libraries.addResource(res)
 		}
-		case ReceiveTimeout ⇒ {
-			renderer.animate
-		}
+		//case ReceiveTimeout ⇒ {
+		//	renderer.animate
+		//}
 	}
 }
 
@@ -217,6 +217,8 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 	}
 	
 	def render(surface:Surface) {
+		animate
+
 		if(screen ne null) {
 			screen.render
 		} else {

@@ -1,6 +1,8 @@
 package org.sofa.simu.oberon
 
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorContext}
+import scala.concurrent.duration._
+
 import org.sofa.math.{Axes, Vector3, Point3, NumberSeq3}
 import org.sofa.simu.oberon.renderer.{Screen, Avatar, MenuScreen, AvatarFactory, Renderer, RendererActor, NoSuchScreenException, NoSuchAvatarException, ShaderResource, TextureResource, ImageSprite, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth}
 import org.sofa.opengl.{Shader, Texture}
@@ -101,7 +103,7 @@ class MenuActor extends Actor {
 
 	var title:ActorRef = null
 
-	var cloud:ActorRef = null
+	var cloud = new Array[ActorRef](10)
 
 	def receive() = {
 		case Start(rActor, gActor) ⇒ {
@@ -149,12 +151,23 @@ class MenuActor extends Actor {
 			title ! SpriteActor.Move(Point3(0, 0.3, 0))
 			title ! SpriteActor.Resize(SizeFromScreenWidth(0.7, "intro-title"))
 
-			cloud = SpriteActor(context, "cloud")
+			import scala.math._
 
-			cloud ! SpriteActor.Start("cloud", rendererActor, gameActor, "image", "intro-cloud")
-			cloud ! SpriteActor.Move(Point3(-0.5, 0.25, 0))
-			cloud ! SpriteActor.Resize(SizeFromTextureWidth(0.4, "intro-cloud"))
+			for(i <- 0 until cloud.length) {
+				cloud(i) = SpriteActor(context, "cloud%d".format(i))
 
+				cloud(i) ! SpriteActor.Start("cloud%d".format(i), rendererActor, gameActor, "image", "intro-cloud")
+				cloud(i) ! SpriteActor.Resize(SizeFromTextureWidth(0.3+(random*0.2), "intro-cloud"))
+
+				val animator = new LineAnimator()
+				animator.incr.x = (((random*2)-1)*0.004)
+				animator.lo.x = -0.8
+				animator.hi.x = 0.8
+				animator.pos.y = 0.2 + (((random*2)-1)*0.1)
+				animator.pos.x = (((random*2)-1)*0.6)
+
+				cloud(i) ! SpriteActor.AnimationBehavior(41, (me) => { me.move(animator.nextPos) })
+			}
 		}
 		case Acquaintance.TouchEvent(from,isStart,isEnd) ⇒ {
 			import RendererActor._
@@ -164,6 +177,30 @@ class MenuActor extends Actor {
 				case _ => { Console.err.println("screen caugth a touch on %s".format(from)) }
 			}
 		}
+	}
+}
+
+trait Animator {
+	def nextPos():NumberSeq3
+}
+
+class LineAnimator extends Animator {
+	val pos = Point3(0,0,0)
+	val incr = Vector3(0,0,0)
+	val lo = Point3(0,0,0)
+	val hi = Point3(1,1,1)
+
+	def nextPos():NumberSeq3 = {
+		pos.x += incr.x 
+		if(pos.x > hi.x ) { pos.x = hi.x; incr.x = -incr.x }
+		if(pos.x < lo.x)  { pos.x = lo.x; incr.x = -incr.x }
+		pos.y += incr.y 
+		if(pos.y > hi.y ) { pos.y = hi.y; incr.y = -incr.y }
+		if(pos.y < lo.y)  { pos.y = lo.y; incr.y = -incr.y }
+		pos.z += incr.z 
+		if(pos.z > hi.z ) { pos.z = hi.z; incr.z = -incr.z }
+		if(pos.z < lo.z)  { pos.z = lo.z; incr.z = -incr.z }
+		Point3(pos)
 	}
 }
 
@@ -183,16 +220,26 @@ object SpriteActor {
 	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, avatarType:String, resTexture:String)
 	case class Resize(size:Size)
 	case class Move(pos:NumberSeq3)
+	case class AnimationBehavior(fps:Int, animBehavior:(SpriteActor) => Unit)
+	case class Animate()
 }
 
 class SpriteActor extends Actor {
 	import SpriteActor._
+
+//var T = 0L
 
 	var name:String = null
 
 	var gameActor:ActorRef = null
 
 	var rendererActor:ActorRef = null
+
+	var animationBehavior:(SpriteActor)=>Unit = null
+
+	def resize(newSize:Size) { rendererActor ! RendererActor.ChangeAvatarSize(name, newSize) }
+
+	def move(newPos:NumberSeq3) { rendererActor ! RendererActor.ChangeAvatarPosition(name, newPos) }
 
 	def receive() = {
 		case Start(nm, ra, ga, avatarType, res) ⇒ {
@@ -203,8 +250,22 @@ class SpriteActor extends Actor {
 			rendererActor ! RendererActor.AddAvatar(name, avatarType, false)
 			rendererActor ! RendererActor.ChangeAvatar(name, ImageSprite.AddState(res, "default", true))
 		}
-		case Resize(size) ⇒ { rendererActor ! RendererActor.ChangeAvatarSize(name, size) }
-		case Move(pos) ⇒ { rendererActor ! RendererActor.ChangeAvatarPosition(name, pos) }
+		case Resize(size) ⇒ { resize(size) }
+		case Move(pos) ⇒ { move(pos) }
+		case AnimationBehavior(fps, animBehavior) ⇒ {
+			animationBehavior = animBehavior
+			context.setReceiveTimeout(fps milliseconds)
+		}
+		case ReceiveTimeout ⇒ {
+			if(animationBehavior ne null) {
+//				val T1 = System.currentTimeMillis
+//				println("time %s = %d".format(name, T1-T))
+//				T = T1
+				animationBehavior(this)
+			} else {
+				throw new RuntimeException("animation behavior is null an receive a timeout ??")
+			}
+		}
 	}
 }
 

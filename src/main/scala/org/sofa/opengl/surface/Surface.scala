@@ -33,6 +33,10 @@ abstract trait Surface {
       * after a call to the SurfaceRenderer.display() method. The given code
       * must return true if the code does not changed the framebuffer. */
     def invoke(code:(Surface)=>Boolean)
+
+    /** Invoke some code to be executed while the OpenGL context is current,
+      * after a call to the SurfaceRenderer.display() method. */
+    def invoke(runnable:Runnable)
 }
 
 /** Rendering and event managing class associated to a rendering surface.

@@ -16,6 +16,8 @@ object SurfaceExecutorService extends AbstractExecutorService {
 	/** The actual surface used for rendering. */
 	private[this] var surface:Surface = null
 
+//private[this] var T = 0L
+
 	/** The actual surface used for rendering. There can be only one such surface
 	  * at a time. It is used to execute actions in the thread managing the surface.
 	  * This is a field that is set at runtime for the only actor that will
@@ -25,7 +27,16 @@ object SurfaceExecutorService extends AbstractExecutorService {
 		this.surface = surface
 	}
 
-	def execute(command:Runnable) = if(surface ne null) surface.invoke({ surface => command.run(); true }) else throw new RuntimeException("JoglExecutorService.surface not set")
+	def execute(command:Runnable) = {
+		if(surface ne null) {
+//			val T1 = System.currentTimeMillis
+//			println("surface executor %d".format(T1-T))
+//			T = T1
+			surface.invoke(command)
+		} else {
+			throw new RuntimeException("SurfaceExecutorService.surface not set, see setSurface()")
+		}
+	}
 
 	def shutdown(): Unit = ()
 

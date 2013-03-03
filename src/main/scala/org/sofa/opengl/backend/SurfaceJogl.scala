@@ -84,7 +84,19 @@ class SurfaceGLCanvas(
     def display(win:GLAutoDrawable) { if(renderer.frame ne null) renderer.frame(this) }
     def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
 
-    def invoke(code:(Surface)=>Boolean) { val me=this; canvas.invoke(false, new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { code(me) } } ) }
+    def invoke(code:(Surface)=>Boolean) {
+    	val me = this
+    	canvas.invoke(false,
+    		new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { code(me) } }
+    	) 
+   	}
+
+    def invoke(runnable:Runnable) {
+    	val me=this
+    	canvas.invoke(false,
+    		new GLRunnable() { override def run(win:GLAutoDrawable) = { runnable.run; true } }
+    	)
+   	}
 
     def windowActivated(e:AWTWindowEvent) {}
     def windowClosed(e:AWTWindowEvent) {}
@@ -228,7 +240,19 @@ class SurfaceNewt(
     def display(win:GLAutoDrawable) { if(renderer.frame ne null) renderer.frame(this) }
     def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
     
-    def invoke(code:(Surface)=>Boolean) { val me=this; win.invoke(false, new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { code(me) } } ) }
+    def invoke(code:(Surface)=>Boolean) {
+    	val me = this
+    	win.invoke(false,
+    		new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { code(me) } }
+    	)
+    }
+
+    def invoke(runnable:Runnable) {
+    	val me = this
+    	win.invoke(false,
+    		new GLRunnable() { override def run(win:GLAutoDrawable) = { runnable.run; true } }
+    	)
+   	}
 
     def windowDestroyNotify(ev:JoglWindowEvent) {}
     def windowDestroyed(e:JoglWindowEvent) {}
