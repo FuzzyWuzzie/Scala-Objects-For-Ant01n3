@@ -141,13 +141,13 @@ class MenuActor extends Actor {
 
 			mountains = SpriteActor(context, "mountains")
 
-			mountains ! SpriteActor.Start("mountains", rendererActor, gameActor, "image", "intro-moutains")
+			mountains ! SpriteActor.Start("mountains", rendererActor, gameActor, "image", "intro-moutains", null)
 			mountains ! SpriteActor.Move(Point3(0, -0.2, 0))
 			mountains ! SpriteActor.Resize(SizeFromScreenWidth(1, "intro-moutains"))
 
 			title = SpriteActor(context, "title")
 
-			title ! SpriteActor.Start("title", rendererActor, gameActor, "image", "intro-title")
+			title ! SpriteActor.Start("title", rendererActor, gameActor, "image", "intro-title", null)
 			title ! SpriteActor.Move(Point3(0, 0.3, 0))
 			title ! SpriteActor.Resize(SizeFromScreenWidth(0.7, "intro-title"))
 
@@ -156,9 +156,6 @@ class MenuActor extends Actor {
 			for(i <- 0 until cloud.length) {
 				cloud(i) = SpriteActor(context, "cloud%d".format(i))
 
-				cloud(i) ! SpriteActor.Start("cloud%d".format(i), rendererActor, gameActor, "image", "intro-cloud")
-				cloud(i) ! SpriteActor.Resize(SizeFromTextureWidth(0.3+(random*0.2), "intro-cloud"))
-
 				val animator = new LineAnimator()
 				animator.incr.x = (((random*2)-1)*0.004)
 				animator.lo.x = -0.8
@@ -166,31 +163,23 @@ class MenuActor extends Actor {
 				animator.pos.y = 0.2 + (((random*2)-1)*0.1)
 				animator.pos.x = (((random*2)-1)*0.6)
 
-				cloud(i) ! SpriteActor.AnimationBehavior(41, (me) => { me.move(animator.nextPos) })
-			}
-		}
-		case Acquaintance.TouchEvent(from,isStart,isEnd) ⇒ {
-			import RendererActor._
-			from match {
-				case "play" => {}
-				case "quit" => { rendererActor ! ChangeAvatar("quit", ImageSprite.ChangeState("activated")); /*gameActor ! Game.Exit*/ }
-				case _ => { Console.err.println("screen caugth a touch on %s".format(from)) }
+				cloud(i) ! SpriteActor.Start("cloud%d".format(i), rendererActor, gameActor, "image", "intro-cloud", animator)
+				cloud(i) ! SpriteActor.Resize(SizeFromTextureWidth(0.3+(random*0.2), "intro-cloud"))
+				//cloud(i) ! SpriteActor.AnimationBehavior(41, (me) => { me.move(animator.nextPos) })
 			}
 		}
 	}
 }
 
-trait Animator {
-	def nextPos():NumberSeq3
-}
-
-class LineAnimator extends Animator {
+class LineAnimator extends ImageSprite.Animator {
 	val pos = Point3(0,0,0)
 	val incr = Vector3(0,0,0)
 	val lo = Point3(0,0,0)
 	val hi = Point3(1,1,1)
 
-	def nextPos():NumberSeq3 = {
+	def nextSize(time:Long, inOut:NumberSeq3) {}
+
+	def nextPosition(time:Long, inOut:NumberSeq3) {
 		pos.x += incr.x 
 		if(pos.x > hi.x ) { pos.x = hi.x; incr.x = -incr.x }
 		if(pos.x < lo.x)  { pos.x = lo.x; incr.x = -incr.x }
@@ -200,8 +189,12 @@ class LineAnimator extends Animator {
 		pos.z += incr.z 
 		if(pos.z > hi.z ) { pos.z = hi.z; incr.z = -incr.z }
 		if(pos.z < lo.z)  { pos.z = lo.z; incr.z = -incr.z }
-		Point3(pos)
+		
+		inOut.copy(pos)
 	}
+
+	def positionChanged(p:NumberSeq3) {}
+	def sizeChanged(s:NumberSeq3) {}
 }
 
 // == Acquaintance ==========================================================================================================
@@ -217,7 +210,7 @@ object Acquaintance {
 object SpriteActor {
 	def apply(context:ActorContext, name:String):ActorRef = context.actorOf(Props[SpriteActor], name) 
 
-	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, avatarType:String, resTexture:String)
+	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, avatarType:String, resTexture:String, animator:ImageSprite.Animator)
 	case class Resize(size:Size)
 	case class Move(pos:NumberSeq3)
 	case class AnimationBehavior(fps:Int, animBehavior:(SpriteActor) => Unit)
@@ -242,13 +235,16 @@ class SpriteActor extends Actor {
 	def move(newPos:NumberSeq3) { rendererActor ! RendererActor.ChangeAvatarPosition(name, newPos) }
 
 	def receive() = {
-		case Start(nm, ra, ga, avatarType, res) ⇒ {
+		case Start(nm, ra, ga, avatarType, res, anim) ⇒ {
 			name = nm
 			gameActor = ga
 			rendererActor = ra
 
 			rendererActor ! RendererActor.AddAvatar(name, avatarType, false)
-			rendererActor ! RendererActor.ChangeAvatar(name, ImageSprite.AddState(res, "default", true))
+
+			if(anim ne null)
+			     rendererActor ! RendererActor.ChangeAvatar(name, ImageSprite.AddAnimatedState(res, anim, "default", true))
+			else rendererActor ! RendererActor.ChangeAvatar(name, ImageSprite.AddState(res, "default", true))
 		}
 		case Resize(size) ⇒ { resize(size) }
 		case Move(pos) ⇒ { move(pos) }

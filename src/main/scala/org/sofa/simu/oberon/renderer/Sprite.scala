@@ -13,22 +13,54 @@ object ImageSprite {
 	/** Declare a new state for the sprite, and associate it an image in the resources library.
 	  * If the `change` field is true, the current state is changed with the new declared
 	  * state as if a [[ChangeState]] message was received. */
-	case class AddState(resourceName:String, state:String, change:Boolean) extends AvatarState {}
+	case class AddState(resourceName:String, state:String, change:Boolean) extends AvatarState
+
+	/** Declare a new state for the sprite, and associate both an image from the resources library,
+	  * and an animator that tells how to change the position and size of the sprite at each frame
+	  * according to the current time. If the `change` field is true, the current state is
+	  * changed with the new declared state as if a [[ChangeState]] message was received. */
+	case class AddAnimatedState(resourceName:String, animator:Animator, state:String, change:Boolean) extends AvatarState
 
 	/** Change the current state of the sprite. */
-	case class ChangeState(state:String) extends AvatarState {}
+	case class ChangeState(state:String) extends AvatarState
+
+	/** An image sprite animator specifies  */
+	trait Animator {
+		/** The position changed externally. */
+		def positionChanged(p:NumberSeq3)
+		/** The size changed externally. */
+		def sizeChanged(s:NumberSeq3)
+		/** Provide the next position of the sprite at `time` by copying the position into the given number sequence. */
+		def nextPosition(time:Long, inOut:NumberSeq3)
+		/** Provide the next dimension of the sprite at `time` by copying the size into the given number sequence. */
+		def nextSize(time:Long, inOut:NumberSeq3)
+	}
+
+	/** A state of an image sprite. */
+	case class State(val animator:Animator, val texture:Texture) {
+		def hasAnimator:Boolean = (animator ne null)
+		def positionChanged(p:NumberSeq3) { if(hasAnimator) animator.positionChanged(p)} 
+		def sizeChanged(s:NumberSeq3) { if(hasAnimator) animator.sizeChanged(s) }
+		def nextPosition(time:Long, inOut:NumberSeq3) { if(hasAnimator) animator.nextPosition(time, inOut) }
+		def nextSize(time:Long, inOut:NumberSeq3) { if(hasAnimator) animator.nextSize(time, inOut) }
+	}
 }
 
-/** A sprite that display an unchanging image. */
+/** A sprite that displays one image at a time.
+  *
+  * The image sprite defines a set of images. Each image is associated to a state. Switching
+  * the sprite state switches the image. */
 class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = false) extends Sprite(name, screen) {
+	import ImageSprite._
+
 	/** Shortcut to the GL. */
 	protected val gl = screen.renderer.gl
 
-	/** The sprite images. */
-	protected val images = new HashMap[String,Texture]()
+	/** All the states. */
+	protected val states = new HashMap[String,State]()
 
 	/** Current state. */
-	protected var state:Texture = null
+	protected var state:State = null
 
 	/** Shader for the image. */
 	protected var imageShader:ShaderProgram = null
@@ -41,6 +73,9 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 
 	override def index = idx
 
+	/** True if there is actually a current state (that is the sprite is initialized). */
+	def hasState:Boolean = (state ne null)
+
 	override def begin() {
 		super.begin
 		import VertexAttribute._
@@ -48,19 +83,31 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
         imageMesh.newVertexArray(gl, imageShader, Vertex -> "position", TexCoord -> "texCoords")
 	}
 
+	override def changePosition(newPos:NumberSeq3) {
+		super.changePosition(newPos)
+		if(hasState) state.positionChanged(pos)
+	}
+
 	override def changeSize(newSize:NumberSeq3) {
-		size.copy(newSize)	
-		if(isIndexed) index.changedSize
+		super.changeSize(newSize)
+		if(hasState) state.sizeChanged(size)
 	}
 
 	override def change(st:AvatarState) {
-		import ImageSprite._
 		st match {
 			case AddState(res:String, state:String, change:Boolean) ⇒ {
-				images += (state -> screen.renderer.libraries.textures.get(gl, res))
+				val tex = screen.renderer.libraries.textures.get(gl, res)
 				
-				if(change)
-					changeState(state)
+				states += (state -> State(null, tex))
+				
+				if(change) changeState(state)
+			}
+			case AddAnimatedState(res:String, an:Animator, state:String, change:Boolean) ⇒ {
+				val tex = screen.renderer.libraries.textures.get(gl, res)
+				
+				states += (state -> State(an, tex))
+
+				if(change) changeState(state)
 			}
 			case ChangeState(state:String) ⇒ {
 				changeState(state)
@@ -70,16 +117,16 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 	}
 
 	protected def changeState(st:String) {
-		state = images.get(st).getOrElse(throw NoSuchStateException("avatar %s has no state %s".format(name, state)))
+		state = states.get(st).getOrElse(throw NoSuchStateException("avatar %s has no state %s".format(name, state)))
 	}
 
 	def render() {
 		val camera = screen.camera
 
-		if(state ne null) {
+		if(hasState) {
 			gl.enable(gl.BLEND)
 			imageShader.use
-			state.bindUniform(gl.TEXTURE0, imageShader, "texColor")
+			state.texture.bindUniform(gl.TEXTURE0, imageShader, "texColor")
 			camera.pushpop {
 				camera.translateModel(pos.x, pos.y, pos.z)
 				camera.scaleModel(size.x, size.y, size.z)
@@ -91,24 +138,9 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 	}
 
 	def animate() {
+		if(hasState) {
+			state.nextPosition(0, pos)
+			state.nextSize(0, size)
+		}
 	}
-
-	override def touched(e:TouchEvent) {
-		super.touched(e)
-	}
-
-	override def end() {
-		super.end
-	}
-}
-
-/** A sprite that may display several images, depending on its state. */
-class AnimationSprite(name:String, screen:Screen) extends Sprite(name, screen) {
-	def render() {}
-	def animate() {}
-}
-
-class SkeletonSprite(name:String, screen:Screen) extends Sprite(name, screen) {
-	def render() {}
-	def animate() {}
 }
