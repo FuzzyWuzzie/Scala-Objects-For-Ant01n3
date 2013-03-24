@@ -29,27 +29,29 @@ import com.typesafe.config.{ConfigFactory, Config}
 class BrucePicaxe {
   	Armature.armatures += "bruce-picaxe" -> Armature (
         "bruce-picaxe", (687, 772), "bruce-picaxe", "armature-shader",
-        Joint ("chest", -0.02, (37,242,162,174), (119,412), (0,0), // <- anchor of the chest could be the initial position of the model.
-        	Joint ("head", -0.03 ,(42,23,154,206), (116,189), (113,248),
-        		Joint ("r-eyebrow",    0.01, (205, 54, 38, 19), (225, 64), (133, 88)),
-        		Joint ("l-eyebrow",    0.01, (249, 54, 34, 19), (267, 64), (176, 88)),
-        		Joint ("helmet",       0.02, (302, 28,154, 79), (370, 98), (118, 84)),
-        		Joint ("mouth-grin",   0.01, (202,134, 69, 43), (241,156), (158,153)),
-        		Joint ("mouth-unsure", 0.01, (302,141, 35, 29), (322,154), (158,153))
+        Joint ("chest", -0.02, (37,242,162,174), (119,412), (0,0), true, // <- anchor of the chest could be the initial position of the model.
+        	Joint ("head", -0.03 ,(42,23,154,206), (116,189), (113,248), true,
+        		Joint ("r-eyebrow",    0.01, (205, 54, 38, 19), (225, 64), (133, 88), true),
+        		Joint ("l-eyebrow",    0.01, (249, 54, 34, 19), (267, 64), (176, 88), true),
+        		Joint ("helmet",       0.02, (302, 28,154, 79), (370, 98), (118, 84), true),
+        		Joint ("mouth-grin",   0.01, (202,134, 69, 43), (241,156), (158,153), true),
+        		Joint ("mouth-unsure", 0.01, (302,141, 35, 29), (322,154), (158,153), false)
         	),
-        	Joint ("r-arm", 0.00, (214,193,155,133), (252,242), (68,276),
-        		Joint ("r-forearm", -0.01, (385,111,283,250), (420,306), (351,284)),
-        		Joint ("l-forearm", -0.03, (521,376,109, 60), (526,433), (351,284))
+        	Joint ("r-arm", 0.00, (214,193,155,133), (252,242), (68,276), true,
+        		Joint ("r-forearm", -0.01, (385,111,283,250), (420,306), (351,284), true)
         	),
-        	Joint ("pelvis", 0.00, (44,448,136, 97), (117,468), (119,412),
-        		Joint ("l-leg", -0.03, (358,371,137,134), (416,426), (122,526), 
-        		  	Joint ("l-foreleg", -0.04, (358,521,137,134), (416,578), (438,493),
-        		  	  	Joint("l-shoe", -0.06, (327,671,145, 70), (372,700), (418,642))
+        	Joint ("l-arm", -0.04, (214,193,155,133), (252,242), (68,276), true,
+        		Joint ("l-forearm", -0.05, (521,376,109, 60), (526,433), (351,284), true)
+        	),
+        	Joint ("pelvis", 0.00, (44,448,136, 97), (117,468), (119,412), true,
+        		Joint ("l-leg", -0.03, (358,371,137,134), (416,426), (122,526), true,
+        		  	Joint ("l-foreleg", -0.04, (358,521,137,134), (416,578), (438,493), true,
+        		  	  	Joint("l-shoe", -0.06, (327,671,145, 70), (372,700), (418,642), true)
         		  	)
         		),
-        		Joint ("r-leg", -0.01, (209,363,132,134), (286,418), (101,523),
-        		  	Joint ("r-foreleg", -0.02, (185,517,137,135), (262,574), (269,487),
-        		  		Joint ("r-shoe", -0.05, (160,675,145, 65), (199,700), (220,640))
+        		Joint ("r-leg", -0.01, (209,363,132,134), (286,418), (101,523), true,
+        		  	Joint ("r-foreleg", -0.02, (185,517,137,135), (262,574), (267,487), true,
+        		  		Joint ("r-shoe", -0.05, (160,675,145, 65), (199,700), (220,640), true)
         		  	)
         		)
         	)
@@ -68,7 +70,7 @@ class TestArmature extends SurfaceRenderer {
 	
 // View
     
-	var axes = Axes(AxisRange(-1,1), AxisRange(-1,1), AxisRange(-1,1))
+	var axes = Axes(AxisRange(-0.5,0.5), AxisRange(-0.5,0.5), AxisRange(-1,1))
     var camera:Camera = null
     var ctrl:BasicCameraController = null
     var libraries:Libraries = null
@@ -171,7 +173,7 @@ class TestArmature extends SurfaceRenderer {
 	}
 	
 	protected def initTextures() {
-		libraries.textures += TextureResource("bruce-picaxe", config.getString("picture"), false)
+		libraries.textures += TextureResource("bruce-picaxe", config.getString("picture"), true, gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	}
 	
 	protected def initGeometry() {
@@ -185,7 +187,6 @@ class TestArmature extends SurfaceRenderer {
 		armature = Armature.armatures.get("bruce-picaxe").getOrElse(throw new RuntimeException("not found bruce-picaxe ?"))
 
 		armature.init(gl, libraries)
-//println("%s".format(armature))
 	}
 	
 	def reshape(surface:Surface) {
@@ -204,7 +205,7 @@ class TestArmature extends SurfaceRenderer {
 
 	 	gl.enable(gl.BLEND)
 	 	gl.disable(gl.DEPTH_TEST)
-	    gl.enable(gl.CULL_FACE)
+	    gl.disable(gl.CULL_FACE)
 	 	armature.display(gl, camera)
 
 	    surface.swapBuffers
@@ -217,7 +218,66 @@ class TestArmature extends SurfaceRenderer {
 		grid.lastVertexArray.draw(grid.drawAs)
 	}
 	
+	class JointAnim(var from:Double, var to:Double, var step:Double) {
+		var value = from
+
+		def animate():Double = {
+			value += step 
+
+			if(value > to) { value = to; step = -step }
+			else if(value < from) { value = from; step = -step }
+
+			value
+		}
+	}
+
+	val armAnim = new JointAnim(-0.1, 0.3, 0.05)
+	val forearmAnim = new JointAnim(-0.8, 0, 0.1)
+	val legAnim = new JointAnim(-0.4, 0.4, 0.05)
+	val forelegAnim = new JointAnim(0, 0.4, 0.025)
+	val shoeAnim = new JointAnim(-0.4, 0.0, 0.025)
+	var grinTime = 0
+
 	def animate() {
+		var angle = armAnim.animate
+		armature.root("r-arm").get.angle = angle
+		armature.root("l-arm").get.angle = angle
+		
+		angle = forearmAnim.animate
+		armature.root("r-arm").get("r-forearm").get.angle = angle
+		armature.root("l-arm").get("l-forearm").get.angle = angle
+
+		// angle = legAnim.animate
+		// armature.root("pelvis").get("r-leg").get.angle =  angle
+		// armature.root("pelvis").get("l-leg").get.angle = -angle
+
+		// angle = forelegAnim.animate
+		// armature.root("pelvis").get("r-leg").get("r-foreleg").get.angle = angle
+		// armature.root("pelvis").get("l-leg").get("l-foreleg").get.angle = angle
+
+		// angle = shoeAnim.animate
+		// armature.root("pelvis").get("r-leg").get("r-foreleg").get("r-shoe").get.angle = angle
+		// armature.root("pelvis").get("l-leg").get("l-foreleg").get("l-shoe").get.angle = angle		
+
+		grinTime += 1
+
+		if(grinTime > 60) {
+			val grin   = armature.root("head").get("mouth-grin").get
+			val unsure = armature.root("head").get("mouth-unsure").get
+//			val helmet = armature.root("head").get("helmet").get
+
+			grinTime = 0
+			grin.visible = !grin.visible
+			unsure.visible = !unsure.visible
+
+			if(grin.visible) {
+				armature.root("head").get("r-eyebrow").get.angle = -0.2
+				armature.root("head").get("l-eyebrow").get.angle =  0.2
+			} else {
+				armature.root("head").get("r-eyebrow").get.angle = 0
+				armature.root("head").get("l-eyebrow").get.angle = 0
+			}
+		}
 	}
 	
 	// def useTextures(shader:ShaderProgram, color:Texture, nmap:Texture) {

@@ -47,24 +47,31 @@ class Armature(val name:String, val area:Point2, val texResource:String, val sha
 	}
 
 	def display(gl:SGL, camera:Camera) {
-		shader.use
-		texture.bindUniform(gl.TEXTURE0, shader, "texColor")
-		root.display(gl, this, camera)
+		camera.pushpop {
+			shader.use
+			texture.bindUniform(gl.TEXTURE0, shader, "texColor")
+			camera.scaleModel(1,-1,1)
+			root.display(gl, this, camera)
+		}
 	}
 
 	override def toString():String = "Armature(%s, [%s], {%s})".format(name, area, root)
 }
 
 object Joint {
-	def apply(name:String, z:Double, area:(Double,Double,Double,Double), pivot:(Double,Double), anchor:(Double,Double), joints:Joint*):Joint =
-		new Joint(name, z, Point2(area._1, area._2), Point2(area._3, area._4), Point2(pivot._1, pivot._2), Point2(anchor._1, anchor._2), joints.toArray) 
+	def apply(name:String, z:Double, area:(Double,Double,Double,Double), pivot:(Double,Double), anchor:(Double,Double), visible:Boolean, joints:Joint*):Joint =
+		new Joint(name, z, Point2(area._1, area._2), Point2(area._3, area._4), Point2(pivot._1, pivot._2), Point2(anchor._1, anchor._2), visible, joints.toArray) 
 }
 
-class Joint(val name:String, val z:Double, val from:Point2, val size:Point2 ,val pivot:Point2, val anchor:Point2, var sub:Array[Joint]) {
+class Joint(val name:String, val z:Double, val from:Point2, val size:Point2 ,val pivot:Point2, val anchor:Point2, var visible:Boolean, var sub:Array[Joint]) {
 
 	protected var parent:Joint = null
 
 	protected var triangle:Int = 0
+
+	var angle = 0.0
+
+	def apply(id:String):Option[Joint] = sub.find(_.name == id)
 
 	def init(parent:Joint, armature:Armature):Int = {
 		// Sort all elements by their Z level to draw them in order.
@@ -125,39 +132,44 @@ class Joint(val name:String, val z:Double, val from:Point2, val size:Point2 ,val
 		pivot.set((pivot.x/sz.x)-from.x, (pivot.y/sz.y)-from.y)
 		
 		if(parent ne null)
-			anchor.set((anchor.x/sz.x)-parent.from.x-parent.pivot.x, (anchor.y/sz.y)-parent.from.y-parent.pivot.y)
+			anchor.set((anchor.x/sz.x)-(parent.from.x+parent.pivot.x), (anchor.y/sz.y)-(parent.from.y+parent.pivot.y))
 	}
 
 	def display(gl:SGL, armature:Armature, camera:Camera) {
-		// Draw all elements in Z order. We have to draw ourself 
-		// at the correct place, hence the complicated tests.
+		if(visible) {
+			// Draw all elements in Z order. We have to draw ourself 
+			// at the correct place, hence the complicated tests.
 
-		camera.pushpop {
-			camera.translateModel(anchor.x, anchor.y, 0)
-
-			if(sub.size > 0) {
-				var ok = true
-	
-				if(z < sub(0).z) {
-					displaySelf(armature, camera)
-					ok = false
+			camera.pushpop {
+				camera.translateModel(anchor.x, anchor.y, 0)
+				if(angle != 0) {
+					camera.rotateModel(angle, 0, 0, 1)
 				}
 
-				sub.foreach { s =>
-					if(z < s.z && ok) {
+				if(sub.size > 0) {
+					var ok = true
+		
+					if(z < sub(0).z) {
 						displaySelf(armature, camera)
-						ok = false 
+						ok = false
 					}
 
-					s.display(gl, armature, camera)
-				}
+					sub.foreach { s =>
+						if(z < s.z && ok) {
+							displaySelf(armature, camera)
+							ok = false 
+						}
 
-				if(ok) {
-					displaySelf(armature, camera)
+						s.display(gl, armature, camera)
+					}
+
+					if(ok) {
+						displaySelf(armature, camera)
+					}
+				} else {
+					camera.setUniformMVP(armature.shader)
+					armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs, triangle*3, 2*3)
 				}
-			} else {
-				camera.setUniformMVP(armature.shader)
-				armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs, triangle*3, 2*3)
 			}
 		}
 	}

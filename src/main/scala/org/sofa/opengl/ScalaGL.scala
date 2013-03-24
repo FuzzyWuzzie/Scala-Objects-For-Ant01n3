@@ -40,6 +40,7 @@ abstract class SGL {
     val TEXTURE_WRAP_S:Int
     val TEXTURE_WRAP_T:Int
     val LINEAR_MIPMAP_LINEAR:Int
+    val NEAREST_MIPMAP_LINEAR:Int
     val LINEAR:Int
     val REPEAT:Int
     val CLAMP_TO_EDGE:Int

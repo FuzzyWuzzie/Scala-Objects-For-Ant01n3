@@ -15,7 +15,7 @@ void main(void) {
 	else a = 0.0;
 
 	gl_FragColor = vec4(rgb, a);
-*/
-//	gl_FragColor = vec4(color.rgb, color.a*0.9);
-	gl_FragColor = texture2D(texColor, X);
+
+	gl_FragColor = vec4(color.rgb, color.a*0.9);
+*/	gl_FragColor = texture2D(texColor, X);
 }
