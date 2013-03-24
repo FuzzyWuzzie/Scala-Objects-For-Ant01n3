@@ -25,7 +25,11 @@ abstract class Library[T](val gl:SGL) {
 
 	/** Add a new resource to the library. If `load` is true, the resource is 
 	  * loaded when added, else it is loaded lazily at first access to its value. */
-	def add(newResource:ResourceDescriptor[T], gl:SGL = null, load:Boolean = false) { library += (newResource.name -> newResource); if(load) newResource.value(gl) }
+	def add(newResource:ResourceDescriptor[T], load:Boolean = false) { library += (newResource.name -> newResource); if(load) newResource.value(gl) }
+
+	/** Add a new resource to the library. If `load` is true, the resource is 
+	  * loaded when added, else it is loaded lazily at first access to its value. */
+	def +=(newResource:ResourceDescriptor[T], load:Boolean = false) { add(newResource, load) }
 
 	/** Load or retrieve a resource. */
 	def get(gl:SGL, name:String):T = {

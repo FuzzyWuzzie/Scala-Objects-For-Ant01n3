@@ -189,6 +189,26 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     		checkErrors
     	}
     }
+
+    def draw(kind:Int, offset:Int, countElement:Int):Unit = {
+    	if(countElement > 0) {
+    		checkId
+    		bind
+
+    		if(elements ne null)
+    		     drawElements(kind, countElement, gl.UNSIGNED_INT, offset)
+    		else drawArrays(kind, offset, countElement)
+
+    		checkErrors
+    	}	
+    }
+
+    def drawArrays(kind:Int, offset:Int, count:Int) {
+    	checkId
+    	bind
+    	gl.drawArrays(kind, offset, count)
+    	checkErrors
+    }
     
     def multiDraw(kind:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) {
         checkId

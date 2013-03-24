@@ -21,3 +21,5 @@ libraryDependencies += "junit" % "junit" % "4.10"
 //scalacOptions ++= Seq("–optimise", "-deprecation")
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.1.0"
+
+libraryDependencies += "com.typesafe" % "config" % "1.0.0"

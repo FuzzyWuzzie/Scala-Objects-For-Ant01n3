@@ -48,7 +48,7 @@ case class TouchEvent(x:Double, y:Double, z:Double, isStart:Boolean, isEnd:Boole
 }
 
 /** Graphical representation of an actor in the renderer. */
-abstract class Avatar(val name:String) extends Renderable {
+abstract class Avatar(val name:String, val screen:Screen) extends Renderable {
 
 	/** Avatar center. */
 	val pos = Point3(0,0,0)
@@ -113,6 +113,8 @@ abstract class Avatar(val name:String) extends Renderable {
 			throw InvalidValuesException("awaiting number seq 3")
 		}
 	}
+
+	override def toString() = "avatar(%s, %s, %s)".format(name, pos, size)
 }
 
 /** If defined by an avatar, allows to quickly find it using a spatial index. */
@@ -163,4 +165,13 @@ class AvatarIndex(val avatar:Avatar) extends SpatialCube {
 	}
 
 	override def toString():String = "idx(%s)".format(avatar.name)
+}
+
+/** Super class of avatar index that does its contains test only in 2D. */
+class AvatarIndex2D(avatar:Avatar) extends AvatarIndex(avatar) {
+	override def contains(x:Double, y:Double, z:Double):Boolean = {
+//Console.err.println("%s test if %s %s contains (%f, %f)".format(avatar.name, from, to, x, y))
+		 (x >= from.x && x < to.x
+		&&y >= from.y && y < to.y)
+	}
 }

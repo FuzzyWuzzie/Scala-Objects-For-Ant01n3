@@ -22,7 +22,8 @@ class SurfaceGLCanvas(
     var w:Int, var h:Int,
     val title:String,
     val caps:GLCapabilities,
-    val backend:SurfaceNewtGLBackend.Value)
+    val backend:SurfaceNewtGLBackend.Value,
+    var fps:Int)
     extends Surface
     with AWTWindowListener
     with AWTKeyListener
@@ -34,11 +35,10 @@ class SurfaceGLCanvas(
     		 camera:Camera,
     		 title:String,
     		 caps:GLCapabilities,
-             backend:SurfaceNewtGLBackend.Value) { 
-    	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt, title, caps, backend) 
+             backend:SurfaceNewtGLBackend.Value, fps:Int) { 
+    	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt, title, caps, backend, fps)
     }	
 
-    protected var fps = 30
     protected var win:AWTFrame = null
     protected var anim:FPSAnimator = null
     protected var sgl:SGL = null
@@ -174,8 +174,8 @@ class SurfaceNewt(
     val title:String,
     val caps:GLCapabilities,
     val backend:SurfaceNewtGLBackend.Value,
-    var decorated:Boolean
-     = true)
+    var fps:Int = 30,
+    var decorated:Boolean = true)
 	extends Surface
 	with    JoglWindowListener
 	with    JoglKeyListener
@@ -186,11 +186,10 @@ class SurfaceNewt(
     		 camera:Camera,
     		 title:String,
     		 caps:GLCapabilities,
-             backend:SurfaceNewtGLBackend.Value) { 
-    	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt, title, caps, backend) 
+             backend:SurfaceNewtGLBackend.Value, fps:Int = 30, decorated:Boolean = true) { 
+    	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt, title, caps, backend, fps, decorated)
     }	
 
-    protected var fps = 30
     protected var win:GLWindow = null
     protected var anim:FPSAnimator = null
     protected var sgl:SGL = null

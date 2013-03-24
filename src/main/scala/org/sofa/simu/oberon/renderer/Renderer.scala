@@ -21,7 +21,7 @@ import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
 import scala.concurrent.duration._
 import org.sofa.simu.oberon.SurfaceExecutorService
 
-import org.sofa.simu.oberon.{Game}
+import org.sofa.simu.oberon.{GameActor}
 
 case class RendererException(msg:String) extends Exception(msg)
 
@@ -44,9 +44,16 @@ object RendererActor {
 	  * index the avatar position to send it touch events.  */
 	case class AddAvatar(name:String, avatarType:String, indexed:Boolean)
 	
+	/** Remove an avatar from the current screen. */
+	case class RemoveAvatar(name:String)
+
 	/** Add a new screen. The name of the screen is free. The type depends on
 	  * the [[AvatarFactory]]. */
 	case class AddScreen(name:String, screenType:String)
+
+	/** Remove a screen, as well as all its avatars. The screen cannot be the current
+	  * one in the renderer. */
+	case class RemoveScreen(name:String)
 	
 	/** Change the current screen. The end message is sent to the current screen and all its avatar. The
 	  * begin message is sent to the new screen and all its avatars. */
@@ -75,9 +82,12 @@ object RendererActor {
 	/** Create a new renderer actor (usually only one is needed) that will run all its messages
 	  * in the same thread as the one of the renderer object and its underlying OpenGL surface.
 	  * At the same time, configure this renderer object and its surface to their initial
-	  * size and eventual title (on desktops). */
-	def apply(system:ActorSystem, renderer:Renderer, avatarFactory:AvatarFactory, title:String, width:Int, height:Int):ActorRef = {
-		renderer.start(title, width, height)
+	  * size and eventual title (on desktops). The `fps` specifies how often
+	  * the internal animation loop will be run per second. This is indicative, and the renderer
+	  * will try fulfill it to achieve a regular frame per second rendering. If you put animators
+	  * in the avatar, they will be run by this internal temporized loop. */
+	def apply(system:ActorSystem, renderer:Renderer, avatarFactory:AvatarFactory, title:String, width:Int, height:Int, fps:Int):ActorRef = {
+		renderer.start(title, width, height, fps)
 		// Tell our specific executor service which thread to use (the same as the one of the OpenGL surface used).
 		SurfaceExecutorService.setSurface(renderer.surface)
 		// Create our renderer actor with the specific executor service so that all its messages
@@ -99,6 +109,9 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 		case AddScreen(name, stype) ⇒ {
 			renderer.addScreen(name, avatarFactory.screenFor(name, stype))
 		}
+		case RemoveScreen(name) ⇒ {
+			renderer.removeScreen(name)
+		}	
 		case SwitchScreen(name) ⇒ {
 			renderer.switchToScreen(name)
 		}
@@ -108,6 +121,9 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 		case AddAvatar(name,atype,indexed) ⇒ {
 			renderer.currentScreen.addAvatar(name, avatarFactory.avatarFor(name, atype, indexed)) 
 		}
+		case RemoveAvatar(name) ⇒ {
+			renderer.currentScreen.removeAvatar(name)
+		}	
 		case ChangeScreen(axis,values) ⇒ {
 			renderer.currentScreen.change(axis, values)
 		}
@@ -160,10 +176,10 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 
 // == Init. ==================================
         
-    /** Initialize the surface with its size, and optionnal title (on
-      * desktops). Once finished, we have an OpenGL context and a
-      * frame buffer. */
-    def start(title:String, initialWidth:Int, initialHeight:Int) {
+    /** Initialize the surface with its size, and optionnal title (on desktops). Once finished, we have an OpenGL context and a
+      * frame buffer. The `fps` parameter tells the renderer internal animation loop will try to draw as much frames per second.
+      * This internal loop is responsible for running the avatar and screen animate methods and redrawing the screen. */
+    def start(title:String, initialWidth:Int, initialHeight:Int, fps:Int) {
 	    val caps = new GLCapabilities(GLProfile.get(GLProfile.GL2ES2))
 	    
 		caps.setDoubleBuffered(true)
@@ -174,13 +190,14 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 	    initSurface    = initRenderer
 	    frame          = render
 	    surfaceChanged = reshape
-	    close          = { surface ⇒ gameActor ! Game.Exit }
+	    close          = { surface ⇒ gameActor ! GameActor.Exit }
 	    key            = onKey
 	    motion         = onMotion
 	    scroll         = onScroll
 	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
 	    					initialWidth, initialHeight, title, caps,
-	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2, false/*undecorated*/)
+	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2,
+	    					fps, false/*undecorated*/)
 
 	    libraries = Libraries(gl)
 	}
@@ -247,7 +264,12 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 	}
 
 	def removeScreen(name:String) {
-		screens -= name
+		val s = screens.get(name).getOrElse(throw NoSuchScreenException("cannot remove non existing screen %s".format(name)))
+		if(s ne screen) {
+			screens -= s.name
+		} else {
+			throw RendererException("cannot remove screen %s since it is current".format(name))
+		}
 	}
 
 	def switchToScreen(name:String) {

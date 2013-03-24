@@ -7,8 +7,11 @@ import org.sofa.opengl.{Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute}
 
 /** Specific avatar that implements a clickable element. */
-abstract class Sprite(name:String, val screen:Screen) extends Avatar(name) {}
+abstract class Sprite(name:String, screen:Screen) extends Avatar(name, screen) {}
 
+/** ImageSprite companion object defining the messages that can be received (change()), and
+  * the [[ImageSprite.Animator]] class that can be used to tell how the sprite moves and
+  * reshapes itself. */
 object ImageSprite {
 	/** Declare a new state for the sprite, and associate it an image in the resources library.
 	  * If the `change` field is true, the current state is changed with the new declared
@@ -26,23 +29,27 @@ object ImageSprite {
 
 	/** An image sprite animator specifies  */
 	trait Animator {
-		/** The position changed externally. */
-		def positionChanged(p:NumberSeq3)
-		/** The size changed externally. */
-		def sizeChanged(s:NumberSeq3)
+		/** True if the animator can define a next position. */
+		def hasNextPosition:Boolean = true
+		/** True if the animator can define a next size. */
+		def hasNextSize:Boolean = true
 		/** Provide the next position of the sprite at `time` by copying the position into the given number sequence. */
-		def nextPosition(time:Long, inOut:NumberSeq3)
+		def nextPosition(time:Long):NumberSeq3
 		/** Provide the next dimension of the sprite at `time` by copying the size into the given number sequence. */
-		def nextSize(time:Long, inOut:NumberSeq3)
+		def nextSize(time:Long):NumberSeq3
 	}
 
 	/** A state of an image sprite. */
-	case class State(val animator:Animator, val texture:Texture) {
+	case class State(val animator:Animator, val texture:Texture, val avatar:Avatar) {
 		def hasAnimator:Boolean = (animator ne null)
-		def positionChanged(p:NumberSeq3) { if(hasAnimator) animator.positionChanged(p)} 
-		def sizeChanged(s:NumberSeq3) { if(hasAnimator) animator.sizeChanged(s) }
-		def nextPosition(time:Long, inOut:NumberSeq3) { if(hasAnimator) animator.nextPosition(time, inOut) }
-		def nextSize(time:Long, inOut:NumberSeq3) { if(hasAnimator) animator.nextSize(time, inOut) }
+		def nextPosition(time:Long) {
+			if(hasAnimator && animator.hasNextPosition) 
+				avatar.screen.changeAvatarPosition(avatar.name, animator.nextPosition(time))
+		}
+		def nextSize(time:Long) {
+		 	if(hasAnimator && animator.hasNextSize)
+		 		avatar.screen.changeAvatarSize(avatar.name, animator.nextSize(time))
+		}
 	}
 }
 
@@ -69,7 +76,7 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 	protected var imageMesh = new PlaneMesh(2, 2, 1, 1, true)
 
 	/** The spatial index anchor. */
-	protected val idx:AvatarIndex = if(isIndexed) new AvatarIndex(this) else null
+	protected val idx:AvatarIndex = if(isIndexed) new AvatarIndex2D(this) else null
 
 	override def index = idx
 
@@ -85,12 +92,10 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 
 	override def changePosition(newPos:NumberSeq3) {
 		super.changePosition(newPos)
-		if(hasState) state.positionChanged(pos)
 	}
 
 	override def changeSize(newSize:NumberSeq3) {
 		super.changeSize(newSize)
-		if(hasState) state.sizeChanged(size)
 	}
 
 	override def change(st:AvatarState) {
@@ -98,14 +103,14 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 			case AddState(res:String, state:String, change:Boolean) ⇒ {
 				val tex = screen.renderer.libraries.textures.get(gl, res)
 				
-				states += (state -> State(null, tex))
+				states += (state -> State(null, tex, this))
 				
 				if(change) changeState(state)
 			}
 			case AddAnimatedState(res:String, an:Animator, state:String, change:Boolean) ⇒ {
 				val tex = screen.renderer.libraries.textures.get(gl, res)
 				
-				states += (state -> State(an, tex))
+				states += (state -> State(an, tex, this))
 
 				if(change) changeState(state)
 			}
@@ -139,8 +144,13 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 
 	def animate() {
 		if(hasState) {
-			state.nextPosition(0, pos)
-			state.nextSize(0, size)
+			state.nextPosition(0)
+			state.nextSize(0)
 		}
 	}
+}
+
+class ImagesSprite(name:String, screen:Screen, override val isIndexed:Boolean = false) extends Sprite(name, screen) {
+	def render() {}
+	def animate() {}
 }

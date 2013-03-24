@@ -28,25 +28,26 @@ class BruceAvatarFactory(val renderer:Renderer) extends AvatarFactory {
 // Almost all seems to be specific to each game (excepted the renderer part that is in its own package)
 // Maybe create utility traits that provide some aspects allowing to automatize some tasks ?
 
-object Game {
+object GameActor {
 	case class Start
 	case class Exit
+	case class NextLevel(level:String)
 
 	def main(args:Array[String]) {
 		val actorSystem = ActorSystem("Bruce")
 		val game = actorSystem.actorOf(Props[GameActor], name = "game")
 
-		game ! Game.Start
+		game ! GameActor.Start
 	}
 }
 
 /** The top level actor, starts and control all the others. */
 class GameActor extends Actor {
-	import Game._
+	import GameActor._
 
 	val renderer = new Renderer(self)
 
-	val rendererActor:ActorRef = RendererActor(context.system, renderer, new BruceAvatarFactory(renderer), "Bruce the miner", 1280, 800)
+	val rendererActor:ActorRef = RendererActor(context.system, renderer, new BruceAvatarFactory(renderer), "Bruce the miner", 1280, 800, 30/*fps*/)
 
 	var menuActor:ActorRef = null
 
@@ -71,20 +72,27 @@ class GameActor extends Actor {
 			rendererActor ! AddResource(TextureResource("intro-title", "title.png", false))
 			rendererActor ! AddResource(TextureResource("intro-moutains", "mountains.png", false))
 			rendererActor ! AddResource(TextureResource("intro-cloud", "cloud.png", false))
+			rendererActor ! AddResource(TextureResource("bruce-thumb-up", "bruce_thumb_up.png", false))
 			rendererActor ! Start(21)
 			
 			menuActor = context.actorOf(Props[MenuActor], name = "menu")
 			
 			menuActor!MenuActor.Start(rendererActor, self)
 		}
-		case Exit  ⇒ { println("exiting..."); context.stop(self) }
+		case Exit ⇒ {
+			println("exiting..."); context.stop(self)
+		}
+		case NextLevel(level) ⇒ {
+			println("next level : %s".format(level))
+		}
 	}
 
 	override def postStop() { sys.exit }
 }
 
 object MenuActor {
-	case class Start(rendererActor:ActorRef, gameActor:ActorRef)	
+	case class Start(rendererActor:ActorRef, gameActor:ActorRef)
+	case class Stop
 }
 
 /** Represent the game menu. */
@@ -103,6 +111,8 @@ class MenuActor extends Actor {
 
 	var title:ActorRef = null
 
+	var bruce:ActorRef = null
+
 	var cloud = new Array[ActorRef](10)
 
 	def receive() = {
@@ -120,15 +130,17 @@ class MenuActor extends Actor {
 			playButton = ButtonActor(context, "play")
 
 			playButton ! ButtonActor.Start("play", rendererActor, gameActor, "image")
-			playButton ! ButtonActor.Move(Point3(0, 0, 0))
+			playButton ! ButtonActor.Move(Point3(0, 0, 0.05))
 			playButton ! ButtonActor.Resize(SizeFromTextureHeight(0.1, "intro-play"))
 			playButton ! ButtonActor.DefineState("intro-play", ButtonActor.State.Normal, true)
-			playButton ! ButtonActor.TouchBehavior((me,isStart,isEnd) => { Console.err.println(s"${me.name} coucou") })
+			playButton ! ButtonActor.TouchBehavior((me,isStart,isEnd) => { 
+				gameActor ! GameActor.NextLevel("level1")
+			})
 			
 			quitButton = ButtonActor(context, "quit")
 
 			quitButton ! ButtonActor.Start("quit", rendererActor, gameActor, "image")
-			quitButton ! ButtonActor.Move(Point3(0, -0.15, 0))
+			quitButton ! ButtonActor.Move(Point3(0, -0.15, 0.05))
 			quitButton ! ButtonActor.Resize(SizeFromTextureHeight(0.1, "intro-quit"))
 			quitButton ! ButtonActor.DefineState("intro-quit", ButtonActor.State.Normal, true)
 			quitButton ! ButtonActor.DefineState("intro-quit-broken", ButtonActor.State.Activated, false)
@@ -136,20 +148,27 @@ class MenuActor extends Actor {
 					me.changeState(ButtonActor.State.Activated)
 				} else if(isEnd) {
 					me.changeState(ButtonActor.State.Normal)
+					gameActor ! GameActor.Exit
 				}
 			})
 
 			mountains = SpriteActor(context, "mountains")
 
 			mountains ! SpriteActor.Start("mountains", rendererActor, gameActor, "image", "intro-moutains", null)
-			mountains ! SpriteActor.Move(Point3(0, -0.2, 0))
+			mountains ! SpriteActor.Move(Point3(0, -0.2, 0.03))
 			mountains ! SpriteActor.Resize(SizeFromScreenWidth(1, "intro-moutains"))
 
 			title = SpriteActor(context, "title")
 
 			title ! SpriteActor.Start("title", rendererActor, gameActor, "image", "intro-title", null)
-			title ! SpriteActor.Move(Point3(0, 0.3, 0))
+			title ! SpriteActor.Move(Point3(0, 0.3, 0.04))
 			title ! SpriteActor.Resize(SizeFromScreenWidth(0.7, "intro-title"))
+
+			bruce = SpriteActor(context, "bruce")
+
+			bruce ! SpriteActor.Start("bruce", rendererActor, gameActor, "image", "bruce-thumb-up", null)
+			bruce ! SpriteActor.Move(Point3(-0.45, -0.27, 0.06))
+			bruce ! SpriteActor.Resize(SizeFromTextureWidth(0.45, "bruce-thumb-up"))
 
 			import scala.math._
 
@@ -157,16 +176,27 @@ class MenuActor extends Actor {
 				cloud(i) = SpriteActor(context, "cloud%d".format(i))
 
 				val animator = new LineAnimator()
-				animator.incr.x = (((random*2)-1)*0.004)
-				animator.lo.x = -0.8
-				animator.hi.x = 0.8
-				animator.pos.y = 0.2 + (((random*2)-1)*0.1)
-				animator.pos.x = (((random*2)-1)*0.6)
+				animator.incr.x =  (((random*2)-1)*0.004)
+				animator.lo.x   = -1.1
+				animator.hi.x   =  1.1
+				animator.pos.y  =  0.3 + (((random*2)-1)*0.3)
+				animator.pos.x  =  (((random*2)-1)*0.8)
+				animator.pos.z  =  0.01
 
 				cloud(i) ! SpriteActor.Start("cloud%d".format(i), rendererActor, gameActor, "image", "intro-cloud", animator)
 				cloud(i) ! SpriteActor.Resize(SizeFromTextureWidth(0.3+(random*0.2), "intro-cloud"))
 				//cloud(i) ! SpriteActor.AnimationBehavior(41, (me) => { me.move(animator.nextPos) })
 			}
+		}
+		case Stop => {
+			playButton ! Stop
+			quitButton ! Stop
+			mountains ! Stop
+			title ! Stop
+			bruce ! Stop
+
+			rendererActor ! RendererActor.SwitchScreen("none")
+			rendererActor ! RendererActor.RemoveScreen("menu")
 		}
 	}
 }
@@ -177,9 +207,11 @@ class LineAnimator extends ImageSprite.Animator {
 	val lo = Point3(0,0,0)
 	val hi = Point3(1,1,1)
 
-	def nextSize(time:Long, inOut:NumberSeq3) {}
+	override def hasNextSize = false
 
-	def nextPosition(time:Long, inOut:NumberSeq3) {
+	def nextSize(time:Long):NumberSeq3 = { null }
+
+	def nextPosition(time:Long):NumberSeq3 = {
 		pos.x += incr.x 
 		if(pos.x > hi.x ) { pos.x = hi.x; incr.x = -incr.x }
 		if(pos.x < lo.x)  { pos.x = lo.x; incr.x = -incr.x }
@@ -189,12 +221,8 @@ class LineAnimator extends ImageSprite.Animator {
 		pos.z += incr.z 
 		if(pos.z > hi.z ) { pos.z = hi.z; incr.z = -incr.z }
 		if(pos.z < lo.z)  { pos.z = lo.z; incr.z = -incr.z }
-		
-		inOut.copy(pos)
+		pos
 	}
-
-	def positionChanged(p:NumberSeq3) {}
-	def sizeChanged(s:NumberSeq3) {}
 }
 
 // == Acquaintance ==========================================================================================================
@@ -211,6 +239,7 @@ object SpriteActor {
 	def apply(context:ActorContext, name:String):ActorRef = context.actorOf(Props[SpriteActor], name) 
 
 	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, avatarType:String, resTexture:String, animator:ImageSprite.Animator)
+	case class Stop
 	case class Resize(size:Size)
 	case class Move(pos:NumberSeq3)
 	case class AnimationBehavior(fps:Int, animBehavior:(SpriteActor) => Unit)
@@ -246,6 +275,10 @@ class SpriteActor extends Actor {
 			     rendererActor ! RendererActor.ChangeAvatar(name, ImageSprite.AddAnimatedState(res, anim, "default", true))
 			else rendererActor ! RendererActor.ChangeAvatar(name, ImageSprite.AddState(res, "default", true))
 		}
+		case Stop ⇒ {
+			rendererActor ! RendererActor.RemoveAvatar(name)
+			context.stop(self)
+		}
 		case Resize(size) ⇒ { resize(size) }
 		case Move(pos) ⇒ { move(pos) }
 		case AnimationBehavior(fps, animBehavior) ⇒ {
@@ -254,9 +287,6 @@ class SpriteActor extends Actor {
 		}
 		case ReceiveTimeout ⇒ {
 			if(animationBehavior ne null) {
-//				val T1 = System.currentTimeMillis
-//				println("time %s = %d".format(name, T1-T))
-//				T = T1
 				animationBehavior(this)
 			} else {
 				throw new RuntimeException("animation behavior is null an receive a timeout ??")
