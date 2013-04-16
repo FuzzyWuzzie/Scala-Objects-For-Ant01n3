@@ -28,7 +28,7 @@ import com.typesafe.config.{ConfigFactory, Config}
 
 class BrucePicaxe {
   	Armature.armatures += "bruce-picaxe" -> Armature (
-        "bruce-picaxe", (687, 772), "bruce-picaxe", "armature-shader",
+        "bruce-picaxe", 1.0/772.0, (687, 772), "bruce-picaxe", "armature-shader",
         Joint ("chest", -0.02, (37,242,162,174), (119,412), (0,0), true, // <- anchor of the chest could be the initial position of the model.
         	Joint ("head", -0.03 ,(42,23,154,206), (116,189), (113,248), true,
         		Joint ("r-eyebrow",    0.01, (205, 54, 38, 19), (225, 64), (133, 88), true),
@@ -160,7 +160,8 @@ class TestArmature extends SurfaceRenderer {
         gl.frontFace(gl.CW)
         
         gl.disable(gl.BLEND)
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+//        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
         libraries = Libraries(gl)
 	}
@@ -187,6 +188,7 @@ class TestArmature extends SurfaceRenderer {
 		armature = Armature.armatures.get("bruce-picaxe").getOrElse(throw new RuntimeException("not found bruce-picaxe ?"))
 
 		armature.init(gl, libraries)
+		println(armature)
 	}
 	
 	def reshape(surface:Surface) {

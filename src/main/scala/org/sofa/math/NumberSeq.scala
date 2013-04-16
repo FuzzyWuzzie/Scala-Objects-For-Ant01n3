@@ -62,6 +62,21 @@ trait NumberSeq extends IndexedSeq[Double] {
 	    buf.append(")")
 	    buf.toString
 	}
+
+	def toShortString():String = {
+		val buf = new StringBuffer
+
+		buf.append("(")
+		var i = 0
+		while(i < data.length) {
+			buf.append("%.2f".format(data(i)))
+			i += 1
+			if(i != data.length)
+				buf.append(",")
+		}
+		buf.append(")")
+		buf.toString
+	}
 	
 	/** New number sequence of the same size as this. This is not a copy of the element of this. */
 	protected[math] def newInstance():ReturnType

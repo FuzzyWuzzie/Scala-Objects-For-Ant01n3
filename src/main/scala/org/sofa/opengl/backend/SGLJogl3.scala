@@ -9,6 +9,7 @@ import org.sofa.nio._
 import GL._
 import GL2._
 import GL2GL3._
+import GL2ES1._
 import GL2ES2._
 import GL3._ 
 
@@ -146,7 +147,7 @@ class SGLJogl3(val gl:GL3, val glu:GLU) extends SGL {
 	    ib1.put(0, id)
 	    glDeleteTextures(1, ib1)
 	}
-	
+
 	def activeTexture(texture:Int) = glActiveTexture(texture)
 	def bindTexture(target:Int, id:Int) = glBindTexture(target, id)
 	def texParameter(target:Int, name:Int, param:Float) = glTexParameterf(target, name, param)

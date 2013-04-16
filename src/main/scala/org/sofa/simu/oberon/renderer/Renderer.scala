@@ -59,8 +59,9 @@ object RendererActor {
 	  * begin message is sent to the new screen and all its avatars. */
 	case class SwitchScreen(name:String)
 	
-	/** Change the current screen user size. This set the environment space where avatars can be positionned. */
-	case class ChangeScreenSize(axes:Axes)
+	/** Change the current screen user size. This set the environment space where avatars can be positionned.
+	  * You also give the size of the grid used by the space index. */
+	case class ChangeScreenSize(axes:Axes, spashUnit:Double)
 
 	/** Change some value for a screen. Possible axes depend on the screen type. */
 	case class ChangeScreen(axis:String, values:AnyRef*)
@@ -115,8 +116,8 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 		case SwitchScreen(name) ⇒ {
 			renderer.switchToScreen(name)
 		}
-		case ChangeScreenSize(axes) ⇒ {
-			renderer.currentScreen.changeAxes(axes)
+		case ChangeScreenSize(axes,spashUnit) ⇒ {
+			renderer.currentScreen.changeAxes(axes, spashUnit)
 		}
 		case AddAvatar(name,atype,indexed) ⇒ {
 			renderer.currentScreen.addAvatar(name, avatarFactory.avatarFor(name, atype, indexed)) 
@@ -213,8 +214,14 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 
 // == Surface events ===========================
 
-	def onScroll(surface:Surface, e:ScrollEvent) {} 
+	def onScroll(surface:Surface, e:ScrollEvent) {
+		if(screen ne null) {
+			screen.pinch(e.amount)
+		}
+	} 
+
 	def onKey(surface:Surface, e:KeyEvent) {}
+	
 	def onMotion(surface:Surface, e:MotionEvent) {
 		if(screen ne null) {
 			screen.motion(e)

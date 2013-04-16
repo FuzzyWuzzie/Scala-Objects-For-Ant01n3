@@ -1,24 +1,54 @@
 package org.sofa.simu.oberon
 
-import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorContext}
+import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorContext, Terminated}
 import scala.concurrent.duration._
 
 import org.sofa.math.{Axes, Vector3, Point3, NumberSeq3}
-import org.sofa.simu.oberon.renderer.{Screen, Avatar, MenuScreen, AvatarFactory, Renderer, RendererActor, NoSuchScreenException, NoSuchAvatarException, ShaderResource, TextureResource, ImageSprite, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth}
+import org.sofa.simu.oberon.renderer.{Screen, Avatar, AvatarFactory, Renderer, RendererActor, NoSuchScreenException, NoSuchAvatarException, ShaderResource, TextureResource, ImageSprite, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth}
+import org.sofa.simu.oberon.renderer.screen.{MenuScreen, TileScreen}
 import org.sofa.opengl.{Shader, Texture}
 import org.sofa.opengl.io.collada.{ColladaFile}
+
+/** Utility to death-watch a set of actors. Allow to count them. */
+class WatchList {
+	/** The set of watched actors. */
+	protected[this] val watchList = new scala.collection.mutable.HashSet[String]()
+
+	/** If not yet watched, watch for the death of the given actor. */
+	def watch(actor:ActorRef,context:ActorContext) {
+		if(! watchList.contains(actor.path.name)) {
+			context.watch(actor)
+			watchList += actor.path.name
+		}
+	}
+
+	/** Does the watch list contains the given actor ? */
+	def contains(actor:ActorRef):Boolean = watchList.contains(actor.path.name)
+
+	/** A Terminated message has been received for the given actor. */
+	def terminated(actor:ActorRef) { watchList -= actor.path.name }
+
+	/** No more actor to watch. Ok all clean. */
+	def isEmpty:Boolean = watchList.isEmpty
+
+	/** Number of actors actually watched. */
+	def size:Int = watchList.size
+
+	override def toString():String = "{%s}".format(watchList.mkString(","))
+}
 
 class BruceAvatarFactory(val renderer:Renderer) extends AvatarFactory {
 	def screenFor(name:String, screenType:String):Screen = {
 		screenType match {
 			case "menu" ⇒ new MenuScreen(name, renderer)
-			case _ ⇒ throw NoSuchScreenException("cannot create a screen of type %s, unknown type".format(screenType))
+			case "tile" ⇒ new TileScreen(name, renderer)
+			case _      ⇒ throw NoSuchScreenException("cannot create a screen of type %s, unknown type".format(screenType))
 		}
 	}
 	def avatarFor(name:String, avatarType:String, indexed:Boolean):Avatar = {
 		avatarType match {
 			case "image" ⇒ new ImageSprite(name, renderer.screen, indexed)
-			case _ ⇒ throw new NoSuchAvatarException("cannot create an avatar of type %s, unknown type".format(avatarType))
+			case _       ⇒ throw new NoSuchAvatarException("cannot create an avatar of type %s, unknown type".format(avatarType))
 		}
 	}
 }
@@ -51,6 +81,10 @@ class GameActor extends Actor {
 
 	var menuActor:ActorRef = null
 
+	var levelActor:ActorRef = null
+
+	var level:String = "menu"
+
 	def receive() = {
 		case Start ⇒ {
 		    Shader.path      += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
@@ -78,12 +112,38 @@ class GameActor extends Actor {
 			menuActor = context.actorOf(Props[MenuActor], name = "menu")
 			
 			menuActor!MenuActor.Start(rendererActor, self)
+			context.watch(menuActor)
+			level = "menu"
 		}
+		
 		case Exit ⇒ {
 			println("exiting..."); context.stop(self)
 		}
+		
+		case Terminated(actor) ⇒ {
+			actor.path.name match {
+				case "menu" ⇒ {
+					println("next level : %s".format(level))
+					levelActor = context.actorOf(Props[LevelActor], name = "level")
+
+					levelActor ! LevelActor.Start(rendererActor, self, 1)
+					context.watch(levelActor)
+				}
+				case "level" ⇒ {
+					println("TODO handle Level termination")
+				}
+			}
+		}
+
 		case NextLevel(level) ⇒ {
-			println("next level : %s".format(level))
+			if(this.level == "menu") {
+				menuActor ! MenuActor.Stop
+				menuActor = null
+			} else {
+				levelActor ! LevelActor.Stop
+				levelActor = null
+			}
+			this.level = level
 		}
 	}
 
@@ -115,6 +175,8 @@ class MenuActor extends Actor {
 
 	var cloud = new Array[ActorRef](10)
 
+	val watchList = new WatchList()
+
 	def receive() = {
 		case Start(rActor, gActor) ⇒ {
 			import RendererActor._
@@ -124,27 +186,31 @@ class MenuActor extends Actor {
 
 			rendererActor ! AddScreen("menu", "menu")
 			rendererActor ! SwitchScreen("menu")
-			rendererActor ! ChangeScreenSize(Axes((-.5, .5), (-.5, .5), (-1., 1.)))
+			rendererActor ! ChangeScreenSize(Axes((-.5, .5), (-.5, .5), (-1., 1.)), 0.05)
 			rendererActor ! ChangeScreen("background-image", "screen-intro")
 
 			playButton = ButtonActor(context, "play")
+			watchList.watch(playButton, context)
 
 			playButton ! ButtonActor.Start("play", rendererActor, gameActor, "image")
 			playButton ! ButtonActor.Move(Point3(0, 0, 0.05))
 			playButton ! ButtonActor.Resize(SizeFromTextureHeight(0.1, "intro-play"))
 			playButton ! ButtonActor.DefineState("intro-play", ButtonActor.State.Normal, true)
-			playButton ! ButtonActor.TouchBehavior((me,isStart,isEnd) => { 
-				gameActor ! GameActor.NextLevel("level1")
+			playButton ! ButtonActor.TouchBehavior((me,isStart,isEnd) ⇒ { 
+				if(isEnd) {
+					gameActor ! GameActor.NextLevel("level1")
+				}
 			})
 			
 			quitButton = ButtonActor(context, "quit")
+			watchList.watch(quitButton, context)
 
 			quitButton ! ButtonActor.Start("quit", rendererActor, gameActor, "image")
 			quitButton ! ButtonActor.Move(Point3(0, -0.15, 0.05))
 			quitButton ! ButtonActor.Resize(SizeFromTextureHeight(0.1, "intro-quit"))
 			quitButton ! ButtonActor.DefineState("intro-quit", ButtonActor.State.Normal, true)
 			quitButton ! ButtonActor.DefineState("intro-quit-broken", ButtonActor.State.Activated, false)
-			quitButton ! ButtonActor.TouchBehavior((me,isStart,isEnd) => { if(isStart) {
+			quitButton ! ButtonActor.TouchBehavior((me,isStart,isEnd) ⇒ { if(isStart) {
 					me.changeState(ButtonActor.State.Activated)
 				} else if(isEnd) {
 					me.changeState(ButtonActor.State.Normal)
@@ -153,18 +219,21 @@ class MenuActor extends Actor {
 			})
 
 			mountains = SpriteActor(context, "mountains")
+			watchList.watch(mountains, context)
 
 			mountains ! SpriteActor.Start("mountains", rendererActor, gameActor, "image", "intro-moutains", null)
 			mountains ! SpriteActor.Move(Point3(0, -0.2, 0.03))
 			mountains ! SpriteActor.Resize(SizeFromScreenWidth(1, "intro-moutains"))
 
 			title = SpriteActor(context, "title")
+			watchList.watch(title, context)
 
 			title ! SpriteActor.Start("title", rendererActor, gameActor, "image", "intro-title", null)
 			title ! SpriteActor.Move(Point3(0, 0.3, 0.04))
 			title ! SpriteActor.Resize(SizeFromScreenWidth(0.7, "intro-title"))
 
 			bruce = SpriteActor(context, "bruce")
+			watchList.watch(bruce, context)
 
 			bruce ! SpriteActor.Start("bruce", rendererActor, gameActor, "image", "bruce-thumb-up", null)
 			bruce ! SpriteActor.Move(Point3(-0.45, -0.27, 0.06))
@@ -174,6 +243,7 @@ class MenuActor extends Actor {
 
 			for(i <- 0 until cloud.length) {
 				cloud(i) = SpriteActor(context, "cloud%d".format(i))
+				watchList.watch(cloud(i), context)
 
 				val animator = new LineAnimator()
 				animator.incr.x =  (((random*2)-1)*0.004)
@@ -188,15 +258,27 @@ class MenuActor extends Actor {
 				//cloud(i) ! SpriteActor.AnimationBehavior(41, (me) => { me.move(animator.nextPos) })
 			}
 		}
-		case Stop => {
-			playButton ! Stop
-			quitButton ! Stop
-			mountains ! Stop
-			title ! Stop
-			bruce ! Stop
 
-			rendererActor ! RendererActor.SwitchScreen("none")
-			rendererActor ! RendererActor.RemoveScreen("menu")
+		case Terminated(actor) ⇒ {
+			watchList.terminated(actor)
+
+			if(watchList.isEmpty) {
+				rendererActor ! RendererActor.SwitchScreen("none")
+				rendererActor ! RendererActor.RemoveScreen("menu")
+				context.stop(self)
+			}
+		}
+
+		case Stop ⇒ {
+			playButton ! ButtonActor.Stop
+			quitButton ! ButtonActor.Stop
+			mountains ! SpriteActor.Stop
+			title ! SpriteActor.Stop
+			bruce ! SpriteActor.Stop
+
+			for(i <- 0 until cloud.length) {
+				cloud(i) ! SpriteActor.Stop
+			}
 		}
 	}
 }
@@ -222,6 +304,48 @@ class LineAnimator extends ImageSprite.Animator {
 		if(pos.z > hi.z ) { pos.z = hi.z; incr.z = -incr.z }
 		if(pos.z < lo.z)  { pos.z = lo.z; incr.z = -incr.z }
 		pos
+	}
+}
+
+// == LevelActor ==========================================================================================================
+
+object LevelActor {
+	case class Start(rendererActor:ActorRef, gameActor:ActorRef, level:Int)
+	case class Stop
+}
+
+class LevelActor extends Actor {
+	import LevelActor._
+
+	var rendererActor:ActorRef = null
+
+	var gameActor:ActorRef = null
+
+	var level:Int = 0
+
+	var screenName:String = null
+
+	def receive() = {
+		case Start(rActor, gActor, level) ⇒ {
+			import RendererActor._
+
+			rendererActor = rActor
+			gameActor     = gActor
+			this.level    = level
+			screenName    = "level%d".format(level)
+
+			rendererActor ! AddScreen(screenName, "tile")
+			rendererActor ! SwitchScreen(screenName)
+			rendererActor ! ChangeScreenSize(Axes((-14., 14.), (-10., 10.), (-1., 1.)), 1)
+		}
+
+		case Stop ⇒ {
+			rendererActor ! RendererActor.SwitchScreen("none")
+			rendererActor ! RendererActor.RemoveScreen(screenName)
+
+			screenName = null
+			level      = 0
+		}
 	}
 }
 
@@ -307,6 +431,7 @@ object ButtonActor {
 
 	def apply(context:ActorContext, name:String):ActorRef = context.actorOf(Props[ButtonActor], name)
 
+	case class Stop
 	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, avatarType:String)
 	case class Resize(size:Size)
 	case class Move(pos:NumberSeq3)
@@ -344,6 +469,11 @@ class ButtonActor extends Actor {
 
 			rendererActor ! RendererActor.AddAvatar(name, avatarType, true)
 			rendererActor ! RendererActor.AddAvatarAcquaintance(name, self)	
+		}
+
+		case Stop ⇒ {
+			rendererActor ! RendererActor.RemoveAvatar(name)
+			context.stop(self)			
 		}
 		
 		case Resize(size) ⇒ { rendererActor ! RendererActor.ChangeAvatarSize(name, size) }

@@ -114,7 +114,7 @@ abstract class SGL {
     
     def genTexture:Int
 	def deleteTexture(id:Int)
-	
+
 	def activeTexture(texture:Int)
 	def bindTexture(target:Int, id:Int)
 	def texParameter(target:Int, name:Int, param:Float)

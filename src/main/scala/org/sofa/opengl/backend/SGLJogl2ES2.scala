@@ -137,7 +137,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 	    ib1.put(0, id)
 	    glDeleteTextures(1, ib1)
 	}
-	
+
 	def activeTexture(texture:Int) = glActiveTexture(texture)
 	def bindTexture(target:Int, id:Int) = glBindTexture(target, id)
 	def texParameter(target:Int, name:Int, param:Float) = glTexParameterf(target, name, param)
