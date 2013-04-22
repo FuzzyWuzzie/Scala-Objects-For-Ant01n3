@@ -4,8 +4,9 @@ import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorCon
 import scala.concurrent.duration._
 
 import org.sofa.math.{Axes, Vector3, Point3, NumberSeq3}
-import org.sofa.simu.oberon.renderer.{Screen, Avatar, AvatarFactory, Renderer, RendererActor, NoSuchScreenException, NoSuchAvatarException, ShaderResource, TextureResource, ImageSprite, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth}
+import org.sofa.simu.oberon.renderer.{Screen, Avatar, AvatarFactory, Renderer, RendererActor, NoSuchScreenException, NoSuchAvatarException, ShaderResource, TextureResource, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth}
 import org.sofa.simu.oberon.renderer.screen.{MenuScreen, TileScreen}
+import org.sofa.simu.oberon.renderer.sprite.{ImageSprite, TilesSprite}
 import org.sofa.opengl.{Shader, Texture}
 import org.sofa.opengl.io.collada.{ColladaFile}
 
@@ -47,6 +48,7 @@ class BruceAvatarFactory(val renderer:Renderer) extends AvatarFactory {
 	}
 	def avatarFor(name:String, avatarType:String, indexed:Boolean):Avatar = {
 		avatarType match {
+			case "tiles" ⇒ new TilesSprite(name, renderer.screen, false)
 			case "image" ⇒ new ImageSprite(name, renderer.screen, indexed)
 			case _       ⇒ throw new NoSuchAvatarException("cannot create an avatar of type %s, unknown type".format(avatarType))
 		}
@@ -107,6 +109,8 @@ class GameActor extends Actor {
 			rendererActor ! AddResource(TextureResource("intro-moutains", "mountains.png", false))
 			rendererActor ! AddResource(TextureResource("intro-cloud", "cloud.png", false))
 			rendererActor ! AddResource(TextureResource("bruce-thumb-up", "bruce_thumb_up.png", false))
+			rendererActor ! AddResource(TextureResource("tile-nothing", "tile_nothing.png", false))
+			rendererActor ! AddResource(TextureResource("tile-mud", "tile_mud.png", false))
 			rendererActor ! Start(21)
 			
 			menuActor = context.actorOf(Props[MenuActor], name = "menu")
@@ -325,6 +329,8 @@ class LevelActor extends Actor {
 
 	var screenName:String = null
 
+	val mud = new Array[ActorRef](1)
+
 	def receive() = {
 		case Start(rActor, gActor, level) ⇒ {
 			import RendererActor._
@@ -337,6 +343,15 @@ class LevelActor extends Actor {
 			rendererActor ! AddScreen(screenName, "tile")
 			rendererActor ! SwitchScreen(screenName)
 			rendererActor ! ChangeScreenSize(Axes((-14., 14.), (-10., 10.), (-1., 1.)), 1)
+			rendererActor ! ChangeScreen("background-image", "tile-nothing")
+
+
+			mud(0) = TilesActor(context, "mud0")
+//			watchList.watch(mud(0), context)
+
+			mud(0) ! TilesActor.Start("mud0", rendererActor, gameActor, 10, 10, "tile-mud")
+			mud(0) ! TilesActor.Move(Point3(0, 0, 0))
+			mud(0) ! TilesActor.Resize(SizeTriplet(1, 1, 1))
 		}
 
 		case Stop ⇒ {
@@ -415,6 +430,69 @@ class SpriteActor extends Actor {
 			} else {
 				throw new RuntimeException("animation behavior is null an receive a timeout ??")
 			}
+		}
+	}
+}
+
+// == TilesActor ============================================================================================================
+
+object TilesActor {
+	def apply(context:ActorContext, name:String):ActorRef = context.actorOf(Props[TilesActor], name) 
+
+	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, width:Int, height:Int, resTexture:String)
+	case class Stop
+	case class Resize(size:Size)
+	case class Move(pos:NumberSeq3)
+}
+
+class TilesActor extends Actor {
+	import TilesActor._
+
+//var T = 0L
+
+	var name:String = null
+
+	var gameActor:ActorRef = null
+
+	var rendererActor:ActorRef = null
+
+	def resize(newSize:Size) { rendererActor ! RendererActor.ChangeAvatarSize(name, newSize) }
+
+	def move(newPos:NumberSeq3) { rendererActor ! RendererActor.ChangeAvatarPosition(name, newPos) }
+
+	def receive() = {
+		case Start(nm, ra, ga, width, height, res) ⇒ {
+			import TilesSprite._
+			name = nm
+			gameActor = ga
+			rendererActor = ra
+
+			rendererActor ! RendererActor.AddAvatar(name, "tiles", false)
+			rendererActor ! RendererActor.ChangeAvatar(name, GridInit(width, height, res))
+			
+			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud0", 0, 0.5, 0.5, 1))
+			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud1", 0, 0, 0.5, 0.5))
+			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud2", 0.5, 0.5, 1, 1))
+			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud3", 0.5, 0, 1, 0.5))
+
+			// rendererActor ! RendererActor.ChangeAvatar(name, ChangeState(TileState(0, 0, "mud2")))
+			// rendererActor ! RendererActor.ChangeAvatar(name, ChangeState(TileState(9, 9, "mud3")))
+
+			// rendererActor ! RendererActor.ChangeAvatar(name, FillState(2,2,5,5, "mud1"))
+			// rendererActor ! RendererActor.ChangeAvatar(name, FillState(5,2,8,5, "mud2"))
+			
+			rendererActor ! RendererActor.ChangeAvatar(name, FillState(5, 5,10,10, "mud1"))
+			rendererActor ! RendererActor.ChangeAvatar(name, FillState(5, 0,10, 5, "mud0"))
+			rendererActor ! RendererActor.ChangeAvatar(name, FillState(0, 0, 5, 5, "mud3"))
+			rendererActor ! RendererActor.ChangeAvatar(name, FillState(0, 5, 5,10, "mud2"))			
+		}
+		case Stop ⇒ {
+			rendererActor ! RendererActor.RemoveAvatar(name)
+			context.stop(self)
+		}
+		case Resize(size) ⇒ { resize(size) }
+		case Move(pos) ⇒ { move(pos) }
+		case ReceiveTimeout ⇒ {
 		}
 	}
 }

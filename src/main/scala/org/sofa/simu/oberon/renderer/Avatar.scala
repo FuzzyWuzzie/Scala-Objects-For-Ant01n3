@@ -42,7 +42,7 @@ trait Renderable {
 	def end()
 }
 
-/** Event sent when the avatar is touched. */
+/** Renderer event sent when the avatar is touched. */
 case class TouchEvent(x:Double, y:Double, z:Double, isStart:Boolean, isEnd:Boolean) {
 	override def toString():String = "touch[%.2f %.2f %.2f%s]".format(x,y,z, if(isStart)" start"else if(isEnd)" end" else "")
 }

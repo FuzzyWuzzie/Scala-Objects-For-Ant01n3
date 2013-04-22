@@ -222,7 +222,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 	}
 
 	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer) {
-		gl.glBufferSubData(target, offset, size, data.buffer)
+		gl.glBufferSubData(target, offset*4, size*4, data.buffer)
 	}
 	
 	def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer) {

@@ -9,6 +9,8 @@ import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
 import org.sofa.simu.oberon.renderer.{Screen, Renderer, NoSuchAxisException}
 
+import scala.math._
+
 /** The instantaneous motion of the touch pointer. */
 class TouchMotion {
 	val start = Point2(0, 0)
@@ -29,14 +31,14 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	/** Color for parts not covered by the background image. */
 	val clearColor = Rgba(0.9, 0.9, 0.9, 1)
 
-	// /** The background plane. */
-	// val backgroundMesh = new PlaneMesh(2, 2, 1, 1, true)
+	/** The background plane. */
+	var backgroundMesh:PlaneMesh = null
 
-	// /** The background shader. */
-	// var backgroundShader:ShaderProgram =null
+	/** The background shader. */
+	var backgroundShader:ShaderProgram =null
 
-	// /** The background imagE. */
-	// var background:Texture = null
+	/** The background imagE. */
+	var background:Texture = null
 
 	// == Level size, position and zoom ========================
 
@@ -59,6 +61,8 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	// == Debug ==============================
 
 	var debug = true	
+
+	var imageShader:ShaderProgram = null
 
 	var gridShader:ShaderProgram = null
 	
@@ -94,7 +98,7 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	}
 
 	protected def beginShader() {
-//		backgroundShader = renderer.libraries.shaders.get(gl, "image-shader")
+		backgroundShader = renderer.libraries.shaders.get(gl, "image-shader")
 		gridShader = renderer.libraries.shaders.get(gl, "plain-shader")
 	}
 
@@ -110,13 +114,13 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	protected def beginGeometry() {
 		import VertexAttribute._
 
-  		setGrid
-  	}
+  		setGrid  	    
+	}
 
   	protected def setGrid() {
 		import VertexAttribute._
 
-		grid.setXYGrid((w/2).toFloat, (h/2).toFloat, 0f, 0f, w.toInt, h.toInt, spash.bucketSize.toFloat, spash.bucketSize.toFloat, Rgba(0.5, 0.5, 0.5, 0.5))
+		grid.setXYGrid((w/2).toFloat, (h/2).toFloat, 0f, 0f, w.toInt, h.toInt, spash.bucketSize.toFloat, spash.bucketSize.toFloat, Rgba(1, 1, 1, 0.1))
 		if(grid.lastVertexArray eq null)
 			 grid.newVertexArray(gl, gridShader, Vertex -> "position", Color -> "color")
 		else grid.updateVertexArray(gl)
@@ -124,13 +128,21 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 
 	def change(axis:String, values:AnyRef*) {
 		axis match {
-			// case "background-image" ⇒ {
-			// 	if(values(0).isInstanceOf[String]) {
-			// 		background = renderer.libraries.textures.get(gl, values(0).asInstanceOf[String])
-			// 		h = axes.y.length
-			// 		w = h * background.ratio
-			// 	}
-			// }
+			case "background-image" ⇒ {
+				if(values(0).isInstanceOf[String]) {
+					val w = (max(axes.x.length, axes.y.length) * 3).toInt
+
+					background = renderer.libraries.textures.get(gl, values(0).asInstanceOf[String])
+
+					if(backgroundMesh ne null) {
+						backgroundMesh.lastVertexArray.dispose
+					}
+
+					backgroundMesh = new PlaneMesh(2, 2, w, w, true)
+					backgroundMesh.setTextureRepeat(w, w)
+			  	    backgroundMesh.newVertexArray(gl, backgroundShader, VertexAttribute.Vertex -> "position", VertexAttribute.TexCoord -> "texCoords")
+				}
+			}
 			case _ ⇒ {
 				throw NoSuchAxisException(axis)
 			}
@@ -159,8 +171,6 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 
 				offx -= lengthPX2GU(delta.x)
 				offy -= lengthPX2GU(delta.y)
-
-				Console.err.println("off (%f, %f) zoom=%f (%f, %f)".format(offx, offy, zoom, offx*zoom, offy*zoom))
 
 				if(     offx > axes.x.to)   offx = axes.x.to
 				else if(offx < axes.x.from) offx = axes.x.from
@@ -214,16 +224,16 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 
 	/** Render the background image (if any). */
 	protected def renderBackground() {
-		// Origin is in the middle of the screen and of the image.
-		// if(background ne null) {
-		// 	backgroundShader.use
-		// 	background.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
-		// 	camera.pushpop {
-		// 		camera.scaleModel(w, h, 1)
-		// 		camera.setUniformMVP(backgroundShader)
-		// 		backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
-		// 	}
-		// }
+		//Origin is in the middle of the screen and of the image.
+		if(background ne null) {
+			backgroundShader.use
+			background.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
+			camera.pushpop {
+				//camera.scaleModel(w, h, 1)
+				camera.setUniformMVP(backgroundShader)
+				backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
+			}
+		}
 		if(debug) {
 			renderGrid
 		}
@@ -231,9 +241,11 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 
 	/** Render a grid alligned with the spash. */
 	protected def renderGrid() {
+		gl.enable(gl.BLEND)
 		gridShader.use
 		camera.setUniformMVP(gridShader)
 		grid.lastVertexArray.draw(grid.drawAs)
+		gl.disable(gl.BLEND)
 	}
 	
 	/** Pass from pixels to game units. */

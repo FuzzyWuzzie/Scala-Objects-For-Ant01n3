@@ -22,14 +22,14 @@ import org.sofa.opengl.surface.SurfaceRenderer
 import org.sofa.math.Vector4
 import org.sofa.opengl.Shader
 import org.sofa.math.Vector3
-import org.sofa.opengl.mesh.TrianglesMesh
+import org.sofa.opengl.mesh.QuadsMesh
 import org.sofa.opengl.mesh.VertexAttribute
 
-object TestIndexedDynTriangleMesh {
-	def main(args:Array[String]):Unit = { (new TestIndexedDynTriangleMesh).test }
+object TestIndexedDynQuadMesh {
+	def main(args:Array[String]):Unit = { (new TestIndexedDynQuadMesh).test }
 }
 
-class TestIndexedDynTriangleMesh extends SurfaceRenderer {
+class TestIndexedDynQuadMesh extends SurfaceRenderer {
 	var gl:SGL = null
 	var surface:Surface = null
 	
@@ -42,8 +42,8 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 	var thing:VertexArray = null
 	var plane:VertexArray = null
 	
-	val maxTriangles = 9
-	val thingMesh = new TrianglesMesh(maxTriangles)
+	val maxQuads = 9
+	val thingMesh = new QuadsMesh(maxQuads)
 	val planeMesh = new PlaneMesh(2, 2, 4, 4)
 
 	var camera:Camera = null
@@ -123,48 +123,62 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 	def initThing() {
 		import math._
 		
-		thingMesh.setPoint(0, 0, 0, 0)
-		thingMesh.setPoint(1, 1, 0, 0)
-		thingMesh.setPoint(2, 0.5f, 1, 0)
-		thingMesh.setPoint(3, -0.5f, 1, 0)
-		thingMesh.setPoint(4, -1, 0, 0)
-		thingMesh.setPoint(5, -0.5f, -1, 0)
-		thingMesh.setPoint(6, 0.5f, -1, 0)
-		thingMesh.setPoint(7, 1.5f, -1, 0)
-		thingMesh.setPoint(8, 0, 2, 0)
-		thingMesh.setPoint(9, -1.5f, -1, 0)
+		thingMesh.setPoint( 0, -2, 0, 0)
+		thingMesh.setPoint( 1, -1, 0, 0)
+		thingMesh.setPoint( 2,  0, 0, 0)
+		thingMesh.setPoint( 3,  1, 0, 0)
+		thingMesh.setPoint( 4,  2, 0, 0)
+		thingMesh.setPoint( 5, -2, 1, 0)
+		thingMesh.setPoint( 6, -1, 1, 0)
+		thingMesh.setPoint( 7,  0, 1, 0)
+		thingMesh.setPoint( 8,  1, 1, 0)
+		thingMesh.setPoint( 9,  2, 1, 0)
+		thingMesh.setPoint(10, -2, 2, 0)
+		thingMesh.setPoint(11, -1, 2, 0)
+		thingMesh.setPoint(12,  0, 2, 0)
+		thingMesh.setPoint(13,  1, 2, 0)
+		thingMesh.setPoint(14,  2, 2, 0)
 		
-		thingMesh.setPointColor(0, Rgba.white)
-		thingMesh.setPointColor(1, Rgba.red)
-		thingMesh.setPointColor(2, Rgba.green)
-		thingMesh.setPointColor(3, Rgba.blue)
-		thingMesh.setPointColor(4, Rgba.cyan)
-		thingMesh.setPointColor(5, Rgba.magenta)
-		thingMesh.setPointColor(6, Rgba.yellow)
-		thingMesh.setPointColor(7, Rgba.grey20)
-		thingMesh.setPointColor(8, Rgba.grey50)
-		thingMesh.setPointColor(9, Rgba.grey80)
+		thingMesh.setPointColor( 0, Rgba.red)
+		thingMesh.setPointColor( 5, Rgba.red)
+		thingMesh.setPointColor(10, Rgba.red)
+		thingMesh.setPointColor( 1, Rgba.green)
+		thingMesh.setPointColor( 6, Rgba.green)
+		thingMesh.setPointColor(11, Rgba.green)
+		thingMesh.setPointColor( 2, Rgba.blue)
+		thingMesh.setPointColor( 7, Rgba.blue)
+		thingMesh.setPointColor(12, Rgba.blue)
+		thingMesh.setPointColor( 3, Rgba.yellow)
+		thingMesh.setPointColor( 8, Rgba.yellow)
+		thingMesh.setPointColor(13, Rgba.yellow)
+		thingMesh.setPointColor( 4, Rgba.cyan)
+		thingMesh.setPointColor( 9, Rgba.cyan)
+		thingMesh.setPointColor(14, Rgba.cyan)
+
+		thingMesh.setPointNormal( 0, 0, 0, 1)
+		thingMesh.setPointNormal( 1, 0, 0, 1)
+		thingMesh.setPointNormal( 2, 0, 0, 1)
+		thingMesh.setPointNormal( 3, 0, 0, 1)
+		thingMesh.setPointNormal( 4, 0, 0, 1)
+		thingMesh.setPointNormal( 5, 0, 0, 1)
+		thingMesh.setPointNormal( 6, 0, 0, 1)
+		thingMesh.setPointNormal( 7, 0, 0, 1)
+		thingMesh.setPointNormal( 8, 0, 0, 1)
+		thingMesh.setPointNormal( 9, 0, 0, 1)
+		thingMesh.setPointNormal(10, 0, 0, 1)
+		thingMesh.setPointNormal(11, 0, 0, 1)
+		thingMesh.setPointNormal(12, 0, 0, 1)
+		thingMesh.setPointNormal(13, 0, 0, 1)
+		thingMesh.setPointNormal(14, 0, 0, 1)
 		
-		thingMesh.setPointNormal(0, 0, 0, 1)
-		thingMesh.setPointNormal(1, 0, 0, 1)
-		thingMesh.setPointNormal(2, 0, 0, 1)
-		thingMesh.setPointNormal(3, 0, 0, 1)
-		thingMesh.setPointNormal(4, 0, 0, 1)
-		thingMesh.setPointNormal(5, 0, 0, 1)
-		thingMesh.setPointNormal(6, 0, 0, 1)
-		thingMesh.setPointNormal(7, 0, 0, 1)
-		thingMesh.setPointNormal(8, 0, 0, 1)
-		thingMesh.setPointNormal(9, 0, 0, 1)
-		
-		thingMesh.setTriangle(0, 0, 1, 2)
-		thingMesh.setTriangle(1, 0, 2, 3)
-		thingMesh.setTriangle(2, 0, 3, 4)
-		thingMesh.setTriangle(3, 0, 4, 5)
-		thingMesh.setTriangle(4, 0, 5, 6)
-		thingMesh.setTriangle(5, 0, 6, 1)
-		thingMesh.setTriangle(6, 3, 2, 8)
-		thingMesh.setTriangle(7, 4, 9, 5)
-		thingMesh.setTriangle(8, 1, 6, 7)
+		thingMesh.setQuad(0, 0, 1, 6, 5)
+		thingMesh.setQuad(1, 1, 2, 7, 6)
+		thingMesh.setQuad(2, 2, 3, 8, 7)
+		thingMesh.setQuad(3, 3, 4, 9, 8)
+		thingMesh.setQuad(4, 5, 6, 11, 10)
+		thingMesh.setQuad(5, 6, 7, 12, 11)
+		thingMesh.setQuad(6, 7, 8, 13, 12)
+		thingMesh.setQuad(7, 8, 9, 14, 13)
 	}
 	
 	def display(surface:Surface) {
@@ -181,21 +195,22 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 //		thingShad.uniform("color", Rgba.red)
 		useLights(thingShad)
 		camera.uniformMVP(thingShad)
-		thing.draw(thingMesh.drawAs, maxTriangles*3)
+		thing.draw(thingMesh.drawAs, maxQuads*4)
 		
 		surface.swapBuffers
 		gl.checkErrors
 		
-		updateTriangles
+		updateQuads
 	}
 	
 	var foo = 0.0
 	var fooInc = 0.01
 
-	def updateTriangles() {
-		for(i <- 2 until 10 by 2) {
+	def updateQuads() {
+//		Array[Int](1,6,11,3,8,13) foreach { i =>
+		Array[Int](1,6,11) foreach { i =>
+//		for(i <- 5 until 15) {
 			val p = thingMesh.getPoint(i)
-			
 			foo += fooInc
 
 			if(foo > 1) { foo = 1; fooInc = -fooInc }
@@ -204,20 +219,20 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 			p.z = foo
 			
 			thingMesh.setPoint(i, p)
-			//thingMesh.autoComputeNormal(i)
 		}
-		thingMesh.setPointNormal(0, 0, 0, 1)
-		thingMesh.setPointNormal(1, 0, 0, 1)
-		thingMesh.setPointNormal(2, 0, 0, 1)
-		thingMesh.setPointNormal(3, 0, 0, 1)
-		thingMesh.setPointNormal(4, 0, 0, 1)
-		thingMesh.setPointNormal(5, 0, 0, 1)
-		thingMesh.setPointNormal(6, 0, 0, 1)
-		thingMesh.setPointNormal(7, 0, 0, 1)
-		thingMesh.setPointNormal(8, 0, 0, 1)
-		thingMesh.setPointNormal(9, 0, 0, 1)
+
+		// thingMesh.setPointNormal(0, 0, 0, 1)
+		// thingMesh.setPointNormal(1, 0, 0, 1)
+		// thingMesh.setPointNormal(2, 0, 0, 1)
+		// thingMesh.setPointNormal(3, 0, 0, 1)
+		// thingMesh.setPointNormal(4, 0, 0, 1)
+		// thingMesh.setPointNormal(5, 0, 0, 1)
+		// thingMesh.setPointNormal(6, 0, 0, 1)
+		// thingMesh.setPointNormal(7, 0, 0, 1)
+		// thingMesh.setPointNormal(8, 0, 0, 1)
+		// thingMesh.setPointNormal(9, 0, 0, 1)
 		
-		thingMesh.updateVertexArray(gl, true, true ,true, false)
+		thingMesh.updateVertexArray(gl, true, false, true, false)
 	}
 	
 	def reshape(surface:Surface) {

@@ -47,10 +47,20 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
     	checkErrors
     }
     
-    def update(from:Int, to:Int, data:IntBuffer) {
+    def update(from:Int, to:Int, data:IntBuffer, alsoPositionInData:Boolean = true) {
     	bind
-    	data.rewind // 4 =  size of int
-    	bufferSubData(gl.ELEMENT_ARRAY_BUFFER, from*4, (to-from)*4, data)
+    	
+    	if(alsoPositionInData) {
+    		data.clear
+    		data.position(from)
+    	}
+    	
+    	bufferSubData(gl.ELEMENT_ARRAY_BUFFER, from, (to-from), data)
+    	
+    	if(alsoPositionInData) {
+    		data.clear
+    	}
+
     	checkErrors
     }
     

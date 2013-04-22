@@ -92,13 +92,30 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
     
     /** Update a part of the buffer with the data given, the buffer start index
       * is given by `from` and the buffer last index is given by `to` not included.
-      * The data must be offset correctly and contain at least `to-from` elements.
+      *
+      * These are position in the GL buffer, not in the data. The data must be
+	  * correctly positionned (use position()) and its limit correct (use limit()).
+	  * However, if the alsoPositionInData flag is true (by default), the data 
+	  * position and limit are set before passing them to the GL. You use this setting
+	  * when the data is as large as the whole buffer and you sync a part of the data
+	  * with a part of the buffer.
+	  *
       * The `to` and `from` values are expressed in elements (series of valuesPerElement
       * items). */
-    def update(from:Int, to:Int, data:FloatBuffer) {
+    def update(from:Int, to:Int, data:FloatBuffer, alsoPositionInData:Boolean = true) {
     	bind
-    	data.rewind
+    	
+    	if(alsoPositionInData) {
+    		data.clear
+    		data.position(from*valuesPerElement)
+    	}
+    	
     	bufferSubData(gl.ARRAY_BUFFER, from*valuesPerElement, (to-from)*valuesPerElement, data)
+
+    	if(alsoPositionInData) {
+			data.clear
+		}
+
     	checkErrors
     	
 //    	Console.err.println("updating %d values that is %d elements (start value=%d or element=%d)".format((to-from)*valuesPerElement,

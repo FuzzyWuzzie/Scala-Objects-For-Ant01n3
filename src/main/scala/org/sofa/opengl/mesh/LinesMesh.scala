@@ -145,7 +145,7 @@ class LinesMesh(val count:Int) extends Mesh {
 		var x = originx - (incrx * (countx/2))
 		var y = originy - (incry * (county/2))
 
-		while(i< countx) {
+		while(i < countx) {
 			setLine(i, x, originy-h, 0, x, originy+h, 0)
 			setColor(i, color)
 			x += incrx
