@@ -1,6 +1,7 @@
 package org.sofa.simu.oberon
 
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorContext, Terminated}
+import scala.collection.mutable.HashMap
 import scala.concurrent.duration._
 
 import org.sofa.math.{Axes, Vector3, Point3, NumberSeq3}
@@ -9,6 +10,31 @@ import org.sofa.simu.oberon.renderer.screen.{MenuScreen, TileScreen}
 import org.sofa.simu.oberon.renderer.sprite.{ImageSprite, TilesSprite}
 import org.sofa.opengl.{Shader, Texture}
 import org.sofa.opengl.io.collada.{ColladaFile}
+
+object GameMap {
+	val maps = new HashMap[String,GameMap]()
+	def apply(texres:String, size:(Double,Double), pos:(Double,Double),
+		actions:Array[TilesSprite.StateChangeAction]):GameMap = new GameMap(texres, size, pos, actions)
+}
+
+class GameMap(val texres:String, val size:(Double,Double), val pos:(Double,Double),
+	val actions:Array[TilesSprite.StateChangeAction]) {}
+
+class Level1MapMud {
+	import TilesSprite._
+
+	GameMap.maps += "mud-tile-sprite" -> GameMap("tile-mud",
+		(28, 20), (-14, -10),
+		Array(AddState("mud0", 0, 0, 0.5, 0.5),
+		      AddState("mud1", 0.5, 0, 1, 0.5),
+		      AddState("mud2", 0, 0.5, 0.5, 1),
+		      AddState("mud3", 0.5, 0.5, 1, 1),
+		      FillState( 0,  0, 14, 10, "mud0"),
+		      FillState(14,  0, 28, 10, "mud1"),
+		      FillState( 0, 10, 14, 20, "mud2"),
+		      FillState(14, 10, 28, 20, "mud3"))
+		)
+}
 
 /** Utility to death-watch a set of actors. Allow to count them. */
 class WatchList {
@@ -111,6 +137,7 @@ class GameActor extends Actor {
 			rendererActor ! AddResource(TextureResource("bruce-thumb-up", "bruce_thumb_up.png", false))
 			rendererActor ! AddResource(TextureResource("tile-nothing", "tile_nothing.png", false))
 			rendererActor ! AddResource(TextureResource("tile-mud", "tile_mud.png", false))
+			rendererActor ! AddResource(TextureResource("tile-stone", "tile_stone.png", false))
 			rendererActor ! Start(21)
 			
 			menuActor = context.actorOf(Props[MenuActor], name = "menu")
@@ -349,8 +376,8 @@ class LevelActor extends Actor {
 			mud(0) = TilesActor(context, "mud0")
 //			watchList.watch(mud(0), context)
 
-			mud(0) ! TilesActor.Start("mud0", rendererActor, gameActor, 10, 10, "tile-mud")
-			mud(0) ! TilesActor.Move(Point3(0, 0, 0))
+			mud(0) ! TilesActor.Start("mud0", rendererActor, gameActor, 28, 20, "tile-mud")
+			mud(0) ! TilesActor.Move(Point3(-14, -10, 0))
 			mud(0) ! TilesActor.Resize(SizeTriplet(1, 1, 1))
 		}
 
@@ -470,21 +497,15 @@ class TilesActor extends Actor {
 			rendererActor ! RendererActor.AddAvatar(name, "tiles", false)
 			rendererActor ! RendererActor.ChangeAvatar(name, GridInit(width, height, res))
 			
-			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud0", 0, 0.5, 0.5, 1))
-			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud1", 0, 0, 0.5, 0.5))
-			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud2", 0.5, 0.5, 1, 1))
-			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud3", 0.5, 0, 1, 0.5))
-
-			// rendererActor ! RendererActor.ChangeAvatar(name, ChangeState(TileState(0, 0, "mud2")))
-			// rendererActor ! RendererActor.ChangeAvatar(name, ChangeState(TileState(9, 9, "mud3")))
-
-			// rendererActor ! RendererActor.ChangeAvatar(name, FillState(2,2,5,5, "mud1"))
-			// rendererActor ! RendererActor.ChangeAvatar(name, FillState(5,2,8,5, "mud2"))
+			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud0", 0, 0, 0.5, 0.5))
+			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud1", 0.5, 0, 1, 0.5))
+			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud2", 0, 0.5, 0.5, 1))
+			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud3", 0.5, 0.5, 1, 1))
 			
-			rendererActor ! RendererActor.ChangeAvatar(name, FillState(5, 5,10,10, "mud1"))
-			rendererActor ! RendererActor.ChangeAvatar(name, FillState(5, 0,10, 5, "mud0"))
-			rendererActor ! RendererActor.ChangeAvatar(name, FillState(0, 0, 5, 5, "mud3"))
-			rendererActor ! RendererActor.ChangeAvatar(name, FillState(0, 5, 5,10, "mud2"))			
+			rendererActor ! RendererActor.ChangeAvatar(name, FillState( 0,  0, 14, 10, "mud0"))
+			rendererActor ! RendererActor.ChangeAvatar(name, FillState(14,  0, 28, 10, "mud1"))
+			rendererActor ! RendererActor.ChangeAvatar(name, FillState( 0, 10, 14, 20, "mud2"))
+			rendererActor ! RendererActor.ChangeAvatar(name, FillState(14, 10, 28, 20, "mud3"))
 		}
 		case Stop ⇒ {
 			rendererActor ! RendererActor.RemoveAvatar(name)

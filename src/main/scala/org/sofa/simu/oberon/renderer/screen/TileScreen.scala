@@ -5,7 +5,7 @@ import akka.actor.{ActorRef}
 
 import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3, SpatialHash, SpatialObject, SpatialPoint, Point2, Vector2}
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
-import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
+import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute, TrianglesMesh}
 import org.sofa.opengl.surface.{MotionEvent}
 import org.sofa.simu.oberon.renderer.{Screen, Renderer, NoSuchAxisException}
 
@@ -34,8 +34,14 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	/** The background plane. */
 	var backgroundMesh:PlaneMesh = null
 
+	/** The background shadow. */
+	var bgShadowMesh = new TrianglesMesh(16)
+
 	/** The background shader. */
 	var backgroundShader:ShaderProgram =null
+
+	/** The background shadow shader. */
+	var bgShadowShader:ShaderProgram = null
 
 	/** The background imagE. */
 	var background:Texture = null
@@ -99,7 +105,8 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 
 	protected def beginShader() {
 		backgroundShader = renderer.libraries.shaders.get(gl, "image-shader")
-		gridShader = renderer.libraries.shaders.get(gl, "plain-shader")
+		gridShader       = renderer.libraries.shaders.get(gl, "plain-shader")
+		bgShadowShader   = gridShader
 	}
 
 	override def changeAxes(newAxes:Axes, spashUnit:Double) {
@@ -108,12 +115,14 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
   		w = axes.x.length.toFloat
   		h = axes.y.length.toFloat
 
+  		setBgShadow
 		setGrid
 	}
 
 	protected def beginGeometry() {
 		import VertexAttribute._
 
+		setBgShadow
   		setGrid  	    
 	}
 
@@ -121,9 +130,52 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 		import VertexAttribute._
 
 		grid.setXYGrid((w/2).toFloat, (h/2).toFloat, 0f, 0f, w.toInt, h.toInt, spash.bucketSize.toFloat, spash.bucketSize.toFloat, Rgba(1, 1, 1, 0.1))
+		
 		if(grid.lastVertexArray eq null)
 			 grid.newVertexArray(gl, gridShader, Vertex -> "position", Color -> "color")
 		else grid.updateVertexArray(gl)
+	}
+
+	protected def setBgShadow() {
+		import VertexAttribute._
+
+		var x0 = axes.x.from
+		var x1 = axes.x.to
+		var y0 = axes.y.from
+		var y1 = axes.y.to
+		var xlen = axes.x.length/1.8
+		var ylen = axes.y.length/2
+
+		// Four first points around the drawing area (axes), from bottom-left in CCW.
+		var i = 0
+		val c0 = Rgba(0,0,0,0)
+		val c1 = Rgba(0,0,0,0.5)
+		Array((x0,y0,c0),(x1,y0,c0),(x1,y1,c0),(x0,y1,c0),
+		      (x0-xlen,y0-ylen,c1), (x0,     y0-ylen,c1), (x1,     y0-ylen,c1),
+		      (x1+xlen,y0-ylen,c1), (x1+xlen,y0,     c1), (x1+xlen,y1,     c1),
+		      (x1+xlen,y1+ylen,c1), (x1,     y1+ylen,c1), (x0,     y1+ylen,c1),
+		      (x0-xlen,y1+ylen,c1), (x0-xlen,y1,     c1), (x0-xlen,y0,     c1)) foreach { pt =>
+			bgShadowMesh.setPoint(i, pt._1.toFloat, pt._2.toFloat, 0f)
+			bgShadowMesh.setPointColor(i, pt._3)
+			i += 1
+		}
+
+		i = 0
+		// Array((15, 0, 5),(15, 5, 4),( 0, 6, 5),( 0, 1, 6),
+		// 	  ( 1, 8, 6),( 6, 8, 7),( 2, 8, 1),( 2, 9, 8),
+		// 	  (11, 9, 2),(11,10, 9),(12,11, 2),(12, 2, 3),
+		// 	  (13,12,14),(14,12, 3),(14, 0,15),(14, 3, 0)) foreach { tri =>
+		Array((15, 0, 4),( 0, 5, 4),( 0, 6, 5),( 0, 1, 6),
+			  ( 1, 7, 6),( 1, 8, 7),( 2, 8, 1),( 2, 9, 8),
+			  (11,10, 2),( 2,10, 9),(12,11, 2),(12, 2, 3),
+			  (13,12, 3),(13, 3,14),(14, 0,15),(14, 3, 0)) foreach { tri =>
+			bgShadowMesh.setTriangle(i, tri._1, tri._2, tri._3)
+			i += 1
+		}
+
+		if(bgShadowMesh.lastVertexArray eq null) 
+		     bgShadowMesh.newVertexArray(gl, bgShadowShader, Vertex -> "position", Color -> "color")
+		else bgShadowMesh.updateVertexArray(gl)
 	}
 
 	def change(axis:String, values:AnyRef*) {
@@ -228,11 +280,14 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 		if(background ne null) {
 			backgroundShader.use
 			background.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
-			camera.pushpop {
-				//camera.scaleModel(w, h, 1)
-				camera.setUniformMVP(backgroundShader)
-				backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
-			}
+			camera.setUniformMVP(backgroundShader)
+			backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
+	
+			gl.enable(gl.BLEND)
+			bgShadowShader.use
+			camera.setUniformMVP(bgShadowShader)
+			bgShadowMesh.lastVertexArray.draw(bgShadowMesh.drawAs)
+			gl.disable(gl.BLEND)
 		}
 		if(debug) {
 			renderGrid

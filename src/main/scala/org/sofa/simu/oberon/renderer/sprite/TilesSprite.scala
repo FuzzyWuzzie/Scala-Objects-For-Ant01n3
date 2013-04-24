@@ -12,15 +12,17 @@ import org.sofa.simu.oberon.renderer.{Sprite,Screen,Avatar,AvatarIndex,AvatarSta
 object TilesSprite {
 	case class GridInit(width:Int, height:Int, resourceName:String) extends AvatarState
 
+	class StateChangeAction extends AvatarState
+
 	/** Declare a new state for the sprite, and associate it an image in the resources library. The tile is
 	  * taken between coordinates (u0,v0) and (u1,v1), in [0..1]. */
-	case class AddState(state:String, u0:Double, v0:Double, u1:Double, v1:Double) extends AvatarState
+	case class AddState(state:String, u0:Double, v0:Double, u1:Double, v1:Double) extends StateChangeAction
 
-	case class ChangeState(st:TileState) extends AvatarState
+	case class ChangeState(st:TileState) extends StateChangeAction
 
-	case class ChangeStates(xy:Seq[TileState]) extends AvatarState
+	case class ChangeStates(xy:Seq[TileState]) extends StateChangeAction
 
-	case class FillState(x0:Int, y0:Int, x1:Int, y1:Int, st:String) extends AvatarState
+	case class FillState(x0:Int, y0:Int, x1:Int, y1:Int, st:String) extends StateChangeAction
 
 	case class TileState(x:Int, y:Int, state:String)
 
