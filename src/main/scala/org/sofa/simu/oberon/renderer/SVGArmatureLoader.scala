@@ -258,7 +258,7 @@ class SVGArmatureLoader {
 
 			val name  = parts(0).trim
 			val decl  = parts(1).trim
-			val joint = joints.get(name).getOrElse { val j = Joint(name); j.anchorGU = Point2(0,0); joints += (name -> j); j }
+			val joint = findJoint(name)
 
 			parseJointDeclaration(joint, decl)
 		}
@@ -281,28 +281,46 @@ class SVGArmatureLoader {
 				joint.sizeUV  = Point2(area.w,area.h)
 				joint.pivotGU = Point2(area.pivot)
 
-				if(sub.size > 0)
-					joint.sub = parseJointSubs(joint, sub, area)
+				if(sub.size > 0) {
+					val (under,above) = parseJointSubs(joint, sub, area)
+					joint.subUnder = under
+					joint.subAbove = above
+				}
 			}
 			case _ => throw ArmatureParseException("cannot parse declaration '%s' for joint '%s'".format(declaration, joint.name))
 		}
 	}
 
-	/** Parse each anchored joint and return the array of sub joints. */
-	protected def parseJointSubs(joint:Joint, subs:Array[String], area:Area):Array[Joint] = {
-		val subsArray = new ArrayBuffer[Joint]()
+	/** Parse each anchored joint and return two arrays of sub joints, the first are to drawn under and the other above. */
+	protected def parseJointSubs(joint:Joint, subs:Array[String], area:Area):(Array[Joint],Array[Joint]) = {
+		val under = new ArrayBuffer[Joint]
+		val above = new ArrayBuffer[Joint]
 
 		subs.foreach { sub =>
 			sub match {
 				case SubJointDeclarationExp(name, z, anchor) => {
-					val joint      = joints.get(name).getOrElse { val j = Joint(name); j.anchorGU = Point2(0,0); joints += (name -> j); j }
+					val joint      = findJoint(name)
 					joint.anchorGU = Point2(area.findAnchor(anchor.toInt))
-					subsArray     += joint
+
+					if(z == "/") under += joint else above += joint
+					println("---> %s".format(z))
 				}
 				case _ => throw ArmatureParseException("cannot parse subjoint declaration '%s' in joint '%s'".format(subs, joint.name))
 			}
 		}
 
-		subsArray.toArray
+		(under.toArray, above.toArray)
+	}
+
+	/** Find a joint with the given name or create it. */
+	protected def findJoint(name:String):Joint = {
+		joints.get(name).getOrElse {
+			val j = Joint(name)
+			
+			j.anchorGU = Point2(0,0)
+			joints += (name -> j)
+			
+			j
+		}
 	}
 }

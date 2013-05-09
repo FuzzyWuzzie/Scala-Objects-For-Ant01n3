@@ -36,17 +36,17 @@ class TextureImageAndroid(val data:Bitmap) extends TextureImage {
 	        val pad   = (align - (width % align)) % align
     	     
 			if(pad == 0) {
-    	    	GLUtils.texImage2D(gl.TEXTURE_2D, 0, GLES20.GL_ALPHA, data, 0)
+    	    	GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_ALPHA, data, 0)
     	 	} else {
     	 		// We need to align the image data with the unpack alignment
     	 		// in order to have an efficient texture memory access.
 
     	 		val bytes = imageDataGray(data, align)
 
-    	 		gl.texImage2D(mode, 0, GLES20.GL_ALPHA, width, height, 0, GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, bytes)
+    	 		gl.texImage2D(mode, level, GLES20.GL_ALPHA, width, height, 0, GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, bytes)
     	 	}
     	} else {
-        	GLUtils.texImage2D(gl.TEXTURE_2D, 0, GLES20.GL_RGBA,  data, 0)
+        	GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_RGBA,  data, 0)
         }
 
         if(doGenerateMipmaps)

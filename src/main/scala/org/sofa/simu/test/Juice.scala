@@ -4,7 +4,7 @@ import org.sofa.{Timer, Environment}
 import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
 import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Vector2, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
 
-import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture, TextureFramebuffer}
+import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture, TextureFramebuffer, TexParams, TexMipMap}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, PointsMesh, WireCubeMesh, LinesMesh, AxisMesh, TrianglesMesh, CylinderMesh, EditableMesh, UnindexedTrianglesMesh, VertexAttribute}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent, ScrollEvent, MotionEvent}
@@ -372,27 +372,27 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 	}
 
 	protected def initTextures() {
-		pointTex = new Texture(gl, "Point.png", true)
+		pointTex = new Texture(gl, "Point.png", TexParams(mipMap=TexMipMap.Generate))
 	    pointTex.minMagFilter(gl.LINEAR, gl.LINEAR)
 	    pointTex.wrap(gl.REPEAT)
 
-		groundTex = new Texture(gl, "Ground.png", true)
+		groundTex = new Texture(gl, "Ground.png", TexParams(mipMap=TexMipMap.Generate))
 	    groundTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    groundTex.wrap(gl.REPEAT)
 
-		groundNMapTex = new Texture(gl, "GroundNMap.png", true)
+		groundNMapTex = new Texture(gl, "GroundNMap.png", TexParams(mipMap=TexMipMap.Generate))
 	    groundNMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    groundNMapTex.wrap(gl.REPEAT)
 
-		birouteTex = new Texture(gl, "BruceColor.png", true)
+		birouteTex = new Texture(gl, "BruceColor.png", TexParams(mipMap=TexMipMap.Generate))
 	    birouteTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    birouteTex.wrap(gl.REPEAT)
 
-		birouteNMapTex = new Texture(gl, "BruceNMap.png", true)
+		birouteNMapTex = new Texture(gl, "BruceNMap.png", TexParams(mipMap=TexMipMap.Generate))
 	    birouteNMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    birouteNMapTex.wrap(gl.REPEAT)
 
-	    wallTex = new Texture(gl, "Wall.jpg", true)
+	    wallTex = new Texture(gl, "Wall.jpg", TexParams(mipMap=TexMipMap.Generate))
 	    wallTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    wallTex.wrap(gl.REPEAT)
 	}

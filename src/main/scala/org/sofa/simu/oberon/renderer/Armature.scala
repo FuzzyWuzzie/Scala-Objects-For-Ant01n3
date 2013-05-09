@@ -53,16 +53,20 @@ class Armature(val name:String,
 		triangles.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
 	}
 
+	/** Display the whole armature, but only joints that are visible. */
 	def display(gl:SGL, camera:Camera) {
 		camera.pushpop {
 			shader.use
 			texture.bindUniform(gl.TEXTURE0, shader, "texColor")
-			//camera.scaleModel(1,-1,1)
 			root.display(gl, this, camera)
 		}
 	}
 
 	override def toString():String = "Armature(%s, [%s], {%s})".format(name, area, root)
+
+	def toIndentedString():String = {
+		"Armature(%s, [%s] {%n%s%n})%n".format(name, area, root.toIndentedString(1))
+	}
 }
 
 object Joint {
@@ -70,24 +74,32 @@ object Joint {
 	  *
 	  * The joint maps to an area in a  texture whose pixels are indexed with an origin at the top-left corner (as usual).
 	  *
-	  * @param name    The joint identifier.
-	  * @param z       The z level.
-	  * @param area    Four pixels, the two first are the position in absolute pixels, the two others the size of the area in the texture for this joint.
-	  * @param pivot   The "gravity" center of the joint a position in absolute pixels.
-	  * @param anchor  The attach point in the parent joint in absolute pixels.
-	  * @param visible If true the joint will be visible at start.
-	  * @param joints  Children joints. */
+	  * @param name      The joint identifier.
+	  * @param z         The z level.
+	  * @param area      Four pixels, the two first are the position in absolute pixels, the two others the size of the area in the texture for this joint.
+	  * @param pivot     The "gravity" center of the joint a position in absolute pixels.
+	  * @param anchor    The attach point in the parent joint in absolute pixels.
+	  * @param visible   If true the joint will be visible at start.
+	  * @param subAbove  Children joints to be drawn (in order) above this.
+	  * @param subUnder  Children joints to be drawn (in order) under this. */
 	def apply(name:String,
 	          z:Double,
 	          area:(Double,Double,Double,Double),
 	          pivot:(Double,Double),
 	          anchor:(Double,Double),
 	          visible:Boolean,
-	          joints:Joint*):Joint =
-		new Joint(name, z, Point2(area._1, area._2), Point2(area._3, area._4), Point2(pivot._1, pivot._2), Point2(anchor._1, anchor._2), visible, joints.toArray) 
+	          sub:Joint*):Joint = {
+		val subs  = sub.sortWith { (j0,j1) => j0.z < j1.z }
+		val (under,above) = subs.partition { s => s.z < z }
+
+		new Joint(name, z,
+		          Point2(area._1, area._2),   Point2(area._3, area._4),
+		          Point2(pivot._1, pivot._2), Point2(anchor._1, anchor._2),
+		          visible, under.toArray, above.toArray) 
+	}
 
 	def apply(name:String):Joint = {
-		new Joint(name, 0.0, null, null, null, null, true, null)
+		new Joint(name, 0.0, null, null, null, null, true, null, null)
 	}
 }
 
@@ -99,6 +111,14 @@ object Joint {
   * given at start to build the joint (therefore most often pixels) scaled by a ratio.
   * These coordinates conserve the aspect ratio.
   *
+  * You specify the coordinates in absolute pixels, this means that fromUV, pivotGU,
+  * and anchorGU, are given acording to real coordinates the pixels of your reference
+  * picture (because this is easier). The name of the fields indicates the units into
+  * which they will be converted when the joint is initialized. This means for example
+  * that fromUV and sizeUV will then be normalized between 0 and 1. And pivotGU and
+  * anchorGU will be scaled by the armature scale, and moved to be relative to (0,0)
+  * and the parent pivot point respectivelly.
+  *
   * @param name     Name of the joint.
   * @param z        The position above or under other joints, allow to give a drawing order.
   * @param fromUV   Give absolute pixels, and it will then contain the position of the left-bottom corner of the joint rectangle in the texture.
@@ -106,7 +126,8 @@ object Joint {
   * @param pivotGU  Give absolute pixels, and it will then contain the position of the pivot point relative to (0,0).
   * @param anchorGU Give absolute pixels, and it will then contain the position of the anchor relative to the parent (0,0).
   * @param visible  Is the joint visible at start ?
-  * @param sub      The sub joints, can be null.
+  * @param subUnder The sub joints to be drawn (in order) under this, can be null.
+  * @param subAbove The sub joints to be drawn (in order) above this, can be null.
   */
 class Joint(val name:String,
             var z:Double,
@@ -115,7 +136,8 @@ class Joint(val name:String,
             var pivotGU:Point2,
             var anchorGU:Point2,
             var visible:Boolean,
-            var sub:Array[Joint]) {
+            var subUnder:Array[Joint],
+            var subAbove:Array[Joint]) {
 
 	/** Parent joint. */
 	protected var parent:Joint = null
@@ -132,24 +154,28 @@ class Joint(val name:String,
 	/** Current rotation. */
 	var angle = 0.0
 
-	def apply(id:String):Option[Joint] = if(sub ne null) sub.find(_.name == id) else None
+	/** The given sub joint if any. */
+	def apply(id:String):Joint = {
+		// Not really efficient ...
+		if(subUnder ne null) subUnder.find(_.name == id).getOrElse {
+			if(subAbove ne null) subAbove.find(_.name == id).getOrElse { null } else null
+		} else null
+	}
 
+	/** The given sub joint if any. */
+	def -> (id:String):Joint = apply(id)
+
+	/** Change the absolute pixel coordinates to relative coordinates either in UV (texture) or
+	  * game (scaled) coordinates and setup the parent joint. */
 	def init(parent:Joint, armature:Armature):Int = {
-		// Sort all elements by their Z level to draw them in order.	
-		
-		if(sub ne null)
-			sub = sub.sortWith { (j0,j1) => j0.z < j1.z }
-
 		this.parent = parent
-
-		// Normalize the coordinates in the texture (that are in pixels) into UV coordinates (between 0 and 1).
 
 		normalize(armature)
 		
 		var count = 1
 		
-		if(sub ne null)
-			sub.foreach { s => count += s.init(this, armature) }
+		if(subUnder ne null) subUnder.foreach { count += _.init(this, armature) }
+		if(subAbove ne null) subAbove.foreach { count += _.init(this, armature) }
 		
 		count
 	}
@@ -181,6 +207,8 @@ class Joint(val name:String,
 		sizeUV.set(sizeUV.x/sz.x, sizeUV.y/sz.y)
 	}
 
+	/** Create the triangles (with the pivot point at the origin) and setup their UV texture, then recursively
+      * build the sub joints. */
 	def build(armature:Armature) {
 		triangle      = armature.count * 2
 		var tri       = triangle
@@ -217,55 +245,70 @@ class Joint(val name:String,
 
 		armature.count += 1
 
-		if(sub ne null)
-			sub.foreach { _.build(armature) }
+		if(subUnder ne null) subUnder.foreach { _.build(armature) }
+		if(subAbove ne null) subAbove.foreach { _.build(armature) }
 	}
 
 	def display(gl:SGL, armature:Armature, camera:Camera) {
 		if(visible) {
-			// Draw all elements in Z order. We have to draw ourself 
-			// at the correct place, hence the complicated tests.
-
 			camera.pushpop {
 				camera.translateModel(anchorGU.x, anchorGU.y, 0)
-				if(angle != 0) {
+
+				if(angle != 0)
 					camera.rotateModel(angle, 0, 0, 1)
-				}
 
-				if((sub ne null) && sub.size > 0) {
-					var ok = true
-		
-					if(z < sub(0).z) {
-						displaySelf(armature, camera)
-						ok = false
-					}
-
-					sub.foreach { s =>
-						if(z < s.z && ok) {
-							displaySelf(armature, camera)
-							ok = false 
-						}
-
-						s.display(gl, armature, camera)
-					}
-
-					if(ok) {
-						displaySelf(armature, camera)
-					}
-				} else {
-					camera.setUniformMVP(armature.shader)
-					armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs, triangle*3, 2*3)
-				}
+				displaySub(gl, subUnder, armature, camera)
+				displaySelf(armature, camera)
+				displaySub(gl, subAbove, armature, camera)
 			}
 		}
 	}
 
+	/** Display the given sub array of joints. */
+	protected def displaySub(gl:SGL, sub:Array[Joint], armature:Armature, camera:Camera) {
+		if((sub ne null) && sub.size > 0) {
+			sub foreach { _.display(gl, armature, camera) }
+		}
+	}
+
+	/** Display this joint. */
 	protected def displaySelf(armature:Armature, camera:Camera) {
 		camera.setUniformMVP(armature.shader)
 		armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs, triangle*3, 2*3)		
 	}
 
-	override def toString():String = "Joint(%s(%.2f) [%s->%s]UV [%s->%s]GU (%s)GU <%s>GU {%s})".format(name, z, fromUV.toShortString,
-			sizeUV.toShortString, fromGU.toShortString, sizeGU.toShortString, pivotGU.toShortString, if(anchorGU ne null )anchorGU.toShortString else "noAnchor",
-			if(sub ne null) sub.mkString(",") else "")
+	/** Return a multiline string where sub joints are indented. */
+	def toIndentedString(indent:Int):String = {
+		val sb = new StringBuilder
+		val id = "    " * indent
+
+		sb ++= id
+		sb ++= "Joint(%s (%s.2fz) [%s / %s]UV [%s / %s]GU pivot(%s)GU anchor(%s)GU".format(name, z,
+	 		fromUV.toShortString, sizeUV.toShortString,
+	 		fromGU.toShortString, sizeGU.toShortString, pivotGU.toShortString,
+	 		if(anchorGU ne null) anchorGU.toShortString else "noAnchor")
+
+		if((subUnder ne null) && subUnder.size > 0) {
+			sb ++= " {%n".format()
+			subUnder.foreach { s => sb ++= "%s".format(s.toIndentedString(indent+1)) }
+			sb ++= "%s}".format(id)
+		}
+
+		if((subAbove ne null) && subAbove.size > 0) {
+			sb ++= " {%n".format()
+			subAbove.foreach { s => sb ++= "%s".format(s.toIndentedString(indent+1)) }
+			sb ++= "%s}".format(id)
+		}
+
+		sb ++= ")%n".format(id)
+
+		sb.toString
+	}
+
+	override def toString():String = "Joint(%s(%.2f) [%s->%s]UV [%s->%s]GU (%s)GU <%s>GU {%s} {%s})".format(name, z,
+	 		fromUV.toShortString, sizeUV.toShortString,
+	 		fromGU.toShortString, sizeGU.toShortString, pivotGU.toShortString,
+			if(anchorGU ne null) anchorGU.toShortString else "noAnchor",
+			if(subUnder ne null) subUnder.mkString(",") else "",
+			if(subAbove ne null) subAbove.mkString(",") else "")
 }

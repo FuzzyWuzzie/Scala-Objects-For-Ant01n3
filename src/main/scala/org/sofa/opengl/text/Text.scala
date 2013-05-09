@@ -6,7 +6,7 @@ import java.awt.{Font => AWTFont, Color => AWTColor, RenderingHints => AWTRender
 import java.awt.image.BufferedImage
 import java.io.{File, IOException, InputStream, FileInputStream}
 import org.sofa.math.{Rgba,Matrix4}
-import org.sofa.opengl.{SGL, Texture, TextureImageAwt, ShaderProgram, VertexArray, Camera}
+import org.sofa.opengl.{SGL, Texture, TextureImageAwt, ShaderProgram, VertexArray, Camera, TexParams}
 import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 
 object GLFont {
@@ -237,7 +237,7 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 		// Generate a new texture.
 
-		font.texture = new Texture(gl,new TextureImageAwt(image), false)
+		font.texture = new Texture(gl, new TextureImageAwt(ArrayBuffer(image), TexParams()), TexParams())
 		font.texture.minMagFilter(gl.NEAREST, gl.LINEAR)
 		font.texture.wrap(gl.CLAMP_TO_EDGE)
 

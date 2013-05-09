@@ -9,7 +9,7 @@ import com.jogamp.newt.opengl._
 
 import org.sofa.nio._
 import org.sofa.math.{Rgba, Vector3, Vector4}
-import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, WhiteLight}
+import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, WhiteLight, TexParams, TexMipMap}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute}
@@ -155,15 +155,15 @@ class TestSkinning3 extends SurfaceRenderer {
 	}
 	
 	protected def initTextures() {
-	    groundColor = new Texture(gl, "textures/Ground.png", true)
+	    groundColor = new Texture(gl, "textures/Ground.png", TexParams(mipMap=TexMipMap.Generate))
 	    groundColor.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    groundColor.wrap(gl.REPEAT)
 
-	    groundNMap = new Texture(gl, "textures/GroundNMap.png", true)
+	    groundNMap = new Texture(gl, "textures/GroundNMap.png", TexParams(mipMap=TexMipMap.Generate))
 	    groundNMap.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    groundNMap.wrap(gl.REPEAT)
 
-	    thingColor = new Texture(gl, "textures/Armature_Color_001.png", true)
+	    thingColor = new Texture(gl, "textures/Armature_Color_001.png", TexParams(mipMap=TexMipMap.Generate))
 	    thingColor.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    thingColor.wrap(gl.REPEAT)
 

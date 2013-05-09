@@ -39,11 +39,14 @@ abstract class SGL {
     val TEXTURE_MAG_FILTER:Int
     val TEXTURE_WRAP_S:Int
     val TEXTURE_WRAP_T:Int
+    val LINEAR_MIPMAP_NEAREST:Int
+    val NEAREST_MIPMAP_NEAREST:Int
     val LINEAR_MIPMAP_LINEAR:Int
     val NEAREST_MIPMAP_LINEAR:Int
     val LINEAR:Int
     val REPEAT:Int
     val CLAMP_TO_EDGE:Int
+    val MIRRORED_REPEAT:Int
     val NEAREST:Int
     val DEPTH_COMPONENT:Int
     val FRAMEBUFFER:Int

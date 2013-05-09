@@ -10,7 +10,7 @@ import com.jogamp.newt.opengl._
 
 import org.sofa.nio._
 import org.sofa.math.{Rgba, Vector3, Vector4, Axes, AxisRange}
-import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight}
+import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMipMap, TexMin, TexMag}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
@@ -172,7 +172,8 @@ class TestArmature extends SurfaceRenderer {
 	}
 	
 	protected def initTextures() {
-		libraries.textures += TextureResource("bruce-picaxe", config.getString("picture"), true, gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+		libraries.textures += TextureResource("bruce-picaxe", config.getString("picture"),
+			TexParams(mipMap=TexMipMap.Generate,minFilter=TexMin.LinearAndMipMapLinear,magFilter=TexMag.Linear))
 	}
 	
 	protected def initGeometry() {
@@ -240,50 +241,43 @@ class TestArmature extends SurfaceRenderer {
 
 	def animate() {
 		var angle = armAnim.animate
-		armature.root("r-arm").get.angle = angle
-		armature.root("l-arm").get.angle = angle
+		(armature.root -> "r-arm").angle = angle
+		(armature.root -> "l-arm").angle = angle
 		
 		angle = forearmAnim.animate
-		armature.root("r-arm").get("r-forearm").get.angle = angle
-		armature.root("l-arm").get("l-forearm").get.angle = angle
+		(armature.root -> "r-arm" -> "r-forearm").angle = angle
+		(armature.root -> "l-arm" -> "l-forearm").angle = angle
 
 		// angle = legAnim.animate
-		// armature.root("pelvis").get("r-leg").get.angle =  angle
-		// armature.root("pelvis").get("l-leg").get.angle = -angle
+		// (armature.root -> "pelvis" -> "r-leg").angle =  angle
+		// (armature.root -> "pelvis" -> "l-leg").angle = -angle
 
 		// angle = forelegAnim.animate
-		// armature.root("pelvis").get("r-leg").get("r-foreleg").get.angle = angle
-		// armature.root("pelvis").get("l-leg").get("l-foreleg").get.angle = angle
+		// (armature.root -> "pelvis" -> "r-leg" -> "r-foreleg").angle = angle
+		// (armature.root -> "pelvis" -> "l-leg" -> "l-foreleg").angle = angle
 
 		// angle = shoeAnim.animate
-		// armature.root("pelvis").get("r-leg").get("r-foreleg").get("r-shoe").get.angle = angle
-		// armature.root("pelvis").get("l-leg").get("l-foreleg").get("l-shoe").get.angle = angle		
+		// (armature.root -> "pelvis" -> "r-leg" -> "r-foreleg" -> "r-shoe").angle = angle
+		// (armature.root -> "pelvis" -> "l-leg" -> "l-foreleg" -> "l-shoe").angle = angle		
 
 		grinTime += 1
 
 		if(grinTime > 60) {
-			val grin   = armature.root("head").get("mouth-grin").get
-			val unsure = armature.root("head").get("mouth-unsure").get
-//			val helmet = armature.root("head").get("helmet").get
+			val grin   = armature.root -> "head" -> "mouth-grin"
+			val unsure = armature.root -> "head" -> "mouth-unsure"
+//			val helmet = armature.root -> "head" -> "helmet"
 
 			grinTime = 0
 			grin.visible = !grin.visible
 			unsure.visible = !unsure.visible
 
 			if(grin.visible) {
-				armature.root("head").get("r-eyebrow").get.angle = -0.2
-				armature.root("head").get("l-eyebrow").get.angle =  0.2
+				(armature.root -> "head" -> "r-eyebrow").angle = -0.2
+				(armature.root -> "head" -> "l-eyebrow").angle =  0.2
 			} else {
-				armature.root("head").get("r-eyebrow").get.angle = 0
-				armature.root("head").get("l-eyebrow").get.angle = 0
+				(armature.root -> "head" ->"r-eyebrow").angle = 0
+				(armature.root -> "head" -> "l-eyebrow").angle = 0
 			}
 		}
 	}
-	
-	// def useTextures(shader:ShaderProgram, color:Texture, nmap:Texture) {
-	//    	color.bindTo(gl.TEXTURE0)
-	//     shader.uniform("texColor", 0)
-	//     nmap.bindTo(gl.TEXTURE1)
-	//     shader.uniform("texNormal", 1)
-	// }
 }

@@ -4,6 +4,7 @@ import org.sofa.nio._
 import java.awt.image.{BufferedImage, DataBufferByte}
 import javax.imageio.ImageIO
 import java.io.{File, IOException}
+import scala.collection.mutable.{ArrayBuffer=>ScalaArrayBuffer}
 
 /** Companion object for Texture.
   *
@@ -22,6 +23,7 @@ object Texture {
 object ImageFormat extends Enumeration {
     val RGBA_8888 = Value
     val A_8 = Value
+    type ImageFormat = Value
 }
 
 /** The image data used for the texture.
@@ -39,63 +41,106 @@ trait TextureImage {
     /** Shortcut to width/height ratio. */
     def ratio:Double = (width.toDouble / height.toDouble)
     /** Image type. */
-    def format:ImageFormat.Value 
+    def format:ImageFormat.Value
     /** Initialize the current texture with this image data. */
-    def texImage2D(gl:SGL, mode:Int, doGenerateMipmaps:Boolean)
+    def texImage2D(gl:SGL, mode:Int)
+}
+
+object TextureImageAwt {
+	protected def read(fileName:String, params:TexParams):ScalaArrayBuffer[BufferedImage] = {
+		import TexMipMap._
+
+		val images = new ScalaArrayBuffer[BufferedImage]
+
+		params.mipMap match {
+			case Load => {
+				var i    = 0
+				val pos  = fileName.lastIndexOf('.')
+		    	val res  = if(pos>0) fileName.substring(0, pos) else fileName
+    			val ext  = if(pos>0) fileName.substring(pos+1, fileName.length) else ""
+    			var file = new File("%s_%d.%s".format(res, i, ext))
+
+    			while(file.exists) {
+println("Reading mipmap %d => %s_%d.%s".format(i, res, i, ext))
+    				images += ImageIO.read(file)
+    				i      += 1
+    				file    = new File("%s_%d.%s".format(res, i, ext))
+    			}
+
+				if(images.size < 0)
+					throw new RuntimeException("cannot load any mipmap level for %s (at least %s_%d.%s)".format(fileName, res, i, ext))
+			}
+			case _    => {
+println("Reading non mipmap %s".format(fileName))
+				images += ImageIO.read(new File(fileName))
+			}
+		}
+
+		images
+	}
 }
 
 /** A texture image data using an AWT buffered image. */
-class TextureImageAwt(val data:BufferedImage) extends TextureImage {
+class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexParams) extends TextureImage {
+	import ImageFormat._
 
-    protected val imgFormat = verify
+    protected var imgFormat:ImageFormat = null
 
-    protected def verify():ImageFormat.Value = {
+	def this(fileName:String, params:TexParams) {
+		this(TextureImageAwt.read(fileName, params), params)
+	}
+
+	imgFormat = verify
+
+    protected def verify():ImageFormat = {
         import BufferedImage._
-        data.getType match {
-            case TYPE_INT_ARGB    => ImageFormat.RGBA_8888
-            case TYPE_INT_RGB     => ImageFormat.RGBA_8888
-            case TYPE_INT_BGR     => ImageFormat.RGBA_8888
-            case TYPE_3BYTE_BGR   => ImageFormat.RGBA_8888
-            case TYPE_4BYTE_ABGR  => ImageFormat.RGBA_8888
-            case TYPE_BYTE_GRAY   => ImageFormat.A_8
+        data(0).getType match {
+            case TYPE_INT_ARGB    => RGBA_8888
+            case TYPE_INT_RGB     => RGBA_8888
+            case TYPE_INT_BGR     => RGBA_8888
+            case TYPE_3BYTE_BGR   => RGBA_8888
+            case TYPE_4BYTE_ABGR  => RGBA_8888
+            case TYPE_BYTE_GRAY   => A_8
             case _ => { throw new RuntimeException("unsupported image format (support INT_ARGB, INT_RGB, BYTE_GRAY)") }
         }
     }
 
-    def texImage2D(gl:SGL, mode:Int, doGenerateMipmaps:Boolean) {
-       val (format, internalFormat, theType, bytes) = imageFormatAndType(gl, data)
+    def texImage2D(gl:SGL, mode:Int) {
+    	var level = 0
+    	val maxLevels = data.length
+
+    	while(level < maxLevels) {
+       		val (format, internalFormat, theType, bytes) = imageFormatAndType(gl, data(level))
+
+	    	gl.texImage2D(mode, level, format, data(level).getWidth, data(level).getHeight, 0, internalFormat, theType, bytes)
+
+    		level += 1
+    	}
        
-       gl.texImage2D(mode, 0, format, width, height, 0, internalFormat, theType, bytes)
-       
-       if(doGenerateMipmaps)
-           gl.generateMipmaps(gl.TEXTURE_2D)
+    	if(params.mipMap == TexMipMap.Generate)
+        	gl.generateMipmaps(gl.TEXTURE_2D)
     }
 
-    def width:Int = data.getWidth
+    def width:Int = data(0).getWidth
 
-    def height:Int = data.getHeight
+    def height:Int = data(0).getHeight
 
-    def format:ImageFormat.Value = imgFormat
+    def format:ImageFormat = imgFormat
 
     protected def imageFormatAndType(gl:SGL, image:BufferedImage):(Int, Int, Int, ByteBuffer) = {
-        val align = gl.getInteger(gl.UNPACK_ALIGNMENT)
-        
+        val align        = gl.getInteger(gl.UNPACK_ALIGNMENT)
+        val premultAlpha = (params.alpha == TexAlpha.Premultiply)
+
         imgFormat match {
-            case ImageFormat.RGBA_8888 => (gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageDataRGBA(image, align))
+            case ImageFormat.RGBA_8888 => (gl.RGBA,  gl.RGBA,  gl.UNSIGNED_BYTE, imageDataRGBA(image, align, premultAlpha))
             case ImageFormat.A_8       => (gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, imageDataGray(image, align))
             case _                     => throw new RuntimeException("WTF?")
         }
     }
     
-    protected def imageDataRGBA(image:BufferedImage, align:Int):ByteBuffer = {
+    protected def imageDataRGBA(image:BufferedImage, align:Int, premultAlpha:Boolean):ByteBuffer = {
         val width  = image.getWidth
         val height = image.getHeight
-        
-        // val dataBuffer     = image.getRaster.getDataBuffer
-        // val buf:ByteBuffer = dataBuffer match {
-        //     case b: DataBufferByte => new ByteBuffer(b.getData, false)
-        //     case _ => null
-        // }
         
         val buf = new ByteBuffer(width * height * 4, true)
         
@@ -119,10 +164,19 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
             x = 0
             while(x < width) {
                 val rgba = image.getRGB(x,y)
-                buf(b+0) = ((rgba>>16) & 0xFF).toByte   // R
-                buf(b+1) = ((rgba>> 8) & 0xFF).toByte   // G
-                buf(b+2) = ((rgba>> 0) & 0xFF).toByte   // B
                 buf(b+3) = ((rgba>>24) & 0xFF).toByte   // A
+
+                if(premultAlpha) {
+                	val alpha = buf(b+3) / 255.0
+                	buf(b+0) = (((rgba>>16) & 0xFF) * alpha).toByte // R
+                	buf(b+1) = (((rgba>> 8) & 0xFF) * alpha).toByte // G
+                	buf(b+2) = (((rgba>> 0) & 0xFF) * alpha).toByte // B
+                } else {
+        	        buf(b+0) = ((rgba>>16) & 0xFF).toByte   // R
+    	            buf(b+1) = ((rgba>> 8) & 0xFF).toByte   // G
+	                buf(b+2) = ((rgba>> 0) & 0xFF).toByte   // B
+                }
+
                 x += 1
                 b += 4
             }
@@ -162,31 +216,226 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
 
 /** Locate and fetch image data. */
 trait TextureLoader {
-    /** Try to locate a resource in the include path and load it. */
-    def open(resource:String):TextureImage
+    /** Try to locate a resource in the include path and load it.
+      *
+      * The params may indicate how to load the resource.
+      *
+      * The mip-map parameter
+      * allow to tell if mip-maps must be generated or loaded. If mip-maps are
+      * loaded, the resource name is used as a basis, but integers must be appended
+      * to the real name of the resource separated from it by an underscore. The
+      * first number must be 0 and is the most accurate level. For example if the
+      * resource name is "foo.png" the loader will look for "foo_0.png" then
+      * for "foo_1.png" etc. until it cannot find the next level.
+      *
+      * The alpha parameter allows to know if the data loaded must be converted to
+      * premultiply by alpha. */
+    def open(resource:String, params:TexParams):TextureImage
 }
 
 /** Default texture loader that uses files in the local file system. */
 class DefaultTextureLoader extends TextureLoader {
-    def open(resource:String):TextureImage = {
-        var file = new File(resource)
-        if(file.exists) {
-            new TextureImageAwt(ImageIO.read(new File(resource)))
-        } else {
+	def open(resource:String, params:TexParams):TextureImage = {
+		import TexMipMap._
+
+		params.mipMap match {
+			case Load => { 
+				val pos  = resource.lastIndexOf('.')
+		    	val res  = if(pos>0) resource.substring(0, pos) else resource
+    			val ext  = if(pos>0) resource.substring(pos+1, resource.length) else ""
+    			val name = "%s_0.%s".format(res, ext)
+
+				findPath(name) match {
+					case null     => throw new IOException("cannot locate texture %s (path %s)".format(name, Texture.path.mkString(":")))
+					case x:String => new TextureImageAwt(x, params)
+				}
+			}
+			case _ => {  
+				findPath(resource) match {
+					case null     => throw new IOException("cannot locate texture %s (path %s)".format(resource, Texture.path.mkString(":")))
+					case x:String => new TextureImageAwt(x, params)
+				}
+			}
+		}
+	}
+
+    // protected def openSingle(resource:String, params:TexParams):TextureImage = {
+    //     val file = findPath(resource)
+
+    //     if(file ne null)
+    //          new TextureImageAwt(ImageIO.read(file), params)
+    //     else throw new IOException("cannot locate texture %s (path %s)".format(resource, Texture.path.mkString(":")))
+
+    //     // val file = new File(resource)
+        
+    //     // if(file.exists) {
+    //     //     new TextureImageAwt(ImageIO.read(file))
+    //     // } else {
+    //     //     val sep = sys.props.get("file.separator").get
+
+    //     //     Texture.path.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
+    //     //         case path:Some[String] => { new TextureImageAwt(ImageIO.read(new File("%s%s%s".format(path.get,sep,resource)))) }
+    //     //         case None => { throw new IOException("cannot locate texture %s (path %s)".format(resource, Texture.path.mkString(":"))) }
+    //     //     }
+    //     // }
+    // }
+
+    // /** Try to locate a resource in the include path and load it as a set of mip-map images.
+    //   * The images must be indexed by integers separated from the filename by an underscore (_)
+    //   * character. For example for the resource "foo.png", you may have mipmaps numbered 
+    //   * "foo_0.png", "foo_1.png", "foo_2.png", "foo_3.png", that will be loaded in this order (with
+    //   * therefore only four levels of mip-map). The first image is level 0 and the more detailed
+    //   * images, each subsequent one is half the size of the image. */
+    // protected def openMipMap(resource:String, params:TexParams):Array[TextureImage] = {
+    // 	val pos  = resource.lastIndexOf('.')
+    // 	val res  = if(pos>0) resource.substring(0, pos) else resource
+    // 	val ext  = if(pos>0) resource.substring(pos+1, resource.length) else ""
+    // 	val texs = new scala.collection.mutable.ArrayBuffer[TextureImage]()
+    // 	var name = "%s_0.%s".format(res, ext)
+    // 	var file = findPath(name)
+
+    // 	if(file ne null) {
+    // 		var i = 1
+    // 		do {
+    // 			texs += new TextureImageAwt(ImageIO.read(file), params)
+    // 			name  = "%s_%d.%s".format(res, i, ext)
+    // 			file  = findPath(name)
+    // 			i    += 1
+    // 		} while(file ne null)
+    // 	} else {
+ 			// throw new IOException("cannot locate texture %s (path %s)".format(name, Texture.path.mkString(":")))    		
+    // 	}
+
+    // 	texs.toArray
+    // }
+
+    protected def findPath(resource:String):String = {
+    	var res  = resource
+    	var file = new File(res)
+
+        if(!file.exists) {
             val sep = sys.props.get("file.separator").get
 
-            Texture.path.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
-                case path:Some[String] => { new TextureImageAwt(ImageIO.read(new File("%s%s%s".format(path.get,sep,resource)))) }
-                case None => { throw new IOException("cannot locate texture %s (path %s)".format(resource, Texture.path.mkString(":"))) }
+            Texture.path.find(path => (new File("%s%s%s".format(path, sep, res))).exists) match {
+                case path:Some[String] => { res = "%s%s%s".format(path.get, sep, res) }
+                case None => { res = null }
             }
-        }
+        }  
+
+Console.err.println("** FOUND %s".format(res))
+
+        res
     }
+}
+
+
+// -- Texture ----------------------------------------------------------------------------------------------
+
+
+/** How to handle mip-maps when loading image data into the texture. */
+object TexMipMap extends Enumeration {
+	/** No mipmaps. */
+	val No       = Value
+
+	/** Automatically generate the mip-maps. */
+	val Generate = Value
+	
+	/** Try to load the mip-maps from files. In this case the given resource
+	  * name for the file is modified to append an underscore then an integer
+	  * indicating the level of the mipmap. The first one must be 0 then
+	  * progressing by 1 until no file is found. For example for resource
+	  * "foo.png" the loader will look at "foo_0.png", then "foo_1.png",
+	  * etc. until it cannot load a level. */
+	val Load     = Value
+
+	/** Enumeration type. */
+	type TexMipMap = Value
+}
+
+/** How to setup the min filter for the texture when loading it. */
+object TexMin extends Enumeration {
+	/** The nearest texel. */
+	val Nearest = Value
+	
+	/** Average of the four nearest texels. */
+	val Linear = Value
+	
+	/** Nearest texel in the nearest mip-map. */
+	val NearestAndMipMapNearest = Value
+	
+	/** Average of the four nearest texels in the nearest mip-map. */
+	val LinearAndMipMapNearest = Value
+	
+	/** Average of the nearest texels of the two nearest mip-maps. */
+	val NearestAndMipMapLinear = Value
+	
+	/** Average of the four nearest pixels from the two nearest mip-maps. */
+	val LinearAndMipMapLinear = Value
+	
+	/** Enumeration type. */
+	type TexMin = Value
+}
+
+/** How to setup the mag filter for the texture when loading it. */
+object TexMag extends Enumeration {
+	/** The nearest texel. */
+	val Nearest = Value
+	
+	/** Average of the four nearest texels. */
+	val Linear = Value
+	
+	/** Enumeration type. */
+	type TexMag = Value
+}
+
+/** How to handle alpha valuers when loading the image. */
+object TexAlpha extends Enumeration {
+	/** Do nothing. */
+	val Nop = Value
+
+	/** Premultiply the values by the alpha. */
+	val Premultiply = Value
+
+	/** Enumeration type. */
+	type TexAlpha = Value
+}
+
+object TexWrap extends Enumeration {
+	/** No repetition. */
+	val Clamp = Value 
+	
+	/** Repetition. */
+	val Repeat = Value
+
+	/** Repetition with mirroring. */
+	val MirroredRepeat = Value
+
+	/** Enumeration type. */
+	type TexWrap = Value
+}
+
+/** Main parameters driving the way a texture is built. */
+case class TexParams(
+		val alpha:TexAlpha.Value   = TexAlpha.Nop,
+		val minFilter:TexMin.Value = TexMin.Linear,
+		val magFilter:TexMag.Value = TexMag.Linear,
+		val mipMap:TexMipMap.Value = TexMipMap.No,
+		val wrap:TexWrap.Value     = TexWrap.Repeat) {
 }
 
 /** Define a new 1D, 2D or 3D texture.
   * 
   * The binding of the texture is not automatic. You must bind it yourself before doing any
   * operation on it.
+  *
+  * The use of the default constructor will not upload any image data to the texture, it is only
+  * declared and bindable. In this case the width and height are only indicative, and you have to
+  * upload the image by yourself using glTexImage2D or using a [[TextureImage]].
+  *
+  * The use of the two other constructors will load an image or use a given [[TextureImage]]
+  * according to given texture parameters. The parameters will describe if the image
+  * is mip-mapped, if the mip-map must be automatically generated or loaded from several files, if
+  * the alpha channel is premultiplied, how to wrap the texture, and how to magnify or minify it.
   */
 class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int) extends OpenGLObject(gl) {
     import gl._
@@ -199,19 +448,19 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
         checkErrors
     }
     
-    // def this(gl:SGL, buffer:ByteBuffer, width:Int, height:Int, format:Int, theType:Int, doGenerateMipmaps:Boolean) {
-    //     this(gl, gl.TEXTURE_2D, width, height, 0)
-    //     initFromBuffer(buffer, format, theType, doGenerateMipmaps)
-    // }
-    
-    def this(gl:SGL, image:TextureImage, generateMipmaps:Boolean) {
+    def this(gl:SGL, image:TextureImage, params:TexParams) {
         this(gl, gl.TEXTURE_2D, image.width, image.height, 0)
-        image.texImage2D(gl, mode, generateMipmaps)
-       checkErrors
+        image.texImage2D(gl, mode)
+
+        minFilter(params.minFilter)
+       	magFilter(params.magFilter)
+       	wrap(params.wrap)
+
+    	checkErrors
     }
 
-    def this(gl:SGL, imageFileName:String, generateMipmaps:Boolean) {
-        this(gl, Texture.loader.open(imageFileName), generateMipmaps)
+    def this(gl:SGL, imageFileName:String, params:TexParams) {
+     	this(gl, Texture.loader.open(imageFileName,params), params)
     }
     
     override def dispose() {
@@ -226,11 +475,52 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
         checkErrors
     }
 
+    /** Specify the minification filter. */
+    def minFilter(minFilter:TexMin.Value) {
+    	import TexMin._
+    	minFilter match {
+    		case Nearest                 => parameter(gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    		case Linear                  => parameter(gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    		case NearestAndMipMapNearest => parameter(gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
+    		case LinearAndMipMapNearest  => parameter(gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST)
+    		case NearestAndMipMapLinear  => parameter(gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR)
+    		case LinearAndMipMapLinear   => parameter(gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+    	}
+        checkErrors
+    }
+
+    /** Specify the magnification filter. */
+    def magFilter(magFilter:TexMag.Value) {
+    	import TexMag._
+    	magFilter match {
+    		case Nearest => parameter(gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+    		case Linear  => parameter(gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    	}
+        checkErrors
+    }
+
+    /** Specify the minification and magnification filters. */
+    def minMagFilter(min:TexMin.Value, mag:TexMag.Value) {
+    	minFilter(min)
+    	magFilter(mag)
+    }
+
     /** Specify the wrapping behavior along S and T axes. */
     def wrap(value:Int) {
         parameter(gl.TEXTURE_WRAP_S, value)
         parameter(gl.TEXTURE_WRAP_T, value)
         checkErrors
+    }
+
+    /** Specify the wrapping behavior along S and T axes. */
+    def wrap(value:TexWrap.Value) {
+    	import TexWrap._
+    	value match {
+    		case Clamp          => { parameter(gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);   parameter(gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)   }
+    		case Repeat         => { parameter(gl.TEXTURE_WRAP_S, gl.REPEAT);          parameter(gl.TEXTURE_WRAP_T, gl.REPEAT)          }
+    		case MirroredRepeat => { parameter(gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT); parameter(gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT) }
+    	}
+    	checkErrors
     }
     
     def parameter(name:Int, value:Float) = texParameter(mode, name, value)
@@ -267,6 +557,10 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
 	/** Ratio width over height. */
 	def ratio:Double = width.toDouble / height.toDouble
 }
+
+
+// -- FrameBuffer -------------------------------------------------------------------------------------------------
+
 
 /** An alternate frame buffer that renders in a texture that can then be used onto onto objects. */
 class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val minFilter:Int, val magFilter:Int) extends OpenGLObject(gl) {

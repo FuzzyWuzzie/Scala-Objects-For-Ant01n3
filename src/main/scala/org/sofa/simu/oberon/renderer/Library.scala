@@ -4,7 +4,7 @@ import java.io.IOException
 
 import scala.collection.mutable.HashMap
 
-import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, Texture}
+import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, Texture, TexParams}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
 
@@ -96,23 +96,22 @@ class ShaderLibrary(gl:SGL) extends Library[ShaderProgram](gl) {}
 
 // == Textures ============================================
 
-object TextureResource { def apply(name:String,fileName:String,mipmaps:Boolean=false,minFilter:Int= -1,magFilter:Int= -1):TextureResource = new TextureResource(name, fileName, mipmaps, minFilter, magFilter) }
-class TextureResource(name:String, val fileName:String, val mipmaps:Boolean=false, var minFilter:Int= -1, var magFilter:Int= -1) extends ResourceDescriptor[Texture](name) {
+object TextureResource { def apply(name:String,fileName:String,params:TexParams):TextureResource = new TextureResource(name, fileName, params) }
+
+class TextureResource(
+	name:String,
+	val fileName:String,
+	val params:TexParams)
+		extends ResourceDescriptor[Texture](name) {
+	
 	private var data:Texture = null
 
-	def this(name:String, fileName:String) { this(name, fileName, false, -1, -1) }
-
-	def this(name:String, fileName:String, mipmaps:Boolean) { this(name, fileName, mipmaps, -1, -1) }
+	def this(name:String, fileName:String) { this(name, fileName, TexParams()) }
 
 	def value(gl:SGL):Texture = {
 		if(data eq null) {
 			try {
-				if(minFilter < 0) minFilter = gl.LINEAR
-				if(magFilter < 0) magFilter = gl.LINEAR
-
-				data = new Texture(gl, fileName, mipmaps)
-				data.minMagFilter(minFilter, magFilter)
-	    		data.wrap(gl.REPEAT)
+				data = new Texture(gl, fileName, params)
 			} catch {
 				case e:IOException ⇒ throw NoSuchResourceException(e.getMessage, e)
 			}

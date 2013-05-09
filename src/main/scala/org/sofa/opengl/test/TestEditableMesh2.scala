@@ -1,6 +1,6 @@
 package org.sofa.opengl.test
 
-import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Camera, Shader, Texture}
+import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Camera, Shader, Texture, TexParams, TexMipMap}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, EditableMesh, LinesMesh}
 import org.sofa.opengl.surface.{Surface, BasicCameraController, SurfaceRenderer}
 import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3, Point3}
@@ -100,11 +100,11 @@ class TestEditableMesh2 extends SurfaceRenderer {
 	}
 
 	protected def initTextures() {
-		colorTex = new Texture(gl, "grey-concrete-texture.png", true)
+		colorTex = new Texture(gl, "grey-concrete-texture.png", TexParams(mipMap=TexMipMap.Generate))
 	    colorTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    colorTex.wrap(gl.REPEAT)
 
-		nMapTex = new Texture(gl, "Plan_Deforme_NMap.png", true)
+		nMapTex = new Texture(gl, "Plan_Deforme_NMap.png", TexParams(mipMap=TexMipMap.Generate))
 	    nMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    nMapTex.wrap(gl.REPEAT)
 	}

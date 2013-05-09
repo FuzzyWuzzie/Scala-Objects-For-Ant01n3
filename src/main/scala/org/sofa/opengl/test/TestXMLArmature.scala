@@ -10,7 +10,7 @@ import com.jogamp.newt.opengl._
 
 import org.sofa.nio._
 import org.sofa.math.{Rgba, Vector3, Vector4, Axes, AxisRange}
-import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight}
+import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
@@ -122,7 +122,8 @@ class TestXMLArmature extends SurfaceRenderer {
 		// TODO make a TextureParams class
 		// allowing to describe the texture repeat, filters, files, mipmaps, etc.
 
-		libraries.textures += TextureResource("armature-texture", texFileName, true, gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
+		libraries.textures += TextureResource("armature-texture", texFileName,
+			TexParams(mipMap=TexMipMap.Generate,minFilter=TexMin.LinearAndMipMapLinear,magFilter=TexMag.Linear))
 	}
 
 	protected def initArmatures(armatureFileName:String) {
@@ -138,7 +139,8 @@ class TestXMLArmature extends SurfaceRenderer {
 		armature = Armature.armatures.get("armature-test").getOrElse(throw new RuntimeException("not found armature 'armature-test' ?"))
 
 		armature.init(gl, libraries)
-		println(armature)
+		
+		println(armature.toIndentedString)
 	}
 	
 	def reshape(surface:Surface) {
@@ -170,65 +172,32 @@ class TestXMLArmature extends SurfaceRenderer {
 		grid.lastVertexArray.draw(grid.drawAs)
 	}
 	
-	// class JointAnim(var from:Double, var to:Double, var step:Double) {
-	// 	var value = from
+	class JointAnim(var from:Double, var to:Double, var step:Double) {
+		var value = from
 
-	// 	def animate():Double = {
-	// 		value += step 
+		def animate():Double = {
+			value += step 
 
-	// 		if(value > to) { value = to; step = -step }
-	// 		else if(value < from) { value = from; step = -step }
+			if(value > to)
+				{ value = to; step = -step }
+			else if(value < from)
+				{ value = from; step = -step }
 
-	// 		value
-	// 	}
-	// }
+			value
+		}
+	}
 
-	// val armAnim = new JointAnim(-0.1, 0.3, 0.05)
-	// val forearmAnim = new JointAnim(-0.8, 0, 0.1)
-	// val legAnim = new JointAnim(-0.4, 0.4, 0.05)
-	// val forelegAnim = new JointAnim(0, 0.4, 0.025)
-	// val shoeAnim = new JointAnim(-0.4, 0.0, 0.025)
-	// var grinTime = 0
+	val rootAnim = new JointAnim(-0.2, 0.2, 0.001)
+	val bAnim    = new JointAnim(-0.3, 0.3, 0.05)
+	val cAnim    = new JointAnim(-0.4, 0.4, 0.05)
+	val dAnim    = new JointAnim(-0.8, 0.8, 0.05)
 
 	def animate() {
-// 		var angle = armAnim.animate
-// 		armature.root("r-arm").get.angle = angle
-// 		armature.root("l-arm").get.angle = angle
-		
-// 		angle = forearmAnim.animate
-// 		armature.root("r-arm").get("r-forearm").get.angle = angle
-// 		armature.root("l-arm").get("l-forearm").get.angle = angle
+		val root = armature.root
 
-// 		// angle = legAnim.animate
-// 		// armature.root("pelvis").get("r-leg").get.angle =  angle
-// 		// armature.root("pelvis").get("l-leg").get.angle = -angle
-
-// 		// angle = forelegAnim.animate
-// 		// armature.root("pelvis").get("r-leg").get("r-foreleg").get.angle = angle
-// 		// armature.root("pelvis").get("l-leg").get("l-foreleg").get.angle = angle
-
-// 		// angle = shoeAnim.animate
-// 		// armature.root("pelvis").get("r-leg").get("r-foreleg").get("r-shoe").get.angle = angle
-// 		// armature.root("pelvis").get("l-leg").get("l-foreleg").get("l-shoe").get.angle = angle		
-
-// 		grinTime += 1
-
-// 		if(grinTime > 60) {
-// 			val grin   = armature.root("head").get("mouth-grin").get
-// 			val unsure = armature.root("head").get("mouth-unsure").get
-// //			val helmet = armature.root("head").get("helmet").get
-
-// 			grinTime = 0
-// 			grin.visible = !grin.visible
-// 			unsure.visible = !unsure.visible
-
-// 			if(grin.visible) {
-// 				armature.root("head").get("r-eyebrow").get.angle = -0.2
-// 				armature.root("head").get("l-eyebrow").get.angle =  0.2
-// 			} else {
-// 				armature.root("head").get("r-eyebrow").get.angle = 0
-// 				armature.root("head").get("l-eyebrow").get.angle = 0
-// 			}
-// 		}
+ 		(root).angle = rootAnim.animate
+ 		(root -> "b").angle = bAnim.animate
+ 		(root -> "c").angle = cAnim.animate
+ 		(root -> "c" -> "d").angle = dAnim.animate
 	}
 }

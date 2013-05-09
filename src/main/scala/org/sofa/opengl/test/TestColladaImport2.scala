@@ -1,6 +1,6 @@
 package org.sofa.opengl.test
 
-import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Camera, Shader, Texture}
+import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Camera, Shader, Texture, TexParams, TexMipMap}
 import org.sofa.opengl.mesh.{PlaneMesh, EditableMesh, Mesh, VertexAttribute}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
 import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3}
@@ -98,11 +98,11 @@ class TestColladaImport2 extends SurfaceRenderer {
 	}
 
 	protected def initTextures() {
-		colorTex = new Texture(gl, "CubicThing_Color.png", true)
+		colorTex = new Texture(gl, "CubicThing_Color.png", TexParams(mipMap=TexMipMap.Generate))
 	    colorTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    colorTex.wrap(gl.REPEAT)
 
-		nMapTex = new Texture(gl, "CubicThing_NMap.png", true)
+		nMapTex = new Texture(gl, "CubicThing_NMap.png", TexParams(mipMap=TexMipMap.Generate))
 	    nMapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    nMapTex.wrap(gl.REPEAT)
 	}

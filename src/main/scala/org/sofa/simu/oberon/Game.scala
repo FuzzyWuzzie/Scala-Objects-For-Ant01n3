@@ -8,7 +8,7 @@ import org.sofa.math.{Axes, Vector3, Point3, NumberSeq3}
 import org.sofa.simu.oberon.renderer.{Screen, Avatar, AvatarFactory, Renderer, RendererActor, NoSuchScreenException, NoSuchAvatarException, ShaderResource, TextureResource, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth}
 import org.sofa.simu.oberon.renderer.screen.{MenuScreen, TileScreen}
 import org.sofa.simu.oberon.renderer.sprite.{ImageSprite, TilesSprite}
-import org.sofa.opengl.{Shader, Texture}
+import org.sofa.opengl.{Shader, Texture, TexParams}
 import org.sofa.opengl.io.collada.{ColladaFile}
 
 object GameMap {
@@ -150,17 +150,17 @@ class GameActor extends Actor {
 
 			rendererActor ! AddResource(ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
 			rendererActor ! AddResource(ShaderResource("plain-shader", "plain_shader.vert.glsl", "plain_shader.frag.glsl"))
-			rendererActor ! AddResource(TextureResource("screen-intro", "bruce_intro_screen.png", false))
-			rendererActor ! AddResource(TextureResource("intro-play", "play.png", false))
-			rendererActor ! AddResource(TextureResource("intro-quit", "quit.png", false))
-			rendererActor ! AddResource(TextureResource("intro-quit-broken", "quit_broken.png", false))
-			rendererActor ! AddResource(TextureResource("intro-title", "title.png", false))
-			rendererActor ! AddResource(TextureResource("intro-moutains", "mountains.png", false))
-			rendererActor ! AddResource(TextureResource("intro-cloud", "cloud.png", false))
-			rendererActor ! AddResource(TextureResource("bruce-thumb-up", "bruce_thumb_up.png", false))
-			rendererActor ! AddResource(TextureResource("tile-nothing", "tile_nothing.png", false))
-			rendererActor ! AddResource(TextureResource("tile-mud", "tile_mud.png", false))
-			rendererActor ! AddResource(TextureResource("tile-stone", "tile_stone.png", false))
+			rendererActor ! AddResource(TextureResource("screen-intro", "bruce_intro_screen.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("intro-play", "play.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("intro-quit", "quit.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("intro-quit-broken", "quit_broken.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("intro-title", "title.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("intro-moutains", "mountains.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("intro-cloud", "cloud.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("bruce-thumb-up", "bruce_thumb_up.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("tile-nothing", "tile_nothing.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("tile-mud", "tile_mud.png", TexParams()))
+			rendererActor ! AddResource(TextureResource("tile-stone", "tile_stone.png", TexParams()))
 			rendererActor ! Start(21)
 			
 			menuActor = context.actorOf(Props[MenuActor], name = "menu")

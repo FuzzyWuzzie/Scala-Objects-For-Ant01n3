@@ -104,20 +104,20 @@ class NormalMap extends SurfaceRenderer {
 	    plane = planeMesh.newVertexArray(gl, nmapShader, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
 	    tube  = tubeMesh.newVertexArray( gl, nmapShader, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
 
-	    uvTex = new Texture(gl, "color.png", true)	    
+	    uvTex = new Texture(gl, "color.png", TexParams(mipMap=TexMipMap.Generate))	    
 //	    uvTex = new Texture(gl, "stone_wall__.jpg", true)
 //	    uvTex = new Texture(gl, "textures/face.jpg", true)
 	    uvTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    uvTex.wrap(gl.REPEAT)
 
-	    specTex = new Texture(gl, "specular.png", true)
+	    specTex = new Texture(gl, "specular.png", TexParams(mipMap=TexMipMap.Generate))
 	    specTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    specTex.wrap(gl.REPEAT)
 	    
 //	    nmapTex = new Texture(gl, "NormalFlat.png", false)
 //	    nmapTex = new Texture(gl, "facenrm.jpg", true)
 //	    nmapTex = new Texture(gl, "stone_wall_normal_map__.jpg", true)
-		nmapTex = new Texture(gl, "normal.png", true)
+		nmapTex = new Texture(gl, "normal.png", TexParams(mipMap=TexMipMap.Generate))
 	    nmapTex.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    nmapTex.wrap(gl.REPEAT)
 	}

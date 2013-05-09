@@ -154,11 +154,11 @@ class Skinning extends SurfaceRenderer {
 	}
 	
 	protected def initTextures() {
-	    tex1uv = new Texture(gl, "textures/stone_wall__.jpg", true)
+	    tex1uv = new Texture(gl, "textures/stone_wall__.jpg", TexParams(mipMap=TexMipMap.Generate))
 	    tex1uv.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    tex1uv.wrap(gl.REPEAT)
 
-	    tex1nm = new Texture(gl, "textures/stone_wall_normal_map__.jpg", true)
+	    tex1nm = new Texture(gl, "textures/stone_wall_normal_map__.jpg", TexParams(mipMap=TexMipMap.Generate))
 	    tex1nm.minMagFilter(gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR)
 	    tex1nm.wrap(gl.REPEAT)
 	}
