@@ -13,28 +13,49 @@ import org.sofa.opengl.io.collada.{ColladaFile}
 
 object GameMap {
 	val maps = new HashMap[String,GameMap]()
-	def apply(texres:String, size:(Double,Double), pos:(Double,Double),
-		actions:Array[TilesSprite.StateChangeAction]):GameMap = new GameMap(texres, size, pos, actions)
+	def apply(size:(Int,Int), position:(Int,Int), texture:(String,Int,Int), tiles:HashMap[String,Int], map:Array[String]):GameMap =
+					new GameMap(size, position, texture, tiles, map)
 }
 
-class GameMap(val texres:String, val size:(Double,Double), val pos:(Double,Double),
-	val actions:Array[TilesSprite.StateChangeAction]) {}
+class GameMap(
+	/** The size of the level in game units (tiles). */
+	val size:(Int,Int),
+	/** The position of the level in game units (tiles). */
+ 	val position:(Int,Int),
+ 	/** The texture used in the level and the number of tiles per row and column in it. */
+	val texture:(String,Int,Int),
+	/** Map each character appearing in the level to a tile in the texture. */
+	val tiles:HashMap[String,Int],
+	/** The level map, each character represents a tile. */
+	val map:Array[String]) {}
 
 class Level1MapMud {
-	import TilesSprite._
+	GameMap.maps += "level1" -> GameMap(
+		(24,18), (-12,-9), ("tile-mud", 3, 3),
+		HashMap(("#" -> 0), ("." -> 1), ("v" -> 1), ("!" -> 2), ("R" -> 3),
+			    ("◊" -> 4), ("^" -> 6), (">" -> 6), ("x" -> 6), ("~" -> 7), ("H" -> 8)),
+	 	Array("#..!..!.##########.!.!.#",
+		      ".x.......!#######.....^.",
+		      "...........#####.......#",
+		      "~~~~~~~~~~~~~~~~~~~~~~~~",
+		      "~~~~~~~~~~~~~~~~~~~~~~~~",
+		      "~~~~~~~~~~~~~~~~~~~~~~~~",
+		      "########################",
+		      "x....######...##########",
+		      "####..####..#..#########",
+		      "#####......###..########",
+		      "###RRRRRRR#####..#######",
+		      "######..xR◊◊◊###.......x",
+		      "###RRRRRRRRRRRR#########",
+		      "########################",
+		      "##########!..!.#####!.!.",
+		      "#########.......###.....",
+		      ">##◊◊◊###.......##......",
+		      "#########vvvvvvv##HHHHHH")
+	)
 
-	GameMap.maps += "mud-tile-sprite" -> GameMap("tile-mud",
-		(28, 20), (-14, -10),
-		Array(AddState("mud0", 0, 0, 0.5, 0.5),
-		      AddState("mud1", 0.5, 0, 1, 0.5),
-		      AddState("mud2", 0, 0.5, 0.5, 1),
-		      AddState("mud3", 0.5, 0.5, 1, 1),
-		      FillState( 0,  0, 14, 10, "mud0"),
-		      FillState(14,  0, 28, 10, "mud1"),
-		      FillState( 0, 10, 14, 20, "mud2"),
-		      FillState(14, 10, 28, 20, "mud3"))
-		)
 }
+
 
 /** Utility to death-watch a set of actors. Allow to count them. */
 class WatchList {
@@ -125,6 +146,8 @@ class GameActor extends Actor {
 
 			import RendererActor._
 			
+			new Level1MapMud
+
 			rendererActor ! AddResource(ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
 			rendererActor ! AddResource(ShaderResource("plain-shader", "plain_shader.vert.glsl", "plain_shader.frag.glsl"))
 			rendererActor ! AddResource(TextureResource("screen-intro", "bruce_intro_screen.png", false))
@@ -366,18 +389,20 @@ class LevelActor extends Actor {
 			gameActor     = gActor
 			this.level    = level
 			screenName    = "level%d".format(level)
+			val map       = GameMap.maps(screenName)
 
 			rendererActor ! AddScreen(screenName, "tile")
 			rendererActor ! SwitchScreen(screenName)
-			rendererActor ! ChangeScreenSize(Axes((-14., 14.), (-10., 10.), (-1., 1.)), 1)
+			rendererActor ! ChangeScreenSize(Axes((-map.size._1/2., map.size._1/2.), (-map.size._2/2., map.size._2/2.), (-1., 1.)), 1)
 			rendererActor ! ChangeScreen("background-image", "tile-nothing")
 
+			val tname = screenName
 
-			mud(0) = TilesActor(context, "mud0")
+			mud(0) = TilesActor(context, tname)
 //			watchList.watch(mud(0), context)
 
-			mud(0) ! TilesActor.Start("mud0", rendererActor, gameActor, 28, 20, "tile-mud")
-			mud(0) ! TilesActor.Move(Point3(-14, -10, 0))
+			mud(0) ! TilesActor.Start(tname, rendererActor, gameActor, map)
+			mud(0) ! TilesActor.Move(Point3(map.position._1, map.position._2, 0))
 			mud(0) ! TilesActor.Resize(SizeTriplet(1, 1, 1))
 		}
 
@@ -466,7 +491,7 @@ class SpriteActor extends Actor {
 object TilesActor {
 	def apply(context:ActorContext, name:String):ActorRef = context.actorOf(Props[TilesActor], name) 
 
-	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, width:Int, height:Int, resTexture:String)
+	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, map:GameMap)
 	case class Stop
 	case class Resize(size:Size)
 	case class Move(pos:NumberSeq3)
@@ -488,24 +513,47 @@ class TilesActor extends Actor {
 	def move(newPos:NumberSeq3) { rendererActor ! RendererActor.ChangeAvatarPosition(name, newPos) }
 
 	def receive() = {
-		case Start(nm, ra, ga, width, height, res) ⇒ {
+		case Start(nm, ra, ga, map) ⇒ {
 			import TilesSprite._
 			name = nm
 			gameActor = ga
 			rendererActor = ra
 
 			rendererActor ! RendererActor.AddAvatar(name, "tiles", false)
-			rendererActor ! RendererActor.ChangeAvatar(name, GridInit(width, height, res))
+			rendererActor ! RendererActor.ChangeAvatar(name, GridInit(map.size._1, map.size._2, map.texture._1))
 			
-			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud0", 0, 0, 0.5, 0.5))
-			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud1", 0.5, 0, 1, 0.5))
-			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud2", 0, 0.5, 0.5, 1))
-			rendererActor ! RendererActor.ChangeAvatar(name, AddState("mud3", 0.5, 0.5, 1, 1))
+			val cw = map.texture._2
+			val ch = map.texture._3
+			val tw = 1.0 / cw
+			val th = 1.0 / ch
+
+			println("tile(%d,%d) tw=%f th=%f".format(cw, ch, tw, th))
+
+			map.tiles.foreach { item =>
+//				val y = (ch-1)-(item._2 / cw)
+				val y = (item._2 / cw)
+				val x = (item._2 % cw)
+				println("loading tile %s at (%d %d) -> uv(%f %f)".format(item._1,x,y, x*tw, y*tw))
+				rendererActor ! RendererActor.ChangeAvatar(name, AddState(item._1, x*tw, y*tw, x*tw+tw, y*tw+tw))
+			}
+
+			var y = map.size._2-1
+
+			map.map.foreach { line =>
+				var x = 0
+				line.foreach { tile =>
+					print("%c".format(tile))
+					rendererActor ! RendererActor.ChangeAvatar(name, ChangeState(TileState(x,y,tile.toString)))
+					x += 1
+				}
+				println(" (line %d)".format(y))
+				y -= 1
+			}
 			
-			rendererActor ! RendererActor.ChangeAvatar(name, FillState( 0,  0, 14, 10, "mud0"))
-			rendererActor ! RendererActor.ChangeAvatar(name, FillState(14,  0, 28, 10, "mud1"))
-			rendererActor ! RendererActor.ChangeAvatar(name, FillState( 0, 10, 14, 20, "mud2"))
-			rendererActor ! RendererActor.ChangeAvatar(name, FillState(14, 10, 28, 20, "mud3"))
+			//rendererActor ! RendererActor.ChangeAvatar(name, FillState( 0,  0, 14, 10, "mud0"))
+			//rendererActor ! RendererActor.ChangeAvatar(name, FillState(14,  0, 28, 10, "mud1"))
+			//rendererActor ! RendererActor.ChangeAvatar(name, FillState( 0, 10, 14, 20, "mud2"))
+			//rendererActor ! RendererActor.ChangeAvatar(name, FillState(14, 10, 28, 20, "mud3"))
 		}
 		case Stop ⇒ {
 			rendererActor ! RendererActor.RemoveAvatar(name)

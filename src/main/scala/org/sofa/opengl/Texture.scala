@@ -101,11 +101,21 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
         
         // Very inefficient.
         
+        // We copy from the height to 0 since the OpenGL spec says:
+        //
+        // "The first element corresponds to the lower left corner of the texture image."
+        // "Subsequent elements progress left-to-right through the remaining texels in the"
+        // "lowest row of the texture image, and then in successively higher rows of the"
+        // "texture image. The final element corresponds to the upper right corner of the"
+        // "texture image."
+        //
+        // This allows (0,0)UV to be at the lower-left corner and (1,1)UV at the upper-right.
+
         var b = 0
-        var y = 0
+        var y = height-1
         var x = 0
 
-        while(y < height) {
+        while(y >= 0) {
             x = 0
             while(x < width) {
                 val rgba = image.getRGB(x,y)
@@ -116,7 +126,7 @@ class TextureImageAwt(val data:BufferedImage) extends TextureImage {
                 x += 1
                 b += 4
             }
-            y += 1
+            y -= 1
         }
         
         buf

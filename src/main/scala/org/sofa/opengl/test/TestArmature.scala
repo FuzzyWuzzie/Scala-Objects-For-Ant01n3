@@ -88,8 +88,6 @@ class TestArmature extends SurfaceRenderer {
     
     var gridShader:ShaderProgram = null
 
-    var bruceTex:Texture = null
-    
 // Go
         
     def test() {
@@ -161,7 +159,7 @@ class TestArmature extends SurfaceRenderer {
         
         gl.disable(gl.BLEND)
 //        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)	// Premultiplied alpha
 
         libraries = Libraries(gl)
 	}

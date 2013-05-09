@@ -131,7 +131,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
         var i   = 0
 
         if(isXY) {
-            zz = depth/2f
+            //zz = depth/2f
             for(d <- 0 until nVertZ) {
                 for(x <- 0 until nVertX) {
                     buf(i+0) = xx
@@ -141,7 +141,8 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
                     i  += 3
                 }
                 xx  = -width/2f
-                zz -= nd
+            //    zz -= nd
+            	zz += nd
             }
         } else {
             for(d <- 0 until nVertZ) {

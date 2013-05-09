@@ -56,8 +56,8 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	    
 	    gl.disable(gl.DEPTH_TEST)
 	    
-	    gl.enable(gl.CULL_FACE)
-        gl.cullFace(gl.BACK)
+//		gl.enable(gl.CULL_FACE)
+//		gl.cullFace(gl.BACK)
         gl.frontFace(gl.CW)
         
         gl.disable(gl.BLEND)

@@ -73,10 +73,10 @@ object TilesSprite {
 			val index = if(this(x,y) ne null) this(x,y).index else sz
 			val p = index * 4
 
-			tilesMesh.setPointTexCoord(p,   state.u0, state.v1)
-			tilesMesh.setPointTexCoord(p+1, state.u1, state.v1)
-			tilesMesh.setPointTexCoord(p+2, state.u1, state.v0)
-			tilesMesh.setPointTexCoord(p+3, state.u0, state.v0)
+			tilesMesh.setPointTexCoord(p,   state.u0, state.v0)
+			tilesMesh.setPointTexCoord(p+1, state.u1, state.v0)
+			tilesMesh.setPointTexCoord(p+2, state.u1, state.v1)
+			tilesMesh.setPointTexCoord(p+3, state.u0, state.v1)
 
 			if(this(x,y) eq null) {
 				tilesMesh.setPoint(p,   x,   y,   0)
@@ -86,9 +86,9 @@ object TilesSprite {
 
 				tilesMesh.setQuad(index, p, p+1, p+2, p+3)
 				sz += 1
-Console.err.println("adding tile(%d,%d) sz=%d index=%d (%f %f %f %f)".format(x,y,sz,index,state.u0,state.v0,state.u1,state.v1))
+//Console.err.println("adding tile(%d,%d) sz=%d index=%d (%f %f %f %f)".format(x,y,sz,index,state.u0,state.v0,state.u1,state.v1))
 			}
-else Console.err.println("changing tile(%d,%d), sz=%d index=%d (%f %f %f %f)".format(x,y,sz,index,state.u0,state.v0,state.u1,state.v1))
+//else Console.err.println("changing tile(%d,%d), sz=%d index=%d (%f %f %f %f)".format(x,y,sz,index,state.u0,state.v0,state.u1,state.v1))
 			
 			grid((y*w)+x) = StateIndex(state, index)
 		}

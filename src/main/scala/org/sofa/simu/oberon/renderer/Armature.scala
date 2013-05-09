@@ -15,16 +15,23 @@ object Armature {
 		new Armature(name, scale, Point2(area._1, area._2), texResource, shaderResource, root)
 }
 
-/** A hierachical set of joints. */
-class Armature(val name:String, val scale:Double, val area:Point2, val texResource:String, val shaderResource:String, val root:Joint) {
+/** A hierachical set of joints, and a way to render them. */
+class Armature(val name:String,
+               val scale:Double,
+               val area:Point2,
+               val texResource:String,
+               val shaderResource:String,
+               val root:Joint) {
 
-	/** Global texture containing each part of the armature, each joint is a rectangle in this texture. */
+	/** Global texture containing each part of the armature, each joint is a rectangle in this texture.
+	  * The origin of the joints area inside the texture is the bottom-left with positive X going
+	  * right and positive Y going up. */
 	var texture:Texture = null
 
 	/** The shader to use to display each joint. */
 	var shader:ShaderProgram = null
 
-	/** Set of triangles, two for each joint. */
+	/** Set of triangles, two for each joint. TODO, use a quad mesh. */
 	var triangles:TrianglesMesh = null
 
 	/** Number of pair of triangle (each joint uses one pair of triangles). */
@@ -50,7 +57,7 @@ class Armature(val name:String, val scale:Double, val area:Point2, val texResour
 		camera.pushpop {
 			shader.use
 			texture.bindUniform(gl.TEXTURE0, shader, "texColor")
-			camera.scaleModel(1,-1,1)
+			//camera.scaleModel(1,-1,1)
 			root.display(gl, this, camera)
 		}
 	}
@@ -70,11 +77,45 @@ object Joint {
 	  * @param anchor  The attach point in the parent joint in absolute pixels.
 	  * @param visible If true the joint will be visible at start.
 	  * @param joints  Children joints. */
-	def apply(name:String, z:Double, area:(Double,Double,Double,Double), pivot:(Double,Double), anchor:(Double,Double), visible:Boolean, joints:Joint*):Joint =
+	def apply(name:String,
+	          z:Double,
+	          area:(Double,Double,Double,Double),
+	          pivot:(Double,Double),
+	          anchor:(Double,Double),
+	          visible:Boolean,
+	          joints:Joint*):Joint =
 		new Joint(name, z, Point2(area._1, area._2), Point2(area._3, area._4), Point2(pivot._1, pivot._2), Point2(anchor._1, anchor._2), visible, joints.toArray) 
+
+	def apply(name:String):Joint = {
+		new Joint(name, 0.0, null, null, null, null, true, null)
+	}
 }
 
-class Joint(val name:String, val z:Double, val fromUV:Point2, val sizeUV:Point2 ,val pivotGU:Point2, val anchorGU:Point2, var visible:Boolean, var sub:Array[Joint]) {
+/** A rectangular area mapped to a part of the armature texture, with a pivot point,
+  * and and anchor point in a parent joint.
+  *
+  * This class uses two units, UV means texture coordinates. They are between 0 and 1
+  * whatever be the ratio of the texture. GU means game units, they are the coordinates
+  * given at start to build the joint (therefore most often pixels) scaled by a ratio.
+  * These coordinates conserve the aspect ratio.
+  *
+  * @param name     Name of the joint.
+  * @param z        The position above or under other joints, allow to give a drawing order.
+  * @param fromUV   Give absolute pixels, and it will then contain the position of the left-bottom corner of the joint rectangle in the texture.
+  * @param sizeUV   Give pixels, and it will then contain the size of the joint rectangle in the texture (the aspect ratio is not conserved).
+  * @param pivotGU  Give absolute pixels, and it will then contain the position of the pivot point relative to (0,0).
+  * @param anchorGU Give absolute pixels, and it will then contain the position of the anchor relative to the parent (0,0).
+  * @param visible  Is the joint visible at start ?
+  * @param sub      The sub joints, can be null.
+  */
+class Joint(val name:String,
+            var z:Double,
+            var fromUV:Point2,
+            var sizeUV:Point2,
+            var pivotGU:Point2,
+            var anchorGU:Point2,
+            var visible:Boolean,
+            var sub:Array[Joint]) {
 
 	/** Parent joint. */
 	protected var parent:Joint = null
@@ -82,7 +123,7 @@ class Joint(val name:String, val z:Double, val fromUV:Point2, val sizeUV:Point2 
 	/** Position in the texture image in game units. */
 	protected val fromGU:Point2 = new Point2
 
-	/** The size of the joint in game units. */
+	/** The size of the joint in game units. Preserve the ratio. */
 	protected val sizeGU:Point2 = new Point2
 
 	/** The triangle index in the armature when drawing. */
@@ -91,16 +132,25 @@ class Joint(val name:String, val z:Double, val fromUV:Point2, val sizeUV:Point2 
 	/** Current rotation. */
 	var angle = 0.0
 
-	def apply(id:String):Option[Joint] = sub.find(_.name == id)
+	def apply(id:String):Option[Joint] = if(sub ne null) sub.find(_.name == id) else None
 
 	def init(parent:Joint, armature:Armature):Int = {
 		// Sort all elements by their Z level to draw them in order.	
-		sub = sub.sortWith({ (j0,j1) => j0.z < j1.z })
+		
+		if(sub ne null)
+			sub = sub.sortWith { (j0,j1) => j0.z < j1.z }
 
 		this.parent = parent
+
+		// Normalize the coordinates in the texture (that are in pixels) into UV coordinates (between 0 and 1).
+
 		normalize(armature)
+		
 		var count = 1
-		sub.foreach { s => count += s.init(this, armature) }
+		
+		if(sub ne null)
+			sub.foreach { s => count += s.init(this, armature) }
+		
 		count
 	}
 
@@ -109,15 +159,21 @@ class Joint(val name:String, val z:Double, val fromUV:Point2, val sizeUV:Point2 
 	protected def normalize(armature:Armature) {
 		var scale = armature.scale
 
-		// At start fromUV is in absolute pixels.
+		// At start, fromUV is in absolute pixels.
 		// We scale the GU points and make all values relative to the pivot.
 
 		fromGU.set(fromUV.x*scale, fromUV.y*scale)
 		sizeGU.set(sizeUV.x*scale, sizeUV.y*scale)
 		pivotGU.set((pivotGU.x*scale)-fromGU.x, (pivotGU.y*scale)-fromGU.y)
 		
-		if(parent ne null)
-			anchorGU.set((anchorGU.x*scale)-parent.fromGU.x-(parent.pivotGU.x), (anchorGU.y*scale)-parent.fromGU.y-(parent.pivotGU.y))
+		if(parent ne null) {
+			// The anchor is set according to the parent pivot point.
+			anchorGU.set(
+				(anchorGU.x*scale)-parent.fromGU.x-(parent.pivotGU.x),
+				(anchorGU.y*scale)-parent.fromGU.y-(parent.pivotGU.y))
+		}
+
+		// Finally the UV are set between 0 and 1.
 
 		var sz = armature.area
 		
@@ -126,13 +182,12 @@ class Joint(val name:String, val z:Double, val fromUV:Point2, val sizeUV:Point2 
 	}
 
 	def build(armature:Armature) {
-		triangle = armature.count * 2
-
-		var tri = triangle
-		var pt  = tri * 3
+		triangle      = armature.count * 2
+		var tri       = triangle
+		var pt        = tri * 3
 		val triangles = armature.triangles
 
-		var x0 = (-pivotGU.x).toFloat
+		var x0 = (-pivotGU.x).toFloat	// Pivot at (0.0)
 		var y0 = (-pivotGU.y).toFloat
 		var x1 = x0 + sizeGU.x.toFloat
 		var y1 = y0 + sizeGU.y.toFloat
@@ -162,7 +217,8 @@ class Joint(val name:String, val z:Double, val fromUV:Point2, val sizeUV:Point2 
 
 		armature.count += 1
 
-		sub.foreach { _.build(armature) }
+		if(sub ne null)
+			sub.foreach { _.build(armature) }
 	}
 
 	def display(gl:SGL, armature:Armature, camera:Camera) {
@@ -176,7 +232,7 @@ class Joint(val name:String, val z:Double, val fromUV:Point2, val sizeUV:Point2 
 					camera.rotateModel(angle, 0, 0, 1)
 				}
 
-				if(sub.size > 0) {
+				if((sub ne null) && sub.size > 0) {
 					var ok = true
 		
 					if(z < sub(0).z) {
@@ -210,6 +266,6 @@ class Joint(val name:String, val z:Double, val fromUV:Point2, val sizeUV:Point2 
 	}
 
 	override def toString():String = "Joint(%s(%.2f) [%s->%s]UV [%s->%s]GU (%s)GU <%s>GU {%s})".format(name, z, fromUV.toShortString,
-			sizeUV.toShortString, fromGU.toShortString, sizeGU.toShortString, pivotGU.toShortString, anchorGU.toShortString,
+			sizeUV.toShortString, fromGU.toShortString, sizeGU.toShortString, pivotGU.toShortString, if(anchorGU ne null )anchorGU.toShortString else "noAnchor",
 			if(sub ne null) sub.mkString(",") else "")
 }

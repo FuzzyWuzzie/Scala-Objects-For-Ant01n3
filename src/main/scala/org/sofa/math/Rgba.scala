@@ -33,7 +33,7 @@ object Rgba {
     
     def apply(r:Double, g:Double, b:Double):Rgba = new Rgba(r, g, b, 1)
 
-    def unapply(from:Rgba):(Double,Double,Double,Double) = from.rgba
+    def unapply(from:Rgba):Some[(Double,Double,Double,Double)] = Some(from.rgba)
 }
 
 /* This should maybe inherit NumberSeq4 ??! */
