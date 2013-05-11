@@ -45,9 +45,9 @@ object SVGArmatureLoader {
 	
 	final val Inkscape  = "http://www.inkscape.org/namespaces/inkscape" 
 
-	final val JointDeclarationExp = """(\w+)\s*(\([^\)]+\))?""".r
+	final val JointDeclarationExp = """([\w\d]+)\s*(\([^\)]+\))?""".r
 
-	final val SubJointDeclarationExp = """(\w+)\s*([/\\])\s*(\d+)""".r
+	final val SubJointDeclarationExp = """([^\\/]+)\s*([/\\])\s*(\d+)""".r
 
 	final val SVGFillExp = """fill:#(\p{XDigit}\p{XDigit})(\p{XDigit}\p{XDigit})(\p{XDigit}\p{XDigit})""".r
 
@@ -149,6 +149,9 @@ class SVGArmatureLoader {
 				}
 			}
 		}
+
+//println("found %d areas =====".format(areas.size))
+//areas.foreach { area => println("area %s".format(area)) }
 
 		val armature = buildArmature(name, texRes, shaderRes)
 
@@ -275,8 +278,8 @@ class SVGArmatureLoader {
 			case JointDeclarationExp(part, subs) => {
 				var sub = if(subs ne null) subs.substring(1,subs.length-1).split(",") else Array[String]()
 				
-				val area = areas.get(part).getOrElse(throw ArmatureParseException("cannot configure joint '%s' area '%' does not exist".format(joint.name, part)))
-				 
+				val area = areas.get(part).getOrElse(throw ArmatureParseException("cannot configure joint '%s' area '%s' does not exist".format(joint.name, part)))
+
 				joint.fromUV  = Point2(area.x,area.y)
 				joint.sizeUV  = Point2(area.w,area.h)
 				joint.pivotGU = Point2(area.pivot)
@@ -299,13 +302,12 @@ class SVGArmatureLoader {
 		subs.foreach { sub =>
 			sub match {
 				case SubJointDeclarationExp(name, z, anchor) => {
-					val joint      = findJoint(name)
-					joint.anchorGU = Point2(area.findAnchor(anchor.toInt))
+					val joint      = findJoint(name.trim)
+					joint.anchorGU = Point2(area.findAnchor(anchor.trim.toInt))
 
 					if(z == "/") under += joint else above += joint
-					println("---> %s".format(z))
 				}
-				case _ => throw ArmatureParseException("cannot parse subjoint declaration '%s' in joint '%s'".format(subs, joint.name))
+				case _ => throw ArmatureParseException("cannot parse subjoint declaration '%s' in joint '%s'".format(sub, joint.name))
 			}
 		}
 

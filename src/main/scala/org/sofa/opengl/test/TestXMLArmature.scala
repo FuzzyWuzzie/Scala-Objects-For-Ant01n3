@@ -10,9 +10,9 @@ import com.jogamp.newt.opengl._
 
 import org.sofa.nio._
 import org.sofa.math.{Rgba, Vector3, Vector4, Axes, AxisRange}
-import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap}
+import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap, TexAlpha}
 import org.sofa.opengl.io.collada.{ColladaFile}
-import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
+import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, ScrollEvent, MotionEvent, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
 
@@ -32,6 +32,7 @@ class TestXMLArmature extends SurfaceRenderer {
     var camera:Camera = null
     var ctrl:BasicCameraController = null
     var libraries:Libraries = null
+    var zoom = 1.0
 
 // Geometry
 
@@ -57,7 +58,7 @@ class TestXMLArmature extends SurfaceRenderer {
 		caps.setSampleBuffers(true)
 		caps.setNumSamples(8)
 
-        ctrl           = new BasicCameraController(camera)
+        ctrl           = new TestXMLArmatureCameraController(camera,this)
 	    initSurface    = initializeSurface
 	    frame          = display
 	    surfaceChanged = reshape
@@ -66,7 +67,7 @@ class TestXMLArmature extends SurfaceRenderer {
 	    motion         = ctrl.motion
 	    scroll         = ctrl.scroll
 	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
-	    					camera, "Aramature loader test", caps,
+	    					camera, "Armature loader test", caps,
 	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
 	}
     
@@ -84,8 +85,8 @@ class TestXMLArmature extends SurfaceRenderer {
 
 	    initGL(gl)
         initShaders
-	    initTextures("/Users/antoine/Documents/Art/Images/Bruce_Art/TestAreas.png")
-        initArmatures("/Users/antoine/Documents/Art/Images/Bruce_Art/TestAreas.svg")
+	    initTextures("/Users/antoine/Documents/Art/Images/Bruce_Art/Robot.png")
+        initArmatures("/Users/antoine/Documents/Art/Images/Bruce_Art/Robot.svg")
 	    initGeometry
 	    
 	    camera.viewCartesian(0, 10, 10)
@@ -105,8 +106,8 @@ class TestXMLArmature extends SurfaceRenderer {
         gl.frontFace(gl.CW)
         
         gl.disable(gl.BLEND)
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-//		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)		// Premultiplied alpha
+//		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)		// Premultiplied alpha
 
         libraries = Libraries(gl)
 	}
@@ -123,7 +124,8 @@ class TestXMLArmature extends SurfaceRenderer {
 		// allowing to describe the texture repeat, filters, files, mipmaps, etc.
 
 		libraries.textures += TextureResource("armature-texture", texFileName,
-			TexParams(mipMap=TexMipMap.Generate,minFilter=TexMin.LinearAndMipMapLinear,magFilter=TexMag.Linear))
+			TexParams(mipMap=TexMipMap.Load,alpha=TexAlpha.Premultiply,
+				      minFilter=TexMin.LinearAndMipMapLinear,magFilter=TexMag.Linear))
 	}
 
 	protected def initArmatures(armatureFileName:String) {
@@ -139,15 +141,22 @@ class TestXMLArmature extends SurfaceRenderer {
 		armature = Armature.armatures.get("armature-test").getOrElse(throw new RuntimeException("not found armature 'armature-test' ?"))
 
 		armature.init(gl, libraries)
+
+		(armature \\ "bipbip2").visible = false
+		(armature \\ "mouthoh").visible = false
 		
 		println(armature.toIndentedString)
 	}
 	
 	def reshape(surface:Surface) {
 	    camera.viewportPx(surface.width, surface.height)
-        var ratio = camera.viewportRatio
         gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
-		camera.orthographic(axes.x.from*(ratio), axes.x.to*(ratio), axes.y.from, axes.y.to, axes.z.to, axes.z.from)
+        resetCameraProjection
+	}
+
+	def resetCameraProjection() {
+        var ratio = camera.viewportRatio
+		camera.orthographic(axes.x.from*ratio*zoom, axes.x.to*ratio*zoom, axes.y.from*zoom, axes.y.to*zoom, axes.z.to, axes.z.from)
 	}
 	
 	def display(surface:Surface) {
@@ -172,7 +181,7 @@ class TestXMLArmature extends SurfaceRenderer {
 		grid.lastVertexArray.draw(grid.drawAs)
 	}
 	
-	class JointAnim(var from:Double, var to:Double, var step:Double) {
+	case class JointAnim(var from:Double, var to:Double, var step:Double) {
 		var value = from
 
 		def animate():Double = {
@@ -187,17 +196,116 @@ class TestXMLArmature extends SurfaceRenderer {
 		}
 	}
 
-	val rootAnim = new JointAnim(-0.2, 0.2, 0.001)
-	val bAnim    = new JointAnim(-0.3, 0.3, 0.05)
-	val cAnim    = new JointAnim(-0.4, 0.4, 0.05)
-	val dAnim    = new JointAnim(-0.8, 0.8, 0.05)
+	case class FireTimer(val duration:Int) {
+		protected var time = 0
+
+		def animate():Boolean = {
+			time += 1
+
+			if(time == duration) {
+				time = 0
+				true
+			} else {
+				false
+			}
+		}
+	}
+
+	case class TwoStatesTimer(val duration1:Int, val duration2:Int) {
+		protected var time = 0
+		var state =  false
+
+		def animate():Boolean = {
+			time += 1
+
+			if(state && time == duration1) {
+				time = 0
+				state = ! state
+			} else if(!state && time == duration2) {
+				time = 0
+				state = ! state
+			}
+
+			state
+		}
+	}
+
+	val bipAnim     = TwoStatesTimer(30, 30)
+	val grinAnim    = TwoStatesTimer(60, 20)
+	val antenaAnim  = JointAnim(-0.2, 0.2, 0.02)
+	val antenaScale = JointAnim(-0.2, 0, 0.04)
+	val larmAnim    = JointAnim(-0.2, 0.2, 0.03)
+	val rarmAnim    = JointAnim(-0.2, 0.2, 0.03)
+	val headAnim    = JointAnim(-0.1, 0.1, 0.01)
+	val clawAnim    = JointAnim(-0.2, 0.2, 0.06)
+	val bodyAnim    = JointAnim(-0.1, 0.1, 0.02)
 
 	def animate() {
-		val root = armature.root
+		val bip = bipAnim.animate
+		(armature \\ "bipbip2").visible = bip
+		(armature \\ "bipbip1").visible = ! bip
 
- 		(root).angle = rootAnim.animate
- 		(root -> "b").angle = bAnim.animate
- 		(root -> "c").angle = cAnim.animate
- 		(root -> "c" -> "d").angle = dAnim.animate
+		val grin = grinAnim.animate
+		(armature \\ "mouthgrin").visible = grin
+		(armature \\ "mouthoh").visible = ! grin
+
+		if(grin) {
+			(armature \\ "leyebrow").angle = 0
+			(armature \\ "reyebrow").angle = 0
+		} else {
+			(armature \\ "leyebrow").angle =  0.2
+			(armature \\ "reyebrow").angle = -0.2		
+		}
+
+		(armature \\ "antena").angle = antenaAnim.animate
+		(armature \\ "antena").scale.set(1, 1+antenaScale.animate)
+
+		(armature \\ "head").angle   = headAnim.animate 
+		(armature \\ "larm").angle   = larmAnim.animate
+		(armature \\ "rarm").angle   = -rarmAnim.animate
+
+		val clawAngle = clawAnim.animate
+
+		(armature \\ "lupclaw").angle   =  clawAngle
+		(armature \\ "ldownclaw").angle = -clawAngle
+		(armature \\ "rupclaw").angle   = -clawAngle
+		(armature \\ "rdownclaw").angle =  clawAngle
+
+		val value = bodyAnim.animate
+		(armature \\ "root").translation.set(value*0.1, 0)
+		(armature \\ "lleg").angle = value //translation.set(0,  value*0.001)
+		(armature \\ "rleg").angle = -value//   translation.set(0, -value*0.001)
+	}
+}
+
+class TestXMLArmatureCameraController(camera:Camera, val app:TestXMLArmature) extends BasicCameraController(camera) {
+	override def scroll(surface:Surface, e:ScrollEvent) {
+	    app.zoom += (e.amount * step * 0.05)
+	    
+	    if(app.zoom < 0.1) app.zoom = 0.1
+	    else if(app.zoom > 100) app.zoom = 100.0
+	    
+	    app.resetCameraProjection
+	} 
+	
+	override def key(surface:Surface, e:KeyEvent) {
+	    import e.ActionChar._
+	 
+	    if(! e.isPrintable) {
+	    	e.actionChar match {
+		    	// case PageUp   => { camera.zoomView(-step) } 
+		    	// case PageDown => { camera.zoomView(step) }
+		    	// case Up       => { camera.rotateViewVertical(step) }
+		    	// case Down     => { camera.rotateViewVertical(-step) }
+		    	// case Left     => { camera.rotateViewHorizontal(-step) }
+		    	// case Right    => { camera.rotateViewHorizontal(step) }
+		    	case Escape   => { app.zoom = 1.0; app.resetCameraProjection }
+		    	case Space    => { app.zoom = 1.0; app.resetCameraProjection }
+		    	case _        => {}
+	    	}
+	    }
+	}       
+	
+	override def motion(surface:Surface, e:MotionEvent) {
 	}
 }

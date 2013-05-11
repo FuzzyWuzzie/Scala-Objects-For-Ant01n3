@@ -75,6 +75,7 @@ class Libraries(gl:SGL) {
 // == Shaders ============================================
 
 object ShaderResource { def apply(name:String, vertex:String, fragment:String):ShaderResource = new ShaderResource(name, vertex, fragment) }
+
 class ShaderResource(name:String, val vertex:String, val fragment:String) extends ResourceDescriptor[ShaderProgram](name) {
 	private var data:ShaderProgram = null
 
@@ -92,6 +93,7 @@ class ShaderResource(name:String, val vertex:String, val fragment:String) extend
 }
 
 object ShaderLibrary { def apply(gl:SGL):ShaderLibrary = new ShaderLibrary(gl) }
+
 class ShaderLibrary(gl:SGL) extends Library[ShaderProgram](gl) {}
 
 // == Textures ============================================
@@ -127,6 +129,7 @@ class TextureLibrary(gl:SGL) extends Library[Texture](gl) {}
 // == Models ============================================
 
 object ModelResource { def apply(name:String,fileName:String):ModelResource = new ModelResource(name,fileName) }
+
 class ModelResource(name:String, val fileName:String) extends ResourceDescriptor[Mesh](name) {
 	private var data:Mesh = null
 
@@ -141,6 +144,7 @@ class ModelLibrary(gl:SGL) extends Library[Mesh](gl) {}
 // == Fonts ============================================
 
 object FontResource { def apply(name:String,fontName:String,size:Int):FontResource = new FontResource(name,fontName,size) }
+
 class FontResource(name:String, val fontName:String, val size:Int) extends ResourceDescriptor[GLFont](name) {
 	private var data:GLFont = null
 
@@ -150,4 +154,5 @@ class FontResource(name:String, val fontName:String, val size:Int) extends Resou
 }
 
 object FontLibrary { def apply(gl:SGL):FontLibrary = new FontLibrary(gl) }
+
 class FontLibrary(gl:SGL) extends Library[GLFont](gl) {}

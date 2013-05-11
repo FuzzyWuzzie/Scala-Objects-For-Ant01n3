@@ -3,9 +3,11 @@ package org.sofa.simu.oberon.renderer
 import scala.collection.mutable.HashMap
 
 import org.sofa.opengl.{SGL, Camera}
-import org.sofa.math.{Point3, Point2}
+import org.sofa.math.{Point3, Point2, Vector2}
 import org.sofa.opengl.{Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
+
+case class NoSuchJointException(message:String) extends Exception(message)
 
 object Armature {
 	/** The set of armatures, added elsewhere. */
@@ -37,6 +39,9 @@ class Armature(val name:String,
 	/** Number of pair of triangle (each joint uses one pair of triangles). */
 	var count:Int = 0
 
+	/** For fast retrieval of joints. */
+	val jointMap = new HashMap[String,Joint]
+
 	/** Setup the hierachical joints armature, set parents, compute the uv positions in the texture and
 	  * finaly build a mesh of triangles where each joint is made of two triangles (joints are rectangular
 	  * areas in the texture). */
@@ -61,6 +66,12 @@ class Armature(val name:String,
 			root.display(gl, this, camera)
 		}
 	}
+
+	/** Obtain the joint corresponding to the given name or throw a [[NoSuchJointException]] exception. */
+	def apply(jointName:String):Joint = { jointMap.get(jointName).getOrElse(throw NoSuchJointException("Joint %s is not registered in armature".format(jointName))) } 
+
+	/** Obtain the joint corresponding to the given name or throw a [[NoSuchJointException]] exception. */
+	def \\ (jointName:String):Joint = apply(jointName)
 
 	override def toString():String = "Armature(%s, [%s], {%s})".format(name, area, root)
 
@@ -154,6 +165,12 @@ class Joint(val name:String,
 	/** Current rotation. */
 	var angle = 0.0
 
+	/** Current translation (before or after rotation ??? or the twos ?) */
+	var translation = Vector2(0, 0)
+
+	/** Current scale (before or after translation ??? or the twos ?) */
+	var scale = Vector2(1, 1)
+
 	/** The given sub joint if any. */
 	def apply(id:String):Joint = {
 		// Not really efficient ...
@@ -169,6 +186,7 @@ class Joint(val name:String,
 	  * game (scaled) coordinates and setup the parent joint. */
 	def init(parent:Joint, armature:Armature):Int = {
 		this.parent = parent
+		armature.jointMap += (name -> this)
 
 		normalize(armature)
 		
@@ -176,7 +194,7 @@ class Joint(val name:String,
 		
 		if(subUnder ne null) subUnder.foreach { count += _.init(this, armature) }
 		if(subAbove ne null) subAbove.foreach { count += _.init(this, armature) }
-		
+
 		count
 	}
 
@@ -188,6 +206,8 @@ class Joint(val name:String,
 		// At start, fromUV is in absolute pixels.
 		// We scale the GU points and make all values relative to the pivot.
 
+if(fromGU == null) throw new RuntimeException("WTF fromGU null in %s".format(name))
+if(fromUV == null) throw new RuntimeException("WTF fromUV null in %s".format(name))
 		fromGU.set(fromUV.x*scale, fromUV.y*scale)
 		sizeGU.set(sizeUV.x*scale, sizeUV.y*scale)
 		pivotGU.set((pivotGU.x*scale)-fromGU.x, (pivotGU.y*scale)-fromGU.y)
@@ -256,6 +276,10 @@ class Joint(val name:String,
 
 				if(angle != 0)
 					camera.rotateModel(angle, 0, 0, 1)
+				if(scale.x != 0 || scale.y != 0)
+					camera.scaleModel(scale.x, scale.y, 1)
+				if(translation.x != 0 || translation.y != 0)
+					camera.translateModel(translation.x, translation.y, 1)
 
 				displaySub(gl, subUnder, armature, camera)
 				displaySelf(armature, camera)
@@ -283,19 +307,19 @@ class Joint(val name:String,
 		val id = "    " * indent
 
 		sb ++= id
-		sb ++= "Joint(%s (%s.2fz) [%s / %s]UV [%s / %s]GU pivot(%s)GU anchor(%s)GU".format(name, z,
+		sb ++= "Joint(%s (%.2fz) [%s / %s]UV [%s / %s]GU pivot(%s)GU anchor(%s)GU".format(name, z,
 	 		fromUV.toShortString, sizeUV.toShortString,
 	 		fromGU.toShortString, sizeGU.toShortString, pivotGU.toShortString,
 	 		if(anchorGU ne null) anchorGU.toShortString else "noAnchor")
 
 		if((subUnder ne null) && subUnder.size > 0) {
-			sb ++= " {%n".format()
+			sb ++= " UNDER{%n".format()
 			subUnder.foreach { s => sb ++= "%s".format(s.toIndentedString(indent+1)) }
 			sb ++= "%s}".format(id)
 		}
 
 		if((subAbove ne null) && subAbove.size > 0) {
-			sb ++= " {%n".format()
+			sb ++= " ABOVE{%n".format()
 			subAbove.foreach { s => sb ++= "%s".format(s.toIndentedString(indent+1)) }
 			sb ++= "%s}".format(id)
 		}

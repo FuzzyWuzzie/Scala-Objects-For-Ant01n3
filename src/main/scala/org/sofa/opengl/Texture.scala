@@ -55,23 +55,21 @@ object TextureImageAwt {
 		params.mipMap match {
 			case Load => {
 				var i    = 0
-				val pos  = fileName.lastIndexOf('.')
+				val pos  = fileName.lastIndexOf('_')
 		    	val res  = if(pos>0) fileName.substring(0, pos) else fileName
-    			val ext  = if(pos>0) fileName.substring(pos+1, fileName.length) else ""
+    			val ext  = if(pos>0) fileName.substring(pos+3, fileName.length) else ""
     			var file = new File("%s_%d.%s".format(res, i, ext))
 
     			while(file.exists) {
-println("Reading mipmap %d => %s_%d.%s".format(i, res, i, ext))
     				images += ImageIO.read(file)
     				i      += 1
     				file    = new File("%s_%d.%s".format(res, i, ext))
     			}
 
-				if(images.size < 0)
+				if(images.size <= 0)
 					throw new RuntimeException("cannot load any mipmap level for %s (at least %s_%d.%s)".format(fileName, res, i, ext))
 			}
 			case _    => {
-println("Reading non mipmap %s".format(fileName))
 				images += ImageIO.read(new File(fileName))
 			}
 		}
@@ -109,10 +107,17 @@ class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexPa
     	var level = 0
     	val maxLevels = data.length
 
+//		gl.texParameter(gl.TEXTURE_2D, gl.TEXTURE_BASE_LEVEL, 0);
+//		gl.texParameter(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, maxLevels-1);
+
     	while(level < maxLevels) {
+    		// We have to send the whole mip-map pyramid in OpenGLES 2.0 since it does not
+    		// support TEXTURE_MAX_LEVEL and TEXTURE_BASE_LEVEL :(
+
        		val (format, internalFormat, theType, bytes) = imageFormatAndType(gl, data(level))
 
 	    	gl.texImage2D(mode, level, format, data(level).getWidth, data(level).getHeight, 0, internalFormat, theType, bytes)
+	    	gl.checkErrors
 
     		level += 1
     	}
@@ -167,10 +172,10 @@ class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexPa
                 buf(b+3) = ((rgba>>24) & 0xFF).toByte   // A
 
                 if(premultAlpha) {
-                	val alpha = buf(b+3) / 255.0
-                	buf(b+0) = (((rgba>>16) & 0xFF) * alpha).toByte // R
-                	buf(b+1) = (((rgba>> 8) & 0xFF) * alpha).toByte // G
-                	buf(b+2) = (((rgba>> 0) & 0xFF) * alpha).toByte // B
+                	val alpha = (buf(b+3)&0xFF).toInt / 255.0
+                	buf(b+0) = ((((rgba>>16) & 0xFF) * alpha).toInt & 0xFF).toByte // R
+                	buf(b+1) = ((((rgba>> 8) & 0xFF) * alpha).toInt & 0xFF).toByte // G
+                	buf(b+2) = ((((rgba>> 0) & 0xFF) * alpha).toInt & 0xFF).toByte // B
                 } else {
         	        buf(b+0) = ((rgba>>16) & 0xFF).toByte   // R
     	            buf(b+1) = ((rgba>> 8) & 0xFF).toByte   // G
@@ -195,10 +200,10 @@ class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexPa
         // Very inefficient.
         
         var b = 0
-        var y = 0
+        var y = height-1
         var x = 0
 
-        while(y < height) {
+        while(y >= 0) {
             x = 0
             while(x < width) {
                 val rgba = image.getRGB(x,y)
@@ -207,7 +212,7 @@ class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexPa
                 b += 1
             }
             b += pad   // Take care of align at end of row.
-            y += 1
+            y -= 1
         }
         
         buf
@@ -240,6 +245,7 @@ class DefaultTextureLoader extends TextureLoader {
 
 		params.mipMap match {
 			case Load => { 
+println("***** LOADING mip-maps")
 				val pos  = resource.lastIndexOf('.')
 		    	val res  = if(pos>0) resource.substring(0, pos) else resource
     			val ext  = if(pos>0) resource.substring(pos+1, resource.length) else ""
@@ -251,6 +257,7 @@ class DefaultTextureLoader extends TextureLoader {
 				}
 			}
 			case _ => {  
+println("***** GENERATING or no mip-maps")
 				findPath(resource) match {
 					case null     => throw new IOException("cannot locate texture %s (path %s)".format(resource, Texture.path.mkString(":")))
 					case x:String => new TextureImageAwt(x, params)
@@ -258,56 +265,6 @@ class DefaultTextureLoader extends TextureLoader {
 			}
 		}
 	}
-
-    // protected def openSingle(resource:String, params:TexParams):TextureImage = {
-    //     val file = findPath(resource)
-
-    //     if(file ne null)
-    //          new TextureImageAwt(ImageIO.read(file), params)
-    //     else throw new IOException("cannot locate texture %s (path %s)".format(resource, Texture.path.mkString(":")))
-
-    //     // val file = new File(resource)
-        
-    //     // if(file.exists) {
-    //     //     new TextureImageAwt(ImageIO.read(file))
-    //     // } else {
-    //     //     val sep = sys.props.get("file.separator").get
-
-    //     //     Texture.path.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
-    //     //         case path:Some[String] => { new TextureImageAwt(ImageIO.read(new File("%s%s%s".format(path.get,sep,resource)))) }
-    //     //         case None => { throw new IOException("cannot locate texture %s (path %s)".format(resource, Texture.path.mkString(":"))) }
-    //     //     }
-    //     // }
-    // }
-
-    // /** Try to locate a resource in the include path and load it as a set of mip-map images.
-    //   * The images must be indexed by integers separated from the filename by an underscore (_)
-    //   * character. For example for the resource "foo.png", you may have mipmaps numbered 
-    //   * "foo_0.png", "foo_1.png", "foo_2.png", "foo_3.png", that will be loaded in this order (with
-    //   * therefore only four levels of mip-map). The first image is level 0 and the more detailed
-    //   * images, each subsequent one is half the size of the image. */
-    // protected def openMipMap(resource:String, params:TexParams):Array[TextureImage] = {
-    // 	val pos  = resource.lastIndexOf('.')
-    // 	val res  = if(pos>0) resource.substring(0, pos) else resource
-    // 	val ext  = if(pos>0) resource.substring(pos+1, resource.length) else ""
-    // 	val texs = new scala.collection.mutable.ArrayBuffer[TextureImage]()
-    // 	var name = "%s_0.%s".format(res, ext)
-    // 	var file = findPath(name)
-
-    // 	if(file ne null) {
-    // 		var i = 1
-    // 		do {
-    // 			texs += new TextureImageAwt(ImageIO.read(file), params)
-    // 			name  = "%s_%d.%s".format(res, i, ext)
-    // 			file  = findPath(name)
-    // 			i    += 1
-    // 		} while(file ne null)
-    // 	} else {
- 			// throw new IOException("cannot locate texture %s (path %s)".format(name, Texture.path.mkString(":")))    		
-    // 	}
-
-    // 	texs.toArray
-    // }
 
     protected def findPath(resource:String):String = {
     	var res  = resource
@@ -321,8 +278,6 @@ class DefaultTextureLoader extends TextureLoader {
                 case None => { res = null }
             }
         }  
-
-Console.err.println("** FOUND %s".format(res))
 
         res
     }

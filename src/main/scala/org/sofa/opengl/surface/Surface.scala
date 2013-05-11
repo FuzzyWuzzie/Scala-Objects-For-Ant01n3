@@ -107,13 +107,15 @@ abstract class KeyEvent extends Event {
     
     object ActionChar extends Enumeration {
     	val Escape = Value
-    			val PageUp = Value
-    			val PageDown = Value
-    			val Up = Value
-    			val Down = Value
-    			val Right = Value
-    			val Left = Value
-    			val Unknown = Value
+    	val PageUp = Value
+    	val PageDown = Value
+    	val Up = Value
+    	val Down = Value
+    	val Right = Value
+    	val Left = Value
+    	val Unknown = Value
+    	val Space = Value
+    	type ActionChar = Value
     }
 }
 

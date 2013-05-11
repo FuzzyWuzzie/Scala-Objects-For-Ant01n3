@@ -139,6 +139,7 @@ class KeyEventAWT(val source:AWTKeyEvent) extends KeyEvent {
             case VK_RIGHT     => Right
             case VK_LEFT      => Left
             case VK_ESCAPE    => Escape
+            case VK_SPACE     => Space
             case _            => Unknown
         }
     }
@@ -301,6 +302,7 @@ class KeyEventJogl(val source:JoglKeyEvent) extends KeyEvent {
             case VK_RIGHT     => Right
             case VK_LEFT      => Left
             case VK_ESCAPE    => Escape
+            case VK_SPACE     => Space
             case _            => Unknown
         }
     }
