@@ -6,7 +6,8 @@ import java.awt.{Font => AWTFont, Color => AWTColor, RenderingHints => AWTRender
 import java.awt.image.BufferedImage
 import java.io.{File, IOException, InputStream, FileInputStream}
 import org.sofa.math.{Rgba,Matrix4}
-import org.sofa.opengl.{SGL, Texture, TextureImageAwt, ShaderProgram, VertexArray, Camera, TexParams}
+import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, TexParams}
+import org.sofa.opengl.backend.{TextureImageAwt}
 import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 
 object GLFont {

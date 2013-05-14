@@ -26,6 +26,16 @@ trait AndroidLoader {
 		paths.contains(newName)
 	}	
 
+	/** True if the file exists. */
+	def exists(fullPathFileName:String):Boolean = {
+		val sep  = sys.props.get("file.separator").get
+		val pos  = fullPathFileName.lastIndexOf(sep)
+		val path = if(pos>0) fullPathFileName.substring(pos) else fullPathFileName
+		val file = if(pos>0) fullPathFileName.substring(pos, fullPathFileName.length) else ""
+
+		resources.getAssets.list(path).contains(file)
+	}
+
 	/** Search for the given resource in the set of pathes. Return the
 	  * first full path that is present in the assets or throw an IO exception
 	  * if not found. */

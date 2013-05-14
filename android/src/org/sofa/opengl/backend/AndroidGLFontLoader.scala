@@ -1,7 +1,7 @@
 package org.sofa.opengl.backend
 
 import org.sofa.Timer
-import org.sofa.opengl.{SGL, Texture}
+import org.sofa.opengl.{SGL, Texture, TexParams}
 import org.sofa.backend.AndroidLoader
 import android.content.res.Resources
 import android.graphics.{Bitmap, Canvas, Paint, Typeface}
@@ -110,7 +110,7 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 
 		// Generate a new texture.
 
-		font.texture = new Texture(gl, new TextureImageAndroid(bitmap), false)
+		font.texture = new Texture(gl, new TextureImageAndroid(bitmap, TexParams()), TexParams())
 		font.texture.minMagFilter(gl.NEAREST, gl.LINEAR)
 		font.texture.wrap(gl.CLAMP_TO_EDGE)
 

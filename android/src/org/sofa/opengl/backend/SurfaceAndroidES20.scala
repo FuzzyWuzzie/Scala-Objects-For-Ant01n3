@@ -4,6 +4,7 @@ import org.sofa.opengl._
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer}
 import android.opengl.GLSurfaceView
 import android.content.Context
+import android.app.Activity
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -25,14 +26,17 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     protected var created = false
     protected var camera:Camera = null
     protected var renderer:SurfaceRenderer = null
+    protected var activity:Activity = null
     
     //build
 
-    def build(camera:Camera, renderer:SurfaceRenderer) {
+    def build(camera:Camera, renderer:SurfaceRenderer, activity:Activity) {
         setEGLContextClientVersion(2)
         setEGLConfigChooser(8,8,8,8,16,0)
-        this.camera = camera
+
+        this.camera   = camera
         this.renderer = renderer
+        this.activity = activity
     
         if(created) {
             if(renderer.initSurface ne null) renderer.initSurface(gl, this)
@@ -118,6 +122,15 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     	    false
     	}
     }
+
+    def resize(newWidth:Int, newHeight:Int) {
+    	// Can we ??
+    	// XXX 
+    }
+
+    def invoke(code:(Surface)=>Boolean) { val me=this; activity.runOnUiThread(new Runnable() { override def run() { code(me) } } ) }
+
+    def invoke(runnable:Runnable) { activity.runOnUiThread(runnable) }
 }
 
 class ScrollEventAndroid(val source:android.view.MotionEvent) extends org.sofa.opengl.surface.ScrollEvent {
