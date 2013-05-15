@@ -1,5 +1,6 @@
 package org.sofa.opengl.io.collada
 
+import org.sofa.FileLoader
 import scala.xml.NodeSeq
 import scala.collection.mutable.HashMap
 
@@ -33,7 +34,7 @@ class ColladaFile(root:NodeSeq) {
 }
 
 /** Locate and fetch image data. */
-trait ColladaLoader {
+trait ColladaLoader extends FileLoader {
     /** Try to locate a resource in the include path and load it. */
     def open(resource:String):NodeSeq
 }
@@ -41,17 +42,7 @@ trait ColladaLoader {
 /** Default Collada loader that uses files in the local file system. */
 class DefaultColladaLoader extends ColladaLoader {
     def open(resource:String):NodeSeq = {
-        var file = new java.io.File(resource)
-        if(file.exists) {
-            scala.xml.XML.loadFile(resource).child
-        } else {
-            val sep = sys.props.get("file.separator").get
-
-            ColladaFile.path.find(path => (new java.io.File("%s%s%s".format(path, sep, resource))).exists) match {
-                case path:Some[String] => { scala.xml.XML.loadFile("%s%s%s".format(path.get,sep,resource)).child }
-                case None => { throw new java.io.IOException("cannot locate Collada file %s (path %s)".format(resource, ColladaFile.path.mkString(":"))) }
-            }
-        }
+    	scala.xml.XML.loadFile(findFile(resource, ColladaFile.path))
     }
 }
 

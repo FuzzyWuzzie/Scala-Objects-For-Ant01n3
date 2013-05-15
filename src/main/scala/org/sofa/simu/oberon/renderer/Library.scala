@@ -4,6 +4,7 @@ import java.io.IOException
 
 import scala.collection.mutable.HashMap
 
+import org.sofa.FileLoader
 import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, Texture, TexParams}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
@@ -44,10 +45,10 @@ abstract class Library[T](val gl:SGL) {
 
 // == Libraries ==========================================
 
-object Libraries { def apply(gl:SGL):Libraries = { new Libraries(gl) } }
+//object Libraries { def apply(gl:SGL):Libraries = { new Libraries(gl) } }
 
 /** The set of libraries for shaders, textures and models. */
-class Libraries(gl:SGL) {
+case class Libraries(gl:SGL) {
 	/** Shader resources. */
 	val shaders = ShaderLibrary(gl)
 
@@ -60,13 +61,17 @@ class Libraries(gl:SGL) {
 	/** Font resources. */
 	val fonts = FontLibrary(gl)
 
+	/** Armature resources. */
+	val armatures = ArmatureLibrary(gl)
+
 	/** Add a new resource in the corresponding library. */
 	def addResource(res:ResourceDescriptor[AnyRef]) {
 		res match {
-			case r:ShaderResource  ⇒ shaders.add(r)
-			case r:TextureResource ⇒ textures.add(r)
-			case r:ModelResource   ⇒ models.add(r)
-			case r:FontResource    ⇒ fonts.add(r)
+			case r:ShaderResource   ⇒ shaders.add(r)
+			case r:TextureResource  ⇒ textures.add(r)
+			case r:ModelResource    ⇒ models.add(r)
+			case r:FontResource     ⇒ fonts.add(r)
+			case r:ArmatureResource ⇒ armatures.add(r)
 			case _ ⇒ throw NoSuchResourceException("unknown kind of resource %s".format(res))
 		}
 	}
@@ -77,7 +82,7 @@ class Libraries(gl:SGL) {
 object ShaderResource { def apply(name:String, vertex:String, fragment:String):ShaderResource = new ShaderResource(name, vertex, fragment) }
 
 class ShaderResource(name:String, val vertex:String, val fragment:String) extends ResourceDescriptor[ShaderProgram](name) {
-	private var data:ShaderProgram = null
+	private[this] var data:ShaderProgram = null
 
 	def value(gl:SGL):ShaderProgram = {
 		if(data eq null) {
@@ -94,7 +99,7 @@ class ShaderResource(name:String, val vertex:String, val fragment:String) extend
 
 object ShaderLibrary { def apply(gl:SGL):ShaderLibrary = new ShaderLibrary(gl) }
 
-class ShaderLibrary(gl:SGL) extends Library[ShaderProgram](gl) {}
+class ShaderLibrary(gl:SGL) extends Library[ShaderProgram](gl)
 
 // == Textures ============================================
 
@@ -106,7 +111,7 @@ class TextureResource(
 	val params:TexParams)
 		extends ResourceDescriptor[Texture](name) {
 	
-	private var data:Texture = null
+	private[this] var data:Texture = null
 
 	def this(name:String, fileName:String) { this(name, fileName, TexParams()) }
 
@@ -124,7 +129,8 @@ class TextureResource(
 }
 
 object TextureLibrary { def apply(gl:SGL):TextureLibrary = new TextureLibrary(gl) }
-class TextureLibrary(gl:SGL) extends Library[Texture](gl) {}
+
+class TextureLibrary(gl:SGL) extends Library[Texture](gl)
 
 // == Models ============================================
 
@@ -139,7 +145,8 @@ class ModelResource(name:String, val fileName:String) extends ResourceDescriptor
 }
 
 object ModelLibrary { def apply(gl:SGL):ModelLibrary = new ModelLibrary(gl) }
-class ModelLibrary(gl:SGL) extends Library[Mesh](gl) {}
+
+class ModelLibrary(gl:SGL) extends Library[Mesh](gl)
 
 // == Fonts ============================================
 
@@ -155,4 +162,39 @@ class FontResource(name:String, val fontName:String, val size:Int) extends Resou
 
 object FontLibrary { def apply(gl:SGL):FontLibrary = new FontLibrary(gl) }
 
-class FontLibrary(gl:SGL) extends Library[GLFont](gl) {}
+class FontLibrary(gl:SGL) extends Library[GLFont](gl)
+
+// == Armatures ========================================
+
+object ArmatureResource {
+	def apply(name:String, texRes:String, shaderRes:String, fileName:String):ArmatureResource = {
+		new ArmatureResource(name, texRes, shaderRes, fileName)
+	}
+}
+
+class ArmatureResource(name:String, texRes:String, shaderRes:String, fileName:String, private var data:Armature) extends ResourceDescriptor[Armature](name) {
+
+	def this(name:String, texRes:String, shaderRes:String, fileName:String) {
+		this(name, texRes, shaderRes, fileName, null)
+	}
+
+	def this(name:String, armature:Armature) {
+		this(name, armature.texResource, armature.shaderResource, null, armature)
+	}
+
+	def value(gl:SGL):Armature = {
+		if(data eq null) {
+			try {
+				data = Armature.loader.open(name, texRes, shaderRes, fileName)
+			} catch {
+				case e:IOException => throw NoSuchResourceException(e.getMessage, e)
+			}
+		} 
+
+		data
+	}
+}
+
+object ArmatureLibrary { def apply(gl:SGL):ArmatureLibrary = new ArmatureLibrary(gl) }
+
+class ArmatureLibrary(gl:SGL) extends Library[Armature](gl)

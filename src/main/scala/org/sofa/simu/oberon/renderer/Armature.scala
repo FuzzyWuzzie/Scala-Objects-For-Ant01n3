@@ -2,6 +2,7 @@ package org.sofa.simu.oberon.renderer
 
 import scala.collection.mutable.HashMap
 
+import org.sofa.FileLoader
 import org.sofa.opengl.{SGL, Camera}
 import org.sofa.math.{Point3, Point2, Vector2}
 import org.sofa.opengl.{Texture, ShaderProgram}
@@ -9,9 +10,33 @@ import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 
 case class NoSuchJointException(message:String) extends Exception(message)
 
+/** Pluggable loader for shader sources. */
+trait ArmatureLoader extends FileLoader {
+    /** Try to open a resource, or throw an IOException if not available. */
+    def open(name:String, texRes:String, shaderRes:String, resource:String):Armature
+}
+
+/** Default loader for shaders, based on files and the include path.
+  * This loader tries to open the given resource directly, then if not
+  * found, tries to find it in each of the pathes provided by the include
+  * path. If not found it throws an IOException. */
+class DefaultArmatureLoader extends ArmatureLoader {
+	private[this] val SVGLoader = new SVGArmatureLoader()
+
+    def open(name:String, texRes:String, shaderRes:String, resource:String):Armature = {
+        SVGLoader.load(name, texRes, shaderRes, findPath(resource, Armature.path))
+    }
+}
+
 object Armature {
-	/** The set of armatures, added elsewhere. */
-	val armatures = new HashMap[String, Armature]()
+//	/** The set of armatures, added elsewhere. */
+//	val armatures = new HashMap[String, Armature]()
+
+	/** The set of paths to try to load a shader. */
+	val path = scala.collection.mutable.ArrayBuffer[String]()
+
+	/** Loader for armatures. */
+	var loader:ArmatureLoader = new DefaultArmatureLoader
 
 	def apply(name:String, scale:Double, area:(Double,Double), texResource:String, shaderResource:String, root:Joint):Armature = 
 		new Armature(name, scale, Point2(area._1, area._2), texResource, shaderResource, root)

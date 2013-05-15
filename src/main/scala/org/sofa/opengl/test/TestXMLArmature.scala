@@ -74,19 +74,17 @@ class TestXMLArmature extends SurfaceRenderer {
 // Rendering
     
 	def initializeSurface(gl:SGL, surface:Surface) {
-		Shader.path      += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
-		Shader.path      += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2/"
-		Shader.path      += "shaders/"
-	    Texture.path     += "/Users/antoine/Documents/Programs/SOFA/textures"
-	    Texture.path     += "/Users/antoine/Documents/Art/Images/Bruce_Art/"
-	    Texture.path     += "textures/"
-		ColladaFile.path += "/Users/antoine/Documents/Art/Sculptures/Blender/"
-		ColladaFile.path += "meshes/"
+		Shader.path      += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2"
+		Shader.path      += "shaders"
+	    Texture.path     += "/Users/antoine/Documents/Art/Images/Bruce_Art"
+	    Texture.path     += "textures"
+	    Armature.path    += "/Users/antoine/Documents/Art/Images/Bruce_Art"
+	    Armature.path    += "svg"
 
 	    initGL(gl)
         initShaders
-	    initTextures("/Users/antoine/Documents/Art/Images/Bruce_Art/Robot.png")
-        initArmatures("/Users/antoine/Documents/Art/Images/Bruce_Art/Robot.svg")
+	    initTextures("Robot.png")
+        initArmatures("Robot.svg")
 	    initGeometry
 	    
 	    camera.viewCartesian(0, 10, 10)
@@ -129,7 +127,7 @@ class TestXMLArmature extends SurfaceRenderer {
 	}
 
 	protected def initArmatures(armatureFileName:String) {
-		(new SVGArmatureLoader()).cache("armature-test", "armature-texture", "armature-shader", armatureFileName)
+		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName)
 	}
 	
 	protected def initGeometry() {
@@ -138,7 +136,7 @@ class TestXMLArmature extends SurfaceRenderer {
 		grid.setXYGrid(1f, 1f, 0f, 0f, 20, 20, 0.1f, 0.1f, gridColor)
 		grid.newVertexArray(gl, gridShader, Vertex -> "position", Color -> "color")
 
-		armature = Armature.armatures.get("armature-test").getOrElse(throw new RuntimeException("not found armature 'armature-test' ?"))
+		armature = libraries.armatures.get(gl, "armature-test")
 
 		armature.init(gl, libraries)
 

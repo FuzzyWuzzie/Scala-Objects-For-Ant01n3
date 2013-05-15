@@ -4,6 +4,7 @@ import org.sofa.nio._
 import java.io.{File, IOException}
 import scala.collection.mutable.{ArrayBuffer=>ScalaArrayBuffer}
 import org.sofa.opengl.backend.TextureImageAwt
+import org.sofa.FileLoader
 
 /** The image formats supported by the texture system actually. */
 object ImageFormat extends Enumeration {
@@ -48,7 +49,7 @@ trait TextureImage {
 
 
 /** Locate and fetch image data. */
-trait TextureLoader {
+trait TextureLoader extends FileLoader {
     /** Try to locate a resource in the include path and load it.
       *
       * The params may indicate how to load the resource.
@@ -87,27 +88,11 @@ class DefaultTextureLoader extends TextureLoader {
 			case _ => {  resource }
 		}
 
-		findPath(name) match {
+		findPath(name, Texture.path) match {
 			case null     => throw new IOException("cannot locate texture %s (path %s)".format(name, Texture.path.mkString(":")))
 			case x:String => new TextureImageAwt(x, params)
 		}
 	}
-
-    protected def findPath(resource:String):String = {
-    	var res  = resource
-    	var file = new File(res)
-
-        if(!file.exists) {
-            val sep = sys.props.get("file.separator").get
-
-            Texture.path.find(path => (new File("%s%s%s".format(path, sep, res))).exists) match {
-                case path:Some[String] => { res = "%s%s%s".format(path.get, sep, res) }
-                case None => { res = null }
-            }
-        }  
-
-        res
-    }
 }
 
 

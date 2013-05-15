@@ -4,6 +4,7 @@ import java.io.{File, InputStream, FileInputStream, IOException}
 import scala.collection.mutable._
 import org.sofa.math._
 import org.sofa.nio._
+import org.sofa.FileLoader
 
 case class ShaderCompilationException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
 case class ShaderLinkException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
@@ -45,7 +46,7 @@ object Shader {
 }
 
 /** Pluggable loader for shader sources. */
-trait ShaderLoader {
+trait ShaderLoader extends FileLoader {
     /** Try to open a resource, or throw an IOException if not available. */
     def open(resource:String):InputStream
 }
@@ -56,17 +57,7 @@ trait ShaderLoader {
   * path. If not found it throws an IOException. */
 class DefaultShaderLoader extends ShaderLoader {
     def open(resource:String):InputStream = {
-        var file = new File(resource)
-        if(file.exists) {
-            new FileInputStream(file)
-        } else {
-            val sep = sys.props.get("file.separator").get
-
-            Shader.path.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
-                case path:Some[String] => {new FileInputStream(new File("%s%s%s".format(path.get,sep,resource))) }
-                case None => { throw new IOException("cannot locate shader %s".format(resource)) }
-            }
-        }
+    	new FileInputStream(findFile(resource, Shader.path))
     }
 }
 

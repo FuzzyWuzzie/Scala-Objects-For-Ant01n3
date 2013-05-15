@@ -1,4 +1,4 @@
-package org.sofa.opengl.test
+package org.sofa.simu.oberon.renderer
 
 import scala.xml._
 import scala.math._
@@ -111,10 +111,10 @@ class SVGArmatureLoader {
 	/** The set of [[Armature]] [[Joints]] built fromt the armature declaration. */
 	protected val joints = new HashMap[String,Joint]
 
-	/** Load an [[Armature]] from a SVG file and store it in the armatures field of the Armature object. */
-	def cache(name:String, texRes:String, shaderRes:String, fileName:String) {
-		Armature.armatures += (name -> load(name, texRes, shaderRes, fileName))
-	}
+	// /** Load an [[Armature]] from a SVG file and store it in the armatures field of the Armature object. */
+	// def cache(name:String, texRes:String, shaderRes:String, fileName:String) {
+	// 	Armature.armatures += (name -> load(name, texRes, shaderRes, fileName))
+	// }
 
 	/** Load an [[Armature]] from a SVG file.
 	  *
