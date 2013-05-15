@@ -12,6 +12,6 @@ class AndroidArmatureLoader(val resources:Resources) extends AndroidLoader with 
 	private[this] val SVGLoader = new SVGArmatureLoader()
 
     def open(name:String, texRes:String, shaderRes:String, resource:String):Armature = {
-        SVGLoader.load(name, texRes, shaderRes, searchInAssets(resource, Armature.path))
+        SVGLoader.load(name, texRes, shaderRes, resources.getAssets.open(searchInAssets(resource, Armature.path)))
     }
 }

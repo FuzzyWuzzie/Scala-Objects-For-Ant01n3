@@ -1,5 +1,7 @@
 package org.sofa.simu.oberon.renderer
 
+import java.io.{File, InputStream, FileInputStream}
+
 import scala.xml._
 import scala.math._
 import scala.collection.mutable.{ArrayBuffer, HashMap}
@@ -111,18 +113,34 @@ class SVGArmatureLoader {
 	/** The set of [[Armature]] [[Joints]] built fromt the armature declaration. */
 	protected val joints = new HashMap[String,Joint]
 
-	// /** Load an [[Armature]] from a SVG file and store it in the armatures field of the Armature object. */
-	// def cache(name:String, texRes:String, shaderRes:String, fileName:String) {
-	// 	Armature.armatures += (name -> load(name, texRes, shaderRes, fileName))
-	// }
+	/** Load an [[Armature]] from a SVG file.
+	  *
+	  * @param name Name of the armature.
+	  * @param texRes Name of a texture in the resource [[Libraries]].
+	  * @param shaderRes Name of a shader in the resource [[Libraries]].
+	  * @param fileName Name fo the SVG file to use. */
+	def load(name:String, texRes:String, shaderRes:String, fileName:String):Armature = {
+		load(name, texRes, shaderRes, new FileInputStream(fileName))
+	}
 
 	/** Load an [[Armature]] from a SVG file.
 	  *
 	  * @param name Name of the armature.
 	  * @param texRes Name of a texture in the resource [[Libraries]].
-	  * @param shaderRes Name of a shader in the resource [[Libraries]]. */
-	def load(name:String, texRes:String, shaderRes:String, fileName:String):Armature = {
-		val root      = XML.loadFile(fileName)
+	  * @param shaderRes Name of a shader in the resource [[Libraries]].
+	  * @param file A file descriptor on a SVG file to use. */
+	def load(name:String, texRes:String, shaderRes:String, file:File):Armature = {
+		load(name, texRes, shaderRes, new FileInputStream(file))
+	}
+
+	/** Load an [[Armature]] from a SVG file.
+	  *
+	  * @param name Name of the armature.
+	  * @param texRes Name of a texture in the resource [[Libraries]].
+	  * @param shaderRes Name of a shader in the resource [[Libraries]].
+	  * @param stream A stream pointing at the SVG data to load and use. */
+	def load(name:String, texRes:String, shaderRes:String, stream:InputStream):Armature = {
+		val root      = XML.load(stream)
 		pagew         = (root \ "@width").text.toDouble
 		pageh         = (root \ "@height").text.toDouble
 		val namedview = (root \ "namedview")
