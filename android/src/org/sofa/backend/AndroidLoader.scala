@@ -6,32 +6,45 @@ import android.content.res.Resources
 trait AndroidLoader {
 	val resources:Resources
 
+	/** Remove any space before and after the path and any trailing slash. */
+	protected def trim(path:String):String = {
+		var p = path.trim
+		if(p.endsWith("/")) p.substring(0, p.length-1) else p
+	} 
+
 	/** Tests if the given resource in the given path exists in the assets. */
 	protected def exists(path:String, resource:String):Boolean = {
-		// We cut the path/resource name anew, since the resource can also contain path
-		// separators.
-		
-		val fileName = if(path.length>0) "%s/%s".format(path, resource) else resource
-		val pos      = fileName.lastIndexOf('/')
-		var newName  = fileName
-		var newPath  = ""
+		// Android does not support trailing '/' in path names nor it support
+		// double slashes ... we have to create a clean path.
+
+ 		var pos = resource.lastIndexOf('/')
+		var newPath = trim(path)
+		var newName = resource.trim
 
 		if(pos >= 0) {
-			newPath = fileName.substring(0, pos)
-			newName = fileName.substring(pos+1)
-		}		
-
-		val paths = resources.getAssets.list(newPath)
+			// We cut the path/resource name anew, since the resource can also contain path
+			// separators.
 		
-		paths.contains(newName)
+			val fileName = if(newPath.length>0) "%s/%s".format(newPath, newName) else newName
+			pos          = fileName.lastIndexOf('/')
+		    newName      = fileName
+		    newPath      = ""
+
+			if(pos >= 0) {
+				newPath = fileName.substring(0, pos)
+				newName = fileName.substring(pos+1)
+			}
+		}
+
+		resources.getAssets.list(newPath).contains(newName)
 	}	
 
-	/** True if the file exists. */
+	/** True if the given file exists in the assets. */
 	def exists(fullPathFileName:String):Boolean = {
-		val sep  = sys.props.get("file.separator").get
-		val pos  = fullPathFileName.lastIndexOf(sep)
-		val path = if(pos>0) fullPathFileName.substring(pos) else fullPathFileName
-		val file = if(pos>0) fullPathFileName.substring(pos, fullPathFileName.length) else ""
+		val name = fullPathFileName.trim
+		val pos  = name.lastIndexOf('/')
+		val path = if(pos>0) name.substring(pos) else ""
+		val file = if(pos>0) name.substring(pos, name.length) else name
 
 		resources.getAssets.list(path).contains(file)
 	}
@@ -40,12 +53,14 @@ trait AndroidLoader {
 	  * first full path that is present in the assets or throw an IO exception
 	  * if not found. */
 	protected def searchInAssets(resource:String, path:Seq[String]):String = {
-		if(exists("", resource)) {
+		val res = resource.trim
+
+		if(exists("", res)) {
 			resource
 		} else {
-			path.find(path => exists(path, resource)) match {
-				case path:Some[String] => { "%s/%s".format(path.get,resource) }
-				case None => { throw new java.io.IOException("cannot open resource %s".format(resource)) }
+			path.find(path => exists(path, res)) match {
+				case path:Some[String] => { "%s/%s".format(trim(path.get),res) }
+				case None => { throw new java.io.IOException("cannot open resource %s (path=%s)".format(resource, path.mkString(":"))) }
 			}
 		}
 	}

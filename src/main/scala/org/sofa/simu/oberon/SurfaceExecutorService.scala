@@ -6,7 +6,7 @@ import akka.dispatch.{DispatcherPrerequisites, ExecutorServiceFactory, ExecutorS
 import java.util.concurrent.{ExecutorService, AbstractExecutorService, ThreadFactory, TimeUnit}
 import java.util.Collections
 
-/** Wraps a [[Surface.invoke()]] as an ExecutorService. This service can then be
+/** Wraps a [[Surface.invoke()]] as an Akka ExecutorService. This service can then be
   * used in a [[ExecutorServiceConfigurator]], specifically here 
   * [[SurfaceExecutorConfigurator]], that is created from the application.conf.
   * 
@@ -23,15 +23,10 @@ object SurfaceExecutorService extends AbstractExecutorService {
 	  * This is a field that is set at runtime for the only actor that will
 	  * use this executor. We have no other mean to do it, since executors
 	  * are not created and managed by us. */
-	def setSurface(surface:Surface) {
-		this.surface = surface
-	}
+	def setSurface(surface:Surface) { this.surface = surface }
 
 	def execute(command:Runnable) = {
 		if(surface ne null) {
-//			val T1 = System.currentTimeMillis
-//			println("surface executor %d".format(T1-T))
-//			T = T1
 			surface.invoke(command)
 		} else {
 			throw new RuntimeException("SurfaceExecutorService.surface not set, see setSurface()")

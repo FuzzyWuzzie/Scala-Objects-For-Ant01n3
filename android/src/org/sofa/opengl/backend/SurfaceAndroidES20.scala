@@ -12,29 +12,44 @@ import javax.microedition.khronos.opengles.GL10
   *
   * The constructor of this class must be (Context,AttributeSet), this is
   * required to instantiate it automatically. Therefore, you must call
-  * explicitely the buil(Camera,SurfaceRenderer) method to finish the
+  * explicitely the buil(SurfaceRenderer,Activity) method to finish the
   * construction phase. */
 class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
 	extends GLSurfaceView(context, attrs) with Surface with GLSurfaceView.Renderer {
 
+	/** Gl Context. */
     protected var sgl:SGL = null
+
+    /** Width of the surface. */
     protected var w:Int = 0
+
+    /** Height of the surface. */
     protected var h:Int = 0
+
+    /** Requested frames per second. */
     protected var fps:Int = 25
+
+    /** Used to compute fps. */
     protected var endTime:Long = 0
+
+    /** Used to compute fps. */
     protected var startTime:Long = 0
+
+    /** True once the surface is created. */
     protected var created = false
-    protected var camera:Camera = null
+
+    /** The renderer. */
     protected var renderer:SurfaceRenderer = null
+
+    /** The activity owning this surface (to call code on the UI thread). */
     protected var activity:Activity = null
     
     //build
 
-    def build(camera:Camera, renderer:SurfaceRenderer, activity:Activity) {
+    def build(renderer:SurfaceRenderer, activity:Activity) {
         setEGLContextClientVersion(2)
         setEGLConfigChooser(8,8,8,8,16,0)
 
-        this.camera   = camera
         this.renderer = renderer
         this.activity = activity
     
@@ -66,6 +81,10 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     }
     
     def onDrawFrame(unused:GL10) {
+    	// XXX
+    	// TODO find how to trigger timed redrawing in Android
+    	// XXX
+
     	endTime = System.currentTimeMillis();
     	
     	val dt = endTime - startTime;
