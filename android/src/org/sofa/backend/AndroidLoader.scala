@@ -43,8 +43,8 @@ trait AndroidLoader {
 	def exists(fullPathFileName:String):Boolean = {
 		val name = fullPathFileName.trim
 		val pos  = name.lastIndexOf('/')
-		val path = if(pos>0) name.substring(pos) else ""
-		val file = if(pos>0) name.substring(pos, name.length) else name
+		val path = if(pos>0) name.substring(0, pos) else ""
+		val file = if(pos>0) name.substring(pos+1) else name
 
 		resources.getAssets.list(path).contains(file)
 	}

@@ -174,8 +174,8 @@ class TestMath {
         
         // Any size matrices
         
-        var d = Matrix(List(1., 2., 3.), List(4., 5., 6.))
-        var e = Matrix(List(1., 2.), List(3., 4.), List(5., 6.))
+        var d = Matrix(List(1.0, 2.0, 3.0), List(4.0, 5.0, 6.0))
+        var e = Matrix(List(1.0, 2.0), List(3.0, 4.0), List(5.0, 6.0))
 
         
         assertEquals(3, d.width, 0)
@@ -236,12 +236,12 @@ class TestMath {
     
     @Test
     def testVectorMatrix() {
-        val M1 = Matrix(List( 1.,  2.,  3.,  4.,  5.),
-                        List( 6.,  7.,  8.,  9., 10.),
-                        List(11., 12., 13., 14., 15.),
-                        List(16., 17., 18., 19., 20.),
-                        List(21., 22., 23., 24., 25.))
-        val V1 = Vector(1., 2., 3., 4., 5.)
+        val M1 = Matrix(List( 1.0,  2.0,  3.0,  4.0,  5.0),
+                        List( 6.0,  7.0,  8.0,  9.0, 10.0),
+                        List(11.0, 12.0, 13.0, 14.0, 15.0),
+                        List(16.0, 17.0, 18.0, 19.0, 20.0),
+                        List(21.0, 22.0, 23.0, 24.0, 25.0))
+        val V1 = Vector(1.0, 2.0, 3.0, 4.0, 5.0)
         val R1 = M1 * V1
         
         assertEquals( 55, R1(0), 0)

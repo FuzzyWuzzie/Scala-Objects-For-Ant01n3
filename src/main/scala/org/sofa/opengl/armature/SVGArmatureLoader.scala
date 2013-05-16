@@ -1,4 +1,4 @@
-package org.sofa.simu.oberon.renderer
+package org.sofa.opengl.armature
 
 import java.io.{File, InputStream, FileInputStream}
 

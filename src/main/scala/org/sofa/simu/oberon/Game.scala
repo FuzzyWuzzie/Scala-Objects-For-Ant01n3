@@ -1,14 +1,17 @@
 package org.sofa.simu.oberon
 
-import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorContext, Terminated}
 import scala.collection.mutable.HashMap
 import scala.concurrent.duration._
+import scala.language.postfixOps
+
+import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorContext, Terminated}
 
 import org.sofa.math.{Axes, Vector3, Point3, NumberSeq3}
-import org.sofa.simu.oberon.renderer.{Screen, Avatar, AvatarFactory, Renderer, RendererActor, NoSuchScreenException, NoSuchAvatarException, ShaderResource, TextureResource, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth}
+import org.sofa.simu.oberon.renderer.{Screen, Avatar, AvatarFactory, Renderer, RendererActor, NoSuchScreenException, NoSuchAvatarException, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth}
 import org.sofa.simu.oberon.renderer.screen.{MenuScreen, TileScreen}
 import org.sofa.simu.oberon.renderer.sprite.{ImageSprite, TilesSprite}
-import org.sofa.opengl.{Shader, Texture, TexParams}
+import org.sofa.opengl.{Shader, Texture, TexParams, Libraries, ShaderResource, TextureResource}
+import org.sofa.opengl.akka.SurfaceExecutorService
 import org.sofa.opengl.io.collada.{ColladaFile}
 
 object GameMap {
@@ -110,9 +113,11 @@ class BruceAvatarFactory(val renderer:Renderer) extends AvatarFactory {
 // Maybe create utility traits that provide some aspects allowing to automatize some tasks ?
 
 object GameActor {
-	case class Start
-	case class Exit
+	case object Start
+	case object Exit
 	case class NextLevel(level:String)
+
+	SurfaceExecutorService.configure(10L)
 
 	def main(args:Array[String]) {
 		val actorSystem = ActorSystem("Bruce")
@@ -208,7 +213,7 @@ class GameActor extends Actor {
 
 object MenuActor {
 	case class Start(rendererActor:ActorRef, gameActor:ActorRef)
-	case class Stop
+	case object Stop
 }
 
 /** Represent the game menu. */
@@ -242,7 +247,7 @@ class MenuActor extends Actor {
 
 			rendererActor ! AddScreen("menu", "menu")
 			rendererActor ! SwitchScreen("menu")
-			rendererActor ! ChangeScreenSize(Axes((-.5, .5), (-.5, .5), (-1., 1.)), 0.05)
+			rendererActor ! ChangeScreenSize(Axes((-0.5, 0.5), (-0.5, 0.5), (-1.0, 1.0)), 0.05)
 			rendererActor ! ChangeScreen("background-image", "screen-intro")
 
 			playButton = ButtonActor(context, "play")
@@ -367,7 +372,7 @@ class LineAnimator extends ImageSprite.Animator {
 
 object LevelActor {
 	case class Start(rendererActor:ActorRef, gameActor:ActorRef, level:Int)
-	case class Stop
+	case object Stop
 }
 
 class LevelActor extends Actor {
@@ -395,7 +400,7 @@ class LevelActor extends Actor {
 
 			rendererActor ! AddScreen(screenName, "tile")
 			rendererActor ! SwitchScreen(screenName)
-			rendererActor ! ChangeScreenSize(Axes((-map.size._1/2., map.size._1/2.), (-map.size._2/2., map.size._2/2.), (-1., 1.)), 1)
+			rendererActor ! ChangeScreenSize(Axes((-map.size._1/2.0, map.size._1/2.0), (-map.size._2/2.0, map.size._2/2.0), (-1.0, 1.0)), 1)
 			rendererActor ! ChangeScreen("background-image", "tile-nothing")
 
 			val tname = screenName
@@ -432,11 +437,11 @@ object SpriteActor {
 	def apply(context:ActorContext, name:String):ActorRef = context.actorOf(Props[SpriteActor], name) 
 
 	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, avatarType:String, resTexture:String, animator:ImageSprite.Animator)
-	case class Stop
+	case object Stop
 	case class Resize(size:Size)
 	case class Move(pos:NumberSeq3)
 	case class AnimationBehavior(fps:Int, animBehavior:(SpriteActor) => Unit)
-	case class Animate()
+	case object Animate
 }
 
 class SpriteActor extends Actor {
@@ -494,7 +499,7 @@ object TilesActor {
 	def apply(context:ActorContext, name:String):ActorRef = context.actorOf(Props[TilesActor], name) 
 
 	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, map:GameMap)
-	case class Stop
+	case object Stop
 	case class Resize(size:Size)
 	case class Move(pos:NumberSeq3)
 }
@@ -580,7 +585,7 @@ object ButtonActor {
 
 	def apply(context:ActorContext, name:String):ActorRef = context.actorOf(Props[ButtonActor], name)
 
-	case class Stop
+	case object Stop
 	case class Start(name:String, rActor:ActorRef, gActor:ActorRef, avatarType:String)
 	case class Resize(size:Size)
 	case class Move(pos:NumberSeq3)

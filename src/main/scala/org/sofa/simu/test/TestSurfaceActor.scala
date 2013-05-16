@@ -1,6 +1,8 @@
 package org.sofa.simu.oberon.test
 
 import scala.math._
+import scala.language.postfixOps
+
 import javax.media.opengl._
 import javax.media.opengl.glu._
 import com.jogamp.opengl.util._
@@ -17,23 +19,53 @@ import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
 
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
 import scala.concurrent.duration._
-import org.sofa.simu.oberon.SurfaceExecutorService
+import org.sofa.opengl.akka.SurfaceExecutorService
+
+
+// This small test runs an actor "SurfaceRendererActor" that drives a surface and runs all its
+// messages from the thread the surface uses (using surface.invoke) thanks to the 
+// SurfaceExecutorService. 
+//
+// Its goal is to animate the surface as fast as possible from the actor.
+
 
 object SurfaceRendererActor {
-	def apply(system:ActorSystem, context:TestSurfaceActor):ActorRef = {
-		SurfaceExecutorService.setSurface(context.surface)
-		system.actorOf(Props(new SurfaceRendererActor(context)).withDispatcher("oberon.surface-dispatcher"), name="surface-renderer-actor")
+	def apply(system:ActorSystem, renderer:TestSurfaceActor):ActorRef = {
+		SurfaceExecutorService.setSurface(renderer.surface)
+		system.actorOf(Props(new SurfaceRendererActor(renderer)).withDispatcher(SurfaceExecutorService.configKey), name="surface-renderer-actor")
 	}
 }
 
 class SurfaceRendererActor(val ctx:TestSurfaceActor) extends Actor {
 	var count = 0
+	
 	var startTime = 0L
 
 	def receive() = {
-		case ReceiveTimeout ⇒ { val T=System.currentTimeMillis; val duration=T-startTime; startTime=System.currentTimeMillis; if(count > 1000) { self ! "kill!" } else { count += 1; ctx.animate }; }//println("T=%d".format(duration)); }//println(s"executing in ${Thread.currentThread.getName} (count=${count})") }
-		case "start" ⇒ { context.setReceiveTimeout(21 millisecond) }
-		case "kill!" ⇒ { println("exiting..."); context.stop(self) }
+		case ReceiveTimeout ⇒ {
+			val T        = System.currentTimeMillis
+			val duration = T - startTime
+			startTime    = T
+
+			if(count > 300) {
+				self ! "kill!"
+			} else {
+				count += 1
+				ctx.animate 
+			}
+			println("T=%d".format(duration))
+			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
+		}
+		case "start" ⇒ {
+			println("@surface-renderer-actor started...")
+			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
+			context.setReceiveTimeout(21 millisecond)
+		}
+		case "kill!" ⇒ {
+			println("@surface-renderer-actor exiting...")
+			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
+			context.stop(self)
+		}
 	}
 
 	override def postStop() {
@@ -43,6 +75,8 @@ class SurfaceRendererActor(val ctx:TestSurfaceActor) extends Actor {
 
 
 object TestSurfaceActor {
+	SurfaceExecutorService.configure
+
     def main(args:Array[String]):Unit = (new TestSurfaceActor).test
 }
 

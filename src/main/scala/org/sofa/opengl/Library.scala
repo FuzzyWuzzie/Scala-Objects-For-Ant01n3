@@ -1,13 +1,13 @@
-package org.sofa.simu.oberon.renderer
+package org.sofa.opengl
 
 import java.io.IOException
 
 import scala.collection.mutable.HashMap
 
 import org.sofa.FileLoader
-import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, Texture, TexParams}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
+import org.sofa.opengl.armature.Armature
 
 /** When a resource cannot be loaded. */
 case class NoSuchResourceException(msg:String,nested:Throwable=null) extends Exception(msg,nested)

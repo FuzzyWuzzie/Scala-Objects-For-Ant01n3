@@ -1,4 +1,4 @@
-package org.sofa.simu.oberon
+package org.sofa.opengl.akka
 
 import com.typesafe.config.Config
 import org.sofa.opengl.surface.Surface
@@ -13,10 +13,25 @@ import java.util.Collections
   * Code derived from Viktor Klang: https://gist.github.com/viktorklang/2422443 */
 object SurfaceExecutorService extends AbstractExecutorService { 
 
+	/** Key name in the configuration. */
+	final val configKey = "org.sofa.opengl.akka.surface-dispatcher"
+
+	/** You can call this in static context before the Akka conf is loaded to avoid creating an
+	  * "application.conf" and still setup the SurfaceExecutorService. */
+	def configure() { configure(10L) }
+
+	/** You can call this in static context before the Akka conf is loaded to avoid creating an
+	  * "application.conf" and still setup the SurfaceExecutorService.
+	  * @param tickDurationMS the interval at wich the scheduler wakes up. */
+	def configure(tickDurationMs:Long) {
+		sys.props += ("akka.scheduler.tick-duration" -> f"$tickDurationMs%dms")
+		sys.props += (s"${configKey}.type"       -> "Dispatcher")
+		sys.props += (s"${configKey}.executor"   -> "org.sofa.opengl.akka.SurfaceExecutorServiceConfigurator")
+		sys.props += (s"${configKey}.throughput" -> "1")
+	}
+
 	/** The actual surface used for rendering. */
 	private[this] var surface:Surface = null
-
-//private[this] var T = 0L
 
 	/** The actual surface used for rendering. There can be only one such surface
 	  * at a time. It is used to execute actions in the thread managing the surface.
@@ -27,7 +42,9 @@ object SurfaceExecutorService extends AbstractExecutorService {
 
 	def execute(command:Runnable) = {
 		if(surface ne null) {
+//Console.err.println("***(surface-dispatcher)*** BEFORE from thread %s".format(Thread.currentThread.getName))
 			surface.invoke(command)
+//Console.err.println("***(surface-dispatcher)*** AFTER from thread %s".format(Thread.currentThread.getName))
 		} else {
 			throw new RuntimeException("SurfaceExecutorService.surface not set, see setSurface()")
 		}
@@ -50,14 +67,18 @@ object SurfaceExecutorService extends AbstractExecutorService {
   * Then to use it add :
   *    surface-dispatcher {
   *        type       = "Dispatcher"
-  *        executor   = "org.sofa.simu.oberon.JoglEventThreadExecutorServiceConfigurator"
+  *        executor   = "org.sofa.opengl.akka.SurfaceExecutorServiceConfigurator"
   *        throughput = 1
   *    }
   * To your application.conf. To use it with an actor use it like this:
-  *    val guiActor = context.actorOf(Props[GUIActor].withDispatcher("surface-dispatcher"), "gui-actor")    
-  * */
+  *    val guiActor = context.actorOf(Props[YourGUIActor].withDispatcher(SurfaceExecutorService.configKey), name="gui-actor")
+  */
 class SurfaceExecutorServiceConfigurator(config:Config, prerequisites:DispatcherPrerequisites)
-	extends ExecutorServiceConfigurator(config, prerequisites) {
-	private[this] val f = new ExecutorServiceFactory { def createExecutorService:ExecutorService = SurfaceExecutorService }
+		extends ExecutorServiceConfigurator(config, prerequisites) {
+	
+	private[this] val f = new ExecutorServiceFactory {
+		def createExecutorService:ExecutorService = { SurfaceExecutorService }
+	}
+	
 	def createExecutorServiceFactory(id:String, threadFactory:ThreadFactory):ExecutorServiceFactory = f
 }

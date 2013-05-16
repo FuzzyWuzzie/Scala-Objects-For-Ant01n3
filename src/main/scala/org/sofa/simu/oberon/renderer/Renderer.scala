@@ -11,7 +11,7 @@ import com.jogamp.newt.opengl._
 
 import org.sofa.nio._
 import org.sofa.math.{Rgba, Vector3, Vector4, Axes, Point3, NumberSeq3}
-import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight}
+import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, ResourceDescriptor, Libraries}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, MotionEvent, KeyEvent, ScrollEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute}
@@ -19,7 +19,7 @@ import org.sofa.opengl.mesh.skeleton.{Bone ⇒ SkelBone}
 
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
 import scala.concurrent.duration._
-import org.sofa.simu.oberon.SurfaceExecutorService
+import org.sofa.opengl.akka.SurfaceExecutorService
 
 import org.sofa.simu.oberon.{GameActor}
 
@@ -93,7 +93,7 @@ object RendererActor {
 		SurfaceExecutorService.setSurface(renderer.surface)
 		// Create our renderer actor with the specific executor service so that all its messages
 		// are executed in the same thread as the OpenGL surface.
-		system.actorOf(Props(new RendererActor(renderer, avatarFactory)).withDispatcher("oberon.surface-dispatcher"), name="renderer-actor")
+		system.actorOf(Props(new RendererActor(renderer, avatarFactory)).withDispatcher(SurfaceExecutorService.configKey), name="renderer-actor")
 	}
 }
 

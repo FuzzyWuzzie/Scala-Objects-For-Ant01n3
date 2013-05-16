@@ -2,7 +2,7 @@ package org.sofa.opengl.backend
 
 import android.content.res.Resources
 import org.sofa.backend.AndroidLoader
-import org.sofa.simu.oberon.renderer.{Armature, ArmatureLoader, SVGArmatureLoader}
+import org.sofa.opengl.armature.{Armature, ArmatureLoader, SVGArmatureLoader}
 
 /** Default loader for shaders, based on files and the include path.
   * This loader tries to open the given resource directly, then if not

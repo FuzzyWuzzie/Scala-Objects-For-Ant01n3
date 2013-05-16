@@ -1,11 +1,11 @@
-package org.sofa.simu.oberon.renderer
+package org.sofa.opengl.armature
 
 import scala.collection.mutable.HashMap
 
 import org.sofa.FileLoader
 import org.sofa.opengl.{SGL, Camera}
 import org.sofa.math.{Point3, Point2, Vector2}
-import org.sofa.opengl.{Texture, ShaderProgram}
+import org.sofa.opengl.{Texture, ShaderProgram, Libraries}
 import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 
 case class NoSuchJointException(message:String) extends Exception(message)
