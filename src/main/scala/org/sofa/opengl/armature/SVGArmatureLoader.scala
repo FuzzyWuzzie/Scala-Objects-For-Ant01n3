@@ -6,7 +6,7 @@ import scala.xml._
 import scala.math._
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 
-import org.sofa.math.{Rgba, Point2}
+import org.sofa.math.{Rgba, Point2, Point3, Matrix3}
 import org.sofa.simu.oberon.renderer._
 
 // -- Exceptions ----------------------------------------------------------------------------------------------
@@ -40,6 +40,31 @@ case class Anchor(xInit:Double, yInit:Double, val id:Int) extends Point2(xInit, 
 	override def toString() = "Anchor(%.2f | %.2f | [%d])".format(x,y,id)
 }
 
+// -- Utility transforms --------------------------------------------------------------------------------------
+
+trait Transform {
+	def transform(x:Double,y:Double):(Double,Double)
+	def transform(p:Point2):Point2
+}
+
+case class TranslateTransform(tx:Double,ty:Double) extends Transform {
+	def transform(x:Double,y:Double) = (x+tx, y+ty)
+	def transform(p:Point2) = new Point2(p.x+tx, p.y+ty)
+}
+
+case class MatrixTransform(a:Double,b:Double,c:Double,d:Double,e:Double,f:Double) extends Transform {
+	val matrix = Matrix3((a,c,e), (b,d,f), (0,0,1))
+	
+	def transform(x:Double,y:Double) = {
+		val rr = matrix * Point3(x, y, 1)
+		(rr.x, rr.y)
+	}
+	def transform(p:Point2) = {
+		val rr = matrix * Point3(p.x, p.y, 1)
+		Point2(rr.x, rr.y)
+	}
+}
+
 // -- Loader class --------------------------------------------------------------------------------------------
 
 object SVGArmatureLoader {
@@ -54,6 +79,8 @@ object SVGArmatureLoader {
 	final val SVGFillExp = """fill:#(\p{XDigit}\p{XDigit})(\p{XDigit}\p{XDigit})(\p{XDigit}\p{XDigit})""".r
 
 	final val SVGTranslateExp = """translate\((-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*)\)""".r
+
+	final val SVGMatrixExp = """matrix\((-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*)\)""".r
 }
 
 /** Load an Armature from a prepared SVG file. 
@@ -168,8 +195,8 @@ class SVGArmatureLoader {
 			}
 		}
 
-//println("found %d areas =====".format(areas.size))
-//areas.foreach { area => println("area %s".format(area)) }
+println("found %d areas =====".format(areas.size))
+areas.foreach { area => println("area %s".format(area)) }
 
 		val armature = buildArmature(name, texRes, shaderRes)
 
@@ -185,7 +212,7 @@ class SVGArmatureLoader {
 
 	/** Parse an area (rectangle) of the SVG file and its pivot and anchor points. */
 	def parseArea(name:String, area:Node):Area = {
-		val globalTr = getTranslation(area)
+		val globalTr = getTransform(area)
 		val rect     = (area \ "rect")
 
 		if(rect.size < 1) {
@@ -195,11 +222,13 @@ class SVGArmatureLoader {
 		// I do not know why, but inskape origin in the GUI seems to be at bottom-left
 		// and in the file at top-left, hence the inversion compared to the pageh.
 
-		val tr = getTranslation(rect.head)
+		val tr = getTransform(rect.head)
 		val w  = (rect \ "@width").text.toDouble
 		val h  = (rect \ "@height").text.toDouble
-		val x  = (rect \ "@x").text.toDouble + (globalTr._1 + tr._1)
-		val y  = (pageh - ((rect \ "@y").text.toDouble + (globalTr._2 + tr._2))) - h
+		var p  = Point2((rect \ "@x").text.toDouble, (rect \ "@y").text.toDouble)
+		
+		p   = globalTr.transform(tr.transform(p))
+		p.y = (pageh - p.y) - h
 
 		var pivot:Pivot = null
 		var anchors = new ArrayBuffer[Anchor]()
@@ -221,21 +250,20 @@ class SVGArmatureLoader {
 		if(pivot eq null)
 			throw ArmatureParseException("Area without pivot point !")
 
-		Area(name,x,y,w,h,pivot,anchors.toArray)
+		Area(name,p.x,p.y,w,h,pivot,anchors.toArray)
 	}
 
 	/** Parse an arc (a SVG path) that define a pivot or anchor point. */
-	def parseArc(arc:Node, globalTr:(Double,Double)):Point2 = {
-		var cx = doubleAttr(Sodipodi, arc, "cx")
-		var cy = doubleAttr(Sodipodi, arc, "cy")
-		var tr = getTranslation(arc)
+	def parseArc(arc:Node, globalTr:Transform):Point2 = {
+		var c  = Point2(doubleAttr(Sodipodi, arc, "cx"), doubleAttr(Sodipodi, arc, "cy"))
+		var tr = getTransform(arc)
 
-		cx += (tr._1 + globalTr._1)
-		cy  = (pageh - (cy + (tr._2 + globalTr._2)))
+		c = globalTr.transform(tr.transform(c))
+		c.y = (pageh - c.y)
 
 		getFill(arc) match {
-			case (255,0) => new Pivot(cx,cy)
-			case (255,x) => new Anchor(cx,cy,x)
+			case (255,0) => new Pivot(c.x,c.y)
+			case (255,x) => new Anchor(c.x,c.y,x)
 			case _       => null
 		}
 	}
@@ -246,15 +274,16 @@ class SVGArmatureLoader {
 	}
 
 	/** Retrieve the translation of a SVG node. */
-	def getTranslation(node:Node):(Double,Double) = {
+	def getTransform(node:Node):Transform = {
 		node.attribute("transform") match {
 			case Some(x) => {
 				x.text match {
-					case SVGTranslateExp(tx, ty) => (tx.toDouble, ty.toDouble)
-					case x => { throw ArmatureParseException("transform of node is not a translation '%s'".format(x)) }
+					case SVGTranslateExp(tx, ty) => TranslateTransform(tx.toDouble, ty.toDouble)
+					case SVGMatrixExp(a, b, c, d, e, f) => MatrixTransform(a.toDouble, b.toDouble, c.toDouble, d.toDouble, e.toDouble, f.toDouble)
+					case x => { throw ArmatureParseException("transform of node is not a translation or a matrix '%s'".format(x)) }
 				}
 			}
-			case None => { (0.0,0.0) }
+			case None => { TranslateTransform(0.0,0.0) }
 		}
 	}
 
