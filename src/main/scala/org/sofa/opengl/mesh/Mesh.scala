@@ -1,8 +1,11 @@
 package org.sofa.opengl.mesh
 
-import javax.media.opengl._
+import scala.language.implicitConversions
+
 import org.sofa.nio._
 import org.sofa.opengl._
+
+import javax.media.opengl._
 import GL._
 import GL2._
 import GL2ES2._

@@ -71,8 +71,8 @@ class TestSpatialHash extends SurfaceRenderer {
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.grey20
-	val planeColor = Rgba.grey80
+	val clearColor = Rgba.Grey20
+	val planeColor = Rgba.Grey80
 	val light1 = Vector4(2, 2, 2, 1)
 	
 	val size = 50
@@ -146,7 +146,7 @@ class TestSpatialHash extends SurfaceRenderer {
 		import VertexAttribute._
 
 		initParticles(size)
-		cubeMesh.setColor(Rgba.red)
+		cubeMesh.setColor(Rgba.Red)
 		wcubeMesh = new WireCubeMesh(bucketSize.toFloat)
 		wcubeMesh.setColor(new Rgba(1, 1, 1, 0.1))
 		
@@ -166,7 +166,7 @@ class TestSpatialHash extends SurfaceRenderer {
 			simu += p
 			spaceHash.add(p)
 			particlesMesh.setPoint(i, p.x)
-			particlesMesh.setColor(i, Rgba.white)
+			particlesMesh.setColor(i, Rgba.White)
 		}
 		
 		spaceHash.add(simuCube)

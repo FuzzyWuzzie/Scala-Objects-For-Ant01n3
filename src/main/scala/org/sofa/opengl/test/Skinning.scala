@@ -42,7 +42,7 @@ class Skinning extends SurfaceRenderer {
     
 // Shading
     
-    val clearColor = Rgba.grey30
+    val clearColor = Rgba.Grey30
     var nmapShader:ShaderProgram = null
     var plainShader:ShaderProgram = null
     var boneShader:ShaderProgram = null
@@ -110,13 +110,13 @@ class Skinning extends SurfaceRenderer {
 	    skeleton = new Bone(0)
 	    skeleton.addChild(1)
 	    //skeleton.orientationScale(0.3333, 0.3333, 0.3333)
-	    skeleton.color = Rgba.red
+	    skeleton.color = Rgba.Red
 	    skeleton(0).poseTranslate(0, 1, 0)
-	    skeleton(0).color = Rgba.green
+	    skeleton(0).color = Rgba.Green
 	    skeleton(0).addChild(2)
 //	    skeleton(0).rotate(Pi/8, 0, 0, 1)
 	    skeleton(0)(0).poseTranslate(0, 1, 0)
-	    skeleton(0)(0).color = Rgba.blue
+	    skeleton(0)(0).color = Rgba.Blue
 //	    skeleton(0)(0).rotate(Pi/8, 0, 0, 1)
 	}
 	
@@ -138,15 +138,15 @@ class Skinning extends SurfaceRenderer {
 	    boneShader.uniform("bone[1].color", skeleton(0).color)
 	    boneShader.uniform("bone[2].color", (skeleton(0))(0).color)
 	    
-	    plainShader.uniform("uniformColor", Rgba.white)
+	    plainShader.uniform("uniformColor", Rgba.White)
 	}
 	
 	protected def initGeometry() {
 		import VertexAttribute._
 
-	    tubeMesh.setBottomDiskColor(Rgba.red)
-	    tubeMesh.setCylinderColor(Rgba.blue)
-	    tubeMesh.setTopDiskColor(Rgba.red)
+	    tubeMesh.setBottomDiskColor(Rgba.Red)
+	    tubeMesh.setCylinderColor(Rgba.Blue)
+	    tubeMesh.setTopDiskColor(Rgba.Red)
 	    
 	    plane = planeMesh.newVertexArray(gl, nmapShader, Vertex -> "pos", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texPos")
 	    tube  = tubeMesh.newVertexArray(gl, boneShader, Vertex -> "position", Normal -> "normal", Bone -> "boneIndex")

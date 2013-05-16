@@ -43,13 +43,13 @@ class TestSkinning6 extends SurfaceRenderer {
     
 // Shading
     
-    val clearColor = Rgba.grey30
+    val clearColor = Rgba.Grey30
     
     var groundShader:ShaderProgram = null
     var thingShader:ShaderProgram = null
     var boneShader:ShaderProgram = null
     
-    var light1 = new HemisphereLight(0, 10, 0, Rgba.white, Rgba.grey30) //WhiteLight(0, 2, 2,  5f, 16f, 0.1f)
+    var light1 = new HemisphereLight(0, 10, 0, Rgba.White, Rgba.Grey30) //WhiteLight(0, 2, 2,  5f, 16f, 0.1f)
     
     // var groundColor:Texture = null
     // var groundNMap:Texture = null
@@ -199,7 +199,7 @@ println("Display Inside thread %s".format(Thread.currentThread.getName))
 	  	gl.enable(gl.BLEND)
 	    groundShader.use
 	    light1.uniform(groundShader, camera)
-	    groundShader.uniform("color", Rgba.white)
+	    groundShader.uniform("color", Rgba.White)
 	    camera.uniformMVP(groundShader)
 	    ground.draw(groundMesh.drawAs)
 		gl.disable(gl.BLEND)

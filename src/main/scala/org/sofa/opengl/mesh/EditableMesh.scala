@@ -366,7 +366,7 @@ class EditableMesh extends Mesh {
 	  * and the tangents (in green). The mesh contains position, and color attributes
 	  * only. It must be drawn using single lines. This allows to verify the normals and
 	  * tangents are good. */
-	def newNormalsTangentsMesh():Mesh = newNormalsTangentsMesh(Rgba.red, Rgba.green)
+	def newNormalsTangentsMesh():Mesh = newNormalsTangentsMesh(Rgba.Red, Rgba.Green)
 
 	/** Create a new mesh (a ColoredLineMesh) that represents the normals (using
 	  * the first given color)

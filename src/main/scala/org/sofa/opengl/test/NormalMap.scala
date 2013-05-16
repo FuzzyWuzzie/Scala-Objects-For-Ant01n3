@@ -32,7 +32,7 @@ class NormalMap extends SurfaceRenderer {
 
     var camera:Camera = null
     var ctrl:BasicCameraController = null
-    val clearColor = Rgba.black
+    val clearColor = Rgba.Black
     val light1 = Vector4(2, 2, 2, 1)
     
     build
@@ -95,11 +95,11 @@ class NormalMap extends SurfaceRenderer {
 	    
 	    reshape(surface)
 	    
-	    tubeMesh.setTopDiskColor(Rgba.yellow)
-	    tubeMesh.setBottomDiskColor(Rgba.yellow)
-	    //tubeMesh.setDiskColor(4, Rgba.red)
-	    tubeMesh.setCylinderColor(Rgba.blue);
-	    planeMesh.setColor(Rgba.magenta)
+	    tubeMesh.setTopDiskColor(Rgba.Yellow)
+	    tubeMesh.setBottomDiskColor(Rgba.Yellow)
+	    //tubeMesh.setDiskColor(4, Rgba.Red)
+	    tubeMesh.setCylinderColor(Rgba.Blue);
+	    planeMesh.setColor(Rgba.Magenta)
 	    
 	    plane = planeMesh.newVertexArray(gl, nmapShader, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
 	    tube  = tubeMesh.newVertexArray( gl, nmapShader, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")

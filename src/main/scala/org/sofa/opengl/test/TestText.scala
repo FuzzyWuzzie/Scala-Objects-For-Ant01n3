@@ -29,8 +29,8 @@ class TestText extends SurfaceRenderer {
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.white
-	val planeColor = Rgba.grey80
+	val clearColor = Rgba.White
+	val planeColor = Rgba.Grey80
 	val light1 = Vector4(1, 2, 1, 1)
 
 	var font:GLFont = null
@@ -106,7 +106,7 @@ class TestText extends SurfaceRenderer {
 
 		font.minMagFilter(gl.LINEAR, gl.LINEAR)
 
-		text.setColor(Rgba.grey20)
+		text.setColor(Rgba.Grey20)
 		text.build("This is GL text !")
 	}
 	

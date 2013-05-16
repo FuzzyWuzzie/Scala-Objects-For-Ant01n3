@@ -67,10 +67,10 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	var drawIsoCubesFlag = false
 	var drawIsoSurfaceFlag = false
 	
-	val isoSurfaceColor = Rgba.cyan
+	val isoSurfaceColor = Rgba.Cyan
 	val particleColor = Rgba(0.7, 0.7, 1, 0.3)
-	val clearColor = Rgba.grey10
-	val planeColor = Rgba.grey80
+	val clearColor = Rgba.Grey10
+	val planeColor = Rgba.Grey80
 	val light1 = Vector4(4, 4, 4, 1)	
 	val particleSizePx = 160f // 160f
 	
@@ -201,7 +201,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		initParticles		
 		initSimu
 
-		planeMesh.setColor(Rgba.red)
+		planeMesh.setColor(Rgba.Red)
 		wcubeMesh = new WireCubeMesh(simu.spaceHash.bucketSize.toFloat)
 		wcubeMesh2 = new WireCubeMesh(isoCellSize.toFloat)
 		wcubeMesh.setColor(Rgba(1, 1, 1, 0.5))
@@ -251,11 +251,11 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	protected def addObstacle(i:Int, wall:QuadWall) {
 		obstaclesMesh.setTriangle(i, wall.tri0)
 		obstaclesMesh.setNormal(i, wall.tri0.normal)
-		obstaclesMesh.setColor(i, Rgba.blue)
+		obstaclesMesh.setColor(i, Rgba.Blue)
 
 		obstaclesMesh.setTriangle(i+1, wall.tri1)
 		obstaclesMesh.setNormal(i+1, wall.tri1.normal)
-		obstaclesMesh.setColor(i+1, Rgba.blue)
+		obstaclesMesh.setColor(i+1, Rgba.Blue)
 		
 		simu.addObstacle(wall)
 	}

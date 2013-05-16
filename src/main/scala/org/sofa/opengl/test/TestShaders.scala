@@ -40,9 +40,9 @@ class TestShaders extends SurfaceRenderer {
 // Shading
 
 	val whiteLight1 = WhiteLight(-2,2,-1.5, 1f, 32f, 0.1f)
-	val coloredLight1 = ColoredLight(-2,2,0.5, Rgba.white, Rgba.white, Rgba.white*0.1, 1, 1, 1, 32, 0, 0.5, 1)
-	val coloredLight2 = ColoredLight(-2,2,1.5, Rgba.white, Rgba.white, Rgba.white*0.1, 1, 1, 1, 32, 0, 0.5, 1)
-	val coloredLight3 = ColoredLight(-2,2,-0.5, Rgba.white, Rgba.white, Rgba.white*0.1, 1, 1, 1, 32, 0, 0.5, 1)
+	val coloredLight1 = ColoredLight(-2,2,0.5, Rgba.White, Rgba.White, Rgba.White*0.1, 1, 1, 1, 32, 0, 0.5, 1)
+	val coloredLight2 = ColoredLight(-2,2,1.5, Rgba.White, Rgba.White, Rgba.White*0.1, 1, 1, 1, 32, 0, 0.5, 1)
+	val coloredLight3 = ColoredLight(-2,2,-0.5, Rgba.White, Rgba.White, Rgba.White*0.1, 1, 1, 1, 32, 0, 0.5, 1)
 
 	val color1 = Rgba(1,0.8,0.1,1)
 	val color2 = Rgba(0.1,1,0.8,1)
@@ -78,7 +78,7 @@ class TestShaders extends SurfaceRenderer {
 
     var light:Array[Light] = new Array[Light](ShaderCount)
         
-    val clearColor = Rgba.grey30
+    val clearColor = Rgba.Grey30
     var groundColor:Texture = null
     var groundNMap:Texture = null
     var uvsphereColor:Texture = null

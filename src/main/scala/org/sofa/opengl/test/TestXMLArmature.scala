@@ -41,8 +41,8 @@ class TestXMLArmature extends SurfaceRenderer {
 
 // Shading
     
-    val clearColor = Rgba.grey90
-    val gridColor = Rgba.grey40
+    val clearColor = Rgba.Grey90
+    val gridColor = Rgba.Grey40
     
     var gridShader:ShaderProgram = null
     

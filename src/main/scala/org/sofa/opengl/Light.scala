@@ -86,7 +86,7 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
 	}
 
 	def this(p:NumberSeq3, diffuse:Rgba, Kd:Double, Ks:Double, Ka:Double, roughness:Double, quadAtt:Double) {
-		this(p.x, p.y, p.z, diffuse, Rgba.white, diffuse, Kd, Ks, Ka, roughness, 0.0, 1.0, quadAtt)
+		this(p.x, p.y, p.z, diffuse, Rgba.White, diffuse, Kd, Ks, Ka, roughness, 0.0, 1.0, quadAtt)
 	}
 
 	def uniform(shader:ShaderProgram, camera:Camera) {

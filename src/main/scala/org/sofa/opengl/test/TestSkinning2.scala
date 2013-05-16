@@ -44,7 +44,7 @@ class TestSkinning2 extends SurfaceRenderer {
     
 // Shading
     
-    val clearColor = Rgba.grey30
+    val clearColor = Rgba.Grey30
     
     var phongShader:ShaderProgram = null
     var nmapShader:ShaderProgram = null
@@ -122,9 +122,9 @@ class TestSkinning2 extends SurfaceRenderer {
 	    plainShader = ShaderProgram(gl, "plain",       "es2/plainColor.vert.glsl",   "es2/plainColor.frag.glsl")
 		boneShader  = ShaderProgram(gl, "basic bones", "es2/bone.vert.glsl",         "es2/bone.frag.glsl")
 
-	    boneShader.uniform("bone[0].color", Rgba.red)
-	    boneShader.uniform("bone[1].color", Rgba.green)
-	    boneShader.uniform("bone[2].color", Rgba.blue)
+	    boneShader.uniform("bone[0].color", Rgba.Red)
+	    boneShader.uniform("bone[1].color", Rgba.Green)
+	    boneShader.uniform("bone[2].color", Rgba.Blue)
 	    
 	//    plainShader.uniform("uniformColor", Rgba.white)
 	}

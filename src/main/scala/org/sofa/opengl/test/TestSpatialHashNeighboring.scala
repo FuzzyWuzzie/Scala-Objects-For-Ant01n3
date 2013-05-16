@@ -92,8 +92,8 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.grey20
-	val planeColor = Rgba.grey80
+	val clearColor = Rgba.Grey20
+	val planeColor = Rgba.Grey80
 	val light1 = Vector4(2, 2, 2, 1)
 	
 	val size = 20
@@ -169,7 +169,7 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 		var c = phongShad.getAttribLocation("color")
 		var n = phongShad.getAttribLocation("normal")
 		
-		cubeMesh.setColor(Rgba.red)
+		cubeMesh.setColor(Rgba.Red)
 		
 		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
 		cube  = cubeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
@@ -193,7 +193,7 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 		simu = new ArrayBuffer[TestParticle2](size)
 		particlesMesh = new PointsMesh(n) 
 		
-		var p = new TestParticle2(0, 0, 1, 0); simu += p; spaceHash.add(p); particlesMesh.setPoint(0, p.x); particlesMesh.setColor(0, Rgba.red)
+		var p = new TestParticle2(0, 0, 1, 0); simu += p; spaceHash.add(p); particlesMesh.setPoint(0, p.x); particlesMesh.setColor(0, Rgba.Red)
 		val angle = (math.Pi*2) / (n-1)
 		var a = 0.0
 		
@@ -204,7 +204,7 @@ class TestSpatialHashNeighboring extends SurfaceRenderer {
 			spaceHash.add(p)
 			Console.err.println("i=%d".format(i))
 			particlesMesh.setPoint(i, p.x)
-			particlesMesh.setColor(i, Rgba.white)
+			particlesMesh.setColor(i, Rgba.White)
 		}
 		
 		spaceHash.add(simuCube)

@@ -38,9 +38,9 @@ class TestEditableMesh2 extends SurfaceRenderer {
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.grey20
-	val normalColor = Rgba.red
-	val tangentColor = Rgba.green
+	val clearColor = Rgba.Grey20
+	val normalColor = Rgba.Red
+	val tangentColor = Rgba.Green
 	val light1 = Vector4(1.5, 1, 0.3, 1)
 	
 	def test() {

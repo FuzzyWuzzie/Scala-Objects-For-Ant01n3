@@ -140,21 +140,28 @@ class LinesMesh(val count:Int) extends Mesh {
 		}
 	}
 
-	def setXYGrid(w:Float, h:Float, originx:Float, originy:Float, countx:Int, county:Int, incrx:Float, incry:Float, color:Rgba) {
+	def setXYGrid(w:Float, h:Float, originx:Float, originy:Float, countx:Int, county:Int, incrx:Float, incry:Float, color:Rgba, xAxisColor:Rgba = Rgba.Red, yAxisColor:Rgba = Rgba.Green) {
 		var i = 0
 		var x = originx - (incrx * (countx/2))
 		var y = originy - (incry * (county/2))
 
-		while(i < countx) {
+		while(i <= countx) {
 			setLine(i, x, originy-h, 0, x, originy+h, 0)
-			setColor(i, color)
+
+			if(i == 0)
+			     setColor(i, xAxisColor)
+			else setColor(i, color)
+
 			x += incrx
 			i += 1
 		}
 
-		while(i < countx+county) {
+		while(i <= countx+county) {
 			setLine(i, originx-w, y, 0, originx+w, y, 0)
-			setColor(i, color)
+
+			if(i == 0)
+			     setColor(i, yAxisColor)
+			else setColor(i, color)
 			y += incry
 			i += 1
 		}

@@ -73,8 +73,8 @@ class TestMetaBalls extends SurfaceRenderer {
 	/** Size of the particles on screen. */
 	val pointSize = 30f
 	
-	val clearColor = Rgba.grey10
-	val planeColor = Rgba.grey80
+	val clearColor = Rgba.Grey10
+	val planeColor = Rgba.Grey80
 	val surfaceColor = Rgba(1, 0.6, 0, 1)
 	val light1 = Vector4(3, 3, 3, 1)
 
@@ -214,7 +214,7 @@ class TestMetaBalls extends SurfaceRenderer {
 			balls += p
 			spaceHash.add(p)
 			particlesMesh.setPoint(i, p.x)
-			particlesMesh.setColor(i, Rgba.magenta)
+			particlesMesh.setColor(i, Rgba.Magenta)
 		}
 	}
 	

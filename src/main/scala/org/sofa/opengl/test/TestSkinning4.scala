@@ -44,7 +44,7 @@ class TestSkinning4 extends SurfaceRenderer {
     
 // Shading
     
-    val clearColor = Rgba.grey30
+    val clearColor = Rgba.Grey30
     
     var phongShader:ShaderProgram = null
     var nmapShader:ShaderProgram = null

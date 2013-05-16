@@ -3,6 +3,7 @@ package org.sofa.opengl.mesh
 import org.sofa.nio.FloatBuffer
 import org.sofa.opengl.{SGL,VertexArray,ShaderProgram}
 import org.sofa.math.{Rgba, Point3}
+
 import javax.media.opengl._
 import GL._
 import GL2._

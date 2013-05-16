@@ -37,7 +37,7 @@ class TestColladaImport2 extends SurfaceRenderer {
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.grey20
+	val clearColor = Rgba.Grey20
 	var lightZ = 3.0
 	val light1 = Vector4(1.7, 2.3, lightZ, 1)
 	

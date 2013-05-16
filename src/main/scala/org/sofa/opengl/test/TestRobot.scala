@@ -50,7 +50,7 @@ class RendererActor(val renderer:TestRobot) extends Actor {
 				self ! "kill!"
 			} else {
 				count += 1
-				renderer.animate 
+				//renderer.animate 
 			}
 			println("T=%d".format(duration))
 			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
@@ -122,14 +122,14 @@ class TestRobot extends SurfaceRenderer {
 
 // Geometry
 
-	val grid = new LinesMesh(40)
+	val grid = new LinesMesh(40+2)
 
     var armature:Armature = null
 
 // Shading
     
-    val clearColor = Rgba.grey90
-    val gridColor = Rgba.grey40
+    val clearColor = Rgba.Grey90
+    val gridColor = Rgba.Grey40
     
     var gridShader:ShaderProgram = null
     
@@ -236,6 +236,8 @@ class TestRobot extends SurfaceRenderer {
 	
 	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+	    animate
 
 	 	displayGrid
 

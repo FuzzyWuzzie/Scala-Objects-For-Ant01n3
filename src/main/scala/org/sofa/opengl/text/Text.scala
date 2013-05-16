@@ -323,7 +323,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	protected var batch:VertexArray = null
 
 	/** Rendering color. */
-	protected var color = Rgba.black
+	protected var color = Rgba.Black
 
 	/** Current triangle. */
 	protected var t = 0

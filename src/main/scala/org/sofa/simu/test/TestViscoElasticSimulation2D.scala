@@ -94,8 +94,8 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	
 	var isoSurfaceColor = Rgba(1,1,1,0.9)
 	var particleColor = Rgba(0.7, 0.7, 1, 0.9)
-	var clearColor = Rgba.grey10
-	var planeColor = Rgba.grey80
+	var clearColor = Rgba.Grey10
+	var planeColor = Rgba.Grey80
 	val light1 = Vector4(0, 7, 3, 1)	
 	var particleSizePx = 30f // 160f
 	
@@ -244,7 +244,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		initParticles		
 		initSimu
 
-		planeMesh.setColor(Rgba.red)
+		planeMesh.setColor(Rgba.Red)
 		wcubeMesh = new WireCubeMesh(simu.spaceHash.bucketSize.toFloat)
 		wcubeMesh2 = new WireCubeMesh(isoCellSize.toFloat)
 		wcubeMesh3 = new WireCubeMesh(isoCellSize.toFloat)
@@ -305,11 +305,11 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	protected def addObstacle(i:Int, wall:QuadWall) {
 		obstaclesMesh.setTriangle(i, wall.tri0)
 		obstaclesMesh.setNormal(i, wall.tri0.normal)
-		obstaclesMesh.setColor(i, Rgba.blue)
+		obstaclesMesh.setColor(i, Rgba.Blue)
 
 		obstaclesMesh.setTriangle(i+1, wall.tri1)
 		obstaclesMesh.setNormal(i+1, wall.tri1.normal)
-		obstaclesMesh.setColor(i+1, Rgba.blue)
+		obstaclesMesh.setColor(i+1, Rgba.Blue)
 		
 		simu.addObstacle(wall)
 	}
@@ -665,7 +665,7 @@ timer.measure("draw quads") {
 					val p0 = isoContourComp.segPoints(segment.a)
 					val p1 = isoContourComp.segPoints(segment.b)
 					isoContourMesh.setLine(i, Point3(p0.x,p0.y,0), Point3(p1.x,p1.y,0))
-					isoContourMesh.setColor(i, Rgba.white)
+					isoContourMesh.setColor(i, Rgba.White)
 				}
 			}
 

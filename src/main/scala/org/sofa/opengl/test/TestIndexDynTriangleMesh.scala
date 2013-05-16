@@ -49,7 +49,7 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.grey20
+	val clearColor = Rgba.Grey20
 	val light1 = Vector4(0.5, 0.5, 0.5, 1)
 	
 	def test() {
@@ -134,16 +134,16 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 		thingMesh.setPoint(8, 0, 2, 0)
 		thingMesh.setPoint(9, -1.5f, -1, 0)
 		
-		thingMesh.setPointColor(0, Rgba.white)
-		thingMesh.setPointColor(1, Rgba.red)
-		thingMesh.setPointColor(2, Rgba.green)
-		thingMesh.setPointColor(3, Rgba.blue)
-		thingMesh.setPointColor(4, Rgba.cyan)
-		thingMesh.setPointColor(5, Rgba.magenta)
-		thingMesh.setPointColor(6, Rgba.yellow)
-		thingMesh.setPointColor(7, Rgba.grey20)
-		thingMesh.setPointColor(8, Rgba.grey50)
-		thingMesh.setPointColor(9, Rgba.grey80)
+		thingMesh.setPointColor(0, Rgba.White)
+		thingMesh.setPointColor(1, Rgba.Red)
+		thingMesh.setPointColor(2, Rgba.Green)
+		thingMesh.setPointColor(3, Rgba.Blue)
+		thingMesh.setPointColor(4, Rgba.Cyan)
+		thingMesh.setPointColor(5, Rgba.Magenta)
+		thingMesh.setPointColor(6, Rgba.Yellow)
+		thingMesh.setPointColor(7, Rgba.Grey20)
+		thingMesh.setPointColor(8, Rgba.Grey50)
+		thingMesh.setPointColor(9, Rgba.Grey80)
 		
 		thingMesh.setPointNormal(0, 0, 0, 1)
 		thingMesh.setPointNormal(1, 0, 0, 1)

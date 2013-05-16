@@ -45,11 +45,13 @@ case class Anchor(xInit:Double, yInit:Double, val id:Int) extends Point2(xInit, 
 trait Transform {
 	def transform(x:Double,y:Double):(Double,Double)
 	def transform(p:Point2):Point2
+	def transform(p:Point3):Point3
 }
 
 case class TranslateTransform(tx:Double,ty:Double) extends Transform {
 	def transform(x:Double,y:Double) = (x+tx, y+ty)
 	def transform(p:Point2) = new Point2(p.x+tx, p.y+ty)
+	def transform(p:Point3) = new Point3(p.x+tx, p.y+ty, p.z)
 }
 
 case class MatrixTransform(a:Double,b:Double,c:Double,d:Double,e:Double,f:Double) extends Transform {
@@ -63,6 +65,7 @@ case class MatrixTransform(a:Double,b:Double,c:Double,d:Double,e:Double,f:Double
 		val rr = matrix * Point3(p.x, p.y, 1)
 		Point2(rr.x, rr.y)
 	}
+	def transform(p:Point3) = { matrix * p }
 }
 
 // -- Loader class --------------------------------------------------------------------------------------------
@@ -195,8 +198,8 @@ class SVGArmatureLoader {
 			}
 		}
 
-println("found %d areas =====".format(areas.size))
-areas.foreach { area => println("area %s".format(area)) }
+//println("found %d areas =====".format(areas.size))
+//areas.foreach { area => println("area %s".format(area)) }
 
 		val armature = buildArmature(name, texRes, shaderRes)
 

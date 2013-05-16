@@ -246,7 +246,7 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 		if(screen ne null) {
 			screen.render
 		} else {
-			gl.clearColor(Rgba.black)
+			gl.clearColor(Rgba.Black)
 			gl.clear(gl.COLOR_BUFFER_BIT)
 		}
 

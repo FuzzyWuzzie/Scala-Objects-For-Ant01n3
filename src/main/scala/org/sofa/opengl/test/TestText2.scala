@@ -49,7 +49,7 @@ class TestText2 extends SurfaceRenderer {
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.white
+	val clearColor = Rgba.White
 
 	var fonts = new Array[GLFont](3)
 	var text:Array[GLString] = new Array[GLString](TestText2.cyrano.length)
@@ -127,19 +127,19 @@ class TestText2 extends SurfaceRenderer {
 		fonts(2).minMagFilter(gl.LINEAR, gl.LINEAR)
 
 		text(0) = new GLString(gl, fonts(0), TestText2.cyrano(0).length, textShad)
-		text(0).setColor(Rgba.red)
+		text(0).setColor(Rgba.Red)
 		text(0).build(TestText2.cyrano(0))
 
 		for(i <- 1 until text.length) {
 			text(i) = new GLString(gl, fonts(2), TestText2.cyrano(i).length, textShad)
-			text(i).setColor(Rgba.black)
+			text(i).setColor(Rgba.Black)
 			text(i).build(TestText2.cyrano(i))
 		}
 	}
 	
 	def initGeometry() {
 		import VertexAttribute._
-		linesMesh.horizontalRuler(0, 0, 10, 100, 10, 2, Rgba.black, Rgba(0.6, 0, 0, 1), Rgba(0.3, 0, 0, 1))
+		linesMesh.horizontalRuler(0, 0, 10, 100, 10, 2, Rgba.Black, Rgba(0.6, 0, 0, 1), Rgba(0.3, 0, 0, 1))
 		lines = linesMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 	}	
 

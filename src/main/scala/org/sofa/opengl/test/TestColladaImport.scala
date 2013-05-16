@@ -33,11 +33,11 @@ class TestColladaImport extends SurfaceRenderer {
 	var camera:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.grey90
+	val clearColor = Rgba.Grey90
 	val thingColor = new Rgba(1, 0.9, 0.6, 1)
-	val planeColor = Rgba.grey40
+	val planeColor = Rgba.Grey40
 
-	val hemiLight = new HemisphereLight(0, 5, 0, Rgba.white, Rgba.grey20)
+	val hemiLight = new HemisphereLight(0, 5, 0, Rgba.White, Rgba.Grey20)
 	
 	def test() {
 		val caps = new GLCapabilities(GLProfile.getGL2ES2)

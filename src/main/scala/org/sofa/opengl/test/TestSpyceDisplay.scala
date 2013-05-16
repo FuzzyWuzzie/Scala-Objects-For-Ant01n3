@@ -42,7 +42,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 
 	var text:Array[GLString] = new Array[GLString](8)
 
-	val clearColor = Rgba.grey20
+	val clearColor = Rgba.Grey20
 	val light1 = Vector4(0.5, 1, 0.5, 1)
 
 	val fbWidth = 512
@@ -128,7 +128,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		text(3) = new GLString(gl, stdFont, 256, textShad);	text(7) = new GLString(gl, stdFont, 256, textShad)
 
 		for(i <- 0 until text.length) {
-			text(i).setColor(Rgba.white)
+			text(i).setColor(Rgba.White)
 		}
 
 		text(0).build("Player 1");			text(4).build("Player 2")
@@ -158,7 +158,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		wallMesh(RightWall) = null
 		wallMesh(LeftWall)  = null
 
-		wallMesh(Ground).setColor(Rgba.black)
+		wallMesh(Ground).setColor(Rgba.Black)
 		wallMesh(BackWall).setTextureRepeat(1,1)
 
 		// Init the triangles

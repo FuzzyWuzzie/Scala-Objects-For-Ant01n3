@@ -32,8 +32,8 @@ class TestRenderToTexture extends SurfaceRenderer {
 	var camera2:Camera = null
 	var ctrl:BasicCameraController = null
 	
-	val clearColor = Rgba.grey20
-	val planeColor = Rgba.grey80
+	val clearColor = Rgba.Grey20
+	val planeColor = Rgba.Grey80
 	val light1 = Vector4(1, 2, 1, 1)
 
 	var fb:TextureFramebuffer = null
@@ -110,7 +110,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 	def initGeometry() {
 		import VertexAttribute._
 
-		cubeMesh.setColor(Rgba.yellow)
+		cubeMesh.setColor(Rgba.Yellow)
 		planeMesh.setTextureRepeat(1,1)
 
 		cube  = cubeMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
@@ -123,7 +123,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 			gl.frontFace(gl.CW)
 			gl.disable(gl.BLEND)
 			gl.disable(gl.DEPTH_TEST)
-			gl.clearColor(Rgba.blue)
+			gl.clearColor(Rgba.Blue)
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 			camera2.rotateViewHorizontal(0.1)
 			camera2.viewLookAt
