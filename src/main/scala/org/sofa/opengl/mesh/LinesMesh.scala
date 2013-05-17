@@ -148,7 +148,7 @@ class LinesMesh(val count:Int) extends Mesh {
 		while(i <= countx) {
 			setLine(i, x, originy-h, 0, x, originy+h, 0)
 
-			if(i == 0)
+			if(x > -0.0001 && x < 0.0001)
 			     setColor(i, xAxisColor)
 			else setColor(i, color)
 
@@ -156,12 +156,13 @@ class LinesMesh(val count:Int) extends Mesh {
 			i += 1
 		}
 
-		while(i <= countx+county) {
+		while(i <= countx+county+1) {
 			setLine(i, originx-w, y, 0, originx+w, y, 0)
 
-			if(i == 0)
+			if(y > -0.0001 && y < 0.0001)
 			     setColor(i, yAxisColor)
 			else setColor(i, color)
+
 			y += incry
 			i += 1
 		}

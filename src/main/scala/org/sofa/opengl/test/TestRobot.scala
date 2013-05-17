@@ -4,6 +4,7 @@ import scala.math._
 import scala.collection.mutable.HashMap
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.compat.Platform
 
 import javax.media.opengl._
 import javax.media.opengl.glu._
@@ -12,10 +13,10 @@ import com.jogamp.newt.event._
 import com.jogamp.newt.opengl._
 
 import org.sofa.nio._
-import org.sofa.math.{Rgba, Point3, Vector3, Vector4, Axes, AxisRange}
+import org.sofa.math.{Rgba, Point2, Point3, Vector3, Vector4, Axes, AxisRange}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap, TexAlpha, Libraries, ShaderResource, TextureResource, ArmatureResource}
 import org.sofa.opengl.io.collada.{ColladaFile}
-import org.sofa.opengl.armature.Armature
+import org.sofa.opengl.armature.{Armature, Joint}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, ScrollEvent, MotionEvent, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
@@ -38,11 +39,11 @@ object RendererActor {
 class RendererActor(val renderer:TestRobot) extends Actor {
 	var count = 0
 	
-	var startTime = 0L
+	var startTime = Platform.currentTime
 
 	def receive() = {
 		case ReceiveTimeout ⇒ {
-			val T        = System.currentTimeMillis
+			val T        = Platform.currentTime
 			val duration = T - startTime
 			startTime    = T
 
@@ -50,19 +51,35 @@ class RendererActor(val renderer:TestRobot) extends Actor {
 				self ! "kill!"
 			} else {
 				count += 1
-				//renderer.animate 
+				
+				if(renderer.behavior.finished(T)) {
+					if(renderer.behavior.name == "rup") {
+						println("goright")
+						renderer.behavior = renderer.moveRight(T)
+					} else if(renderer.behavior.name == "goright") {
+						println("rdown")
+						renderer.behavior = renderer.downRLeg(T)
+					} else if(renderer.behavior.name == "rdown") {
+						println("lup")
+						renderer.behavior = renderer.upLLeg(T)
+					} else if(renderer.behavior.name == "lup") {
+						println("ldown")
+						renderer.behavior = renderer.downLLeg(T)
+					} else if(renderer.behavior.name == "ldown") {
+						//println("goleft")
+						//renderer.behavior = renderer.moveLeft(T)
+					//} else if( renderer.behavior.name == "goleft") {
+						println("rup")
+						renderer.behavior = renderer.upRLeg(T)
+					}
+				}
 			}
-			println("T=%d".format(duration))
-			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
+//			println("T=%d".format(duration))
 		}
 		case "start" ⇒ {
-			println("@surface-renderer-actor started...")
-			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
-			context.setReceiveTimeout(21 millisecond)
+			context.setReceiveTimeout(100 millisecond)
 		}
 		case "kill!" ⇒ {
-			println("@surface-renderer-actor exiting...")
-			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
 			context.stop(self)
 		}
 	}
@@ -75,7 +92,7 @@ class RendererActor(val renderer:TestRobot) extends Actor {
 // == TestRobot and Renderer ========================================================
 
 object TestRobot extends App {
-	SurfaceExecutorService.configure
+	SurfaceExecutorService.configure(50)
 
 	start
 
@@ -130,6 +147,8 @@ class TestRobot extends SurfaceRenderer {
     
     val clearColor = Rgba.Grey90
     val gridColor = Rgba.Grey40
+    val xAxisColor = Rgba(0.6,0,0.7,1)
+    val yAxisColor = Rgba(0.9,0.7,0,1)
     
     var gridShader:ShaderProgram = null
     
@@ -163,6 +182,7 @@ class TestRobot extends SurfaceRenderer {
 	    initTextures("Robot2.png")
         initArmatures("Robot2.svg")
 	    initGeometry
+	    initBehaviors
 	    
 	    camera.viewCartesian(0, 10, 10)
 	    camera.setFocus(0, 2, 0)
@@ -210,7 +230,7 @@ class TestRobot extends SurfaceRenderer {
 	protected def initGeometry() {
 		import VertexAttribute._
 
-		grid.setXYGrid(1f, 1f, 0f, 0f, 20, 20, 0.1f, 0.1f, gridColor)
+		grid.setXYGrid(1f, 1f, 0f, 0f, 20, 20, 0.1f, 0.1f, gridColor, xAxisColor, yAxisColor)
 		grid.newVertexArray(gl, gridShader, Vertex -> "position", Color -> "color")
 
 		armature = libraries.armatures.get(gl, "armature-test")
@@ -221,6 +241,75 @@ class TestRobot extends SurfaceRenderer {
 		(armature \\ "mouthoh").visible = false
 		
 		println(armature.toIndentedString)
+	}
+
+	var behavior:Behavior = null
+
+	protected def initBehaviors() {
+		(armature \\ "lleg").angle     = -0.3
+		(armature \\ "lforeleg").angle =  0.3
+		(armature \\ "lfoot").angle    =  0.0
+
+		behavior = upRLeg(Platform.currentTime)
+	}
+
+	def upRLeg(t:Long):Behavior = {
+		val b = new AggregateBehavior("rup",
+			new InterpolateToAngleBehavior("leg",     (armature \\ "rleg"),      0.7, t+100),
+			new InterpolateToAngleBehavior("foreleg", (armature \\ "rforeleg"), -0.5, t+100),
+			new InterpolateToAngleBehavior("foot",    (armature \\ "rfoot"),    -0.2, t+100)
+		)
+		b.start(t)
+		b
+	}
+
+	def downRLeg(t:Long):Behavior = {
+		val b = new AggregateBehavior("rdown",
+			new InterpolateToAngleBehavior("leg",     (armature \\ "rleg"),      0.3, t+100),
+			new InterpolateToAngleBehavior("foreleg", (armature \\ "rforeleg"), -0.3, t+100),
+			new InterpolateToAngleBehavior("foot",    (armature \\ "rfoot"),     0.0, t+100)
+		)
+		b.start(t)
+		b
+	}
+
+	def moveRight(t:Long):Behavior = {
+		val b = new AggregateBehavior("goright", 
+			new InterpolateMoveBehavior(   "body",    (armature \\ "root"),     (0.025, 0), t+100),
+			new InterpolateToAngleBehavior("leg",     (armature \\ "lleg"),     -0.4,       t+100),
+			new InterpolateToAngleBehavior("foreleg", (armature \\ "lforeleg"),  0.0,       t+100),
+			new InterpolateToAngleBehavior("foot",    (armature \\ "lfoot"),     0.1,       t+100)
+		)
+		b.start(t)
+		b
+	}
+
+	def upLLeg(t:Long):Behavior = {
+		val b = new AggregateBehavior("lup",
+			new InterpolateToAngleBehavior(   "leg",     (armature \\ "lleg"),     -0.7,       t+100),
+			new InterpolateToAngleBehavior(   "foreleg", (armature \\ "lforeleg"),  0.5,       t+100),
+			new InterpolateToAngleBehavior(   "foot",    (armature \\ "lfoot"),     0.2,       t+100)
+		)
+		b.start(t)
+		b
+	}
+
+	def downLLeg(t:Long):Behavior = {
+		val b = new AggregateBehavior("ldown",
+			new InterpolateToAngleBehavior("leg",     (armature \\ "lleg"),     -0.3, t+100),
+			new InterpolateToAngleBehavior("foreleg", (armature \\ "lforeleg"),  0.3, t+100),
+			new InterpolateToAngleBehavior("foot",    (armature \\ "lfoot"),     0.0, t+100)
+		)
+		b.start(t)
+		b
+	}
+
+	def moveLeft(t:Long):Behavior = {
+		val b = new AggregateBehavior("goleft",
+				new InterpolateToPositionBehavior("body", (armature \\ "root"), (0, 0), t+100)
+		)
+		b.start(t)
+		b
 	}
 	
 	def reshape(surface:Surface) {
@@ -234,8 +323,14 @@ class TestRobot extends SurfaceRenderer {
 		camera.orthographic(axes.x.from*ratio*zoom, axes.x.to*ratio*zoom, axes.y.from*zoom, axes.y.to*zoom, axes.z.to, axes.z.from)
 	}
 	
+//private[this] var T = 0L
+
 	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+//	    var t = Platform.currentTime
+//	    var d = t - T
+//	    T = t
 
 	    animate
 
@@ -248,6 +343,7 @@ class TestRobot extends SurfaceRenderer {
 
 	    surface.swapBuffers
 	    gl.checkErrors
+//println("animate T = %d".format(d))
 	}
 
 	protected def displayGrid() {
@@ -255,103 +351,110 @@ class TestRobot extends SurfaceRenderer {
 		camera.setUniformMVP(gridShader)
 		grid.lastVertexArray.draw(grid.drawAs)
 	}
-	
-	case class JointAnim(var from:Double, var to:Double, var step:Double) {
-		var value = from
-
-		def animate():Double = {
-			value += step 
-
-			if(value > to)
-				{ value = to; step = -step }
-			else if(value < from)
-				{ value = from; step = -step }
-
-			value
-		}
-	}
-
-	case class FireTimer(val duration:Int) {
-		protected var time = 0
-
-		def animate():Boolean = {
-			time += 1
-
-			if(time == duration) {
-				time = 0
-				true
-			} else {
-				false
-			}
-		}
-	}
-
-	case class TwoStatesTimer(val duration1:Int, val duration2:Int) {
-		protected var time = 0
-		var state =  false
-
-		def animate():Boolean = {
-			time += 1
-
-			if(state && time == duration1) {
-				time = 0
-				state = ! state
-			} else if(!state && time == duration2) {
-				time = 0
-				state = ! state
-			}
-
-			state
-		}
-	}
-
-	val bipAnim     = TwoStatesTimer(30, 30)
-	val grinAnim    = TwoStatesTimer(60, 20)
-	val antenaAnim  = JointAnim(-0.2, 0.2, 0.02)
-	val antenaScale = JointAnim(-0.2, 0, 0.04)
-	val larmAnim    = JointAnim(-0.2, 0.2, 0.03)
-	val rarmAnim    = JointAnim(-0.2, 0.2, 0.03)
-	val headAnim    = JointAnim(-0.1, 0.1, 0.01)
-	val clawAnim    = JointAnim(-0.2, 0.2, 0.06)
-	val bodyAnim    = JointAnim(-0.1, 0.1, 0.02)
 
 	def animate() {
-		val bip = bipAnim.animate
-		(armature \\ "bipbip2").visible = bip
-		(armature \\ "bipbip1").visible = ! bip
+		if(behavior ne null)
+			behavior.animate(Platform.currentTime)
+	}	
+}
 
-		val grin = grinAnim.animate
-		(armature \\ "mouthgrin").visible = grin
-		(armature \\ "mouthoh").visible = ! grin
 
-		if(grin) {
-			(armature \\ "leyebrow").angle = 0
-			(armature \\ "reyebrow").angle = 0
-		} else {
-			(armature \\ "leyebrow").angle =  0.2
-			(armature \\ "reyebrow").angle = -0.2		
+// -- Behaviors ----------------------------------------------------------------------------
+
+
+abstract class Behavior(val name:String) {
+	def start(t:Long)
+	def animate(t:Long)
+	def finished(t:Long):Boolean
+}
+
+class AggregateBehavior(name:String, val behaviors:Behavior *) extends Behavior(name) {
+	def start(t:Long) { behaviors.foreach { _.start(t) } }
+	def animate(t:Long) { behaviors.foreach { _.animate(t) } }
+	def finished(t:Long):Boolean = { behaviors.find { b => b.finished(t) == false } match {
+			case None => true
+			case _    => false
 		}
-
-		(armature \\ "antena").angle = antenaAnim.animate
-		(armature \\ "antena").scale.set(1, 1+antenaScale.animate)
-
-		(armature \\ "head").angle   = headAnim.animate 
-		(armature \\ "larm").angle   = larmAnim.animate
-		(armature \\ "rarm").angle   = -rarmAnim.animate
-
-		val clawAngle = clawAnim.animate
-
-		(armature \\ "lupclaw").angle   =  clawAngle
-		(armature \\ "ldownclaw").angle = -clawAngle
-		(armature \\ "rupclaw").angle   = -clawAngle
-		(armature \\ "rdownclaw").angle =  clawAngle
-
-		val value = bodyAnim.animate
-		(armature \\ "root").translation.set(value*0.1, 0)
-		(armature \\ "lleg").angle = value //translation.set(0,  value*0.001)
-		(armature \\ "rleg").angle = -value//   translation.set(0, -value*0.001)
 	}
 }
+
+abstract class JointBehavior(name:String, val joint:Joint) extends Behavior(name) {
+}
+
+abstract class InterpolateBehavior(name:String, joint:Joint, val to:Long) extends JointBehavior(name, joint) {
+	var from:Double = 0.0
+	
+	def start(t:Long) {	from = t }
+
+	protected def interpolation(t:Long):Double = (t-from).toDouble / (to-from).toDouble
+
+	def finished(t:Long):Boolean =  (t >= to)
+}
+
+class InterpolateToAngleBehavior(name:String, joint:Joint, val targetAngle:Double, to:Long) extends InterpolateBehavior(name, joint, to) {
+	var startAngle:Double = 0.0
+
+	override def start(t:Long) {
+		super.start(t)
+		startAngle = joint.angle
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.angle = targetAngle
+		} else {
+			joint.angle = startAngle + ((targetAngle - startAngle) * interpolation(t))
+//println("joint %s angle %f (%% == %f)".format(joint.name, joint.angle, percent))
+		}
+	}
+}
+
+// XXX TODO redo this with Point2 and arimthemtic operators !!! XXX
+class InterpolateToPositionBehavior(name:String, joint:Joint, val targetPosition:(Double,Double), to:Long) extends InterpolateBehavior(name, joint, to) {
+	var startPosition = new Point2(0,0)
+
+	override def start(t:Long) {
+		super.start(t)
+		startPosition.copy(joint.translation)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.translation.set(targetPosition._1, targetPosition._2)
+		} else {
+			val interp =  interpolation(t)
+			joint.translation.set(
+				startPosition.x + ((targetPosition._1 - startPosition.x) * interp),
+				startPosition.y + ((targetPosition._2 - startPosition.y) * interp)
+			)
+		}
+	}
+}
+
+class InterpolateMoveBehavior(name:String, joint:Joint, val displacement:(Double,Double), to:Long) extends InterpolateBehavior(name, joint, to) {
+	var startPosition = new Point2(0,0)
+
+	override def start(t:Long) {
+		super.start(t)
+		startPosition.copy(joint.translation)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.translation.set(startPosition.x + displacement._1, startPosition.y + displacement._2)
+		} else {
+			val interp = interpolation(t)
+			joint.translation.set(
+				startPosition.x + (displacement._1 * interp),
+				startPosition.y + (displacement._2 * interp)
+			)
+		}
+	}
+}
+
+
+// -- User Interaction ---------------------------------------------------------------------------
+
 
 class RobotCameraController(camera:Camera, val renderer:TestRobot) extends BasicCameraController(camera) {
 	val oldPos = Point3(0,0,0)
