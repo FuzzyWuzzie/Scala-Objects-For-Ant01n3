@@ -53,26 +53,28 @@ class RendererActor(val renderer:TestRobot) extends Actor {
 				count += 1
 				
 				if(renderer.behavior.finished(T)) {
-					if(renderer.behavior.name == "rup") {
-						println("goright")
-						renderer.behavior = renderer.moveRight(T)
-					} else if(renderer.behavior.name == "goright") {
-						println("rdown")
-						renderer.behavior = renderer.downRLeg(T)
-					} else if(renderer.behavior.name == "rdown") {
-						println("lup")
-						renderer.behavior = renderer.upLLeg(T)
-					} else if(renderer.behavior.name == "lup") {
-						println("ldown")
-						renderer.behavior = renderer.downLLeg(T)
-					} else if(renderer.behavior.name == "ldown") {
-						//println("goleft")
-						//renderer.behavior = renderer.moveLeft(T)
-					//} else if( renderer.behavior.name == "goleft") {
-						println("rup")
-						renderer.behavior = renderer.upRLeg(T)
-					}
-				}
+					renderer.behavior.start(T)
+				} 
+
+					// if(renderer.behavior.name == "rup") {
+					// 	println("goright")
+					// 	renderer.behavior = renderer.moveRight(T)
+					// } else if(renderer.behavior.name == "goright") {
+					// 	println("rdown")
+					// 	renderer.behavior = renderer.downRLeg(T)
+					// } else if(renderer.behavior.name == "rdown") {
+					// 	println("lup")
+					// 	renderer.behavior = renderer.upLLeg(T)
+					// } else if(renderer.behavior.name == "lup") {
+					// 	println("ldown")
+					// 	renderer.behavior = renderer.downLLeg(T)
+					// } else if(renderer.behavior.name == "ldown") {
+					// 	//println("goleft")
+					// 	//renderer.behavior = renderer.moveLeft(T)
+					// //} else if( renderer.behavior.name == "goleft") {
+					// 	println("rup")
+					// 	renderer.behavior = renderer.upRLeg(T)
+					// }
 			}
 //			println("T=%d".format(duration))
 		}
@@ -107,7 +109,7 @@ object TestRobot extends App {
 		caps.setSampleBuffers(true)
 		caps.setNumSamples(8)
 
-        renderer.ctrl           = new RobotCameraController(renderer.camera, renderer)
+        renderer.ctrl           = new RobotInteraction(renderer.camera, renderer)
 	    renderer.initSurface    = renderer.initializeSurface
 	    renderer.frame          = renderer.display
 	    renderer.surfaceChanged = renderer.reshape
@@ -250,67 +252,47 @@ class TestRobot extends SurfaceRenderer {
 		(armature \\ "lforeleg").angle =  0.3
 		(armature \\ "lfoot").angle    =  0.0
 
-		behavior = upRLeg(Platform.currentTime)
+		behavior = walkRight.start(Platform.currentTime) //upRLeg(Platform.currentTime)
 	}
 
-	def upRLeg(t:Long):Behavior = {
-		val b = new AggregateBehavior("rup",
-			new InterpolateToAngleBehavior("leg",     (armature \\ "rleg"),      0.7, t+100),
-			new InterpolateToAngleBehavior("foreleg", (armature \\ "rforeleg"), -0.5, t+100),
-			new InterpolateToAngleBehavior("foot",    (armature \\ "rfoot"),    -0.2, t+100)
-		)
-		b.start(t)
-		b
-	}
+	def walkRight:Behavior = new DoInSequence("walkRight", upRLeg, moveRight, downRLeg, upLLeg, downLLeg)
 
-	def downRLeg(t:Long):Behavior = {
-		val b = new AggregateBehavior("rdown",
-			new InterpolateToAngleBehavior("leg",     (armature \\ "rleg"),      0.3, t+100),
-			new InterpolateToAngleBehavior("foreleg", (armature \\ "rforeleg"), -0.3, t+100),
-			new InterpolateToAngleBehavior("foot",    (armature \\ "rfoot"),     0.0, t+100)
-		)
-		b.start(t)
-		b
-	}
+	private[this] final val durationMs = 100
 
-	def moveRight(t:Long):Behavior = {
-		val b = new AggregateBehavior("goright", 
-			new InterpolateMoveBehavior(   "body",    (armature \\ "root"),     (0.025, 0), t+100),
-			new InterpolateToAngleBehavior("leg",     (armature \\ "lleg"),     -0.4,       t+100),
-			new InterpolateToAngleBehavior("foreleg", (armature \\ "lforeleg"),  0.0,       t+100),
-			new InterpolateToAngleBehavior("foot",    (armature \\ "lfoot"),     0.1,       t+100)
+	def upRLeg:Behavior = new DoInParallel("upRLeg",
+			new InterpToAngle("a", (armature \\ "rleg"),      0.7, durationMs),
+			new InterpToAngle("b", (armature \\ "rforeleg"), -0.5, durationMs),
+			new InterpToAngle("c", (armature \\ "rfoot"),    -0.2, durationMs)
 		)
-		b.start(t)
-		b
-	}
 
-	def upLLeg(t:Long):Behavior = {
-		val b = new AggregateBehavior("lup",
-			new InterpolateToAngleBehavior(   "leg",     (armature \\ "lleg"),     -0.7,       t+100),
-			new InterpolateToAngleBehavior(   "foreleg", (armature \\ "lforeleg"),  0.5,       t+100),
-			new InterpolateToAngleBehavior(   "foot",    (armature \\ "lfoot"),     0.2,       t+100)
+	def downRLeg:Behavior = new DoInParallel("downRLeg",
+			new InterpToAngle("a", (armature \\ "rleg"),      0.3, durationMs),
+			new InterpToAngle("b", (armature \\ "rforeleg"), -0.3, durationMs),
+			new InterpToAngle("c", (armature \\ "rfoot"),     0.0, durationMs)
 		)
-		b.start(t)
-		b
-	}
 
-	def downLLeg(t:Long):Behavior = {
-		val b = new AggregateBehavior("ldown",
-			new InterpolateToAngleBehavior("leg",     (armature \\ "lleg"),     -0.3, t+100),
-			new InterpolateToAngleBehavior("foreleg", (armature \\ "lforeleg"),  0.3, t+100),
-			new InterpolateToAngleBehavior("foot",    (armature \\ "lfoot"),     0.0, t+100)
+	def moveRight:Behavior = new DoInParallel("moveRight",
+			new InterpMove("a",    (armature \\ "root"),     (0.025, 0), durationMs),
+			new InterpToAngle("b", (armature \\ "lleg"),     -0.4,       durationMs),
+			new InterpToAngle("c", (armature \\ "lforeleg"),  0.0,       durationMs),
+			new InterpToAngle("d", (armature \\ "lfoot"),     0.1,       durationMs)
 		)
-		b.start(t)
-		b
-	}
 
-	def moveLeft(t:Long):Behavior = {
-		val b = new AggregateBehavior("goleft",
-				new InterpolateToPositionBehavior("body", (armature \\ "root"), (0, 0), t+100)
+	def upLLeg:Behavior = new DoInParallel("upLLeg",
+			new InterpToAngle("a", (armature \\ "lleg"),     -0.7, durationMs),
+			new InterpToAngle("b", (armature \\ "lforeleg"),  0.5, durationMs),
+			new InterpToAngle("c", (armature \\ "lfoot"),     0.2, durationMs)
 		)
-		b.start(t)
-		b
-	}
+
+	def downLLeg:Behavior = new DoInParallel("downLLeg",
+			new InterpToAngle("a", (armature \\ "lleg"),     -0.3, durationMs),
+			new InterpToAngle("b", (armature \\ "lforeleg"),  0.3, durationMs),
+			new InterpToAngle("c", (armature \\ "lfoot"),     0.0, durationMs)
+		)
+
+	def moveLeft(t:Long):Behavior = new DoInParallel("moveLeft",
+				new InterpToPosition("a", (armature \\ "root"), (0, 0), durationMs)
+		)
 	
 	def reshape(surface:Surface) {
 	    camera.viewportPx(surface.width, surface.height)
@@ -363,13 +345,15 @@ class TestRobot extends SurfaceRenderer {
 
 
 abstract class Behavior(val name:String) {
-	def start(t:Long)
+	def start(t:Long):Behavior
 	def animate(t:Long)
 	def finished(t:Long):Boolean
+
+	override def toString():String = "%s".format(name)
 }
 
-class AggregateBehavior(name:String, val behaviors:Behavior *) extends Behavior(name) {
-	def start(t:Long) { behaviors.foreach { _.start(t) } }
+class DoInParallel(name:String, val behaviors:Behavior *) extends Behavior(name) {
+	def start(t:Long):Behavior = { behaviors.foreach { _.start(t) }; this }
 	def animate(t:Long) { behaviors.foreach { _.animate(t) } }
 	def finished(t:Long):Boolean = { behaviors.find { b => b.finished(t) == false } match {
 			case None => true
@@ -378,25 +362,53 @@ class AggregateBehavior(name:String, val behaviors:Behavior *) extends Behavior(
 	}
 }
 
-abstract class JointBehavior(name:String, val joint:Joint) extends Behavior(name) {
+class DoInSequence(name:String, b:Behavior *) extends Behavior(name) {
+	val behaviors = b.toArray
+	
+	var index = 0
+
+	def start(t:Long):Behavior = {
+		index = 0
+		behaviors(index).start(t)
+		this
+	}
+	
+	def animate(t:Long) { 
+		if(index < behaviors.length) {
+			if(behaviors(index).finished(t)) {
+				index += 1
+				if(index < behaviors.length)
+					behaviors(index).start(t)
+			}
+			if(index < behaviors.length) {
+				behaviors(index).animate(t)
+			}
+		}
+	}
+
+	def finished(t:Long):Boolean = (index >= behaviors.length)
 }
 
-abstract class InterpolateBehavior(name:String, joint:Joint, val to:Long) extends JointBehavior(name, joint) {
-	var from:Double = 0.0
+abstract class JointBehavior(name:String, val joint:Joint) extends Behavior(name) {}
+
+abstract class InterpolateBehavior(name:String, joint:Joint, val duration:Long) extends JointBehavior(name, joint) {
+	var from = 0L
+
+	var to = 0L
 	
-	def start(t:Long) {	from = t }
+	def start(t:Long):Behavior = { from = t; to = t + duration; this }
 
 	protected def interpolation(t:Long):Double = (t-from).toDouble / (to-from).toDouble
 
-	def finished(t:Long):Boolean =  (t >= to)
+	def finished(t:Long):Boolean = (t >= to)
 }
 
-class InterpolateToAngleBehavior(name:String, joint:Joint, val targetAngle:Double, to:Long) extends InterpolateBehavior(name, joint, to) {
+class InterpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:Long) extends InterpolateBehavior(name, joint, duration) {
 	var startAngle:Double = 0.0
 
-	override def start(t:Long) {
-		super.start(t)
+	override def start(t:Long):Behavior = {
 		startAngle = joint.angle
+		super.start(t)
 	}
 
 	def animate(t:Long) {
@@ -409,13 +421,12 @@ class InterpolateToAngleBehavior(name:String, joint:Joint, val targetAngle:Doubl
 	}
 }
 
-// XXX TODO redo this with Point2 and arimthemtic operators !!! XXX
-class InterpolateToPositionBehavior(name:String, joint:Joint, val targetPosition:(Double,Double), to:Long) extends InterpolateBehavior(name, joint, to) {
+class InterpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
 	var startPosition = new Point2(0,0)
 
-	override def start(t:Long) {
-		super.start(t)
+	override def start(t:Long):Behavior = {
 		startPosition.copy(joint.translation)
+		super.start(t)
 	}
 
 	def animate(t:Long) {
@@ -431,12 +442,12 @@ class InterpolateToPositionBehavior(name:String, joint:Joint, val targetPosition
 	}
 }
 
-class InterpolateMoveBehavior(name:String, joint:Joint, val displacement:(Double,Double), to:Long) extends InterpolateBehavior(name, joint, to) {
+class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
 	var startPosition = new Point2(0,0)
 
-	override def start(t:Long) {
-		super.start(t)
+	override def start(t:Long):Behavior = {
 		startPosition.copy(joint.translation)
+		super.start(t)
 	}
 
 	def animate(t:Long) {
@@ -456,7 +467,7 @@ class InterpolateMoveBehavior(name:String, joint:Joint, val displacement:(Double
 // -- User Interaction ---------------------------------------------------------------------------
 
 
-class RobotCameraController(camera:Camera, val renderer:TestRobot) extends BasicCameraController(camera) {
+class RobotInteraction(camera:Camera, val renderer:TestRobot) extends BasicCameraController(camera) {
 	val oldPos = Point3(0,0,0)
 	
 	val vector = Vector3()
