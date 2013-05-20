@@ -36,6 +36,9 @@ object RendererActor {
 	}
 }
 
+
+
+/** Models the behavior of the robot (give hi-level orders). */
 class RendererActor(val renderer:TestRobot) extends Actor {
 	var count = 0
 	
@@ -53,28 +56,10 @@ class RendererActor(val renderer:TestRobot) extends Actor {
 				count += 1
 				
 				if(renderer.behavior.finished(T)) {
-					renderer.behavior.start(T)
+					if(renderer.behavior.name == "walkRight")
+					     renderer.behavior = renderer.walkLeft.start(T)
+					else renderer.behavior = renderer.walkRight.start(T)
 				} 
-
-					// if(renderer.behavior.name == "rup") {
-					// 	println("goright")
-					// 	renderer.behavior = renderer.moveRight(T)
-					// } else if(renderer.behavior.name == "goright") {
-					// 	println("rdown")
-					// 	renderer.behavior = renderer.downRLeg(T)
-					// } else if(renderer.behavior.name == "rdown") {
-					// 	println("lup")
-					// 	renderer.behavior = renderer.upLLeg(T)
-					// } else if(renderer.behavior.name == "lup") {
-					// 	println("ldown")
-					// 	renderer.behavior = renderer.downLLeg(T)
-					// } else if(renderer.behavior.name == "ldown") {
-					// 	//println("goleft")
-					// 	//renderer.behavior = renderer.moveLeft(T)
-					// //} else if( renderer.behavior.name == "goleft") {
-					// 	println("rup")
-					// 	renderer.behavior = renderer.upRLeg(T)
-					// }
 			}
 //			println("T=%d".format(duration))
 		}
@@ -257,6 +242,8 @@ class TestRobot extends SurfaceRenderer {
 
 	def walkRight:Behavior = new DoInSequence("walkRight", upRLeg, moveRight, downRLeg, upLLeg, downLLeg)
 
+	def walkLeft:Behavior = new DoInSequence("walkLeft", upLLeg, moveLeft, downLLeg, upRLeg, downRLeg)
+
 	private[this] final val durationMs = 100
 
 	def upRLeg:Behavior = new DoInParallel("upRLeg",
@@ -265,23 +252,16 @@ class TestRobot extends SurfaceRenderer {
 			new InterpToAngle("c", (armature \\ "rfoot"),    -0.2, durationMs)
 		)
 
-	def downRLeg:Behavior = new DoInParallel("downRLeg",
-			new InterpToAngle("a", (armature \\ "rleg"),      0.3, durationMs),
-			new InterpToAngle("b", (armature \\ "rforeleg"), -0.3, durationMs),
-			new InterpToAngle("c", (armature \\ "rfoot"),     0.0, durationMs)
-		)
-
-	def moveRight:Behavior = new DoInParallel("moveRight",
-			new InterpMove("a",    (armature \\ "root"),     (0.025, 0), durationMs),
-			new InterpToAngle("b", (armature \\ "lleg"),     -0.4,       durationMs),
-			new InterpToAngle("c", (armature \\ "lforeleg"),  0.0,       durationMs),
-			new InterpToAngle("d", (armature \\ "lfoot"),     0.1,       durationMs)
-		)
-
 	def upLLeg:Behavior = new DoInParallel("upLLeg",
 			new InterpToAngle("a", (armature \\ "lleg"),     -0.7, durationMs),
 			new InterpToAngle("b", (armature \\ "lforeleg"),  0.5, durationMs),
 			new InterpToAngle("c", (armature \\ "lfoot"),     0.2, durationMs)
+		)
+	
+	def downRLeg:Behavior = new DoInParallel("downRLeg",
+			new InterpToAngle("a", (armature \\ "rleg"),      0.3, durationMs),
+			new InterpToAngle("b", (armature \\ "rforeleg"), -0.3, durationMs),
+			new InterpToAngle("c", (armature \\ "rfoot"),     0.0, durationMs)
 		)
 
 	def downLLeg:Behavior = new DoInParallel("downLLeg",
@@ -290,8 +270,18 @@ class TestRobot extends SurfaceRenderer {
 			new InterpToAngle("c", (armature \\ "lfoot"),     0.0, durationMs)
 		)
 
-	def moveLeft(t:Long):Behavior = new DoInParallel("moveLeft",
-				new InterpToPosition("a", (armature \\ "root"), (0, 0), durationMs)
+	def moveLeft:Behavior = new DoInParallel("moveLeft",
+			new InterpMove("a",    (armature \\ "root"),    (-0.025, 0), durationMs),
+			new InterpToAngle("b", (armature \\ "rleg"),      0.4,       durationMs),
+			new InterpToAngle("c", (armature \\ "rforeleg"),  0.0,       durationMs),
+			new InterpToAngle("d", (armature \\ "rfoot"),    -0.1,       durationMs)
+		)
+	
+	def moveRight:Behavior = new DoInParallel("moveRight",
+			new InterpMove("a",    (armature \\ "root"),     (0.025, 0), durationMs),
+			new InterpToAngle("b", (armature \\ "lleg"),     -0.4,       durationMs),
+			new InterpToAngle("c", (armature \\ "lforeleg"),  0.0,       durationMs),
+			new InterpToAngle("d", (armature \\ "lfoot"),     0.1,       durationMs)
 		)
 	
 	def reshape(surface:Surface) {
