@@ -6,7 +6,7 @@ import java.awt.{Font => AWTFont, Color => AWTColor, RenderingHints => AWTRender
 import java.awt.image.BufferedImage
 import java.io.{File, IOException, InputStream, FileInputStream}
 import org.sofa.math.{Rgba,Matrix4}
-import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, TexParams, TexAlpha, TexMin, TexMag, TexWrap}
+import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, TexParams, TexAlpha, TexMin, TexMag, TexWrap, TexMipMap}
 import org.sofa.opengl.backend.{TextureImageAwt}
 import org.sofa.opengl.mesh.{QuadsMesh, VertexAttribute}
 
@@ -58,10 +58,20 @@ object GLFont {
 
 /** A font allowing to draw text in OpenGL.
   *
+  * The file indicate a file that appears in the font path. The size is the size 
+  * in pixels of the font. use the `isMipMapped` parameter to try to enable mip-maps
+  * for a font. This is typically useful when the font will be used in 3D or with
+  * a 2D view where the pixels are not matched one to one (the text may be zoomed
+  * for example). 
+  *
+  * If your text is rendered at a given pixel resolution, that never changes, the
+  * better rendering is to use no mip-maps. If your text is rendered in 3D or with
+  * a changing size or with any transformations, enable mip-maps for better quality.
+  *
   * This code is derived and largely inspired by the implementation of Fractious:
   * http://fractiousg.blogspot.fr/2012/04/rendering-text-in-opengl-on-android.html
   */
-class GLFont(val gl:SGL, file:String, val size:Int) {
+class GLFont(val gl:SGL, file:String, val size:Int, val isMipMapped:Boolean = false) {
 	/** Font height (actual, pixels). */
 	var height = 0f
 
@@ -81,10 +91,6 @@ class GLFont(val gl:SGL, file:String, val size:Int) {
 
 	/** The full texture region. */
 	var textureRgn:TextureRegion = null
-
-	var textureMin:Int = gl.NEAREST
-
-	var textureMag:Int = gl.LINEAR
 
 	//----------------------
 
@@ -117,18 +123,9 @@ class GLFont(val gl:SGL, file:String, val size:Int) {
 
 	//--------------------------
 
-	GLFont.loader.load(gl, file, size, this)
+	GLFont.loader.load(gl, file, size, this, isMipMapped)
 
 	//--------------------------
-
-	/** Set the minification and magnification filters for the glyph
-	  * texture. For 2D pixel perfect use, the NEAREST-LINEAR mode is better.
-	  * For 3D use the LINEAR-LINEAR mode is better. */
-	def minMagFilter(minFilter:Int, magFilter:Int) {
-		textureMin = minFilter
-		textureMag = magFilter
-		texture.minMagFilter(textureMin, textureMag)
-	}
 
 	/** Width of the given char, if unknown, returns the default character width. */
 	def charWidth(c:Char):Float = {
@@ -155,7 +152,8 @@ class GLFont(val gl:SGL, file:String, val size:Int) {
 
 /** Loader for fonts. */
 trait GLFontLoader {
-	def load(gl:SGL, file:String, size:Int, font:GLFont)
+	/** Try to load the given font file at the given size. */
+	def load(gl:SGL, file:String, size:Int, font:GLFont, mipmaps:Boolean = false)
 }
 
 
@@ -164,16 +162,18 @@ trait GLFontLoader {
 
 /** A fond loader that rasterize the text using AWT and Java2D. */
 class GLFontLoaderAWT extends GLFontLoader {
-	def load(gl:SGL, resource:String, size:Int, font:GLFont) {
+	def load(gl:SGL, resource:String, size:Int, font:GLFont, mipmaps:Boolean = false) {
+		// XXX This code has all the mechanic to create mipmaps by rendering several
+		// images using several fonts at various sizes. However this code is not used
+		// and mipmaps are actually generated automatically from the main image. This
+		// is because, indeed the text is crispier when rendered at various sizes, but
+		// hinting will offset text to match pixels and therefore produce strange
+		// artifacts.
+
 
 		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
 
 		font.isAlphaPremultiplied = true
-
-		// Load the font.
-
-		var theFont = loadFont(resource)
-		var awtFont = theFont.deriveFont(AWTFont.PLAIN, size.toFloat)
 
 		// Java2D forces me to create an image before I have access to font metrics
 		// However, I need font metrics to know the size of the image ... hum ...
@@ -182,23 +182,35 @@ class GLFontLoaderAWT extends GLFontLoader {
 		val h = size*1.4 		// idem
 		val textureSize = math.sqrt((w*1.1) * (h*1.1) * GLFont.CharCnt).toInt
 		
-//		val image = new BufferedImage(textureSize, textureSize, BufferedImage.TYPE_BYTE_GRAY)
-		val image = new BufferedImage(textureSize, textureSize, BufferedImage.TYPE_4BYTE_ABGR)	// <- Do not know yet why,
-		val gfx   = image.getGraphics.asInstanceOf[AWTGraphics2D]								// but rendering is far better.
+		val images = generateImages(textureSize, mipmaps)
+//		val images = generateImages(textureSize, false)
+		val gfx    = images.map { img => img.getGraphics.asInstanceOf[AWTGraphics2D] }
 
-		gfx.setRenderingHints(java.awt.Toolkit.getDefaultToolkit.getDesktopProperty("awt.font.desktophints").asInstanceOf[java.util.Map[String,String]])
+		// Load the font.
 
-//		gfx.setColor(new AWTColor(0f, 0f, 0f, 0.0f))	// By default the image contains (0,0,0,0) pixels,
-//		gfx.fillRect(0, 0, textureSize, textureSize)	// therefore the alpha is correct at start.
+		var theFont = loadFont(resource)
+		var awtFont = generateFonts(images.size, size, theFont)
 
-		gfx.setFont(awtFont)
-		gfx.setRenderingHint(AWTRenderingHints.KEY_TEXT_ANTIALIASING,
-//		                     AWTRenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB)
- 	 	 				     AWTRenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+		// By default images are filled with (0,0,0,0) pixels, so alpha is correct
+		// and the background is black as needed (we rendr text in white).
 
-		val metrics = gfx.getFontMetrics(awtFont)
+		val hints = java.awt.Toolkit.getDefaultToolkit.getDesktopProperty("awt.font.desktophints").asInstanceOf[java.util.Map[String,String]]
+		var level = 0
 
-		// Get Font metrics.
+		gfx.foreach { g =>
+			g.setRenderingHints(hints)
+			g.setFont(awtFont(level))
+			g.setRenderingHint(AWTRenderingHints.KEY_TEXT_ANTIALIASING,
+ 	 	 					   AWTRenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+			if(mipmaps)
+				g.setRenderingHint(AWTRenderingHints.KEY_FRACTIONALMETRICS,			// Avoid repositionning glyphs on the pixel grid. 
+								   AWTRenderingHints.VALUE_FRACTIONALMETRICS_ON)	// We will do this ourselves.
+			level += 1
+		}
+
+		val metrics = gfx(0).getFontMetrics(awtFont(0))
+
+		// Get Font metrics (from one gfx, others are the same).
 
 		font.height  = metrics.getHeight
 		font.ascent  = metrics.getAscent
@@ -239,38 +251,26 @@ class GLFontLoaderAWT extends GLFontLoader {
 		font.colCnt = textureSize / font.cellWidth
 		font.rowCnt = (math.ceil(GLFont.CharCnt.toFloat / font.colCnt.toFloat)).toInt
 
-		// Render each of the character to the image.
+		// Render each of the character to the image(s).
 
-		var x = padX
-		var y = ((font.cellHeight - 1) - font.descent).toInt
+		level = 1
+		var i = 0
 
-		c = GLFont.CharStart
-
-		gfx.setColor(AWTColor.white)
-
-		while(c < GLFont.CharEnd) {
-			gfx.drawString("%c".format(c), x, y)
-
-			x += font.cellWidth
-
-			if((x + font.cellWidth) >= textureSize) {
-				x  = padX
-				y += font.cellHeight
-			}
-
-			c += 1
-		}
+		images.foreach { img => renderImage(img, textureSize, gfx(i), font, padX, level); level *= 2; i += 1 }
 
 		// Generate a new texture.
 
-		val texParams = TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Linear,magFilter=TexMag.Linear,wrap=TexWrap.Clamp)
-		font.texture  = new Texture(gl, new TextureImageAwt(ArrayBuffer(image), texParams), texParams)
+		val texParams = if(mipmaps)
+				 TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.LinearAndMipMapLinear,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.Load)
+			else TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Linear,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.No)
+		
+		font.texture = new Texture(gl, new TextureImageAwt(images, texParams), texParams)
 
 		// Setup the array of character texture regions.
 
-		x = padX
-		y = 0
-		c = 0
+		var x = padX
+		var y = 0
+		    c = 0
 
 		font.pad = font.charWidthMax * 0.1f
 
@@ -309,6 +309,67 @@ class GLFontLoaderAWT extends GLFontLoader {
                 case None => { throw new IOException("cannot locate font %s".format(resource)) }
             }
         }
+	}
+
+	/** Either generate one image or several depending on the mipmap paramter. */
+	protected def generateImages(textureSize:Int, mipmaps:Boolean):ArrayBuffer[BufferedImage] = {
+		val images = new ArrayBuffer[BufferedImage]()
+		var size   = textureSize
+
+		if(mipmaps) {
+			while(size > 0) {
+println("*** generating image size=%d".format(size))
+				images += new BufferedImage(size, size, BufferedImage.TYPE_4BYTE_ABGR) 
+				size /= 2
+			}
+		} else {
+			images += new BufferedImage(size, size, BufferedImage.TYPE_4BYTE_ABGR)
+		}
+
+		images
+	}
+
+	/** Generate fonts fro each mipmap level */
+	protected def generateFonts(count:Int, size:Int, theFont:AWTFont):ArrayBuffer[AWTFont] = {
+		val fonts = new ArrayBuffer[AWTFont]()
+		var sz    = size
+
+		for(level <- 1 to count) {
+println("*** generating level %d font size %d".format(level, sz))
+			fonts += theFont.deriveFont(AWTFont.PLAIN, sz.toFloat)
+			sz    /= 2
+		}
+
+		fonts
+	}
+
+	protected def renderImage(image:BufferedImage, textureSize:Int, gfx:AWTGraphics2D, font:GLFont, padX:Double, div:Int) {
+// XXX TODO if size < 50 for example stop rendering.
+// XXX OGL ES requires a full mip map pyramid, but it has no meaning
+// XXX to render text so small.
+
+		var size = textureSize / div
+		val cw   = font.cellWidth / div
+		val ch   = font.cellHeight / div
+		var x    = padX / div
+		var y    = ((ch - 1) - (font.descent/div)).toInt
+		var c    = GLFont.CharStart
+
+		gfx.setColor(AWTColor.white)
+
+		while(c < GLFont.CharEnd) {
+			gfx.drawString("%c".format(c), x.toInt, y.toInt)
+
+			x += cw
+
+			if((x + cw) >= size) {
+				x  = padX / div
+				y += ch
+			}
+
+			c += 1
+		}
+
 	}
 }
 

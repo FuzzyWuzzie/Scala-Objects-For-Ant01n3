@@ -95,16 +95,12 @@ class TestText extends SurfaceRenderer {
 	}
 
 	def initGLText() {
-		println("unpack alignment = %d".format(gl.getInteger(gl.UNPACK_ALIGNMENT)))
-
 		GLFont.path += "/Users/antoine/Library/Fonts"
 
-		font = new GLFont(gl, "Ubuntu-R.ttf", 40)
+		font = new GLFont(gl, "Ubuntu-R.ttf", 80, true)
 //		font = new GLFont(gl, "DroidSerif-Italic.ttf", 100)
 //		font = new GLFont(gl, "SourceSansPro-Black.ttf", 100)
 		text = new GLString(gl, font, 256, textShad)
-
-		font.minMagFilter(gl.LINEAR, gl.LINEAR)
 
 		text.setColor(Rgba.Grey20)
 		text.build("This is GL text !")

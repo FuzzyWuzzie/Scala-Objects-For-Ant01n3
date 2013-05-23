@@ -118,10 +118,6 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		subFont = new GLFont(gl, "Ubuntu-B.ttf", 30)
 		stdFont = new GLFont(gl, "Ubuntu-B.ttf", 25)
 		
-		heaFont.minMagFilter(gl.LINEAR, gl.LINEAR)
-		subFont.minMagFilter(gl.LINEAR, gl.LINEAR)
-		stdFont.minMagFilter(gl.LINEAR, gl.LINEAR)
-
 		text(0) = new GLString(gl, heaFont, 256, textShad);	text(4) = new GLString(gl, heaFont, 256, textShad)
 		text(1) = new GLString(gl, subFont, 256, textShad);	text(5) = new GLString(gl, subFont, 256, textShad)
 		text(2) = new GLString(gl, stdFont, 256, textShad);	text(6) = new GLString(gl, stdFont, 256, textShad)
@@ -259,7 +255,6 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		gl.clearColor(clearColor)
 		gl.viewport(0, 0, surface.width, surface.height)
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-		gl.frontFace(gl.CW)
 		
 		camera.viewLookAt
 
@@ -272,6 +267,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 
 		// Planes
 		
+		gl.frontFace(gl.CW)
 		camera.pushpop {
 			phongShad.use
 			useLights(phongShad)
@@ -280,6 +276,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 			wall(Ground).draw(wallMesh(Ground).drawAs)
 		}
 		
+		gl.frontFace(gl.CCW)
 		camera.pushpop {
 			spyceShad.use
 			fb.bindColorTextureTo(gl.TEXTURE0)
