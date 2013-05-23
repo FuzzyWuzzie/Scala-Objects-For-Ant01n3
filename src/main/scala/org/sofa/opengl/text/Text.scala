@@ -6,7 +6,7 @@ import java.awt.{Font => AWTFont, Color => AWTColor, RenderingHints => AWTRender
 import java.awt.image.BufferedImage
 import java.io.{File, IOException, InputStream, FileInputStream}
 import org.sofa.math.{Rgba,Matrix4}
-import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, TexParams}
+import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, TexParams, TexAlpha, TexMin, TexMag, TexWrap}
 import org.sofa.opengl.backend.{TextureImageAwt}
 import org.sofa.opengl.mesh.{QuadsMesh, VertexAttribute}
 
@@ -149,9 +149,18 @@ class GLFont(val gl:SGL, file:String, val size:Int) {
 	}
 }
 
+
+// -- GLFontLoader --------------------------------------------------------------------------------------------
+
+
+/** Loader for fonts. */
 trait GLFontLoader {
 	def load(gl:SGL, file:String, size:Int, font:GLFont)
 }
+
+
+// -- GLFontLoader AWT ----------------------------------------------------------------------------------------
+
 
 /** A fond loader that rasterize the text using AWT and Java2D. */
 class GLFontLoaderAWT extends GLFontLoader {
@@ -159,7 +168,7 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
 
-		font.isAlphaPremultiplied = false
+		font.isAlphaPremultiplied = true
 
 		// Load the font.
 
@@ -254,9 +263,8 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 		// Generate a new texture.
 
-		font.texture = new Texture(gl, new TextureImageAwt(ArrayBuffer(image), TexParams()), TexParams())
-		font.texture.minMagFilter(gl.NEAREST, gl.LINEAR)
-		font.texture.wrap(gl.CLAMP_TO_EDGE)
+		val texParams = TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Nearest,magFilter=TexMag.Linear,wrap=TexWrap.Clamp)
+		font.texture  = new Texture(gl, new TextureImageAwt(ArrayBuffer(image), texParams), texParams)
 
 		// Setup the array of character texture regions.
 
@@ -304,6 +312,10 @@ class GLFontLoaderAWT extends GLFontLoader {
 	}
 }
 
+
+// -- Texture Region ----------------------------------------------------------------------------------------------------
+
+
 /** Region in a texture that identify a character.
   *
   * @param u1 left
@@ -322,6 +334,10 @@ class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
 		this(x/texSize, y/texSize, (x+width)/texSize, (y-height)/texSize)
 	}
 }
+
+
+// -- GLString ----------------------------------------------------------------------------------------------------------
+
 
 /** A single string of text.
   * 
@@ -418,9 +434,17 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 		batchMesh.updateVertexArray(gl, true, false, false, true)
 	}
 
+	/** Draw the string with the baseline at (0,0). Use the translation of the camera. */
 	def draw(camera:Camera) {
-		val ff = gl.getInteger(gl.FRONT_FACE)
+		val ff  = gl.getInteger(gl.FRONT_FACE)
+		val src = gl.getInteger(gl.BLEND_SRC) 
+		val dst = gl.getInteger(gl.BLEND_DST)
+
+		if(font.isAlphaPremultiplied)
+			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+		else gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 		gl.frontFace(gl.CCW)
+
 		shader.use
 		font.texture.bindTo(gl.TEXTURE0)
 	    shader.uniform("texColor", 0)
@@ -428,20 +452,23 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	    camera.setUniformMVP(shader)
 		batch.draw(batchMesh.drawAs, p)
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?		
+		
+		gl.blendFunc(src, dst)
 		gl.frontFace(ff)
 	}
 
 	/** Draw the string with the baseline at (0,0). Use translation of the current MVP. */
 	def draw(mvp:Matrix4) {
-		shader.use
-
+		val ff  = gl.getInteger(gl.FRONT_FACE)
 		val src = gl.getInteger(gl.BLEND_SRC) 
 		val dst = gl.getInteger(gl.BLEND_DST)
 
 		if(font.isAlphaPremultiplied)
 			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 		else gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+		gl.frontFace(gl.CCW)
 
+		shader.use
 		font.texture.bindTo(gl.TEXTURE0)
 	    shader.uniform("texColor", 0)
 	    shader.uniform("textColor", color)
@@ -450,6 +477,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?
 
 		gl.blendFunc(src, dst)
+		gl.frontFace(ff)
 	}
 
 	/** Define a quad for a character at current `x` position.
