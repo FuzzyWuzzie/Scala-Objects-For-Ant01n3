@@ -55,10 +55,10 @@ class RendererActor(val renderer:TestRobot) extends Actor {
 			} else {
 				count += 1
 				
-				if(renderer.behavior.finished(T)) {
-					if(renderer.behavior.name == "walkRight")
-					     renderer.behavior = renderer.walkLeft.start(T)
-					else renderer.behavior = renderer.walkRight.start(T)
+				if(renderer.robotBehavior.behavior.finished(T)) {
+					if(renderer.robotBehavior.behavior.name == "walkRight")
+					     renderer.robotBehavior.behavior = renderer.robotBehavior.walkLeft.start(T)
+					else renderer.robotBehavior.behavior = renderer.robotBehavior.walkRight.start(T)
 				} 
 			}
 //			println("T=%d".format(duration))
@@ -143,6 +143,7 @@ class TestRobot extends SurfaceRenderer {
 
 	var system:ActorSystem = null
 	var surfaceActor:ActorRef =  null
+	var robotBehavior:RobotBehavior = null
 
 // Go
             
@@ -230,59 +231,9 @@ class TestRobot extends SurfaceRenderer {
 		println(armature.toIndentedString)
 	}
 
-	var behavior:Behavior = null
-
-	protected def initBehaviors() {
-		(armature \\ "lleg").angle     = -0.3
-		(armature \\ "lforeleg").angle =  0.3
-		(armature \\ "lfoot").angle    =  0.0
-
-		behavior = walkRight.start(Platform.currentTime) //upRLeg(Platform.currentTime)
+	def initBehaviors() {
+		robotBehavior = new RobotBehavior(armature)
 	}
-
-	def walkRight:Behavior = new DoInSequence("walkRight", upRLeg, moveRight, downRLeg, upLLeg, downLLeg)
-
-	def walkLeft:Behavior = new DoInSequence("walkLeft", upLLeg, moveLeft, downLLeg, upRLeg, downRLeg)
-
-	private[this] final val durationMs = 100
-
-	def upRLeg:Behavior = new DoInParallel("upRLeg",
-			new InterpToAngle("a", (armature \\ "rleg"),      0.7, durationMs),
-			new InterpToAngle("b", (armature \\ "rforeleg"), -0.5, durationMs),
-			new InterpToAngle("c", (armature \\ "rfoot"),    -0.2, durationMs)
-		)
-
-	def upLLeg:Behavior = new DoInParallel("upLLeg",
-			new InterpToAngle("a", (armature \\ "lleg"),     -0.7, durationMs),
-			new InterpToAngle("b", (armature \\ "lforeleg"),  0.5, durationMs),
-			new InterpToAngle("c", (armature \\ "lfoot"),     0.2, durationMs)
-		)
-	
-	def downRLeg:Behavior = new DoInParallel("downRLeg",
-			new InterpToAngle("a", (armature \\ "rleg"),      0.3, durationMs),
-			new InterpToAngle("b", (armature \\ "rforeleg"), -0.3, durationMs),
-			new InterpToAngle("c", (armature \\ "rfoot"),     0.0, durationMs)
-		)
-
-	def downLLeg:Behavior = new DoInParallel("downLLeg",
-			new InterpToAngle("a", (armature \\ "lleg"),     -0.3, durationMs),
-			new InterpToAngle("b", (armature \\ "lforeleg"),  0.3, durationMs),
-			new InterpToAngle("c", (armature \\ "lfoot"),     0.0, durationMs)
-		)
-
-	def moveLeft:Behavior = new DoInParallel("moveLeft",
-			new InterpMove("a",    (armature \\ "root"),    (-0.025, 0), durationMs),
-			new InterpToAngle("b", (armature \\ "rleg"),      0.4,       durationMs),
-			new InterpToAngle("c", (armature \\ "rforeleg"),  0.0,       durationMs),
-			new InterpToAngle("d", (armature \\ "rfoot"),    -0.1,       durationMs)
-		)
-	
-	def moveRight:Behavior = new DoInParallel("moveRight",
-			new InterpMove("a",    (armature \\ "root"),     (0.025, 0), durationMs),
-			new InterpToAngle("b", (armature \\ "lleg"),     -0.4,       durationMs),
-			new InterpToAngle("c", (armature \\ "lforeleg"),  0.0,       durationMs),
-			new InterpToAngle("d", (armature \\ "lfoot"),     0.1,       durationMs)
-		)
 	
 	def reshape(surface:Surface) {
 	    camera.viewportPx(surface.width, surface.height)
@@ -325,8 +276,8 @@ class TestRobot extends SurfaceRenderer {
 	}
 
 	def animate() {
-		if(behavior ne null)
-			behavior.animate(Platform.currentTime)
+		if((robotBehavior ne null) && (robotBehavior.behavior ne null))
+			robotBehavior.behavior.animate(Platform.currentTime)
 	}	
 }
 
@@ -397,15 +348,15 @@ class InterpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:L
 	var startAngle:Double = 0.0
 
 	override def start(t:Long):Behavior = {
-		startAngle = joint.angle
+		startAngle = joint.transform.angle
 		super.start(t)
 	}
 
 	def animate(t:Long) {
 		if(finished(t)) {
-			joint.angle = targetAngle
+			joint.transform.angle = targetAngle
 		} else {
-			joint.angle = startAngle + ((targetAngle - startAngle) * interpolation(t))
+			joint.transform.angle = startAngle + ((targetAngle - startAngle) * interpolation(t))
 //println("joint %s angle %f (%% == %f)".format(joint.name, joint.angle, percent))
 		}
 	}
@@ -415,16 +366,16 @@ class InterpToPosition(name:String, joint:Joint, val targetPosition:(Double,Doub
 	var startPosition = new Point2(0,0)
 
 	override def start(t:Long):Behavior = {
-		startPosition.copy(joint.translation)
+		startPosition.copy(joint.transform.translation)
 		super.start(t)
 	}
 
 	def animate(t:Long) {
 		if(finished(t)) {
-			joint.translation.set(targetPosition._1, targetPosition._2)
+			joint.transform.translation.set(targetPosition._1, targetPosition._2)
 		} else {
 			val interp =  interpolation(t)
-			joint.translation.set(
+			joint.transform.translation.set(
 				startPosition.x + ((targetPosition._1 - startPosition.x) * interp),
 				startPosition.y + ((targetPosition._2 - startPosition.y) * interp)
 			)
@@ -436,21 +387,83 @@ class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), dur
 	var startPosition = new Point2(0,0)
 
 	override def start(t:Long):Behavior = {
-		startPosition.copy(joint.translation)
+		startPosition.copy(joint.transform.translation)
 		super.start(t)
 	}
 
 	def animate(t:Long) {
 		if(finished(t)) {
-			joint.translation.set(startPosition.x + displacement._1, startPosition.y + displacement._2)
+			joint.transform.translation.set(startPosition.x + displacement._1, startPosition.y + displacement._2)
 		} else {
 			val interp = interpolation(t)
-			joint.translation.set(
+			joint.transform.translation.set(
 				startPosition.x + (displacement._1 * interp),
 				startPosition.y + (displacement._2 * interp)
 			)
 		}
 	}
+}
+
+
+// -- Robot Behavior -----------------------------------------------------------------------------
+
+
+class RobotBehavior(val armature:Armature) {
+	var behavior:Behavior = null
+
+	init
+
+	private[this] final val durationMs = 100
+
+	protected def init() {
+		(armature \\ "lleg").transform.angle     = -0.3
+		(armature \\ "lforeleg").transform.angle =  0.3
+		(armature \\ "lfoot").transform.angle    =  0.0
+
+		behavior = walkRight.start(Platform.currentTime) //upRLeg(Platform.currentTime)
+	}
+
+	def walkRight:Behavior = new DoInSequence("walkRight", upRLeg, moveRight, downRLeg, upLLeg, downLLeg)
+
+	def walkLeft:Behavior = new DoInSequence("walkLeft", upLLeg, moveLeft, downLLeg, upRLeg, downRLeg)
+
+	def upRLeg:Behavior = new DoInParallel("upRLeg",
+		new InterpToAngle("a", (armature \\ "rleg"),      0.7, durationMs),
+		new InterpToAngle("b", (armature \\ "rforeleg"), -0.5, durationMs),
+		new InterpToAngle("c", (armature \\ "rfoot"),    -0.2, durationMs)
+	)
+
+	def upLLeg:Behavior = new DoInParallel("upLLeg",
+		new InterpToAngle("a", (armature \\ "lleg"),     -0.7, durationMs),
+		new InterpToAngle("b", (armature \\ "lforeleg"),  0.5, durationMs),
+		new InterpToAngle("c", (armature \\ "lfoot"),     0.2, durationMs)
+	)
+	
+	def downRLeg:Behavior = new DoInParallel("downRLeg",
+		new InterpToAngle("a", (armature \\ "rleg"),      0.3, durationMs),
+		new InterpToAngle("b", (armature \\ "rforeleg"), -0.3, durationMs),
+		new InterpToAngle("c", (armature \\ "rfoot"),     0.0, durationMs)
+	)
+
+	def downLLeg:Behavior = new DoInParallel("downLLeg",
+		new InterpToAngle("a", (armature \\ "lleg"),     -0.3, durationMs),
+		new InterpToAngle("b", (armature \\ "lforeleg"),  0.3, durationMs),
+		new InterpToAngle("c", (armature \\ "lfoot"),     0.0, durationMs)
+	)
+
+	def moveLeft:Behavior = new DoInParallel("moveLeft",
+		new InterpMove("a",    (armature \\ "root"),    (-0.025, 0), durationMs),
+		new InterpToAngle("b", (armature \\ "rleg"),      0.4,       durationMs),
+		new InterpToAngle("c", (armature \\ "rforeleg"),  0.0,       durationMs),
+		new InterpToAngle("d", (armature \\ "rfoot"),    -0.1,       durationMs)
+	)
+	
+	def moveRight:Behavior = new DoInParallel("moveRight",
+		new InterpMove("a",    (armature \\ "root"),     (0.025, 0), durationMs),
+		new InterpToAngle("b", (armature \\ "lleg"),     -0.4,       durationMs),
+		new InterpToAngle("c", (armature \\ "lforeleg"),  0.0,       durationMs),
+		new InterpToAngle("d", (armature \\ "lfoot"),     0.1,       durationMs)
+	)
 }
 
 

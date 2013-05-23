@@ -5,17 +5,14 @@
 varying vec2 X;
 
 uniform sampler2D texColor;
+uniform float highlight;
 
 void main(void) {
-/*	vec4  color = texture2D(texColor, X);
-	vec3  rgb   = color.rgb;
-	float a     = color.a;
+	vec4 c = texture2D(texColor, X);
 
-	if(a > 0.7) a = a;
-	else a = 0.0;
-
-	gl_FragColor = vec4(rgb, a);
-
-	gl_FragColor = vec4(color.rgb, color.a*0.9);
-*/	gl_FragColor = texture2D(texColor, X);
+	if(highlight != 0.0) {
+		gl_FragColor = vec4(1.0*c.a, c.g, c.b, c.a);
+	} else {
+		gl_FragColor = c;
+	}
 }

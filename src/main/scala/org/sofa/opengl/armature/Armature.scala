@@ -88,7 +88,7 @@ class Armature(val name:String,
 		camera.pushpop {
 			shader.use
 			texture.bindUniform(gl.TEXTURE0, shader, "texColor")
-			root.display(gl, this, camera)
+			root.display(gl, this, camera, shader)
 		}
 	}
 
@@ -104,6 +104,37 @@ class Armature(val name:String,
 		"Armature(%s, [%s] {%n%s%n})%n".format(name, area, root.toIndentedString(1))
 	}
 }
+
+
+// == Joint Transform ===============================================================================
+
+
+class JointTransform {
+
+	/** Current rotation. */
+	var angle = 0.0
+
+	/** Current translation (before or after rotation ??? or the twos ?) */
+	var translation = Vector2(0, 0)
+
+	/** Current scale (before or after translation ??? or the twos ?) */
+	var scale = Vector2(1, 1)
+
+	def transform(camera:Camera) {
+		if(angle != 0)
+			camera.rotateModel(angle, 0, 0, 1)
+
+		if(scale.x != 0 || scale.y != 0)
+			camera.scaleModel(scale.x, scale.y, 1)
+
+		if(translation.x != 0 || translation.y != 0)
+			camera.translateModel(translation.x, translation.y, 1)
+	}
+}
+
+
+// == Joint =========================================================================================
+
 
 object Joint {
 	/** Create a joint.
@@ -166,7 +197,7 @@ object Joint {
   * @param subAbove The sub joints to be drawn (in order) above this, can be null.
   */
 class Joint(val name:String,
-            var z:Double,
+            var z:Double,		// <- XXX not used XXX
             var fromUV:Point2,
             var sizeUV:Point2,
             var pivotGU:Point2,
@@ -176,7 +207,7 @@ class Joint(val name:String,
             var subAbove:Array[Joint]) {
 
 	/** Parent joint. */
-	protected var parent:Joint = null
+	var parent:Joint = null
 
 	/** Position in the texture image in game units. */
 	protected val fromGU:Point2 = new Point2
@@ -187,14 +218,10 @@ class Joint(val name:String,
 	/** The triangle index in the armature when drawing. */
 	protected var triangle:Int = 0
 
-	/** Current rotation. */
-	var angle = 0.0
+	var selected = false
 
-	/** Current translation (before or after rotation ??? or the twos ?) */
-	var translation = Vector2(0, 0)
-
-	/** Current scale (before or after translation ??? or the twos ?) */
-	var scale = Vector2(1, 1)
+	/** Current transform for the joint (and its subjoints). Can be null. */
+	var transform = new JointTransform
 
 	/** The given sub joint if any. */
 	def apply(id:String):Joint = {
@@ -205,7 +232,35 @@ class Joint(val name:String,
 	}
 
 	/** The given sub joint if any. */
-	def -> (id:String):Joint = apply(id)
+	def \ (id:String):Joint = apply(id)
+
+	/** Number of sub-joints to draw in order under this one. */
+	def subUnderCount:Int = if(subUnder ne null) subUnder.size else 0
+
+	/** Number of sub-joints to draw in order above this one. */
+	def subAboveCount:Int = if(subAbove ne null) subAbove.size else 0
+
+	/** Number of sub-joints under or above this one. */
+	def subCount:Int = subUnderCount + subAboveCount
+
+	/** I-th sub-joint starting in the sub-joints under this one, and continuing in the sub-joints above this one.
+	  * For example if this joint has two sub-joints under and two above, index 0 is the first sub-joint under,
+	  * index 2 is the first sub-joint above. Index 3 is the last sub-joint. */
+	def sub(i:Int):Joint = {
+		if(subUnder ne null) {
+			if(i < subUnder.size) {
+				subUnder(i)
+			} else if((subAbove ne null) && (i - subUnder.size) < subAbove.size) {
+				subAbove(i-subUnder.size)
+			} else null
+		} else {
+			if((subAbove ne null) && (i < subAbove.size)) {
+				subAbove(i)
+			} else {
+				null
+			}
+		}
+	}
 
 	/** Change the absolute pixel coordinates to relative coordinates either in UV (texture) or
 	  * game (scaled) coordinates and setup the parent joint. */
@@ -231,8 +286,6 @@ class Joint(val name:String,
 		// At start, fromUV is in absolute pixels.
 		// We scale the GU points and make all values relative to the pivot.
 
-if(fromGU == null) throw new RuntimeException("WTF fromGU null in %s".format(name))
-if(fromUV == null) throw new RuntimeException("WTF fromUV null in %s".format(name))
 		fromGU.set(fromUV.x*scale, fromUV.y*scale)
 		sizeGU.set(sizeUV.x*scale, sizeUV.y*scale)
 		pivotGU.set((pivotGU.x*scale)-fromGU.x, (pivotGU.y*scale)-fromGU.y)
@@ -294,34 +347,33 @@ if(fromUV == null) throw new RuntimeException("WTF fromUV null in %s".format(nam
 		if(subAbove ne null) subAbove.foreach { _.build(armature) }
 	}
 
-	def display(gl:SGL, armature:Armature, camera:Camera) {
+	def display(gl:SGL, armature:Armature, camera:Camera, shader:ShaderProgram) {
 		if(visible) {
 			camera.pushpop {
 				camera.translateModel(anchorGU.x, anchorGU.y, 0)
 
-				if(angle != 0)
-					camera.rotateModel(angle, 0, 0, 1)
-				if(scale.x != 0 || scale.y != 0)
-					camera.scaleModel(scale.x, scale.y, 1)
-				if(translation.x != 0 || translation.y != 0)
-					camera.translateModel(translation.x, translation.y, 1)
+				if(transform ne null)
+					transform.transform(camera)
 
-				displaySub(gl, subUnder, armature, camera)
-				displaySelf(armature, camera)
-				displaySub(gl, subAbove, armature, camera)
+				displaySub(gl, subUnder, armature, camera, shader)
+				displaySelf(armature, camera, shader)
+				displaySub(gl, subAbove, armature, camera, shader)
 			}
 		}
 	}
 
 	/** Display the given sub array of joints. */
-	protected def displaySub(gl:SGL, sub:Array[Joint], armature:Armature, camera:Camera) {
+	protected def displaySub(gl:SGL, sub:Array[Joint], armature:Armature, camera:Camera, shader:ShaderProgram) {
 		if((sub ne null) && sub.size > 0) {
-			sub foreach { _.display(gl, armature, camera) }
+			sub foreach { _.display(gl, armature, camera, shader) }
 		}
 	}
 
 	/** Display this joint. */
-	protected def displaySelf(armature:Armature, camera:Camera) {
+	protected def displaySelf(armature:Armature, camera:Camera, shader:ShaderProgram) {
+		if(selected)
+		     shader.uniform("highlight", 1.0f)
+		else shader.uniform("highlight", 0.0f)
 		camera.setUniformMVP(armature.shader)
 		armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs, triangle*3, 2*3)		
 	}

@@ -247,31 +247,31 @@ class TestXMLArmature extends SurfaceRenderer {
 		(armature \\ "mouthoh").visible = ! grin
 
 		if(grin) {
-			(armature \\ "leyebrow").angle = 0
-			(armature \\ "reyebrow").angle = 0
+			(armature \\ "leyebrow").transform.angle = 0
+			(armature \\ "reyebrow").transform.angle = 0
 		} else {
-			(armature \\ "leyebrow").angle =  0.2
-			(armature \\ "reyebrow").angle = -0.2		
+			(armature \\ "leyebrow").transform.angle =  0.2
+			(armature \\ "reyebrow").transform.angle = -0.2		
 		}
 
-		(armature \\ "antena").angle = antenaAnim.animate
-		(armature \\ "antena").scale.set(1, 1+antenaScale.animate)
+		(armature \\ "antena").transform.angle = antenaAnim.animate
+		(armature \\ "antena").transform.scale.set(1, 1+antenaScale.animate)
 
-		(armature \\ "head").angle   = headAnim.animate 
-		(armature \\ "larm").angle   = larmAnim.animate
-		(armature \\ "rarm").angle   = -rarmAnim.animate
+		(armature \\ "head").transform.angle = headAnim.animate 
+		(armature \\ "larm").transform.angle = larmAnim.animate
+		(armature \\ "rarm").transform.angle = -rarmAnim.animate
 
 		val clawAngle = clawAnim.animate
 
-		(armature \\ "lupclaw").angle   =  clawAngle
-		(armature \\ "ldownclaw").angle = -clawAngle
-		(armature \\ "rupclaw").angle   = -clawAngle
-		(armature \\ "rdownclaw").angle =  clawAngle
+		(armature \\ "lupclaw").transform.angle   =  clawAngle
+		(armature \\ "ldownclaw").transform.angle = -clawAngle
+		(armature \\ "rupclaw").transform.angle   = -clawAngle
+		(armature \\ "rdownclaw").transform.angle =  clawAngle
 
 		val value = bodyAnim.animate
-		(armature \\ "root").translation.set(value*0.1, 0)
-		(armature \\ "lleg").angle = value //translation.set(0,  value*0.001)
-		(armature \\ "rleg").angle = -value//   translation.set(0, -value*0.001)
+		(armature \\ "root").transform.translation.set(value*0.1, 0)
+		(armature \\ "lleg").transform.angle = value //translation.set(0,  value*0.001)
+		(armature \\ "rleg").transform.angle = -value//   translation.set(0, -value*0.001)
 	}
 }
 

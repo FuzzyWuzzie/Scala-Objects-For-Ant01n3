@@ -90,7 +90,7 @@ class TestText extends SurfaceRenderer {
 	}
 	
 	def initShaders() {
-		textShad = ShaderProgram(gl, "phong shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
+		textShad = ShaderProgram(gl, "text shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
 		plainShad = ShaderProgram(gl, "plain shader", "es2/plainColor.vert.glsl", "es2/plainColor.frag.glsl")
 	}
 

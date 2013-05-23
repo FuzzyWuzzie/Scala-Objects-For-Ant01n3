@@ -115,8 +115,8 @@ class SurfaceGLCanvas(
     def mouseWheelMoved(e:AWTMouseWheelEvent) {}
 
     def keyPressed(e:AWTKeyEvent) {}
-    def keyReleased(e:AWTKeyEvent) {}
-    def keyTyped(e:AWTKeyEvent) { if(renderer.key ne null) renderer.key(this, new KeyEventAWT(e)) }
+    def keyReleased(e:AWTKeyEvent) { if(renderer.key ne null) renderer.key(this, new KeyEventAWT(e)) }
+    def keyTyped(e:AWTKeyEvent) {}
 
     def resize(newWidth:Int, newHeight:Int) {
     	win.setSize(newWidth, newHeight)
@@ -263,8 +263,8 @@ class SurfaceNewt(
     def windowResized(e:JoglWindowEvent) {Console.err.println("resized w=%d h=%d".format(win.getWidth, win.getHeight))} 
     
 	def keyPressed(e:JoglKeyEvent) {} 
-	def keyReleased(e:JoglKeyEvent) {}
-	def keyTyped(e:JoglKeyEvent) { if(renderer.key ne null) renderer.key(this, new KeyEventJogl(e)) }
+	def keyReleased(e:JoglKeyEvent) { if(renderer.key ne null) renderer.key(this, new KeyEventJogl(e)) }
+	def keyTyped(e:JoglKeyEvent) { }
 	
     def mouseClicked(e:JoglMouseEvent) {
         e.getButton match {

@@ -10,27 +10,43 @@ import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, TexPar
 import org.sofa.opengl.backend.{TextureImageAwt}
 import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 
+
+// TODO:
+//
+// 1. This thing is actually only able to understand characters in a very limited range
+//    However we could imagine "blocks" that maps to unicode blocks and that are textures,
+//    rendered on demand, when needing some characters.
+//
+// 2. Also we could get rid of the configuration by a static object ?
+//
+// 3. To avoid rendering a texture in a lot of sizes, one could imagine creating the
+//    textures as mip-map.
+//
+// 4. Allow a Text loader to read textures from bitmaps stored in images, instead of
+//    rasterizing them. For games this could save time.
+
+
 object GLFont {
 	/** First character Unicode. */
-	val CharStart = 32
+	final val CharStart = 32
 	
 	/** Last character Unicode. */
-	val CharEnd = 255
+	final val CharEnd = 255
 	
 	/** Number of represented characters. */
-	val CharCnt = (((CharEnd-CharStart)+1)+1)
+	final val CharCnt = (((CharEnd-CharStart)+1)+1)
 	
 	/** Character to use for unknown. */
-	val CharNone = 32	// Must be in the range CharStart .. CharEnd
+	final val CharNone = 32	// Must be in the range CharStart .. CharEnd
 	
 	/** Index of unknown character. */
-	val CharUnknown = (CharCnt-1)
+	final val CharUnknown = (CharCnt-1)
 
 	/** Minimum font size (pixels). */
-	val FontSizeMin = 6
+	final val FontSizeMin = 6
 	
 	/** Maximum font size (pixels). */
-	val FontSizeMax = 180
+	final val FontSizeMax = 180
 	
 	/** Path to lookup for font files. */
 	val path = new ArrayBuffer[String]()
@@ -39,11 +55,6 @@ object GLFont {
 	var loader:GLFontLoader = new GLFontLoaderAWT()
 }
 
-// TODO: This thing is actually only able to understand characters in a very limited range
-// However we could imagine "blocks" that maps to unicode blocks and that are textures,
-// rendered on demand, when needing some characters.
-//
-// Also we could get rid of the configuration by a static object ?
 
 /** A font allowing to draw text in OpenGL.
   *
@@ -104,7 +115,11 @@ class GLFont(val gl:SGL, file:String, val size:Int) {
 	/** True if the texture contains bitmaps with premultiplied alpha. */
 	var isAlphaPremultiplied = false
 
+	//--------------------------
+
 	GLFont.loader.load(gl, file, size, this)
+
+	//--------------------------
 
 	/** Set the minification and magnification filters for the glyph
 	  * texture. For 2D pixel perfect use, the NEAREST-LINEAR mode is better.
@@ -138,6 +153,7 @@ trait GLFontLoader {
 	def load(gl:SGL, file:String, size:Int, font:GLFont)
 }
 
+/** A fond loader that rasterize the text using AWT and Java2D. */
 class GLFontLoaderAWT extends GLFontLoader {
 	def load(gl:SGL, resource:String, size:Int, font:GLFont) {
 
@@ -255,7 +271,7 @@ class GLFontLoaderAWT extends GLFontLoader {
 		while(c < GLFont.CharCnt) {
 			// We define the texture region with padding at left and at right since most of the characters
 			// go outside of their advance (hence the fond.pad, also used in when drawing in GLString).
-			font.charRgn(c) = new TextureRegion(textureSize, x-font.pad, y,
+			font.charRgn(c) = new TextureRegion(textureSize, x-font.pad, textureSize-y,
 									font.charWidths(c)+font.pad*2, font.cellHeight)//, font.descent)
 			x += font.cellWidth
 
@@ -303,7 +319,7 @@ class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
 	  * @param width The width of the texture region in pixels.
 	  * @param height The height of the texture region in pixels. */
 	def this(texSize:Float, x:Float, y:Float, width:Float, height:Float) {
-		this(x/texSize, y/texSize, (x+width)/texSize, (y+height)/texSize)
+		this(x/texSize, y/texSize, (x+width)/texSize, (y-height)/texSize)
 	}
 }
 
