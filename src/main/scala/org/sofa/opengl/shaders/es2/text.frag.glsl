@@ -5,10 +5,9 @@ varying vec2 vTexCoords;
 uniform sampler2D texColor;
 uniform vec4 textColor;
 
-/** Shader suitable for text with the JDK. */
+/** Shader suitable for text with the JDK.
+  * It supports premultiplied textures, provided the textColor is
+  * also premultiplied by its own alpha. */
 void main(void) {
-	vec4 C = texture2D(texColor, vTexCoords.st);
-
-//	gl_FragColor = vec4(C.r-(1.0-textColor.r), C.g-(1.0-textColor.g), C.b-(1.0-textColor.b), C.a*textColor.a);
-	gl_FragColor = vec4(C.r * textColor.r, C.g * textColor.g, C.b * textColor.b, C.a * textColor.a);
+	gl_FragColor = texture2D(texColor, vTexCoords.st) * textColor;
 }

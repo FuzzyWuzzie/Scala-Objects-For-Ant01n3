@@ -55,6 +55,7 @@ class Rgba(
 		red   *= factor
 		green *= factor
 		blue  *= factor
+		alpha *= factor
 		this
 	}
 
@@ -69,6 +70,16 @@ class Rgba(
 		alpha += other.alpha
 		this
 	}
+
+	/** Multiply red, green and blue components by alpha. */
+	def alphPremultiply() {
+		red   *= alpha
+		green *= alpha
+		blue  *= alpha
+	}
+
+	/** New color same as this one, but with red, green and blue components multiplied by alpha. */
+	def alphaPremultiplied():Rgba = Rgba(red*alpha, green*alpha, blue*alpha, alpha)
 
 	def rgb:(Double,Double,Double) = (red,green,blue)
 

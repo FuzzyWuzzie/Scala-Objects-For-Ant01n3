@@ -263,7 +263,7 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 		// Generate a new texture.
 
-		val texParams = TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Nearest,magFilter=TexMag.Linear,wrap=TexWrap.Clamp)
+		val texParams = TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Linear,magFilter=TexMag.Linear,wrap=TexWrap.Clamp)
 		font.texture  = new Texture(gl, new TextureImageAwt(ArrayBuffer(image), texParams), texParams)
 
 		// Setup the array of character texture regions.
@@ -439,16 +439,21 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 		val ff  = gl.getInteger(gl.FRONT_FACE)
 		val src = gl.getInteger(gl.BLEND_SRC) 
 		val dst = gl.getInteger(gl.BLEND_DST)
+		var clr = color
 
-		if(font.isAlphaPremultiplied)
+		if(font.isAlphaPremultiplied) {
 			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-		else gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+			 clr = color.alphaPremultiplied
+	 	} else {
+	 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+	 	}
+
 		gl.frontFace(gl.CCW)
 
 		shader.use
 		font.texture.bindTo(gl.TEXTURE0)
 	    shader.uniform("texColor", 0)
-	    shader.uniform("textColor", color)
+	    shader.uniform("textColor", clr)
 	    camera.setUniformMVP(shader)
 		batch.draw(batchMesh.drawAs, p)
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?		
@@ -462,16 +467,21 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 		val ff  = gl.getInteger(gl.FRONT_FACE)
 		val src = gl.getInteger(gl.BLEND_SRC) 
 		val dst = gl.getInteger(gl.BLEND_DST)
+		var clr = color
 
-		if(font.isAlphaPremultiplied)
+		if(font.isAlphaPremultiplied) {
 			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-		else gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+			 clr = color.alphaPremultiplied
+	 	} else {
+	 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+	 	}
+
 		gl.frontFace(gl.CCW)
 
 		shader.use
 		font.texture.bindTo(gl.TEXTURE0)
 	    shader.uniform("texColor", 0)
-	    shader.uniform("textColor", color)
+	    shader.uniform("textColor", clr)
 	    shader.uniformMatrix("MVP", mvp)
 		batch.draw(batchMesh.drawAs, p)
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?

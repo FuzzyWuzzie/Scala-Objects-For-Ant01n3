@@ -3,7 +3,7 @@ package org.sofa.opengl.test
 import org.sofa.Timer
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
 import org.sofa.opengl.{SGL, ShaderProgram, MatrixStack, VertexArray, Camera, Shader, TextureFramebuffer}
-import org.sofa.opengl.mesh.{PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
+import org.sofa.opengl.mesh.{AxisMesh, LinesMesh, QuadsMesh, VertexAttribute}
 import org.sofa.opengl.text.{GLFont, GLString}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
@@ -34,6 +34,22 @@ object TestText2 {
 		"Alternait les grands vers avec les plus petits,",
 		"Et fais tourner au feu des strophes de rôtis !"
 		)
+
+	val cyranoColors = Array[Rgba](
+		Rgba.Red,
+		Rgba.Blue,
+		Rgba.Green,
+		Rgba.Yellow,
+		Rgba.Cyan,
+		Rgba.Magenta,
+		Rgba(1,0,0,0.5),
+		Rgba(0,1,0,0.5),
+		Rgba(0,0,1,0.5),
+		Rgba(0,0,0,0.5),
+		Rgba(0,0,0,0.25),
+		Rgba(0,0,0,0.1),
+		Rgba.Black
+		)
 }
 
 class TestText2 extends SurfaceRenderer {
@@ -41,7 +57,9 @@ class TestText2 extends SurfaceRenderer {
 	var surface:Surface = null
 	
 	val linesMesh = new LinesMesh(3000)
+	val quadsMesh = new QuadsMesh(20)
 	var lines:VertexArray = null
+	var quads:VertexArray = null
 
 	var plainShad:ShaderProgram = null
 	var textShad:ShaderProgram = null
@@ -76,7 +94,7 @@ class TestText2 extends SurfaceRenderer {
 		scroll         = ctrl.scroll
 		close          = { surface => sys.exit }
 		surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
-							camera, "Test Text", caps,
+							camera, "Test Text 2", caps,
 							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
 	}
 	
@@ -107,33 +125,25 @@ class TestText2 extends SurfaceRenderer {
 	
 	def initShaders() {
 		plainShad = ShaderProgram(gl, "plain shader", "es2/plainColor.vert.glsl", "es2/plainColor.frag.glsl")
-		textShad  = ShaderProgram(gl, "phong shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
+		textShad  = ShaderProgram(gl, "text shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
 	}
 
 	def initGLText() {
-//		println("unpack alignment = %d".format(gl.getInteger(gl.UNPACK_ALIGNMENT)))
+		import TestText2._
 
 		GLFont.path += "/Users/antoine/Library/Fonts"
 		GLFont.path += "Fonts"
 
-//		font = new GLFont(gl, "NoticiaText-Italic.ttf", 40)
-//		font = new GLFont(gl, "Ubuntu-RI.ttf", 40)
-		fonts(0) = new GLFont(gl, "Ubuntu-R.ttf", 45)
+//		fonts(0) = new GLFont(gl, "Ubuntu-R.ttf", 45)
 //		fonts(1) = new GLFont(gl, "Ubuntu-RI.ttf", 45)
 		fonts(2) = new GLFont(gl, "Ubuntu-L.ttf", 40)
 
-		fonts(0).minMagFilter(gl.LINEAR, gl.LINEAR)
-//		fonts(1).minMagFilter(gl.LINEAR, gl.LINEAR)
-		fonts(2).minMagFilter(gl.LINEAR, gl.LINEAR)
-
-		text(0) = new GLString(gl, fonts(0), TestText2.cyrano(0).length, textShad)
-		text(0).setColor(Rgba.Red)
-		text(0).build(TestText2.cyrano(0))
-
-		for(i <- 1 until text.length) {
+		for(i <- 0 until text.length) {
 			text(i) = new GLString(gl, fonts(2), TestText2.cyrano(i).length, textShad)
-			text(i).setColor(Rgba.Black)
-			text(i).build(TestText2.cyrano(i))
+			if(i < cyranoColors.size)
+			     text(i).setColor(cyranoColors(i))
+			else text(i).setColor(Rgba.Black)
+			text(i).build(cyrano(i))
 		}
 	}
 	
@@ -141,6 +151,19 @@ class TestText2 extends SurfaceRenderer {
 		import VertexAttribute._
 		linesMesh.horizontalRuler(0, 0, 10, 100, 10, 2, Rgba.Black, Rgba(0.6, 0, 0, 1), Rgba(0.3, 0, 0, 1))
 		lines = linesMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
+
+		quadsMesh.setPoint(0,   0,   0,  0); quadsMesh.setPointColor(0, Rgba.Red)
+		quadsMesh.setPoint(1, 100,   0,  0); quadsMesh.setPointColor(1, Rgba.Blue)
+		quadsMesh.setPoint(2, 100, 800,  0); quadsMesh.setPointColor(2, Rgba.Blue)
+		quadsMesh.setPoint(3,   0, 800,  0); quadsMesh.setPointColor(3, Rgba.Red)
+		quadsMesh.setPoint(4, 100,   0,  0); quadsMesh.setPointColor(4, Rgba.Green)
+		quadsMesh.setPoint(5, 200,   0,  0); quadsMesh.setPointColor(5, Rgba.Magenta)
+		quadsMesh.setPoint(6, 200, 800,  0); quadsMesh.setPointColor(6, Rgba.Magenta)
+		quadsMesh.setPoint(7, 100, 800,  0); quadsMesh.setPointColor(7, Rgba.Green)
+		quadsMesh.setQuad(0, 0, 3, 2, 1)
+		quadsMesh.setQuad(1, 4, 7, 6, 5)
+
+		quads = quadsMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 	}	
 
 	def display(surface:Surface) {
@@ -151,7 +174,6 @@ class TestText2 extends SurfaceRenderer {
 		camera.viewIdentity
 
 		gl.enable(gl.BLEND)
-//		gl.disable(gl.LINE_SMOOTH)
 		gl.lineWidth(1)
 		
 		// Ruler
@@ -159,6 +181,10 @@ class TestText2 extends SurfaceRenderer {
 		plainShad.use
 		camera.setUniformMVP(plainShad)
 		lines.draw(linesMesh.drawAs)		
+
+		// Background
+
+		quads.draw(quadsMesh.drawAs, 2*4)
 
 		// GLString
 
@@ -180,7 +206,6 @@ class TestText2 extends SurfaceRenderer {
 	}
 	
 	def reshape(surface:Surface) {
-Console.err.println("### Surface (%d x %d)".format(surface.width, surface.height))
 		camera.viewportPx(surface.width, surface.height)
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
 		camera.orthographic(0, surface.width, 0, surface.height, -1, 1)
