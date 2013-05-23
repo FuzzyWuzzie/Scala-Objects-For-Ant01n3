@@ -8,7 +8,7 @@ import java.io.{File, IOException, InputStream, FileInputStream}
 import org.sofa.math.{Rgba,Matrix4}
 import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, TexParams}
 import org.sofa.opengl.backend.{TextureImageAwt}
-import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
+import org.sofa.opengl.mesh.{QuadsMesh, VertexAttribute}
 
 
 // TODO:
@@ -179,8 +179,8 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 		gfx.setRenderingHints(java.awt.Toolkit.getDefaultToolkit.getDesktopProperty("awt.font.desktophints").asInstanceOf[java.util.Map[String,String]])
 
-//		gfx.setColor(new AWTColor(0.2f, 0f, 0f, 1))
-//		gfx.fillRect(0, 0, textureSize, textureSize)
+//		gfx.setColor(new AWTColor(0f, 0f, 0f, 0.0f))	// By default the image contains (0,0,0,0) pixels,
+//		gfx.fillRect(0, 0, textureSize, textureSize)	// therefore the alpha is correct at start.
 
 		gfx.setFont(awtFont)
 		gfx.setRenderingHint(AWTRenderingHints.KEY_TEXT_ANTIALIASING,
@@ -332,10 +332,10 @@ class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
   * TODO: Multi-line string.
   */
 class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:ShaderProgram) {
-	/** Mesh used to build the triangles of the batch. */
-	protected val batchMesh = new TrianglesMesh(maxCharCnt*2)
+	/** Mesh used to build the quads of the batch. */
+	protected val batchMesh = new QuadsMesh(maxCharCnt)
 
-	/** Vertex array of the triangles (by two to form a quad) for each character. */
+	/** Vertex array of the quads for each character. */
 	protected var batch:VertexArray = null
 
 	/** Rendering color. */
@@ -408,7 +408,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 		val width = font.charWidth(c)
 		val rgn   = font.charTextureRegion(c)
 
-		addCharTriangles(rgn, width)
+		addCharQuad(rgn, width)
 
 		x += width  	// Triangles may overlap.
 	}
@@ -452,13 +452,13 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 		gl.blendFunc(src, dst)
 	}
 
-	/** Define two triangles for a character at current `x` position.
+	/** Define a quad for a character at current `x` position.
 	  * The `x` position is a point at the baseline of the character just
 	  * at the left of the start of the character. The character may extend before
 	  * and after, above and under this position. */
-	protected def addCharTriangles(rgn:TextureRegion, width:Float) {
-		val W = width + font.pad*2 // rgn.width 		// Overall character drawing width
-		val H = font.cellHeight // rgn.height 			// Overall character drawing height
+	protected def addCharQuad(rgn:TextureRegion, width:Float) {
+		val W = width + font.pad * 2 // rgn.width 		// Overall character drawing width
+		val H = font.cellHeight      // rgn.height 		// Overall character drawing height
 		val X = x - font.pad                            // Real X start of drawing.
 		val Y = y - font.descent                        // Real Y start of drawing.
 
@@ -469,40 +469,32 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 		//   v
 		//  v2
 
-		//  6--5 3
-		//  |2/ /|   ^
-		//  |/ /1|   |
-		//  4 1--2 >-+ CCW
+		//  3--2   ^
+		//  |  |   |
+		//  0--1 >-+ CCW
 
 		// Vertices
 
 		batchMesh.setPoint(p,   X,   Y,   0)
 		batchMesh.setPoint(p+1, X+W, Y,   0)
 		batchMesh.setPoint(p+2, X+W, Y+H, 0)
-
-		batchMesh.setPoint(p+3, X,   Y,   0)
-		batchMesh.setPoint(p+4, X+W, Y+H, 0)
-		batchMesh.setPoint(p+5, X,   Y+H, 0)
+		batchMesh.setPoint(p+3, X,   Y+H, 0)
 
 		// TexCoords
 
 		batchMesh.setPointTexCoord(p,   rgn.u1, rgn.v2)
 		batchMesh.setPointTexCoord(p+1, rgn.u2, rgn.v2)
 		batchMesh.setPointTexCoord(p+2, rgn.u2, rgn.v1)
+		batchMesh.setPointTexCoord(p+3, rgn.u1, rgn.v1)
 
-		batchMesh.setPointTexCoord(p+3, rgn.u1, rgn.v2)
-		batchMesh.setPointTexCoord(p+4, rgn.u2, rgn.v1)
-		batchMesh.setPointTexCoord(p+5, rgn.u1, rgn.v1)
+		// The quad
 
-		// Triangles
+		batchMesh.setQuad(t, p, p+1, p+2, p+3)
 
-		batchMesh.setTriangle(t,   p,   p+1, p+2)
-		batchMesh.setTriangle(t+1, p+3, p+4, p+5)
-
-		// The TrianglesMesh supports color per vertice, would it be interesting
+		// The QuadsMesh supports color per vertice, would it be interesting
 		// to allow to color individual characters in a string ?
 
-		p += 6
-		t += 2
+		p += 4
+		t += 1
 	}
 }
