@@ -206,8 +206,6 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		text(TextPartId).build(selected.name)
-
 	    animate
 
 	 	displayGrid
@@ -266,6 +264,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 				selected.selected = false
 				selected = selected.parent
 				selected.selected = true
+				text(TextPartId).build(selected.name)
 				println("-> parent")
 			}
 		}
@@ -277,6 +276,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 				selected.selected = false
 				selected = selected.sub(0)
 				selected.selected = true
+				text(TextPartId).build(selected.name)
 				selindex = 0
 				println("-> first sub")
 			}
@@ -290,6 +290,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 				selected.selected = false
 				selected = selected.parent.sub(selindex)
 				selected.selected = true
+				text(TextPartId).build(selected.name)
 				println("-> next sibling")
 			}
 		}
@@ -302,6 +303,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 				selected.selected = false
 				selected = selected.parent.sub(selindex)
 				selected.selected = true
+				text(TextPartId).build(selected.name)
 				println("-> prev sibling")
 			}
 		}

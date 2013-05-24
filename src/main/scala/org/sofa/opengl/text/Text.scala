@@ -467,8 +467,6 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 
 	/** Same as calling begin(), char() on each character of the string, then end(). */
 	def build(string:String) {
-println("build -> %s".format(string))
-
 		begin
 		var i = 0
 		val n = min(string.length, maxCharCnt)
@@ -492,10 +490,6 @@ println("build -> %s".format(string))
 	/** End the definition of the new string. This can only be called if begin() has been called before. */
 	def end() {
 		batchMesh.updateVertexArray(gl, updateVertices=true, updateTexCoords=true)
-// println("ICI")
-// 		import VertexAttribute._
-// 		batchMesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
-// println("LA")
 	}
 
 	/** Draw the string with the baseline at (0,0). Use the translation of the camera. */

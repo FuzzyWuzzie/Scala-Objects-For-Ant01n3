@@ -1,21 +1,27 @@
 package org.sofa.opengl.backend
 
+import scala.collection.mutable.SynchronizedQueue
+
 import org.sofa.opengl.{SGL, Camera}
 import org.sofa.opengl.surface._
-import javax.media.opengl.{GLCapabilities, GLEventListener, GLAutoDrawable}
-import com.jogamp.newt.opengl.GLWindow
-import com.jogamp.newt.event.{KeyEvent=>JoglKeyEvent, MouseEvent=>JoglMouseEvent, MouseListener=>JoglMouseListener, WindowListener=>JoglWindowListener, KeyListener=>JoglKeyListener, WindowEvent=>JoglWindowEvent, WindowUpdateEvent=>JoglWindowUpdateEvent}
+
 import java.awt.{Frame=>AWTFrame}
+import javax.media.opengl.{GLCapabilities, GLEventListener, GLAutoDrawable}
 import javax.media.opengl.{GLDrawableFactory, GLRunnable}
 import javax.media.opengl.awt.GLCanvas
-import java.awt.event.{MouseListener=>AWTMouseListener,KeyListener=>AWTKeyListener,WindowListener=>AWTWindowListener, KeyEvent=>AWTKeyEvent, MouseEvent=>AWTMouseEvent, WindowEvent=>AWTWindowEvent, MouseWheelListener=>AWTMouseWheelListener, MouseWheelEvent=>AWTMouseWheelEvent}
-import com.jogamp.opengl.util.FPSAnimator
 import javax.media.opengl.glu.GLU
+import java.awt.event.{MouseListener=>AWTMouseListener,KeyListener=>AWTKeyListener,WindowListener=>AWTWindowListener, KeyEvent=>AWTKeyEvent, MouseEvent=>AWTMouseEvent, WindowEvent=>AWTWindowEvent, MouseWheelListener=>AWTMouseWheelListener, MouseWheelEvent=>AWTMouseWheelEvent}
+
+import com.jogamp.newt.opengl.GLWindow
+import com.jogamp.newt.event.{NEWTEvent=>JoglEvent, KeyEvent=>JoglKeyEvent, MouseEvent=>JoglMouseEvent, MouseListener=>JoglMouseListener, WindowListener=>JoglWindowListener, KeyListener=>JoglKeyListener, WindowEvent=>JoglWindowEvent, WindowUpdateEvent=>JoglWindowUpdateEvent}
+import com.jogamp.opengl.util.FPSAnimator
+
 
 object SurfaceNewtGLBackend extends Enumeration {
 	val GL2ES2 = Value
 	val GL3 = Value
 }
+
 
 class SurfaceGLCanvas(
     val renderer:SurfaceRenderer,
@@ -183,6 +189,10 @@ class SurfaceNewt(
 	with    JoglMouseListener
 	with    GLEventListener {
 
+	/** Synchronized queue for events coming from the EDT (event dispatching thread), as
+	  * with NEWT, events are handled in a distinct thread from rendering. */
+	private[this] val eventQueue = new SynchronizedQueue[Event]
+
     def this(renderer:SurfaceRenderer,
     		 camera:Camera,
     		 title:String,
@@ -237,7 +247,7 @@ class SurfaceNewt(
     
     def init(win:GLAutoDrawable) { renderer.initSurface(gl, this) }
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) { w = width; h = height; if(renderer.surfaceChanged ne null) renderer.surfaceChanged(this) }
-    def display(win:GLAutoDrawable) { if(renderer.frame ne null) renderer.frame(this) }
+    def display(win:GLAutoDrawable) { processEvents; if(renderer.frame ne null) renderer.frame(this) }
     def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
     
     def invoke(code:(Surface)=>Boolean) {
@@ -254,6 +264,19 @@ class SurfaceNewt(
     	)
    	}
 
+   	/** Process all pending events in the event queue. */
+   	protected def processEvents() {
+   		while(! eventQueue.isEmpty) {
+   			eventQueue.dequeue match {
+   				case e:KeyEvent       => { if(renderer.key       ne null) renderer.key(this, e) }
+   				case e:ActionEvent    => { if(renderer.action    ne null) renderer.action(this, e) }
+				case e:ConfigureEvent => { if(renderer.configure ne null) renderer.configure(this, e) }
+				case e:MotionEvent    => { if(renderer.motion    ne null) renderer.motion(this, e) }
+				case e:ScrollEvent    => { if(renderer.scroll    ne null) renderer.scroll(this, e) }
+   			}
+   		}
+   	}
+
     def windowDestroyNotify(ev:JoglWindowEvent) {}
     def windowDestroyed(e:JoglWindowEvent) {}
     def windowGainedFocus(e:JoglWindowEvent) {} 
@@ -263,23 +286,23 @@ class SurfaceNewt(
     def windowResized(e:JoglWindowEvent) {Console.err.println("resized w=%d h=%d".format(win.getWidth, win.getHeight))} 
     
 	def keyPressed(e:JoglKeyEvent) {} 
-	def keyReleased(e:JoglKeyEvent) { if(renderer.key ne null) renderer.key(this, new KeyEventJogl(e)) }
-	def keyTyped(e:JoglKeyEvent) { }
+	def keyReleased(e:JoglKeyEvent) { eventQueue.enqueue(new KeyEventJogl(e)) }
+	def keyTyped(e:JoglKeyEvent) {}
 	
     def mouseClicked(e:JoglMouseEvent) {
         e.getButton match {
-            case 1 => { if(renderer.action ne null) renderer.action(this, new ActionEvent) }
-            case 3 => { if(renderer.configure ne null) renderer.configure(this, new ConfigureEvent) }
+            case 1 => { eventQueue.enqueue(new ActionEvent()) }
+            case 3 => { eventQueue.enqueue(new ConfigureEvent()) }
             case _ => {}
         }
     }
     def mouseEntered(e:JoglMouseEvent) {}
     def mouseExited(e:JoglMouseEvent) {}
     def mouseMoved(e:JoglMouseEvent) {}
-    def mousePressed(e:JoglMouseEvent) { if(renderer.motion ne null) renderer.motion(this, new MotionEventJogl(e, true, false)) }
-    def mouseDragged(e:JoglMouseEvent) { if(renderer.motion ne null) renderer.motion(this, new MotionEventJogl(e, false, false)) }
-    def mouseReleased(e:JoglMouseEvent) { if(renderer.motion ne null) renderer.motion(this, new MotionEventJogl(e, false, true)) }
-    def mouseWheelMoved(e:JoglMouseEvent) { if(renderer.scroll ne null) renderer.scroll(this, new ScrollEventJogl(e)) }
+    def mousePressed(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, true, false)) }
+    def mouseDragged(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, false, false)) }
+    def mouseReleased(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, false, true)) }
+    def mouseWheelMoved(e:JoglMouseEvent) { eventQueue.enqueue(new ScrollEventJogl(e)) }
 
     def resize(newWidth:Int, newHeight:Int) {
     	win.setSize(newWidth, newHeight)
