@@ -1,10 +1,13 @@
 package org.sofa.opengl.text
 
-import org.sofa.Timer
 import scala.collection.mutable.ArrayBuffer
+import scala.math._
+
 import java.awt.{Font => AWTFont, Color => AWTColor, RenderingHints => AWTRenderingHints, Graphics2D => AWTGraphics2D}
 import java.awt.image.BufferedImage
 import java.io.{File, IOException, InputStream, FileInputStream}
+
+import org.sofa.Timer
 import org.sofa.math.{Rgba,Matrix4}
 import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, TexParams, TexAlpha, TexMin, TexMag, TexWrap, TexMipMap}
 import org.sofa.opengl.backend.{TextureImageAwt}
@@ -19,10 +22,7 @@ import org.sofa.opengl.mesh.{QuadsMesh, VertexAttribute}
 //
 // 2. Also we could get rid of the configuration by a static object ?
 //
-// 3. To avoid rendering a texture in a lot of sizes, one could imagine creating the
-//    textures as mip-map.
-//
-// 4. Allow a Text loader to read textures from bitmaps stored in images, instead of
+// 3. Allow a Text loader to read textures from bitmaps stored in images, instead of
 //    rasterizing them. For games this could save time.
 
 
@@ -88,9 +88,6 @@ class GLFont(val gl:SGL, file:String, val size:Int, val isMipMapped:Boolean = fa
 
 	/** The texture with each glyph. */
 	var texture:Texture = null
-
-	/** The full texture region. */
-	var textureRgn:TextureRegion = null
 
 	//----------------------
 
@@ -318,7 +315,6 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 		if(mipmaps) {
 			while(size > 0) {
-println("*** generating image size=%d".format(size))
 				images += new BufferedImage(size, size, BufferedImage.TYPE_4BYTE_ABGR) 
 				size /= 2
 			}
@@ -335,7 +331,6 @@ println("*** generating image size=%d".format(size))
 		var sz    = size
 
 		for(level <- 1 to count) {
-println("*** generating level %d font size %d".format(level, sz))
 			fonts += theFont.deriveFont(AWTFont.PLAIN, sz.toFloat)
 			sz    /= 2
 		}
@@ -344,32 +339,38 @@ println("*** generating level %d font size %d".format(level, sz))
 	}
 
 	protected def renderImage(image:BufferedImage, textureSize:Int, gfx:AWTGraphics2D, font:GLFont, padX:Double, div:Int) {
-// XXX TODO if size < 50 for example stop rendering.
-// XXX OGL ES requires a full mip map pyramid, but it has no meaning
-// XXX to render text so small.
+		// if size < 30 we stop rendering.
+		// OGL ES requires a full mip map pyramid, but it has no meaning
+		// to render text so small.
 
 		var size = textureSize / div
-		val cw   = font.cellWidth / div
-		val ch   = font.cellHeight / div
-		var x    = padX / div
-		var y    = ((ch - 1) - (font.descent/div)).toInt
-		var c    = GLFont.CharStart
 
-		gfx.setColor(AWTColor.white)
+		if(size > 30) {
+			val cw   = font.cellWidth / div
+			val ch   = font.cellHeight / div
+			var x    = padX / div
+			var y    = ((ch - 1) - (font.descent/div)).toInt
+			var c    = GLFont.CharStart
 
-		while(c < GLFont.CharEnd) {
-			gfx.drawString("%c".format(c), x.toInt, y.toInt)
+			gfx.setColor(AWTColor.white)
 
-			x += cw
+			while(c < GLFont.CharEnd) {
+				gfx.drawString("%c".format(c), x.toInt, y.toInt)
 
-			if((x + cw) >= size) {
-				x  = padX / div
-				y += ch
+				x += cw
+
+				if((x + cw) >= size) {
+					x  = padX / div
+					y += ch
+				}
+
+				c += 1
 			}
-
-			c += 1
+		} else {
+			gfx.setColor(new AWTColor(1.0f, 1.0f, 1.0f, 0.25f))
+		    gfx.fillRect(0, 0, size, size)
+			gfx.setColor(AWTColor.white)
 		}
-
 	}
 }
 
@@ -412,14 +413,11 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	/** Mesh used to build the quads of the batch. */
 	protected val batchMesh = new QuadsMesh(maxCharCnt)
 
-	/** Vertex array of the quads for each character. */
-	protected var batch:VertexArray = null
-
 	/** Rendering color. */
 	protected var color = Rgba.Black
 
-	/** Current triangle. */
-	protected var t = 0
+	/** Current quad. */
+	protected var q = 0
 
 	/** Current point. */
 	protected var p = 0
@@ -434,9 +432,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 
 	protected def init() {
 		import VertexAttribute._
-
-//		shader = ShaderProgram(gl, "text shader", "es2/text.vert.glsl", "es2/text.frag.glsl")
-		batch  = batchMesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
+		batchMesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
 	}
 
 	/** Size of the string in pixels. */
@@ -455,6 +451,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	  * before the first character. */
 	def begin() {
 		p = 0
+		q = 0
 		x = 0f
 		y = 0f
 	}
@@ -470,9 +467,11 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 
 	/** Same as calling begin(), char() on each character of the string, then end(). */
 	def build(string:String) {
+println("build -> %s".format(string))
+
 		begin
 		var i = 0
-		val n = string.length
+		val n = min(string.length, maxCharCnt)
 		while(i < n) {
 			char(string.charAt(i))
 			i += 1
@@ -492,7 +491,11 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 
 	/** End the definition of the new string. This can only be called if begin() has been called before. */
 	def end() {
-		batchMesh.updateVertexArray(gl, true, false, false, true)
+		batchMesh.updateVertexArray(gl, updateVertices=true, updateTexCoords=true)
+// println("ICI")
+// 		import VertexAttribute._
+// 		batchMesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
+// println("LA")
 	}
 
 	/** Draw the string with the baseline at (0,0). Use the translation of the camera. */
@@ -516,7 +519,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	    shader.uniform("texColor", 0)
 	    shader.uniform("textColor", clr)
 	    camera.setUniformMVP(shader)
-		batch.draw(batchMesh.drawAs, p)
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs, p)
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?		
 		
 		gl.blendFunc(src, dst)
@@ -544,7 +547,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	    shader.uniform("texColor", 0)
 	    shader.uniform("textColor", clr)
 	    shader.uniformMatrix("MVP", mvp)
-		batch.draw(batchMesh.drawAs, p)
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs, p)
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?
 
 		gl.blendFunc(src, dst)
@@ -556,44 +559,46 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	  * at the left of the start of the character. The character may extend before
 	  * and after, above and under this position. */
 	protected def addCharQuad(rgn:TextureRegion, width:Float) {
-		val W = width + font.pad * 2 // rgn.width 		// Overall character drawing width
-		val H = font.cellHeight      // rgn.height 		// Overall character drawing height
-		val X = x - font.pad                            // Real X start of drawing.
-		val Y = y - font.descent                        // Real Y start of drawing.
+		if(q < maxCharCnt) {
+			val W = width + font.pad * 2 // rgn.width 		// Overall character drawing width
+			val H = font.cellHeight      // rgn.height 		// Overall character drawing height
+			val X = x - font.pad                            // Real X start of drawing.
+			val Y = y - font.descent                        // Real Y start of drawing.
 
-		//  u1 --> u2
-		//  
-		//  v1
-		//   |
-		//   v
-		//  v2
+			//  u1 --> u2
+			//  
+			//  v1
+			//   |
+			//   v
+			//  v2
 
-		//  3--2   ^
-		//  |  |   |
-		//  0--1 >-+ CCW
+			//  3--2   ^
+			//  |  |   |
+			//  0--1 >-+ CCW
 
-		// Vertices
+			// Vertices
 
-		batchMesh.setPoint(p,   X,   Y,   0)
-		batchMesh.setPoint(p+1, X+W, Y,   0)
-		batchMesh.setPoint(p+2, X+W, Y+H, 0)
-		batchMesh.setPoint(p+3, X,   Y+H, 0)
+			batchMesh.setPoint(p,   X,   Y,   0)
+			batchMesh.setPoint(p+1, X+W, Y,   0)
+			batchMesh.setPoint(p+2, X+W, Y+H, 0)
+			batchMesh.setPoint(p+3, X,   Y+H, 0)
 
-		// TexCoords
+			// TexCoords
 
-		batchMesh.setPointTexCoord(p,   rgn.u1, rgn.v2)
-		batchMesh.setPointTexCoord(p+1, rgn.u2, rgn.v2)
-		batchMesh.setPointTexCoord(p+2, rgn.u2, rgn.v1)
-		batchMesh.setPointTexCoord(p+3, rgn.u1, rgn.v1)
+			batchMesh.setPointTexCoord(p,   rgn.u1, rgn.v2)
+			batchMesh.setPointTexCoord(p+1, rgn.u2, rgn.v2)
+			batchMesh.setPointTexCoord(p+2, rgn.u2, rgn.v1)
+			batchMesh.setPointTexCoord(p+3, rgn.u1, rgn.v1)
 
-		// The quad
+			// The quad
 
-		batchMesh.setQuad(t, p, p+1, p+2, p+3)
+			batchMesh.setQuad(q, p, p+1, p+2, p+3)
 
-		// The QuadsMesh supports color per vertice, would it be interesting
-		// to allow to color individual characters in a string ?
+			// The QuadsMesh supports color per vertice, would it be interesting
+			// to allow to color individual characters in a string ?
 
-		p += 4
-		t += 1
+			p += 4
+			q += 1
+		}
 	}
 }

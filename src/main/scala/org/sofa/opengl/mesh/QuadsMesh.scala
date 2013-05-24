@@ -206,7 +206,7 @@ class QuadsMesh(val size:Int) extends Mesh {
 	/** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
 	  * avoid moving data between the CPU and GPU. You may give a boolean for each buffer in the vertex array
 	  * that you want to update or not. */
-	def updateVertexArray(gl:SGL, updateVertices:Boolean, updateColors:Boolean, updateNormals:Boolean, updateTexCoords:Boolean) {
+	def updateVertexArray(gl:SGL, updateVertices:Boolean=false, updateColors:Boolean=false, updateNormals:Boolean=false, updateTexCoords:Boolean=false) {
 		if(va ne null) {
 			if(updateVertices && vend > vbeg) {
 				va.buffer(VertexAttribute.Vertex.toString).update(vbeg, vend, V)

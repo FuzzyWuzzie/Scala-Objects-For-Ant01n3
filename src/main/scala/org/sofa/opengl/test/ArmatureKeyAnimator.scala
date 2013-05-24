@@ -20,13 +20,14 @@ import org.sofa.opengl.armature.{Armature, Joint}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, ScrollEvent, MotionEvent, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
-import org.sofa.opengl.akka.SurfaceExecutorService
+import org.sofa.opengl.text.{GLFont, GLString}
+//import org.sofa.opengl.akka.SurfaceExecutorService
 
 
 // == ArmatureKeyAnimator and Renderer ========================================================
 
 object ArmatureKeyAnimator extends App {
-	SurfaceExecutorService.configure(50)
+//	SurfaceExecutorService.configure(50)
 
 	start
 
@@ -50,12 +51,17 @@ object ArmatureKeyAnimator extends App {
 	    renderer.motion         = renderer.ctrl.motion
 	    renderer.scroll         = renderer.ctrl.scroll
 	    renderer.surface        = new org.sofa.opengl.backend.SurfaceNewt(renderer,
-	    						renderer.camera, "Robot !", caps,
+	    						renderer.camera, "Armature Animator", caps,
 	    						org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
 	}
+
+	final val TextFrameNo = 0
+	final val TextPartId  = 1
 }
 
 class ArmatureKeyAnimator extends SurfaceRenderer {
+	import ArmatureKeyAnimator._
+
 // General
 
     var gl:SGL = null
@@ -75,6 +81,11 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 
     var armature:Armature = null
 
+// Text
+
+	var font:GLFont = null
+	var text = new Array[GLString](10)
+
 // Shading
     
     val clearColor = Rgba.Grey90
@@ -83,6 +94,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
     val yAxisColor = Rgba(0.9,0.7,0,1)
     
     var gridShader:ShaderProgram = null
+    var textShader:ShaderProgram = null
     
 // Rendering
     
@@ -93,9 +105,11 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	    Texture.path  += "textures"
 	    Armature.path += "/Users/antoine/Documents/Art/Images/Bruce_Art"
 	    Armature.path += "svg"
+	    GLFont.path   += "/Users/antoine/Library/Fonts"
 
 	    initGL(gl)
         initShaders
+	    initGLText
 	    initTextures("Robot2.png")
         initArmatures("Robot2.svg")
 	    initGeometry
@@ -117,7 +131,6 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
         gl.frontFace(gl.CW)
         
         gl.disable(gl.BLEND)
-//		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)		// Premultiplied alpha
 
         libraries = Libraries(gl)
@@ -126,8 +139,10 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	protected def initShaders() {
 		libraries.shaders += ShaderResource("plain-shader", "plain_shader.vert.glsl", "plain_shader.frag.glsl")
 		libraries.shaders += ShaderResource("armature-shader", "armature_shader.vert.glsl", "armature_shader.frag.glsl")
+		libraries.shaders += ShaderResource("text-shader", "text.vert.glsl", "text.frag.glsl")
 
 		gridShader = libraries.shaders.get(gl, "plain-shader")
+		textShader = libraries.shaders.get(gl, "text-shader")
 	}
 	
 	protected def initTextures(texFileName:String) {
@@ -137,6 +152,18 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 		libraries.textures += TextureResource("armature-texture", texFileName,
 			TexParams(mipMap=TexMipMap.Load,alpha=TexAlpha.Premultiply,
 				      minFilter=TexMin.LinearAndMipMapLinear,magFilter=TexMag.Linear))
+	}
+
+	protected def initGLText() {
+		font = new GLFont(gl, "Ubuntu-R.ttf", 100, true)
+
+		for(i <- 0 until text.size) {
+			text(i) = new GLString(gl, font, 256, textShader)
+			text(i).setColor(Rgba(0,0,0,0.8))
+		}
+
+		text(TextFrameNo).build("Frame 0")
+		text(TextPartId).build("?")
 	}
 
 	protected def initArmatures(armatureFileName:String) {
@@ -160,6 +187,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 		selected.selected = true
 
 		println(armature.toIndentedString)
+		text(TextPartId).build(selected.name)
 	}
 
 	def reshape(surface:Surface) {
@@ -178,13 +206,13 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-//	    var t = Platform.currentTime
-//	    var d = t - T
-//	    T = t
+		text(TextPartId).build(selected.name)
 
 	    animate
 
 	 	displayGrid
+	 	displayInfo
+	 	displayTimeLines
 
 	 	gl.enable(gl.BLEND)
 	 	gl.disable(gl.DEPTH_TEST)
@@ -193,13 +221,37 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 
 	    surface.swapBuffers
 	    gl.checkErrors
-//println("animate T = %d".format(d))
 	}
 
 	protected def displayGrid() {
 		gridShader.use
 		camera.setUniformMVP(gridShader)
 		grid.lastVertexArray.draw(grid.drawAs)
+	}
+
+	protected def displayInfo() {
+		gl.disable(gl.DEPTH_TEST)
+		
+		camera.pushpop {
+			val scale = 0.001
+			camera.translateModel(-0.7, 0.3, 0)			
+			camera.pushpop {
+				camera.scaleModel(scale, scale, scale)
+				text(TextFrameNo).draw(camera)
+			}
+			camera.translateModel(0, -0.1, 0)			
+			camera.pushpop {
+				camera.scaleModel(scale, scale, scale)
+				text(TextPartId).setColor(Rgba(random, 0, 0, 1))
+				text(TextPartId).draw(camera)
+			}
+		}
+		
+		gl.enable(gl.DEPTH_TEST)
+	}
+
+	protected def displayTimeLines() {
+
 	}
 
 	def animate() {

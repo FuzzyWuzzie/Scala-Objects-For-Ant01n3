@@ -97,12 +97,12 @@ class TestText extends SurfaceRenderer {
 	def initGLText() {
 		GLFont.path += "/Users/antoine/Library/Fonts"
 
-		font = new GLFont(gl, "Ubuntu-R.ttf", 80, true)
-//		font = new GLFont(gl, "DroidSerif-Italic.ttf", 100)
-//		font = new GLFont(gl, "SourceSansPro-Black.ttf", 100)
+//		font = new GLFont(gl, "Ubuntu-R.ttf", 80, true)
+		font = new GLFont(gl, "DroidSerif-Italic.ttf", 80, true)
+//		font = new GLFont(gl, "SourceSansPro-Black.ttf", 80, true)
 		text = new GLString(gl, font, 256, textShad)
 
-		text.setColor(Rgba.Grey20)
+		text.setColor(Rgba.Red)
 		text.build("This is GL text !")
 	}
 	
@@ -115,11 +115,23 @@ class TestText extends SurfaceRenderer {
 		axis  = axisMesh.newVertexArray(gl, plainShad, Vertex -> "position", Color -> "color")
 	}	
 
+	val textData = Array("This is GL text !", "An OpenGL text Library", "Easy to use !", "#@&%$*")
+	var textIndex = 0
+	var count = 0
+
 	def display(surface:Surface) {
 		gl.viewport(0, 0, surface.width, surface.height)
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.frontFace(gl.CW)
 		
+		count += 1
+
+		if(count > 50) {
+			textIndex = (textIndex+1)%textData.size
+			text.build(textData(textIndex))
+			count = 0
+		}
+
 		camera.viewLookAt
 		
 		// Axis
@@ -134,11 +146,11 @@ class TestText extends SurfaceRenderer {
 		camera.pushpop {
 			val scale = (font.texture.width / 100.0)
 
+			gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 			textShad.use
 			font.texture.bindTo(gl.TEXTURE0)
+			textShad.uniform("textColor", Rgba.Red)
 	    	textShad.uniform("texColor", 0)	// Texture Unit 0
-	    //textShad.uniform("textColor", Rgba.black)
-	    	//camera.scaleModel(scale, scale, scale)
 			camera.setUniformMVP(textShad)
 			plane.draw(planeMesh.drawAs)
 			gl.bindTexture(gl.TEXTURE_2D, 0)
@@ -165,11 +177,4 @@ class TestText extends SurfaceRenderer {
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
 		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, 2)
 	}
-	
-	// protected def useLights(shader:ShaderProgram) {
-	// 	shader.uniform("light.pos", Vector3(camera.modelview.top * light1))
-	// 	shader.uniform("light.intensity", 4f)
-	// 	shader.uniform("light.ambient", 0.1f)
-	// 	shader.uniform("light.specular", 100f)
-	// }
 }
