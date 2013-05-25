@@ -17,6 +17,7 @@ import org.sofa.math.{Rgba, Point2, Point3, Vector3, Vector4, Axes, AxisRange}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap, TexAlpha, Libraries, ShaderResource, TextureResource, ArmatureResource}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.armature.{Armature, Joint}
+import org.sofa.opengl.armature.behavior._
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, ScrollEvent, MotionEvent, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
@@ -282,134 +283,11 @@ class TestRobot extends SurfaceRenderer {
 }
 
 
-// -- Behaviors ----------------------------------------------------------------------------
-
-
-abstract class Behavior(val name:String) {
-	def start(t:Long):Behavior
-	def animate(t:Long)
-	def finished(t:Long):Boolean
-
-	override def toString():String = "%s".format(name)
-}
-
-class DoInParallel(name:String, val behaviors:Behavior *) extends Behavior(name) {
-	def start(t:Long):Behavior = { behaviors.foreach { _.start(t) }; this }
-	def animate(t:Long) { behaviors.foreach { _.animate(t) } }
-	def finished(t:Long):Boolean = { behaviors.find { b => b.finished(t) == false } match {
-			case None => true
-			case _    => false
-		}
-	}
-}
-
-class DoInSequence(name:String, b:Behavior *) extends Behavior(name) {
-	val behaviors = b.toArray
-	
-	var index = 0
-
-	def start(t:Long):Behavior = {
-		index = 0
-		behaviors(index).start(t)
-		this
-	}
-	
-	def animate(t:Long) { 
-		if(index < behaviors.length) {
-			if(behaviors(index).finished(t)) {
-				index += 1
-				if(index < behaviors.length)
-					behaviors(index).start(t)
-			}
-			if(index < behaviors.length) {
-				behaviors(index).animate(t)
-			}
-		}
-	}
-
-	def finished(t:Long):Boolean = (index >= behaviors.length)
-}
-
-abstract class JointBehavior(name:String, val joint:Joint) extends Behavior(name) {}
-
-abstract class InterpolateBehavior(name:String, joint:Joint, val duration:Long) extends JointBehavior(name, joint) {
-	var from = 0L
-
-	var to = 0L
-	
-	def start(t:Long):Behavior = { from = t; to = t + duration; this }
-
-	protected def interpolation(t:Long):Double = (t-from).toDouble / (to-from).toDouble
-
-	def finished(t:Long):Boolean = (t >= to)
-}
-
-class InterpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:Long) extends InterpolateBehavior(name, joint, duration) {
-	var startAngle:Double = 0.0
-
-	override def start(t:Long):Behavior = {
-		startAngle = joint.transform.angle
-		super.start(t)
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joint.transform.angle = targetAngle
-		} else {
-			joint.transform.angle = startAngle + ((targetAngle - startAngle) * interpolation(t))
-//println("joint %s angle %f (%% == %f)".format(joint.name, joint.angle, percent))
-		}
-	}
-}
-
-class InterpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
-	var startPosition = new Point2(0,0)
-
-	override def start(t:Long):Behavior = {
-		startPosition.copy(joint.transform.translation)
-		super.start(t)
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joint.transform.translation.set(targetPosition._1, targetPosition._2)
-		} else {
-			val interp =  interpolation(t)
-			joint.transform.translation.set(
-				startPosition.x + ((targetPosition._1 - startPosition.x) * interp),
-				startPosition.y + ((targetPosition._2 - startPosition.y) * interp)
-			)
-		}
-	}
-}
-
-class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
-	var startPosition = new Point2(0,0)
-
-	override def start(t:Long):Behavior = {
-		startPosition.copy(joint.transform.translation)
-		super.start(t)
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joint.transform.translation.set(startPosition.x + displacement._1, startPosition.y + displacement._2)
-		} else {
-			val interp = interpolation(t)
-			joint.transform.translation.set(
-				startPosition.x + (displacement._1 * interp),
-				startPosition.y + (displacement._2 * interp)
-			)
-		}
-	}
-}
-
-
 // -- Robot Behavior -----------------------------------------------------------------------------
 
 
 class RobotBehavior(val armature:Armature) {
-	var behavior:Behavior = null
+	var behavior:ArmatureBehavior = null
 
 	init
 
@@ -423,42 +301,42 @@ class RobotBehavior(val armature:Armature) {
 		behavior = walkRight.start(Platform.currentTime) //upRLeg(Platform.currentTime)
 	}
 
-	def walkRight:Behavior = new DoInSequence("walkRight", upRLeg, moveRight, downRLeg, upLLeg, downLLeg)
+	def walkRight = new DoInSequence("walkRight", upRLeg, moveRight, downRLeg, upLLeg, downLLeg)
 
-	def walkLeft:Behavior = new DoInSequence("walkLeft", upLLeg, moveLeft, downLLeg, upRLeg, downRLeg)
+	def walkLeft = new DoInSequence("walkLeft", upLLeg, moveLeft, downLLeg, upRLeg, downRLeg)
 
-	def upRLeg:Behavior = new DoInParallel("upRLeg",
+	def upRLeg = new DoInParallel("upRLeg",
 		new InterpToAngle("a", (armature \\ "rleg"),      0.7, durationMs),
 		new InterpToAngle("b", (armature \\ "rforeleg"), -0.5, durationMs),
 		new InterpToAngle("c", (armature \\ "rfoot"),    -0.2, durationMs)
 	)
 
-	def upLLeg:Behavior = new DoInParallel("upLLeg",
+	def upLLeg = new DoInParallel("upLLeg",
 		new InterpToAngle("a", (armature \\ "lleg"),     -0.7, durationMs),
 		new InterpToAngle("b", (armature \\ "lforeleg"),  0.5, durationMs),
 		new InterpToAngle("c", (armature \\ "lfoot"),     0.2, durationMs)
 	)
 	
-	def downRLeg:Behavior = new DoInParallel("downRLeg",
+	def downRLeg = new DoInParallel("downRLeg",
 		new InterpToAngle("a", (armature \\ "rleg"),      0.3, durationMs),
 		new InterpToAngle("b", (armature \\ "rforeleg"), -0.3, durationMs),
 		new InterpToAngle("c", (armature \\ "rfoot"),     0.0, durationMs)
 	)
 
-	def downLLeg:Behavior = new DoInParallel("downLLeg",
+	def downLLeg = new DoInParallel("downLLeg",
 		new InterpToAngle("a", (armature \\ "lleg"),     -0.3, durationMs),
 		new InterpToAngle("b", (armature \\ "lforeleg"),  0.3, durationMs),
 		new InterpToAngle("c", (armature \\ "lfoot"),     0.0, durationMs)
 	)
 
-	def moveLeft:Behavior = new DoInParallel("moveLeft",
+	def moveLeft = new DoInParallel("moveLeft",
 		new InterpMove("a",    (armature \\ "root"),    (-0.025, 0), durationMs),
 		new InterpToAngle("b", (armature \\ "rleg"),      0.4,       durationMs),
 		new InterpToAngle("c", (armature \\ "rforeleg"),  0.0,       durationMs),
 		new InterpToAngle("d", (armature \\ "rfoot"),    -0.1,       durationMs)
 	)
 	
-	def moveRight:Behavior = new DoInParallel("moveRight",
+	def moveRight = new DoInParallel("moveRight",
 		new InterpMove("a",    (armature \\ "root"),     (0.025, 0), durationMs),
 		new InterpToAngle("b", (armature \\ "lleg"),     -0.4,       durationMs),
 		new InterpToAngle("c", (armature \\ "lforeleg"),  0.0,       durationMs),

@@ -17,11 +17,11 @@ import org.sofa.math.{Rgba, Point2, Point3, Vector3, Vector4, Axes, AxisRange}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap, TexAlpha, Libraries, ShaderResource, TextureResource, ArmatureResource}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.armature.{Armature, Joint}
+import org.sofa.opengl.armature.behavior.{ArmatureBehavior, ArmatureBehaviorLoader, KeyInterp}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, ScrollEvent, MotionEvent, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
 import org.sofa.opengl.text.{GLFont, GLString}
-//import org.sofa.opengl.akka.SurfaceExecutorService
 
 
 // == ArmatureKeyAnimator and Renderer ========================================================
@@ -106,6 +106,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	    Armature.path += "/Users/antoine/Documents/Art/Images/Bruce_Art"
 	    Armature.path += "svg"
 	    GLFont.path   += "/Users/antoine/Library/Fonts"
+	    ArmatureBehavior.path += "/Users/antoine/Desktop"
 
 	    initGL(gl)
         initShaders
@@ -113,6 +114,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	    initTextures("Robot2.png")
         initArmatures("Robot2.svg")
 	    initGeometry
+	    initBehaviors
 	    
 	    camera.viewCartesian(0, 10, 10)
 	    camera.setFocus(0, 2, 0)
@@ -155,7 +157,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	}
 
 	protected def initGLText() {
-		font = new GLFont(gl, "Ubuntu-R.ttf", 100, true)
+		font = new GLFont(gl, "Ubuntu-R.ttf", 99, true)
 
 		for(i <- 0 until text.size) {
 			text(i) = new GLString(gl, font, 256, textShader)
@@ -187,7 +189,15 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 		selected.selected = true
 
 		println(armature.toIndentedString)
-		text(TextPartId).build(selected.name)
+		text(TextPartId).build("[%s]".format(selected.name))
+		text(TextPartId).setColor(Rgba(0.2, 0.0, 0.3, 0.9))
+		text(TextFrameNo).setColor(Rgba(0.3, 0.2, 0, 0.9))
+	}
+
+	protected def initBehaviors() {
+		val behavior = new KeyInterp("walk", armature)
+
+		behavior.loadFrom("Robot2.sifz")
 	}
 
 	def reshape(surface:Surface) {
@@ -240,7 +250,6 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 			camera.translateModel(0, -0.1, 0)			
 			camera.pushpop {
 				camera.scaleModel(scale, scale, scale)
-				text(TextPartId).setColor(Rgba(random, 0, 0, 1))
 				text(TextPartId).draw(camera)
 			}
 		}
@@ -264,7 +273,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 				selected.selected = false
 				selected = selected.parent
 				selected.selected = true
-				text(TextPartId).build(selected.name)
+				text(TextPartId).build("[%s]".format(selected.name))
 				println("-> parent")
 			}
 		}
@@ -276,7 +285,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 				selected.selected = false
 				selected = selected.sub(0)
 				selected.selected = true
-				text(TextPartId).build(selected.name)
+				text(TextPartId).build("[%s]".format(selected.name))
 				selindex = 0
 				println("-> first sub")
 			}
@@ -290,7 +299,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 				selected.selected = false
 				selected = selected.parent.sub(selindex)
 				selected.selected = true
-				text(TextPartId).build(selected.name)
+				text(TextPartId).build("[%s]".format(selected.name))
 				println("-> next sibling")
 			}
 		}
@@ -303,7 +312,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 				selected.selected = false
 				selected = selected.parent.sub(selindex)
 				selected.selected = true
-				text(TextPartId).build(selected.name)
+				text(TextPartId).build("[%s]".format(selected.name))
 				println("-> prev sibling")
 			}
 		}

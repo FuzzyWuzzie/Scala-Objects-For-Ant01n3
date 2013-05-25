@@ -10,13 +10,13 @@ import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 
 case class NoSuchJointException(message:String) extends Exception(message)
 
-/** Pluggable loader for shader sources. */
+/** Pluggable loader for armature sources. */
 trait ArmatureLoader extends FileLoader {
     /** Try to open a resource, or throw an IOException if not available. */
     def open(name:String, texRes:String, shaderRes:String, resource:String):Armature
 }
 
-/** Default loader for shaders, based on files and the include path.
+/** Default loader for armatures, based on files and the include path.
   * This loader tries to open the given resource directly, then if not
   * found, tries to find it in each of the pathes provided by the include
   * path. If not found it throws an IOException. */
