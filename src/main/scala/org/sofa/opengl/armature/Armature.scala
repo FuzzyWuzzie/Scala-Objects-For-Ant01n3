@@ -111,7 +111,7 @@ class Armature(val name:String,
 
 class JointTransform {
 
-	/** Current rotation. */
+	/** Current rotation in radians. */
 	var angle = 0.0
 
 	/** Current translation (before or after rotation ??? or the twos ?) */

@@ -17,7 +17,7 @@ import org.sofa.math.{Rgba, Point2, Point3, Vector3, Vector4, Axes, AxisRange}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap, TexAlpha, Libraries, ShaderResource, TextureResource, ArmatureResource}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.armature.{Armature, Joint}
-import org.sofa.opengl.armature.behavior.{ArmatureBehavior, ArmatureBehaviorLoader, KeyInterp}
+import org.sofa.opengl.armature.behavior.{ArmatureBehavior, ArmatureBehaviorLoader, ArmatureKeyInterp}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, ScrollEvent, MotionEvent, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
@@ -95,6 +95,11 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
     
     var gridShader:ShaderProgram = null
     var textShader:ShaderProgram = null
+
+
+// Behavior
+
+	var behavior:ArmatureBehavior = null
     
 // Rendering
     
@@ -195,9 +200,8 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	}
 
 	protected def initBehaviors() {
-		val behavior = new KeyInterp("walk", armature)
-
-		behavior.loadFrom("Robot2.sifz")
+		behavior = new ArmatureKeyInterp("walk", armature, "Robot2.sifz", 0.05)
+		behavior.start(Platform.currentTime)
 	}
 
 	def reshape(surface:Surface) {
@@ -261,7 +265,21 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 
 	}
 
+var count = 0
+
 	def animate() {
+		count += 1
+		if(count > 1 && (behavior ne null)) {
+			count = 0
+			val t = Platform.currentTime
+
+			if(behavior.finished(t)) {
+				//armature.root.transform.translation.set(0,0)
+				behavior.start(t)
+			} else {
+				behavior.animate(t)
+			}
+		}
 	}
 
 	var selected:Joint = null

@@ -3,7 +3,7 @@ package org.sofa.opengl.armature.behavior
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 
 import org.sofa.FileLoader
-import org.sofa.math.{Point2}
+import org.sofa.math.{Point2, Vector2}
 import org.sofa.opengl.armature.{Armature, Joint, SifzArmatureBehaviorLoader, TimedKeys, TimedValue, TimedVector}
 
 
@@ -129,6 +129,7 @@ class InterpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:L
 }
 
 
+/** Absolute displacement. */
 class InterpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
 	var startPosition = new Point2(0,0)
 
@@ -151,6 +152,7 @@ class InterpToPosition(name:String, joint:Joint, val targetPosition:(Double,Doub
 }
 
 
+/** Relative displacement. */
 class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
 	var startPosition = new Point2(0,0)
 
@@ -174,27 +176,154 @@ class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), dur
 
 // -- KeyInterp ------------------------------------------------------------------------------------------
 
-class KeyInterp(name:String, armature:Armature) extends ArmatureBehavior(name) {
+abstract class JointKeyInterp(name:String, joint:Joint) extends JointBehavior(name, joint) {
+	var from = 0L
 
-	def loadFrom(fileName:String) {
-		val keys = ArmatureBehavior.loader.load(fileName)
+	var to = 0L
 
-println("*** keys size %d".format(keys.size))
-		keys foreach { item =>
-			println("have %d translate and %d rotate for %s".format(item._2.translate.size, item._2.rotate.size, item._1))
-		}
-	}
+	def start(t:Long):ArmatureBehavior = { from = t; to = t + next; this }
 
-	def start(t:Long):ArmatureBehavior = {
-		null
+	def finished(t:Long):Boolean = (t >= to && (!hasNext))
+
+	protected def interpolation(t:Long):Double = (t-from).toDouble / (to-from).toDouble
+
+	protected def next():Long
+
+	protected def hasNext():Boolean
+}
+
+/** Relative displacement. 
+  *
+  * The translate set of vectors are absolute positions according to the start position, not relative one
+  * with another.
+  */
+class JointKeyMoveInterp(name:String, joint:Joint, val translate:Array[TimedVector]) extends JointKeyInterp(name, joint) {
+	var index = -1
+
+	var startPosition = Vector2(0,0)
+
+	var fromPosition = Vector2(0,0)
+
+	var toPosition = Vector2(0,0)
+
+	override def start(t:Long):ArmatureBehavior = {
+		index = -1
+		
+		startPosition.copy(joint.transform.translation)
+		fromPosition.copy(startPosition)
+		super.start(t)
 	}
 
 	def animate(t:Long) {
-
+		if(finished(t)) {
+			joint.transform.translation.set(startPosition.x + toPosition.x, startPosition.y + toPosition.y)
+		} else {
+			if(t > to) {
+				from = t
+				to   = t + next
+			}
+			
+			val interp = interpolation(t)
+			joint.transform.translation.set(
+				startPosition.x + fromPosition.x + ((toPosition.x - fromPosition.x) * interp),
+				startPosition.y + fromPosition.y + ((toPosition.y - fromPosition.y) * interp)
+			)
+		}
 	}
 
-	def finished(t:Long):Boolean = {
-		true
+	protected def next():Long = {		
+		index += 1
+
+		if(index < translate.length) {
+			fromPosition.copy(toPosition)
+			toPosition.copy(translate(index).vector)
+			translate(index).timeMs
+		} else {
+			0L
+		}
 	}
-	
+
+	protected def hasNext():Boolean = (index+1 < translate.length)
+}
+
+class JointKeyRotateInterp(name:String, joint:Joint, val rotate:Array[TimedValue]) extends JointKeyInterp(name, joint) {
+	var index = -1
+
+	var startAngle = 0.0
+
+	var fromAngle = 0.0
+
+	var toAngle = 0.0
+
+	override def start(t:Long):ArmatureBehavior = {
+		index     = -1
+		fromAngle = joint.transform.angle
+		
+		super.start(t)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.transform.angle = toAngle
+		} else {
+			if(t > to) {
+				from = t
+				to   = t + next
+			}
+
+			val interp = interpolation(t)
+			joint.transform.angle = fromAngle + ((toAngle - fromAngle) * interp)
+		}
+	}
+
+	protected def next():Long = {
+		index += 1
+
+		if(index < rotate.length) {
+			fromAngle = toAngle
+			toAngle   = rotate(index).value
+			rotate(index).timeMs
+		} else {
+			0L
+		}
+	}
+
+	protected def hasNext():Boolean = (index+1 < rotate.length)
+}
+
+object  ArmatureKeyInterp {
+	def loadFrom(fileName:String, armature:Armature, scal:Double = 1.0):Array[ArmatureBehavior] = {
+		val keys = ArmatureBehavior.loader.load(fileName)
+		val behaviors = new ArrayBuffer[JointKeyInterp]
+
+		keys.foreach { keyset =>
+			val name  = keyset._1
+			val anim  = keyset._2
+			val joint = (armature \\ name)
+
+			if((anim.translate ne null) && anim.translate.size > 0)
+				behaviors += new JointKeyMoveInterp(name, joint, scale(scal, anim.translate.toArray))
+			
+			if((anim.rotate ne null) && anim.rotate.size > 0)
+				behaviors += new JointKeyRotateInterp(name, joint, anim.rotate.toArray)
+		}
+
+		behaviors.toArray
+	}	
+
+	private def scale(scale:Double, translate:Array[TimedVector]):Array[TimedVector] = {
+		translate.foreach { tv =>
+			tv.vector.set(tv.vector.x * scale, tv.vector.y * scale)
+		}
+		translate
+	}
+}
+
+/** A set of joint key interpolators. */
+class ArmatureKeyInterp(name:String, armature:Armature, behaviors:ArmatureBehavior *) extends DoInParallel(name, behaviors:_*) {
+	import ArmatureKeyInterp._
+
+	def this(name:String, armature:Armature, fileName:String, scale:Double = 1.0) {
+		this(name, armature, ArmatureKeyInterp.loadFrom(fileName, armature, scale):_*)
+	}
 }

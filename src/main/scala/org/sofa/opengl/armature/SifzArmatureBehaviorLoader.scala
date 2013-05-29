@@ -210,5 +210,5 @@ class SifzArmatureBehaviorLoader {
 	}
 
 	/** Parse a single angle. */
-	protected def parseAngle(angle:Node):Double = (angle \ "@value").text.toDouble
+	protected def parseAngle(angle:Node):Double = (angle \ "@value").text.toDouble.toRadians
 }
