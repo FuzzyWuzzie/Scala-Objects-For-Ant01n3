@@ -81,7 +81,7 @@ class SifzArmatureBehaviorLoader {
 		fps   = (root \ "@fps").text.toDouble.toInt
 		start = convertInFrames((root \ "@begin-time").text)
 		end   = convertInFrames((root \ "@end-time").text)
-
+println("fps=%d, start=%d, end=%d".format(fps, start, end))
 		parsePasteCanvas(pasteCanvasOf(root \ "layer"), 0)
 	}
 

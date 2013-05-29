@@ -193,14 +193,14 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 		selected = (armature \\ "root")
 		selected.selected = true
 
-		println(armature.toIndentedString)
+		//println(armature.toIndentedString)
 		text(TextPartId).build("[%s]".format(selected.name))
 		text(TextPartId).setColor(Rgba(0.2, 0.0, 0.3, 0.9))
 		text(TextFrameNo).setColor(Rgba(0.3, 0.2, 0, 0.9))
 	}
 
 	protected def initBehaviors() {
-		behavior = new ArmatureKeyInterp("walk", armature, "Robot2.sifz", 0.05)
+		behavior = new ArmatureKeyInterp("walk", armature, "Robot3.sifz", 0.05)
 		behavior.start(Platform.currentTime)
 	}
 

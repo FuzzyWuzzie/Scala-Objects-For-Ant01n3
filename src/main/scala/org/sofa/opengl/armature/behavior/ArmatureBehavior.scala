@@ -177,11 +177,13 @@ class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), dur
 // -- KeyInterp ------------------------------------------------------------------------------------------
 
 abstract class JointKeyInterp(name:String, joint:Joint) extends JointBehavior(name, joint) {
+	var init = 0L
+
 	var from = 0L
 
 	var to = 0L
 
-	def start(t:Long):ArmatureBehavior = { from = t; to = t + next; this }
+	def start(t:Long):ArmatureBehavior = { init = t; from = t; to = t + next; this }
 
 	def finished(t:Long):Boolean = (t >= to && (!hasNext))
 
@@ -219,8 +221,8 @@ class JointKeyMoveInterp(name:String, joint:Joint, val translate:Array[TimedVect
 			joint.transform.translation.set(startPosition.x + toPosition.x, startPosition.y + toPosition.y)
 		} else {
 			if(t > to) {
-				from = t
-				to   = t + next
+				from = to
+				to   = init + next
 			}
 			
 			val interp = interpolation(t)
@@ -267,8 +269,8 @@ class JointKeyRotateInterp(name:String, joint:Joint, val rotate:Array[TimedValue
 			joint.transform.angle = toAngle
 		} else {
 			if(t > to) {
-				from = t
-				to   = t + next
+				from = to
+				to   = init + next
 			}
 
 			val interp = interpolation(t)
