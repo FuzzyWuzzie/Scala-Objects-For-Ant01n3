@@ -68,10 +68,18 @@ object GLFont {
   * better rendering is to use no mip-maps. If your text is rendered in 3D or with
   * a changing size or with any transformations, enable mip-maps for better quality.
   *
+  * If you enable mip-maps, you can ask to try to rasterize the text for each mip-map
+  * level (instead of rasterizing it once at the highest level an producing sub-levels
+  * by resizing this image) with the option `rasterizeMipMaps`.
+  * This will produce crispier text, but can introduce artifacts
+  * between levels since the rasterizer will move some pixels (indeed in order to produce
+  * crispier text). In this case if your text will always be in 2D, specify `optimizeFor3D`
+  * to false (the default).
+  *
   * This code is derived and largely inspired by the implementation of Fractious:
   * http://fractiousg.blogspot.fr/2012/04/rendering-text-in-opengl-on-android.html
   */
-class GLFont(val gl:SGL, file:String, val size:Int, val isMipMapped:Boolean = false) {
+class GLFont(val gl:SGL, file:String, val size:Int, val isMipMapped:Boolean = false, rasterizeMipMaps:Boolean = true, optimizeFor3D:Boolean = false) {
 	/** Font height (actual, pixels). */
 	var height = 0f
 
@@ -120,7 +128,7 @@ class GLFont(val gl:SGL, file:String, val size:Int, val isMipMapped:Boolean = fa
 
 	//--------------------------
 
-	GLFont.loader.load(gl, file, size, this, isMipMapped)
+	GLFont.loader.load(gl, file, size, this, isMipMapped, rasterizeMipMaps, optimizeFor3D)
 
 	//--------------------------
 
@@ -149,8 +157,18 @@ class GLFont(val gl:SGL, file:String, val size:Int, val isMipMapped:Boolean = fa
 
 /** Loader for fonts. */
 trait GLFontLoader {
-	/** Try to load the given font file at the given size. */
-	def load(gl:SGL, file:String, size:Int, font:GLFont, mipmaps:Boolean = false)
+	/** Try to load the given font file at the given size.
+	  *
+	  * If `mipmaps` is true, try to generate mip-maps for the text. This is only useful 
+	  * if you intent to use the font in 3D or in 2D and zoom on it. If you intent to work
+	  * in 2D at a pixel perfect resolution, do not use mip-maps. In the other case, you
+	  * can ask to try to render the font for each mip-map level (`rasterizeMipMaps`). In
+	  * this case the rasterizer will re-render the font at each mip-map level to try to have
+	  * the crispiest text possible. This can incur some rendering problems as the rasterizer
+	  * will move some pixels in order to do that. So if you intent to view the text in 3D (no
+	  * parallel to the screen) specify `optimizeFor3D` with true.
+	  */
+	def load(gl:SGL, file:String, size:Int, font:GLFont, mipmaps:Boolean = false, rasterizeMipMaps:Boolean = true, optimizeFor3D:Boolean = false)
 }
 
 
@@ -159,15 +177,7 @@ trait GLFontLoader {
 
 /** A fond loader that rasterize the text using AWT and Java2D. */
 class GLFontLoaderAWT extends GLFontLoader {
-	def load(gl:SGL, resource:String, size:Int, font:GLFont, mipmaps:Boolean = false) {
-		// XXX This code has all the mechanic to create mipmaps by rendering several
-		// images using several fonts at various sizes. However this code is not used
-		// and mipmaps are actually generated automatically from the main image. This
-		// is because, indeed the text is crispier when rendered at various sizes, but
-		// hinting will offset text to match pixels and therefore produce strange
-		// artifacts.
-
-
+	def load(gl:SGL, resource:String, size:Int, font:GLFont, mipmaps:Boolean = false, rasterizeMipMaps:Boolean = true, optimizeFor3D:Boolean = false) {
 		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
 
 		font.isAlphaPremultiplied = true
@@ -178,9 +188,12 @@ class GLFontLoaderAWT extends GLFontLoader {
 		val w = size*1.4 		// factor to make some room.
 		val h = size*1.4 		// idem
 		val textureSize = math.sqrt((w*1.1) * (h*1.1) * GLFont.CharCnt).toInt
+
+		// If we use generated mipmaps, rasterizeMipMaps is false and we will
+		// generate only one image. In this case all the remaining parts of
+		// the rasterizer will follow and the mip-maps will be generated.
 		
-		val images = generateImages(textureSize, mipmaps)
-//		val images = generateImages(textureSize, false)
+		val images = generateImages(textureSize, mipmaps && rasterizeMipMaps)
 		val gfx    = images.map { img => img.getGraphics.asInstanceOf[AWTGraphics2D] }
 
 		// Load the font.
@@ -257,9 +270,19 @@ class GLFontLoaderAWT extends GLFontLoader {
 
 		// Generate a new texture.
 
-		val texParams = if(mipmaps)
-				 TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.LinearAndMipMapLinear,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.Load)
-			else TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Linear,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.No)
+		val texParams = if(mipmaps) {
+			if(rasterizeMipMaps) {
+				if(optimizeFor3D)
+					 TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.LinearAndMipMapLinear, magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.Load)
+				else TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.LinearAndMipMapNearest,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.Load)
+			} else {
+				if(optimizeFor3D)
+				     TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.LinearAndMipMapLinear, magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.Generate)
+				else TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.LinearAndMipMapNearest,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.Generate)
+			}
+		} else {
+			TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Linear,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.No)
+		}
 		
 		font.texture = new Texture(gl, new TextureImageAwt(images, texParams), texParams)
 

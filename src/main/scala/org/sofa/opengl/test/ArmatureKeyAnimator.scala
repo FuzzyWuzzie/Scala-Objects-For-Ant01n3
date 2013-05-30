@@ -162,14 +162,14 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	}
 
 	protected def initGLText() {
-		font = new GLFont(gl, "Ubuntu-R.ttf", 99, true)
+		font = new GLFont(gl, "Ubuntu-R.ttf", 80, true)
 
 		for(i <- 0 until text.size) {
 			text(i) = new GLString(gl, font, 256, textShader)
 			text(i).setColor(Rgba(0,0,0,0.8))
 		}
 
-		text(TextFrameNo).build("Frame 0")
+		text(TextFrameNo).build("0ms")
 		text(TextPartId).build("?")
 	}
 
@@ -245,7 +245,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 		gl.disable(gl.DEPTH_TEST)
 		
 		camera.pushpop {
-			val scale = 0.001
+			val scale = 0.0007
 			camera.translateModel(-0.7, 0.3, 0)			
 			camera.pushpop {
 				camera.scaleModel(scale, scale, scale)
@@ -265,21 +265,20 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 
 	}
 
-var count = 0
+	var startTime = 0L
 
 	def animate() {
-		count += 1
-		if(count > 1 && (behavior ne null)) {
-			count = 0
-			val t = Platform.currentTime
+		val t = Platform.currentTime
 
-			if(behavior.finished(t)) {
-				//armature.root.transform.translation.set(0,0)
-				behavior.start(t)
-			} else {
-				behavior.animate(t)
-			}
+		if(behavior.finished(t)) {
+			//armature.root.transform.translation.set(0,0)
+			behavior.start(t)
+			startTime = t
+		} else {
+			behavior.animate(t)
 		}
+
+		text(TextFrameNo).build("%dms".format(t-startTime))
 	}
 
 	var selected:Joint = null

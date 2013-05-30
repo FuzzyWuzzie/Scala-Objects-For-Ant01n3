@@ -176,11 +176,15 @@ class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), dur
 
 // -- KeyInterp ------------------------------------------------------------------------------------------
 
+/** Base interpolator for joints using a sequence of keys at specific times. */
 abstract class JointKeyInterp(name:String, joint:Joint) extends JointBehavior(name, joint) {
+	/** Time at start (used to avoid time drift). */
 	var init = 0L
 
+	/** The current key start time. */
 	var from = 0L
 
+	/** The current key end time. */
 	var to = 0L
 
 	def start(t:Long):ArmatureBehavior = { init = t; from = t; to = t + next; this }
@@ -189,16 +193,17 @@ abstract class JointKeyInterp(name:String, joint:Joint) extends JointBehavior(na
 
 	protected def interpolation(t:Long):Double = (t-from).toDouble / (to-from).toDouble
 
+	/** Switch to the next key (if possible) and return the end-time of the next key (relative to the start not to the previous key). */
 	protected def next():Long
 
+	/** True if there is a next key. */
 	protected def hasNext():Boolean
 }
 
-/** Relative displacement. 
+/** Relative displacement according to a set of key positions in time. 
   *
-  * The translate set of vectors are absolute positions according to the start position, not relative one
-  * with another.
-  */
+  * The set of translation vectors are absolute positions according to the start position, not relative one
+  * with another. Each vector has a time that is relative to the start not to the previous key. */
 class JointKeyMoveInterp(name:String, joint:Joint, val translate:Array[TimedVector]) extends JointKeyInterp(name, joint) {
 	var index = -1
 
@@ -248,6 +253,10 @@ class JointKeyMoveInterp(name:String, joint:Joint, val translate:Array[TimedVect
 	protected def hasNext():Boolean = (index+1 < translate.length)
 }
 
+/** Absolute rotation, according to a set of key angles in time. 
+  *
+  * The set of angles are absolute values, not relative one with another.
+  * Each rotation has a time that is relative to the start not to the previous key. */
 class JointKeyRotateInterp(name:String, joint:Joint, val rotate:Array[TimedValue]) extends JointKeyInterp(name, joint) {
 	var index = -1
 

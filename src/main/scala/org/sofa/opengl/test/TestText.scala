@@ -97,8 +97,8 @@ class TestText extends SurfaceRenderer {
 	def initGLText() {
 		GLFont.path += "/Users/antoine/Library/Fonts"
 
-//		font = new GLFont(gl, "Ubuntu-R.ttf", 80, true)
-		font = new GLFont(gl, "DroidSerif-Italic.ttf", 80, true)
+		font = new GLFont(gl, "Ubuntu-R.ttf", 80, true)
+//		font = new GLFont(gl, "DroidSerif-Italic.ttf", 80, true)
 //		font = new GLFont(gl, "SourceSansPro-Black.ttf", 80, true)
 		text = new GLString(gl, font, 256, textShad)
 
