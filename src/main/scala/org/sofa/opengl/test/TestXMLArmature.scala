@@ -35,7 +35,7 @@ class TestXMLArmature extends SurfaceRenderer {
 
 // Geometry
 
-	val grid = new LinesMesh(40)
+	val grid = new LinesMesh(42)
 
     var armature:Armature = null
 

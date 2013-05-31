@@ -121,14 +121,14 @@ class JointTransform {
 	var scale = Vector2(1, 1)
 
 	def transform(camera:Camera) {
-		if(angle != 0)
-			camera.rotateModel(angle, 0, 0, 1)
+		if(translation.x != 0 || translation.y != 0)
+			camera.translateModel(translation.x, translation.y, 1)
 
 		if(scale.x != 0 || scale.y != 0)
 			camera.scaleModel(scale.x, scale.y, 1)
-
-		if(translation.x != 0 || translation.y != 0)
-			camera.translateModel(translation.x, translation.y, 1)
+		
+		if(angle != 0)
+			camera.rotateModel(angle, 0, 0, 1)
 	}
 }
 

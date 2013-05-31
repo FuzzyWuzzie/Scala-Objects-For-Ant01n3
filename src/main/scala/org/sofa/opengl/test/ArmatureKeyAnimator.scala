@@ -17,7 +17,7 @@ import org.sofa.math.{Rgba, Point2, Point3, Vector3, Vector4, Axes, AxisRange}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap, TexAlpha, Libraries, ShaderResource, TextureResource, ArmatureResource}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.armature.{Armature, Joint}
-import org.sofa.opengl.armature.behavior.{ArmatureBehavior, ArmatureBehaviorLoader, ArmatureKeyInterp}
+import org.sofa.opengl.armature.behavior.{ArmatureBehavior, ArmatureBehaviorLoader, ArmatureKeyInterp, JointVisibilitySwitch, BehaviorLoop}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, ScrollEvent, MotionEvent, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
@@ -99,7 +99,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 
 // Behavior
 
-	var behavior:ArmatureBehavior = null
+	var robot:RobotZazou2 = null
     
 // Rendering
     
@@ -200,8 +200,8 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	}
 
 	protected def initBehaviors() {
-		behavior = new ArmatureKeyInterp("walk", armature, "Robot3.sifz", 0.05)
-		behavior.start(Platform.currentTime)
+		robot = new RobotZazou2(armature)
+		robot.start
 	}
 
 	def reshape(surface:Surface) {
@@ -224,7 +224,6 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 
 	 	displayGrid
 	 	displayInfo
-	 	displayTimeLines
 
 	 	gl.enable(gl.BLEND)
 	 	gl.disable(gl.DEPTH_TEST)
@@ -261,24 +260,9 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 		gl.enable(gl.DEPTH_TEST)
 	}
 
-	protected def displayTimeLines() {
-
-	}
-
-	var startTime = 0L
-
 	def animate() {
-		val t = Platform.currentTime
-
-		if(behavior.finished(t)) {
-			//armature.root.transform.translation.set(0,0)
-			behavior.start(t)
-			startTime = t
-		} else {
-			behavior.animate(t)
-		}
-
-		text(TextFrameNo).build("%dms".format(t-startTime))
+		robot.animate()
+		text(TextFrameNo).build("%dms".format(robot.endTime-robot.startTime))
 	}
 
 	var selected:Joint = null
@@ -336,6 +320,44 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	}
 }
 
+
+class RobotZazou2(val armature:Armature) {
+
+	var startTime = 0L
+
+	var endTime = 0L
+
+	var walkBehavior:ArmatureBehavior = new ArmatureKeyInterp("walk", armature, "Robot3.sifz", 0.05)
+
+	var mouthBehavior:ArmatureBehavior = BehaviorLoop("mouth", 0, JointVisibilitySwitch("mouth", 500, armature \\ "mouthgrin", armature \\ "mouthoh"))
+
+	var bipbipBehavior:ArmatureBehavior = BehaviorLoop("bibbip", 0, JointVisibilitySwitch("bipbip", 300, armature \\ "bipbip1", armature \\ "bipbip2"))
+
+	def start() {
+		val t = Platform.currentTime
+
+		walkBehavior.start(t)
+		mouthBehavior.start(t)
+		bipbipBehavior.start(t)
+	}
+
+	def animate() {
+		endTime = Platform.currentTime
+
+		if(startTime == 0L)
+			startTime = endTime
+
+		if(walkBehavior.finished(endTime)) {
+			walkBehavior.start(endTime)
+			startTime = endTime
+		} else {
+			walkBehavior.animate(endTime)
+		}
+
+		mouthBehavior.animate(endTime)
+		bipbipBehavior.animate(endTime)
+	}
+}
 
 // -- User Interaction ---------------------------------------------------------------------------
 

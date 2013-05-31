@@ -7,6 +7,13 @@ import org.sofa.math.{Point2, Vector2}
 import org.sofa.opengl.armature.{Armature, Joint, SifzArmatureBehaviorLoader, TimedKeys, TimedValue, TimedVector}
 
 
+
+// A set of "behaviors" for armatures.
+//
+// This is still a prototype of a pseudo DSL of composable behaviors.
+
+
+
 // -- Loaders -------------------------------------------------------------------------------------
 
 
@@ -174,6 +181,100 @@ class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), dur
 	}
 }
 
+// -- Switches -------------------------------------------------------------------------------------------
+
+object JointVisibilitySwitch {
+	def apply(name:String, duration:Long, joints:Joint *):JointVisibilitySwitch = new JointVisibilitySwitch(name, duration, joints:_*)
+}
+
+class JointVisibilitySwitch(name:String, val duration:Long, val joints:Joint *) extends ArmatureBehavior(name) {
+	protected var index = 0
+
+	protected var startTime = 0L
+
+	def start(t:Long):ArmatureBehavior = {
+		index = 0
+		joints.foreach { _.visible = false }
+		joints(index).visible = true
+		startTime = t
+		this
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joints(index).visible = false
+			index = joints.size - 1
+			joints(index).visible = true
+		} else {
+			val idx = (t - startTime) / duration
+
+			if(idx > index) {
+				joints(index).visible = false
+				index = idx.toInt
+				joints(index).visible = true
+			}
+		}
+	}
+
+	def finished(t:Long):Boolean = (t > (startTime + (duration * joints.size)))
+}
+
+// -- Loops ----------------------------------------------------------------------------------------------
+
+object BehaviorLoop {
+	def apply(name:String, limit:Int, behaviors:ArmatureBehavior *):BehaviorLoop = new BehaviorLoop(name, limit, behaviors:_*)
+}
+
+/** Repeats each behavior either a given number of times or infinitely.
+  * 
+  * Indicate a negative or zero `limit` to repeat indefinitely. */
+class BehaviorLoop(name:String, val limit:Int, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
+	/** Number of repetitions for each behavior. */
+	protected val repeated = new Array[Int](behaviors.size)
+
+	/** How many behaviors finished. */
+	protected var howManyFinished = 0
+
+	def start(t:Long):ArmatureBehavior = {
+		var i = 0
+		while(i < repeated.size) { repeated(i) = 0; i += 1 }
+		howManyFinished = 0
+		this
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			// Nop
+		} else {
+			var i = 0
+			val n = behaviors.size
+			val l = if(limit > 0) limit else Int.MaxValue
+
+			while(i < n) {
+				if(repeated(i) < l) {
+					if(behaviors(i).finished(t)) {
+						if(limit > 0)
+							repeated(i) += 1
+						
+						if(repeated(i) < l) {
+							behaviors(i).start(t)
+						} else {
+							if(limit > 0)
+								howManyFinished += 1
+						}
+					} else {
+						behaviors(i).animate(t)
+					}
+				}	
+
+				i += 1
+			}
+		}
+	}
+
+	def finished(t:Long):Boolean = (howManyFinished == behaviors.size)
+}
+
 // -- KeyInterp ------------------------------------------------------------------------------------------
 
 /** Base interpolator for joints using a sequence of keys at specific times. */
@@ -328,6 +429,9 @@ object  ArmatureKeyInterp {
 		}
 		translate
 	}
+
+	def apply(name:String, armature:Armature, fileName:String, scale:Double = 1.0):ArmatureKeyInterp = new ArmatureKeyInterp(name, armature, fileName, scale)
+	def apply(name:String, armature:Armature, behaviors:ArmatureBehavior *):ArmatureKeyInterp = new ArmatureKeyInterp(name, armature, behaviors:_*)
 }
 
 /** A set of joint key interpolators. */
