@@ -109,6 +109,13 @@ class Armature(val name:String,
 // == Joint Transform ===============================================================================
 
 
+/** Transformation of a joint. 
+  *
+  * Lots of work remains to do. It would be interesting to be able to change the implementation
+  * of this class, but behaviors expect to be able to specify thing according to a given 
+  * JointTransform implementation. An interface is not really possible since tranform methods are very
+  * different. One way of doing things would be to let the behaviors set the transforms of a joint.
+  * But what if a joint is controlled by two behaviors ? A list of transforms ?  */
 class JointTransform {
 
 	/** Current rotation in radians. */
@@ -120,6 +127,7 @@ class JointTransform {
 	/** Current scale (before or after translation ??? or the twos ?) */
 	var scale = Vector2(1, 1)
 
+	/** Apply the transform to the given `camera`. */
 	def transform(camera:Camera) {
 		if(translation.x != 0 || translation.y != 0)
 			camera.translateModel(translation.x, translation.y, 1)

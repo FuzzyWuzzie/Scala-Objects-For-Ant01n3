@@ -249,19 +249,32 @@ class SurfaceNewt(
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) { w = width; h = height; if(renderer.surfaceChanged ne null) renderer.surfaceChanged(this) }
     def display(win:GLAutoDrawable) { processEvents; if(renderer.frame ne null) renderer.frame(this) }
     def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
+
+    /** Used to fasten invoke, in order to test if we are in the correct thread. */
+    private[this] var invokeThread:Thread = null
     
     def invoke(code:(Surface)=>Boolean) {
     	val me = this
-    	win.invoke(false,
-    		new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { code(me) } }
-    	)
+
+    	if(invokeThread eq Thread.currentThread) {
+    		code(me)	
+    	} else {
+    		win.invoke(false,
+    			new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { if(invokeThread eq null) invokeThread = Thread.currentThread; code(me) } }
+    		)
+    	}
     }
 
     def invoke(runnable:Runnable) {
     	val me = this
-    	win.invoke(false,
-    		new GLRunnable() { override def run(win:GLAutoDrawable) = { runnable.run; true } }
-    	)
+
+    	if(invokeThread eq Thread.currentThread) {
+	    	runnable.run
+    	} else {
+    		win.invoke(false,
+	    		new GLRunnable() { override def run(win:GLAutoDrawable) = { if(invokeThread eq null) invokeThread = Thread.currentThread; runnable.run; true } }
+    		)
+    	}
    	}
 
    	/** Process all pending events in the event queue. */

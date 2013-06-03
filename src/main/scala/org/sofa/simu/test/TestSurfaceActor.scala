@@ -47,24 +47,27 @@ class SurfaceRendererActor(val ctx:TestSurfaceActor) extends Actor {
 			val duration = T - startTime
 			startTime    = T
 
-			if(count > 300) {
+			if(count > 2000) {
 				self ! "kill!"
 			} else {
 				count += 1
 				ctx.animate 
 			}
-			println("T=%d".format(duration))
-			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
+			//Console.err.println("## T=%d".format(duration))
+			//Console.err.println(s"executing in ${Thread.currentThread.getName} (count=${count})")
 		}
 		case "start" ⇒ {
-			println("@surface-renderer-actor started...")
-			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
-			context.setReceiveTimeout(21 millisecond)
+			Console.err.println("@surface-renderer-actor started...")
+			Console.err.println(s"executing in ${Thread.currentThread.getName} (count=${count})")
+			context.setReceiveTimeout(10 millisecond)
 		}
 		case "kill!" ⇒ {
-			println("@surface-renderer-actor exiting...")
-			println(s"executing in ${Thread.currentThread.getName} (count=${count})")
+			Console.err.println("@surface-renderer-actor exiting...")
+			Console.err.println(s"executing in ${Thread.currentThread.getName} (count=${count})")
 			context.stop(self)
+		}
+		case x => {
+			Console.err.println("Error unknown thing %s".format(x))
 		}
 	}
 
@@ -75,7 +78,7 @@ class SurfaceRendererActor(val ctx:TestSurfaceActor) extends Actor {
 
 
 object TestSurfaceActor {
-	SurfaceExecutorService.configure
+	SurfaceExecutorService.configure(10L)
 
     def main(args:Array[String]):Unit = (new TestSurfaceActor).test
 }
@@ -131,7 +134,7 @@ class TestSurfaceActor extends SurfaceRenderer {
 	    scroll         = ctrl.scroll
 	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
 	    					camera, "Skinning", caps,
-	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)
+	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2, 30 /* fps */)
 
 	    actorSystem    = ActorSystem("test")
 		surfaceActor   = SurfaceRendererActor(actorSystem, this)
@@ -208,9 +211,15 @@ class TestSurfaceActor extends SurfaceRenderer {
 
 //println("Reshape Inside thread %s".format(Thread.currentThread.getName))
 	}
+
+//var T = 0L
 	
 	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+//	    var t = System.currentTimeMillis
+//		Console.err.println("display T=%d".format(t-T))
+//		T = t
 
 //println("Display Inside thread %s".format(Thread.currentThread.getName))
 
