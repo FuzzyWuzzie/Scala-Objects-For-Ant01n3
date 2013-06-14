@@ -21,11 +21,19 @@ trait AvatarState {}
 /** When an avatar cannot change to a given state. */
 case class NoSuchStateException(msg:String) extends Exception(msg)
 
+
+// -- Avatar Factory --------------------------------------------------------------------------------------
+
+
 /** Create actor representators. */
 trait AvatarFactory {
 	def screenFor(name:String, screenType:String):Screen
 	def avatarFor(name:String, avatarType:String, indexed:Boolean):Avatar
 }
+
+
+// -- Renderable -----------------------------------------------------------------------------------------
+
 
 /** Base for each renderable thing in (avatars, screens, etc.). */
 trait Renderable {
@@ -42,10 +50,18 @@ trait Renderable {
 	def end()
 }
 
+
+// -- Events -----------------------------------------------------------------------------------------------
+
+
 /** Renderer event sent when the avatar is touched. */
 case class TouchEvent(x:Double, y:Double, z:Double, isStart:Boolean, isEnd:Boolean) {
 	override def toString():String = "touch[%.2f %.2f %.2f%s]".format(x,y,z, if(isStart)" start"else if(isEnd)" end" else "")
 }
+
+
+// -- Avatar ------------------------------------------------------------------------------------------------
+
 
 /** Graphical representation of an actor in the renderer. */
 abstract class Avatar(val name:String, val screen:Screen) extends Renderable {
@@ -116,6 +132,10 @@ abstract class Avatar(val name:String, val screen:Screen) extends Renderable {
 
 	override def toString() = "avatar(%s, %s, %s)".format(name, pos, size)
 }
+
+
+// -- Avatar Index ------------------------------------------------------------------------------------------------
+
 
 /** If defined by an avatar, allows to quickly find it using a spatial index. */
 class AvatarIndex(val avatar:Avatar) extends SpatialCube {

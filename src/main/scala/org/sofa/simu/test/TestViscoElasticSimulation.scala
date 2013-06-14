@@ -335,7 +335,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	protected def drawPlane() {
 		phongShad.use
 		useLights(phongShad)
-		camera.uniformMVP(phongShad)
+		camera.uniform(phongShad)
 		plane.draw(planeMesh.drawAs)
 	}
 	
@@ -343,7 +343,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		gl.disable(gl.CULL_FACE)
 		phongShad.use
 		useLights(phongShad)
-		camera.uniformMVP(phongShad)
+		camera.uniform(phongShad)
 		obstacles.draw(obstaclesMesh.drawAs)
 		gl.enable(gl.CULL_FACE)
 	}
@@ -351,7 +351,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 	protected def drawAxis() {
 		gl.enable(gl.BLEND)
 		plainShad.use
-		camera.setUniformMVP(plainShad)
+		camera.uniformMVP(plainShad)
 		axis.draw(axisMesh.drawAs)
 		gl.disable(gl.BLEND)
 	}
@@ -360,7 +360,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		if(drawParticlesFlag) {
 			gl.enable(gl.BLEND)
 			particlesShad.use
-			camera.setUniformMVP(particlesShad)
+			camera.uniformMVP(particlesShad)
 			particlesShad.uniform("pointSize", particleSizePx)
 			particles.draw(particlesMesh.drawAs, simu.size)
 			gl.disable(gl.BLEND)
@@ -371,7 +371,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		if(drawSpringsFlag) {
 			gl.enable(gl.BLEND)
 			plainShad.use
-			camera.setUniformMVP(plainShad)
+			camera.uniformMVP(plainShad)
 			springs.draw(springsMesh.drawAs, simu.springs.size*2)
 			gl.disable(gl.BLEND)
 		}
@@ -387,8 +387,8 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 				//if(bucket._2.points > 0) {
 				camera.pushpop {
 					val p = bucket._2.position
-					camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
-					camera.setUniformMVP(plainShad)
+					camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
+					camera.uniformMVP(plainShad)
 					wcube.draw(wcubeMesh.drawAs)
 				}
 				//}
@@ -406,8 +406,8 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			isoSurfaceComp.cubes.foreach { cube=>
 				camera.pushpop {
 					val p = cube.pos
-					camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
-					camera.setUniformMVP(plainShad)
+					camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
+					camera.uniformMVP(plainShad)
 					if(!cube.isEmpty)
 						wcube2.draw(wcubeMesh.drawAs)
 				}
@@ -420,7 +420,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		if(drawIsoSurfaceFlag && isoSurfaceComp.triangleCount > 0) {
 			phongShad.use
 			useLights(phongShad)
-			camera.uniformMVP(phongShad)
+			camera.uniform(phongShad)
 			isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
 		}
 	}

@@ -178,7 +178,7 @@ class Skinning extends SurfaceRenderer {
 	    camera.viewLookAt
 	    useLights(nmapShader)
 	    useTextures(nmapShader)
-	    camera.uniformMVP(nmapShader)
+	    camera.uniform(nmapShader)
 	    gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    plane.draw(planeMesh.drawAs)
 	    
@@ -193,13 +193,13 @@ class Skinning extends SurfaceRenderer {
 	    camera.pushpop {
 	    	setBonesColor(1)
 	        skeleton.uniform(boneShader)
-	        camera.uniformMVP(boneShader)
+	        camera.uniform(boneShader)
 	        tube.draw(tubeMesh.drawAs)
 	    	gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    	setBonesColor(0.5f)
 	    	gl.enable(gl.BLEND)
 	        skeleton.uniform(boneShader)
-	        camera.uniformMVP(boneShader)
+	        camera.uniform(boneShader)
 	        tube.draw(tubeMesh.drawAs)
 	    	gl.disable(gl.BLEND)
 	    }

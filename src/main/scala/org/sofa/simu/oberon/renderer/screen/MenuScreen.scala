@@ -40,7 +40,7 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 
 	var gridShader:ShaderProgram = null
 	
-	val grid = new LinesMesh(40)
+	val grid = new LinesMesh(42)
 
 	// == Access ============================
 
@@ -155,8 +155,8 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 			backgroundShader.use
 			background.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
 			camera.pushpop {
-				camera.scaleModel(w, h, 1)
-				camera.setUniformMVP(backgroundShader)
+				camera.scale(w, h, 1)
+				camera.uniformMVP(backgroundShader)
 				backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
 			}
 		}
@@ -168,7 +168,7 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	/** Render a grid alligned with the spash. */
 	protected def renderGrid() {
 		gridShader.use
-		camera.setUniformMVP(gridShader)
+		camera.uniformMVP(gridShader)
 		grid.lastVertexArray.draw(grid.drawAs)
 	}
 	

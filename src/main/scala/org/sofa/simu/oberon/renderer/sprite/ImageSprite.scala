@@ -132,9 +132,9 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 			imageShader.use
 			state.texture.bindUniform(gl.TEXTURE0, imageShader, "texColor")
 			camera.pushpop {
-				camera.translateModel(pos.x, pos.y, pos.z)
-				camera.scaleModel(size.x, size.y, size.z)
-				camera.setUniformMVP(imageShader)
+				camera.translate(pos.x, pos.y, pos.z)
+				camera.scale(size.x, size.y, size.z)
+				camera.uniformMVP(imageShader)
 				imageMesh.lastVertexArray.draw(imageMesh.drawAs)
 			}
 			gl.disable(gl.BLEND)

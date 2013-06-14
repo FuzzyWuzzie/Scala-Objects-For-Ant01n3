@@ -22,6 +22,16 @@ object Camera {
   * 
   * It stores a view port in pixels that express the rendering canvas dimensions. This canvas also
   * allows to control the aspect-ratio of the camera. 
+  *
+  * TODO this is really two objects in one.
+  *   - PointOfView (handle the focus and eye)
+  *   - Camera extends PointOfView (handle the perspective and modelview)
+  *
+  * TODO uniformMVP, setUniformMVP, setUniformMV, setUniformMV3x3 are misnamed
+  *   - uniformMVP -> uniformMV_MV3x3_MVP ?
+  *   - setUniformMVP -> uniformMVP 
+  *   - setUniformMV -> uniformMV
+  *   - setUniformMV3x3 -> uniformMV3x3
   */
 class Camera {
     /** How to pass from view space to camera space. */
@@ -29,6 +39,13 @@ class Camera {
     
     /** How to pass from model to view space. */
     val modelview = MatrixStack(Matrix4())
+
+    /** The projection matrix times the modelview matrix. We avoid to recompute or reallocate
+      * it since it is used very often. Memory/speed compromise. */
+    val mvp = new Matrix4()
+
+    /** Flag indicating if the modelview or projection changed since the last MVP compute. */
+    protected var needRecomputeMVP = true
 
     /** Up direction, for camera banking. */
     var up = Vector3(0, 1,  0)
@@ -48,9 +65,9 @@ class Camera {
     /** Maximum depth of the view (far clip-plane position). */
     var maxDepth = 100.0
     
-    def zoom_= (value:Double):Unit = { sphericalEye.z = value; cartesianFromSpherical }
+    def radius_= (value:Double):Unit = { sphericalEye.z = value; cartesianFromSpherical }
     
-    def zoom:Double = sphericalEye.z
+    def radius:Double = sphericalEye.z
     
     def theta_= (value:Double):Unit = { sphericalEye.x = value; cartesianFromSpherical }
     
@@ -99,10 +116,18 @@ class Camera {
         sphericalEye.y += delta
         cartesianFromSpherical
     }
+
+    /** Modify the coodinates of the camera "eye" by rotating horizontally and vertically its focus point
+      * of the amount (`thetaDouble`, `phiDelta`). */
+    def rotateView(thetaDelta:Double, phiDelta:Double) {
+    	sphericalEye.x += thetaDelta
+    	sphericalEye.y += phiDelta
+    	cartesianFromSpherical
+    }
     
     /** Modify the distance between the camera "eye" and the focus point from the given amount
       * `delta`. */
-    def zoomView(delta:Double) {
+    def viewTraveling(delta:Double) {
         sphericalEye.z += delta
         cartesianFromSpherical
     }
@@ -141,6 +166,7 @@ class Camera {
         projection.setIdentity
         maxDepth = axes.z.from
         projection.frustum(axes.x.from, axes.x.to, axes.y.from, axes.y.to, axes.z.to, axes.z.from)
+        needRecomputeMVP = true
     }
     
     /** Erase the projection matrix with a new projection using the given frustum
@@ -148,6 +174,7 @@ class Camera {
     def frustum(left:Double, right:Double, bottom:Double, top:Double, near:Double) {
         projection.setIdentity
         projection.frustum(left, right, bottom, top, near, maxDepth)
+        needRecomputeMVP = true
     }
 
     /** Erase the projection matrix with a new projection using the given orthographic
@@ -156,6 +183,7 @@ class Camera {
     	projection.setIdentity
     	maxDepth = axes.z.from
     	projection.orthographic(axes.x.from, axes.x.to, axes.y.from, axes.y.to, axes.z.to, axes.z.from)
+        needRecomputeMVP = true
     }
 
     /** Erase the projection matrix with a new projection using the given orthographic
@@ -164,6 +192,7 @@ class Camera {
         projection.setIdentity
         maxDepth = far
         projection.orthographic(left, right, bottom, top, near, far)
+        needRecomputeMVP = true
     }
     
     /** Erase the model-view matrix at the top of the model-view matrix stack and copy in
@@ -178,12 +207,14 @@ class Camera {
     def viewLookAt() {
         modelview.setIdentity
         modelview.lookAt(cartesianEye, focus, up)
+        needRecomputeMVP = true
     }
 
     /** Reset the modelview to the identity. This must be called before each display
       * of the scene, before any transformation are made to the model view matrix. */
     def viewIdentity() {
     	modelview.setIdentity
+        needRecomputeMVP = true
     }
     
     /** Push a copy of the current model-view matrix in the model-view matrix stack. */
@@ -206,63 +237,78 @@ class Camera {
     }
     
     /** Apply a translation of vector `(dx, dy, dz)` to the current model-view matrix. */
-    def translateModel(dx:Double, dy:Double, dz:Double) {
+    def translate(dx:Double, dy:Double, dz:Double) {
     	modelview.translate(dx, dy, dz)
+        needRecomputeMVP = true
     }
     
     /** Apply a translation of vector `of` to the current model-view matrix. */
-    def translateModel(of:NumberSeq3) {
+    def translate(of:NumberSeq3) {
         modelview.translate(of)
+        needRecomputeMVP = true
     }
     
     /** Apply a rotation of `angle` around axis `(x, y, z)` to the current model-view matrix. */
-    def rotateModel(angle:Double, x:Double, y:Double, z:Double) {
+    def rotate(angle:Double, x:Double, y:Double, z:Double) {
         modelview.rotate(angle, x, y, z)
+        needRecomputeMVP = true
     }
     
     /** Apply a rotation of `angle` around `axis` to the current model-view matrix. */
-    def rotateModel(angle:Double, axis:NumberSeq3) {
+    def rotate(angle:Double, axis:NumberSeq3) {
         modelview.rotate(angle, axis)
+        needRecomputeMVP = true
     }
     
     /** Scale the current model-view matrix by coefficients `(sx, sy, sz)`. */
-    def scaleModel(sx:Double, sy:Double, sz:Double) {
+    def scale(sx:Double, sy:Double, sz:Double) {
         modelview.scale(sx, sy, sz)
+        needRecomputeMVP = true
     }
     
     /** Scale the current model-view matrix by coefficients from the vector `by`. */
-    def scaleModel(by:NumberSeq3) {
+    def scale(by:NumberSeq3) {
         modelview.scale(by)
+        needRecomputeMVP = true
     }
     
     /** Apply the given `transform` to the current model-view matrix. */
-    def transformModel(transform:Matrix4) {
+    def transform(transform:Matrix4) {
         modelview.multBy(transform)
-    }
-    
-    protected val tmpM4 = new Matrix4()
-    
-    /** Store as uniform variables the model-view matrix, the projection matrix and the top 3x3
-      * matrix extracted from the model-view matrix in the given shader.
-      * 
-      * These matrices are stored under the name "MV" for the model-view, "MVP" for the
-      * perspective * model-view and "MV3x3" for the top 3x3 model-view matrix.
-      */
-    def uniformMVP(shader:ShaderProgram) {
-        tmpM4.copy(projection)
-        tmpM4.multBy(modelview)
-    	  shader.uniformMatrix("MV", modelview.top)
-	      shader.uniformMatrix("MV3x3", modelview.top3x3)
-	      shader.uniformMatrix("MVP", tmpM4)
+        needRecomputeMVP = true
     }
 
-    def setUniformMVP(shader:ShaderProgram) {
-        tmpM4.copy(projection)
-        tmpM4.multBy(modelview)
-        shader.uniformMatrix("MVP", tmpM4)
+    /** Build the MVP from the projection and modelview matrices. */
+    protected def recomputeMVP() {
+    	if(needRecomputeMVP) {
+        	mvp.copy(projection)
+        	mvp.multBy(modelview)
+        	needRecomputeMVP = false
+        }    	
+    }
+    
+    /** Store as uniform variables the model-view matrix, the model-view*projection matrix (mvp)
+      * and the top 3x3 matrix extracted from the model-view matrix in the given shader.
+      * 
+      * These matrices are stored under the default names "MV" for the model-view, "MVP" for the
+      * perspective * model-view and "MV3x3" for the top 3x3 model-view matrix.
+      */
+    def uniform(shader:ShaderProgram, mvName:String="MV", mv3x3Name:String="MV3x3", mvpName:String="MVP") {
+		uniformMV(shader, mvName)
+		uniformMV3x3(shader, mv3x3Name)
+		uniformMVP(shader, mvpName)
+    }
+
+    /** Store as uniform variable the model-view*projection matrix (mvp). The default uniform
+      * name is "MVP". */
+    def uniformMVP(shader:ShaderProgram, mvpName:String="MVP") {
+        recomputeMVP
+        shader.uniformMatrix(mvpName, mvp)
     }
     	
-    def setUniformMV(shader:ShaderProgram) { shader.uniformMatrix("MV", modelview.top) }
+    /** Store as uniform variable the model-view matrix. The default uniform name is "MV". */
+    def uniformMV(shader:ShaderProgram, mvName:String="MV") { shader.uniformMatrix(mvName, modelview.top) }
     
-    def setUniformMV3x3(shader:ShaderProgram) { shader.uniformMatrix("MV3x3", modelview.top3x3) }   
+    /** Store as uniform variable the top 3x3 matrix of the model-view. The default uniform name is "MV3x3". */
+    def uniformMV3x3(shader:ShaderProgram, mv3x3Name:String="MV3x3") { shader.uniformMatrix(mv3x3Name, modelview.top3x3) }   
 }

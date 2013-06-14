@@ -130,13 +130,13 @@ class JointTransform {
 	/** Apply the transform to the given `camera`. */
 	def transform(camera:Camera) {
 		if(translation.x != 0 || translation.y != 0)
-			camera.translateModel(translation.x, translation.y, 1)
+			camera.translate(translation.x, translation.y, 1)
 
 		if(scale.x != 0 || scale.y != 0)
-			camera.scaleModel(scale.x, scale.y, 1)
+			camera.scale(scale.x, scale.y, 1)
 		
 		if(angle != 0)
-			camera.rotateModel(angle, 0, 0, 1)
+			camera.rotate(angle, 0, 0, 1)
 	}
 }
 
@@ -358,7 +358,7 @@ class Joint(val name:String,
 	def display(gl:SGL, armature:Armature, camera:Camera, shader:ShaderProgram) {
 		if(visible) {
 			camera.pushpop {
-				camera.translateModel(anchorGU.x, anchorGU.y, 0)
+				camera.translate(anchorGU.x, anchorGU.y, 0)
 
 				if(transform ne null)
 					transform.transform(camera)
@@ -382,7 +382,7 @@ class Joint(val name:String,
 		if(selected)
 		     shader.uniform("highlight", 1.0f)
 		else shader.uniform("highlight", 0.0f)
-		camera.setUniformMVP(armature.shader)
+		camera.uniformMVP(armature.shader)
 		armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs, triangle*3, 2*3)		
 	}
 

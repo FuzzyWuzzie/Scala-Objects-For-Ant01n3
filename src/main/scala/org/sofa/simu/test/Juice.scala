@@ -557,10 +557,10 @@ var angle = 0.0
 			cameraTex.pushpop {
 				gl.frontFace(gl.CCW)
 				plainShad.use
-				cameraTex.translateModel(fbWidth/2, fbHeight/2, 0)
-				cameraTex.scaleModel(40, 40, 1)
-				cameraTex.rotateModel(angle, 0, 0, 1)
-				cameraTex.setUniformMVP(plainShad)
+				cameraTex.translate(fbWidth/2, fbHeight/2, 0)
+				cameraTex.scale(40, 40, 1)
+				cameraTex.rotate(angle, 0, 0, 1)
+				cameraTex.uniformMVP(plainShad)
 				triangles.draw(trianglesMesh.drawAs, 8*3)
 
 				angle += 0.01
@@ -570,27 +570,27 @@ var angle = 0.0
 			// Text 
 						
 			textShad.use
-			cameraTex.setUniformMVP(textShad)
+			cameraTex.uniformMVP(textShad)
 			
 			cameraTex.pushpop {
-				cameraTex.translateModel(20, fbHeight-50, 0)
+				cameraTex.translate(20, fbHeight-50, 0)
 				text(0).draw(cameraTex)
-				cameraTex.translateModel(0, -40, 0)
+				cameraTex.translate(0, -40, 0)
 				text(1).draw(cameraTex)
-				cameraTex.translateModel(0, -30, 0)
+				cameraTex.translate(0, -30, 0)
 				text(2).draw(cameraTex)
-				cameraTex.translateModel(0, -25, 0)
+				cameraTex.translate(0, -25, 0)
 				text(3).draw(cameraTex)
 			}
 
 			cameraTex.pushpop {
-				cameraTex.translateModel(fbWidth-text(4).advance-20, fbHeight-50, 0)
+				cameraTex.translate(fbWidth-text(4).advance-20, fbHeight-50, 0)
 				text(4).draw(cameraTex)
-				cameraTex.translateModel(text(4).advance-text(5).advance, -40, 0)
+				cameraTex.translate(text(4).advance-text(5).advance, -40, 0)
 				text(5).draw(cameraTex)
-				cameraTex.translateModel(text(5).advance-text(6).advance, -30, 0)
+				cameraTex.translate(text(5).advance-text(6).advance, -30, 0)
 				text(6).draw(cameraTex)
-				cameraTex.translateModel(text(6).advance-text(7).advance, -25, 0)
+				cameraTex.translate(text(6).advance-text(7).advance, -25, 0)
 				text(7).draw(cameraTex)
 			}
 
@@ -681,7 +681,7 @@ var angle = 0.0
 	    nmapShad.uniform("ambientIntensity", ambientIntensity)
 	    nmapShad.uniform("specularPow", 128f)
 
-		camera.uniformMVP(nmapShad)
+		camera.uniform(nmapShad)
 		ground.draw(groundMesh.drawAs)
 		gl.disable(gl.BLEND)
 	}
@@ -695,17 +695,17 @@ var angle = 0.0
 		useLights(phongTexShad)
 	//	phongTexShad.uniform("color", Rgba.black)
 		camera.pushpop {
-			camera.translateModel(-15, 4, 0)
-			camera.scaleModel(10,10,10)
-			camera.rotateModel(math.Pi/2, 0, 1, 0)
-			camera.uniformMVP(phongTexShad)
+			camera.translate(-15, 4, 0)
+			camera.scale(10,10,10)
+			camera.rotate(math.Pi/2, 0, 1, 0)
+			camera.uniform(phongTexShad)
 			wall.draw(wallMesh.drawAs)
 		}
 		camera.pushpop {
-			camera.translateModel(15, 4, 0)
-			camera.scaleModel(10,10,10)
-			camera.rotateModel(math.Pi/2, 0, 1, 0)
-			camera.uniformMVP(phongTexShad)
+			camera.translate(15, 4, 0)
+			camera.scale(10,10,10)
+			camera.rotate(math.Pi/2, 0, 1, 0)
+			camera.uniform(phongTexShad)
 			wall.draw(wallMesh.drawAs)
 		}
 		gl.frontFace(gl.CW)
@@ -715,8 +715,8 @@ var angle = 0.0
 			fb.bindColorTextureTo(gl.TEXTURE0)
 	    	spyceShad.uniform("texColor", 0)	// Texture Unit 0
 			useLights(spyceShad, 1000f, 100f)
-			camera.translateModel(0,4,-10)
-			camera.uniformMVP(spyceShad)
+			camera.translate(0,4,-10)
+			camera.uniform(spyceShad)
 			ledWall.draw(ledWallMesh.drawAs)
 			gl.bindTexture(gl.TEXTURE_2D, 0)
 		}
@@ -747,7 +747,7 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 	    nmapShad.uniform("ambientIntensity", ambientIntensity+0.3f)
 	    nmapShad.uniform("specularPow", 128f)
 
-//		camera.uniformMVP(nmapShad)
+//		camera.uniform(nmapShad)
 
 		drawBiroute(player1)
 		drawBiroute(player2)
@@ -759,17 +759,17 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 		var angle = 0.0
 
 		camera.pushpop {
-			camera.translateModel(player.emitPoint)
-			camera.scaleModel(0.5, 0.5, 0.5)
+			camera.translate(player.emitPoint)
+			camera.scale(0.5, 0.5, 0.5)
 			if(player.velocity.x < 0) {
-				camera.rotateModel(Pi, 0, 1, 0)
+				camera.rotate(Pi, 0, 1, 0)
 				angle = (Pi/2.0) - Vector3(0,1,0).angle(player.velocity)
 			} else {
 				angle = (Pi/2.0) - Vector3(0,1,0).angle(player.velocity)
 			}
-			camera.rotateModel(angle, 0, 0, 1)
-//			camera.uniformMVP(phongNoClrShad)
-			camera.uniformMVP(nmapShad)
+			camera.rotate(angle, 0, 0, 1)
+//			camera.uniform(phongNoClrShad)
+			camera.uniform(nmapShad)
 			biroute.draw(birouteMesh.drawAs)
 		}
 	}
@@ -778,7 +778,7 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 		gl.disable(gl.CULL_FACE)
 		phongShad.use
 		useLights(phongShad)
-		camera.uniformMVP(phongShad)
+		camera.uniform(phongShad)
 		obstacles.draw(obstaclesMesh.drawAs)
 		gl.enable(gl.CULL_FACE)
 	}
@@ -786,7 +786,7 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 	protected def drawAxis() {
 		gl.enable(gl.BLEND)
 		plainShad.use
-		camera.setUniformMVP(plainShad)
+		camera.uniformMVP(plainShad)
 		axis.draw(axisMesh.drawAs)
 		gl.disable(gl.BLEND)
 	}
@@ -798,7 +798,7 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 			particlesShad.use
 //			pointTex.bindTo(gl.TEXTURE0)
 //	    	particlesShad.uniform("texColor", 0)	// Texture Unit 0
-			camera.setUniformMVP(particlesShad)
+			camera.uniformMVP(particlesShad)
 			particlesShad.uniform("pointSize", particleSizePx)
 			particles.draw(particlesMesh.drawAs, simu.size)
 			gl.disable(gl.BLEND)
@@ -820,16 +820,16 @@ timer.measure("draw quads") {
 			while(I < N) {
 				val particle = simu(I)
 				camera.push
-				camera.translateModel(particle.x.x, particle.x.y, particle.x.z)
+				camera.translate(particle.x.x, particle.x.y, particle.x.z)
 				dir.set(particle.x, particle.xprev)
 				var l = dir.norm
 				var angle = dir.angle(up) - (math.Pi/2)
 				if(dir.x > 0)
 					angle = -angle
 				if(l > 1)  l = 1
- 				camera.rotateModel(angle, 0, 0, 1)
-				camera.scaleModel(1+l, 1-l, 1)
-				camera.setUniformMVP(particlesQuadShad)
+ 				camera.rotate(angle, 0, 0, 1)
+				camera.scale(1+l, 1-l, 1)
+				camera.uniformMVP(particlesQuadShad)
 				quad.draw(quadMesh.drawAs)
 				camera.pop
 				I += 1
@@ -846,7 +846,7 @@ timer.measure("draw quads") {
 			gl.enable(gl.BLEND)
 			gl.lineWidth(2)
 			plainShad.use
-			camera.setUniformMVP(plainShad)
+			camera.uniformMVP(plainShad)
 			springs.draw(springsMesh.drawAs, simu.springs.size*2)
 			gl.lineWidth(1)
 			gl.disable(gl.BLEND)
@@ -860,7 +860,7 @@ timer.measure("draw quads") {
 				gl.enable(gl.BLEND)
 				phongShad.use
 				useLights(phongShad)
-				camera.uniformMVP(phongShad)
+				camera.uniform(phongShad)
 				isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
 				gl.disable(gl.BLEND)
 			}
@@ -873,7 +873,7 @@ timer.measure("draw quads") {
 //Console.err.println("Drawing iso plane %d triangles".format(isoContourComp.triangleCount))
 			phongShad.use
 			useLights(phongShad)
-			camera.uniformMVP(phongShad)
+			camera.uniform(phongShad)
 //			isoPlane.draw(isoPlaneMesh.drawAs, isoContourComp.triangleCount*3)
 			isoPlane.draw(isoPlaneMesh.drawAs, triangleCount*3)
 //			gl.disable(gl.BLEND)
@@ -884,7 +884,7 @@ timer.measure("draw quads") {
 		if(drawIsoContourFlag && isoContourComp.segmentCount > 0) {
 			gl.enable(gl.BLEND)
 			plainShad.use
-			camera.setUniformMVP(plainShad)
+			camera.uniformMVP(plainShad)
 			//springs.draw(springsMesh.drawAs, simu.springs.size*2)
 			isoContour.draw(isoContourMesh.drawAs, isoContourComp.segmentCount*2)
 			gl.disable(gl.BLEND)
@@ -1122,8 +1122,8 @@ class JuiceInteractions(camera:Camera, val scene:JuiceScene) extends BasicCamera
             }
         } else {
 	    	keyEvent.actionChar match {
-		    	case PageUp   => { camera.zoomView(-step) } 
-		    	case PageDown => { camera.zoomView(step) }
+		    	case PageUp   => { camera.viewTraveling(-step) } 
+		    	case PageDown => { camera.viewTraveling(step) }
 		    	case Up       => { camera.rotateViewVertical(step) }
 		    	case Down     => { camera.rotateViewVertical(-step) }
 		    	case Left     => { camera.rotateViewHorizontal(-step) }
@@ -1136,9 +1136,9 @@ class JuiceInteractions(camera:Camera, val scene:JuiceScene) extends BasicCamera
     }
 	
 	override def scroll(surface:Surface, e:ScrollEvent) {
-	    camera.zoom = camera.zoom + e.amount * step
-	    if(camera.zoom < 30) camera.zoom = 30
-	    else if(camera.zoom > 50) camera.zoom = 50
+	    camera.radius = camera.radius + e.amount * step
+	    if(camera.radius < 30) camera.radius = 30
+	    else if(camera.radius > 50) camera.radius = 50
 	} 	
 	
 	override def motion(surface:Surface, e:MotionEvent) {

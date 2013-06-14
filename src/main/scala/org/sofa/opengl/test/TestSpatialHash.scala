@@ -183,14 +183,14 @@ class TestSpatialHash extends SurfaceRenderer {
 		
 //		phongShad.use
 //		useLights(phongShad)
-//		camera.uniformMVP(phongShad)
+//		camera.uniform(phongShad)
 //		plane.draw(planeMesh.drawAs)
 		
 		// Axis
 		
 		gl.enable(gl.BLEND)
 		plainShad.use
-		camera.setUniformMVP(plainShad)
+		camera.uniformMVP(plainShad)
 		axis.draw(axisMesh.drawAs)
 		
 		// Space hash
@@ -200,8 +200,8 @@ class TestSpatialHash extends SurfaceRenderer {
 		spaceHash.buckets.foreach { bucket =>
 			camera.pushpop {
 				val p = bucket._2.position
-				camera.translateModel((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
-				camera.setUniformMVP(plainShad)
+				camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
+				camera.uniformMVP(plainShad)
 				wcube.draw(wcubeMesh.drawAs)
 			}
 		}
@@ -210,7 +210,7 @@ class TestSpatialHash extends SurfaceRenderer {
 		// Particles
 		
 		particlesShad.use
-		camera.setUniformMVP(particlesShad)
+		camera.uniformMVP(particlesShad)
 		particlesShad.uniform("pointSize", 30f)
 		particles.draw(particlesMesh.drawAs)
 		
@@ -230,9 +230,9 @@ class TestSpatialHash extends SurfaceRenderer {
 	protected def drawCube(simuCube:TestVolume) {
 		camera.pushpop {
 			val side = simuCube.side
-			camera.translateModel(simuCube.x.x+side/2, simuCube.x.y+side/2, simuCube.x.z+side/2)
-			camera.scaleModel(side, side, side)
-			camera.uniformMVP(phongShad)
+			camera.translate(simuCube.x.x+side/2, simuCube.x.y+side/2, simuCube.x.z+side/2)
+			camera.scale(side, side, side)
+			camera.uniform(phongShad)
 			cube.draw(cubeMesh.drawAs)
 		}
 	}

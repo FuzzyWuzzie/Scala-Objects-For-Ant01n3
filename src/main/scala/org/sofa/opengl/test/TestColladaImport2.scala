@@ -162,7 +162,7 @@ class TestColladaImport2 extends SurfaceRenderer {
 
 		phongShad.use
 		useLights(phongShad)
-		camera.uniformMVP(phongShad)
+		camera.uniform(phongShad)
 		plane.draw(planeMesh.drawAs)
 		
 		// Thing
@@ -176,14 +176,14 @@ class TestColladaImport2 extends SurfaceRenderer {
 		    nMapShad.uniform("whitelight.intensity", 2f)
 		    nMapShad.uniform("whitelight.ambient", 0.2f)
 		    nMapShad.uniform("whitelight.specular", 256f)
-		camera.uniformMVP(nMapShad)
+		camera.uniform(nMapShad)
 //		thing.draw(thingMesh.drawAs)
 		camera.pushpop {
 			//gl.disable(gl.CULL_FACE)
 			gl.frontFace(gl.CCW)
 			//camera.scaleModel(0.01, 0.01, 0.01)
-			camera.translateModel(0, 1, 0)
-			camera.uniformMVP(nMapShad)
+			camera.translate(0, 1, 0)
+			camera.uniform(nMapShad)
 			thing.draw(thingMesh.drawAs)
 			gl.enable(gl.CULL_FACE)
 		}

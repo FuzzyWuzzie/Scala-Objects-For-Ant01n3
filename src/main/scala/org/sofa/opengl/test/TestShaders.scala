@@ -204,7 +204,7 @@ class TestShaders extends SurfaceRenderer {
 	  	gl.enable(gl.BLEND)
 	    groundShader.use
 	    //useTextures(groundShader, groundColor, groundNMap)
-	    camera.setUniformMVP(groundShader)
+	    camera.uniformMVP(groundShader)
 	    ground.draw(groundMesh.drawAs)
 		gl.disable(gl.BLEND)
 
@@ -226,9 +226,9 @@ class TestShaders extends SurfaceRenderer {
 					shader(i).uniform("uniColor", shaderDesc(i)._3)
 					light(i).uniform(shader(i), camera)
 					camera.pushpop {
-						camera.translateModel(x, y, z)
-						camera.scaleModel(0.45, 0.45, 0.45)
-						camera.uniformMVP(shader(i))
+						camera.translate(x, y, z)
+						camera.scale(0.45, 0.45, 0.45)
+						camera.uniform(shader(i))
 						uvsphere.draw(uvsphereMesh.drawAs)
 					}
 

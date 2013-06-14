@@ -16,8 +16,8 @@ class BasicCameraController(val camera:Camera) {
 	    import e.ActionChar._
 	    if(! e.isPrintable) {
 	    	e.actionChar match {
-		    	case PageUp   => { camera.zoomView(-step) } 
-		    	case PageDown => { camera.zoomView(step) }
+		    	case PageUp   => { camera.viewTraveling(-step) } 
+		    	case PageDown => { camera.viewTraveling(step) }
 		    	case Up       => { camera.rotateViewVertical(step) }
 		    	case Down     => { camera.rotateViewVertical(-step) }
 		    	case Left     => { camera.rotateViewHorizontal(-step) }

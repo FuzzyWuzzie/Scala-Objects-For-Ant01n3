@@ -133,7 +133,7 @@ class Bone(val id:Int) {
 	  *      uniform mat4 MVP;   // Projection-Model-View matrix.
 	  */
 	def drawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram, uniformColorName:String) {
-	    camera.setUniformMVP(shader)
+	    camera.uniformMVP(shader)
 	    recursiveDrawSkeleton(gl, camera, shader, uniformColorName)
 	}
 
@@ -146,7 +146,7 @@ class Bone(val id:Int) {
 	  *      uniform mat4 MVP;   // Projection-Model-View matrix.
 	  */
 	def drawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram) {
-	    camera.setUniformMVP(shader)
+	    camera.uniformMVP(shader)
 	    recursiveDrawSkeleton(gl, camera, shader, null)
 	}
 	
@@ -230,13 +230,13 @@ class Bone(val id:Int) {
 	    	Bone.bone = Bone.boneMesh.newVertexArray(gl, shader, VertexAttribute.Vertex -> "position", VertexAttribute.Color -> "color")
 	    
 	    camera.pushpop {
-	        camera.transformModel(orientation)
-	        camera.transformModel(animation)
+	        camera.transform(orientation)
+	        camera.transform(animation)
 
 	        if(uniformColorName ne null) shader.uniform(uniformColorName, color)
 	        camera.pushpop {
-		       	camera.scaleModel(1, length, 1)
-		        camera.setUniformMVP(shader)
+		       	camera.scale(1, length, 1)
+		        camera.uniformMVP(shader)
 		        Bone.bone.draw(Bone.boneMesh.drawAs)
 	        }
 	        

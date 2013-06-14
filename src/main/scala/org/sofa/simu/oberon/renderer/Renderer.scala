@@ -137,7 +137,7 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 		case ChangeAvatar(name, state) ⇒ {
 			renderer.currentScreen.changeAvatar(name, state)
 		}
-		case AddAvatarAcquaintance(name,acqaintance) ⇒ {
+		case AddAvatarAcquaintance(name, acqaintance) ⇒ {
 			renderer.currentScreen.addAvatarAcquaintance(name, acqaintance)
 		}
 		case AddResource(res) ⇒ {
@@ -198,7 +198,7 @@ class Renderer(val gameActor:ActorRef) extends SurfaceRenderer {
 	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
 	    					initialWidth, initialHeight, title, caps,
 	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2,
-	    					fps, false/*undecorated*/)
+	    					fps, false/*undecorated*/, false/*not fullscreen*/)
 
 	    libraries = Libraries(gl)
 	}

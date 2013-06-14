@@ -198,7 +198,7 @@ class TestSkinning4 extends SurfaceRenderer {
 	    nmapShader.use
 	    light1.uniform(nmapShader, camera)
 	    useTextures(nmapShader, groundColor, groundNMap)
-	    camera.uniformMVP(nmapShader)
+	    camera.uniform(nmapShader)
 	    ground.draw(groundMesh.drawAs)
 		gl.disable(gl.BLEND)
 
@@ -209,7 +209,7 @@ class TestSkinning4 extends SurfaceRenderer {
 	    light1.uniform(boneShader, camera)
 	    useTextures(boneShader, thingColor, thingNMap)
 	    skeleton.uniform(boneShader)
-	    camera.uniformMVP(boneShader)
+	    camera.uniform(boneShader)
 	    thing.draw(thingMesh.drawAs)
 		gl.frontFace(gl.CW)
 	    

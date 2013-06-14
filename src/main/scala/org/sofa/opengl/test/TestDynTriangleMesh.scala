@@ -151,14 +151,14 @@ class TestDynTriangleMesh extends SurfaceRenderer {
 		planeShad.use
 		camera.viewLookAt
 		useLights(planeShad)
-		camera.uniformMVP(planeShad)
+		camera.uniform(planeShad)
 		plane.draw(planeMesh.drawAs)
 		
 		// TODO Thing
 		thingShad.use
 //		thingShad.uniform("color", Rgba.red)
 		useLights(thingShad)
-		camera.uniformMVP(thingShad)
+		camera.uniform(thingShad)
 		thing.draw(thingMesh.drawAs, maxTriangles*3)
 		
 		surface.swapBuffers

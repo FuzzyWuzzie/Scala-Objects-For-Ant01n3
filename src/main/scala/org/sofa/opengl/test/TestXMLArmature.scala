@@ -174,7 +174,7 @@ class TestXMLArmature extends SurfaceRenderer {
 
 	protected def displayGrid() {
 		gridShader.use
-		camera.setUniformMVP(gridShader)
+		camera.uniformMVP(gridShader)
 		grid.lastVertexArray.draw(grid.drawAs)
 	}
 	

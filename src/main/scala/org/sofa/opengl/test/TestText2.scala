@@ -179,7 +179,7 @@ class TestText2 extends SurfaceRenderer {
 		// Ruler
 
 		plainShad.use
-		camera.setUniformMVP(plainShad)
+		camera.uniformMVP(plainShad)
 		lines.draw(linesMesh.drawAs)		
 
 		// Background
@@ -193,7 +193,7 @@ class TestText2 extends SurfaceRenderer {
 			camera.pushpop {
 				//val scale = 5.0 / text(0).advance
 				//camera.scaleModel(scale, scale, scale)
-				camera.translateModel(10, (text.length-i)*fonts(2).height, 0)
+				camera.translate(10, (text.length-i)*fonts(2).height, 0)
 				text(i).draw(camera)
 			}
 			gl.enable(gl.DEPTH_TEST)

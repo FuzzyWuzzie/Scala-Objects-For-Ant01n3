@@ -535,7 +535,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 		font.texture.bindTo(gl.TEXTURE0)
 	    shader.uniform("texColor", 0)
 	    shader.uniform("textColor", clr)
-	    camera.setUniformMVP(shader)
+	    camera.uniformMVP(shader)
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs, p)
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?		
 		

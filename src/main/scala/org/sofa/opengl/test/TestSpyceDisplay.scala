@@ -210,10 +210,10 @@ class TestSpyceDisplay extends SurfaceRenderer {
 				gl.enable(gl.BLEND)
 				gl.frontFace(gl.CCW)
 				plainShad.use
-				cameraTex.translateModel(fbWidth/2, fbHeight/2, 0)
-				cameraTex.scaleModel(40, 40, 1)
-				cameraTex.rotateModel(angle, 0, 0, 1)
-				cameraTex.setUniformMVP(plainShad)
+				cameraTex.translate(fbWidth/2, fbHeight/2, 0)
+				cameraTex.scale(40, 40, 1)
+				cameraTex.rotate(angle, 0, 0, 1)
+				cameraTex.uniformMVP(plainShad)
 				triangles.draw(trianglesMesh.drawAs, 8*3)
 
 				angle += 0.01
@@ -223,27 +223,27 @@ class TestSpyceDisplay extends SurfaceRenderer {
 			// Text 
 						
 			textShad.use
-			cameraTex.setUniformMVP(textShad)
+			cameraTex.uniformMVP(textShad)
 			
 			cameraTex.pushpop {
-				cameraTex.translateModel(20, fbHeight-50, 0)
+				cameraTex.translate(20, fbHeight-50, 0)
 				text(0).draw(cameraTex)
-				cameraTex.translateModel(0, -40, 0)
+				cameraTex.translate(0, -40, 0)
 				text(1).draw(cameraTex)
-				cameraTex.translateModel(0, -30, 0)
+				cameraTex.translate(0, -30, 0)
 				text(2).draw(cameraTex)
-				cameraTex.translateModel(0, -25, 0)
+				cameraTex.translate(0, -25, 0)
 				text(3).draw(cameraTex)
 			}
 
 			cameraTex.pushpop {
-				cameraTex.translateModel(fbWidth-text(4).advance-20, fbHeight-50, 0)
+				cameraTex.translate(fbWidth-text(4).advance-20, fbHeight-50, 0)
 				text(4).draw(cameraTex)
-				cameraTex.translateModel(text(4).advance-text(5).advance, -40, 0)
+				cameraTex.translate(text(4).advance-text(5).advance, -40, 0)
 				text(5).draw(cameraTex)
-				cameraTex.translateModel(text(5).advance-text(6).advance, -30, 0)
+				cameraTex.translate(text(5).advance-text(6).advance, -30, 0)
 				text(6).draw(cameraTex)
-				cameraTex.translateModel(text(6).advance-text(7).advance, -25, 0)
+				cameraTex.translate(text(6).advance-text(7).advance, -25, 0)
 				text(7).draw(cameraTex)
 			}
 
@@ -262,7 +262,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		
 		gl.enable(gl.BLEND)
 		plainShad.use
-		camera.setUniformMVP(plainShad)
+		camera.uniformMVP(plainShad)
 		axis.draw(axisMesh.drawAs)
 
 		// Planes
@@ -271,8 +271,8 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		camera.pushpop {
 			phongShad.use
 			useLights(phongShad)
-			camera.translateModel(0,0,0.5f)
-			camera.uniformMVP(phongShad)
+			camera.translate(0,0,0.5f)
+			camera.uniform(phongShad)
 			wall(Ground).draw(wallMesh(Ground).drawAs)
 		}
 		
@@ -282,8 +282,8 @@ class TestSpyceDisplay extends SurfaceRenderer {
 			fb.bindColorTextureTo(gl.TEXTURE0)
 	    	spyceShad.uniform("texColor", 0)	// Texture Unit 0
 			useLights(spyceShad)
-			camera.translateModel(0,0.5,0)
-			camera.uniformMVP(spyceShad)
+			camera.translate(0,0.5,0)
+			camera.uniform(spyceShad)
 			wall(BackWall).draw(wallMesh(BackWall).drawAs)
 			gl.bindTexture(gl.TEXTURE_2D, 0)
 		}

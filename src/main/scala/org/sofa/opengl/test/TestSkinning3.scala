@@ -200,7 +200,7 @@ class TestSkinning3 extends SurfaceRenderer {
 	    light1.uniform(nmapShader, camera)
 	    //useLights(nmapShader)
 	    useTextures(nmapShader)
-	    camera.uniformMVP(nmapShader)
+	    camera.uniform(nmapShader)
 	    //gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    ground.draw(groundMesh.drawAs)
 		gl.disable(gl.BLEND)
@@ -213,7 +213,7 @@ class TestSkinning3 extends SurfaceRenderer {
 	    light1.uniform(boneShader, camera)
 	    camera.pushpop {
 	    	skeleton.uniform(boneShader)
-	    	camera.uniformMVP(boneShader)
+	    	camera.uniform(boneShader)
 	    	thing.draw(thingMesh.drawAs)
 	    }
 		gl.disable(gl.BLEND)

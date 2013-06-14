@@ -129,12 +129,12 @@ class TestRenderToTexture extends SurfaceRenderer {
 			camera2.viewLookAt
 			
 			//plainShad.use
-			//camera2.setUniformMVP(plainShad)
+			//camera2.uniformMVP(plainShad)
 			//cube.draw(cubeMesh.drawAs)
 			
 			phongShad.use
 			useLights2(phongShad)
-			camera2.uniformMVP(phongShad)
+			camera2.uniform(phongShad)
 			cube.draw(cubeMesh.drawAs)
 
 			gl.checkErrors
@@ -155,7 +155,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 		fb.bindColorTextureTo(gl.TEXTURE0)
 	    phongTexShad.uniform("texColor", 0)	// Texture Unit 0
 		useLights(phongTexShad)
-		camera.uniformMVP(phongTexShad)
+		camera.uniform(phongTexShad)
 		plane.draw(planeMesh.drawAs)
 		gl.bindTexture(gl.TEXTURE_2D, 0)
 		
@@ -163,12 +163,12 @@ class TestRenderToTexture extends SurfaceRenderer {
 		
 		gl.enable(gl.BLEND)
 		plainShad.use
-		camera.setUniformMVP(plainShad)
+		camera.uniformMVP(plainShad)
 		axis.draw(axisMesh.drawAs)
 		
 			// phongShad.use
 			// useLights(phongShad)
-			//camera.setUniformMVP(plainShad)
+			//camera.uniformMVP(plainShad)
 			//cube.draw(cubeMesh.drawAs)
 		
 		surface.swapBuffers

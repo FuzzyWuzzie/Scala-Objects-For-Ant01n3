@@ -188,7 +188,7 @@ class TestEditableMesh2 extends SurfaceRenderer {
 		
 		planeShad.use
 		useLights(planeShad)
-		camera.uniformMVP(planeShad)
+		camera.uniform(planeShad)
 		plane.draw(planeMesh.drawAs)
 		
 
@@ -202,12 +202,12 @@ class TestEditableMesh2 extends SurfaceRenderer {
 		    thingShad.uniform("lightIntensity", 1f)
 		    thingShad.uniform("ambientIntensity", 0.2f)
 		    thingShad.uniform("specularPow", 128f)
-		camera.uniformMVP(thingShad)
+		camera.uniform(thingShad)
 		thing.draw(thingMesh.drawAs)
 
 		gl.enable(gl.BLEND)
 		normalsShad.use
-		camera.setUniformMVP(normalsShad)
+		camera.uniformMVP(normalsShad)
 		normals.draw(normalsMesh.drawAs)
 		gl.disable(gl.BLEND)
 

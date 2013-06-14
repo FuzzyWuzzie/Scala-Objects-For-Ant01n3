@@ -181,8 +181,9 @@ class SurfaceNewt(
     val title:String,
     val caps:GLCapabilities,
     val backend:SurfaceNewtGLBackend.Value,
-    var fps:Int = 30,
-    var decorated:Boolean = true)
+    var fps:Int,
+    var decorated:Boolean,
+    var fullScreen:Boolean)
 	extends Surface
 	with    JoglWindowListener
 	with    JoglKeyListener
@@ -197,8 +198,8 @@ class SurfaceNewt(
     		 camera:Camera,
     		 title:String,
     		 caps:GLCapabilities,
-             backend:SurfaceNewtGLBackend.Value, fps:Int = 30, decorated:Boolean = true) { 
-    	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt, title, caps, backend, fps, decorated)
+             backend:SurfaceNewtGLBackend.Value, fps:Int = 30, decorated:Boolean = true, fullScreen:Boolean = false) { 
+    	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt, title, caps, backend, fps, decorated, fullScreen)
     }	
 
     protected var win:GLWindow = null
@@ -212,6 +213,7 @@ class SurfaceNewt(
         anim = new FPSAnimator(win, fps)
         sgl  = null
 
+        win.setFullscreen(fullScreen)
         win.setUndecorated(!decorated)
 	   	win.setVisible(true)	
 	   	// XXX The jogl specs tell to create the window before setting the size in order to know the native

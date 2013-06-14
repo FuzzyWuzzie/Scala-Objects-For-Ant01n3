@@ -200,7 +200,7 @@ println("Display Inside thread %s".format(Thread.currentThread.getName))
 	    groundShader.use
 	    light1.uniform(groundShader, camera)
 	    groundShader.uniform("color", Rgba.White)
-	    camera.uniformMVP(groundShader)
+	    camera.uniform(groundShader)
 	    ground.draw(groundMesh.drawAs)
 		gl.disable(gl.BLEND)
 
@@ -211,7 +211,7 @@ println("Display Inside thread %s".format(Thread.currentThread.getName))
 	    thingShader.uniform("color", Rgba(0.375,0.441,0.5,1))
 	   	light1.uniform(thingShader, camera)
 	   	skeleton.uniform(thingShader)
-	    camera.uniformMVP(thingShader)
+	    camera.uniform(thingShader)
 	    thing.draw(thingMesh.drawAs)
 		gl.frontFace(gl.CW)
 

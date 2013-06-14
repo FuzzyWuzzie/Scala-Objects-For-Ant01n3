@@ -138,7 +138,7 @@ class TestText extends SurfaceRenderer {
 		
 		gl.enable(gl.BLEND)
 		plainShad.use
-		camera.setUniformMVP(plainShad)
+		camera.uniformMVP(plainShad)
 		axis.draw(axisMesh.drawAs)
 
 		// Plane
@@ -151,7 +151,7 @@ class TestText extends SurfaceRenderer {
 			font.texture.bindTo(gl.TEXTURE0)
 			textShad.uniform("textColor", Rgba.Red)
 	    	textShad.uniform("texColor", 0)	// Texture Unit 0
-			camera.setUniformMVP(textShad)
+			camera.uniformMVP(textShad)
 			plane.draw(planeMesh.drawAs)
 			gl.bindTexture(gl.TEXTURE_2D, 0)
 		}
@@ -161,7 +161,7 @@ class TestText extends SurfaceRenderer {
 		camera.pushpop {
 			gl.disable(gl.DEPTH_TEST)
 			val scale = 5.0 / text.advance
-			camera.scaleModel(scale, scale, scale)
+			camera.scale(scale, scale, scale)
 			text.draw(camera)
 			gl.enable(gl.DEPTH_TEST)
 		}

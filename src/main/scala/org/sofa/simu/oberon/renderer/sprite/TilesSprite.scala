@@ -266,9 +266,9 @@ class TilesSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 // XXX ah ah ah ONLY one TEXTURE !!! XXX
 			texture.bindUniform(gl.TEXTURE0, tilesShader, "texColor")
 			camera.pushpop {
-				camera.translateModel(pos.x, pos.y, pos.z)
-				camera.scaleModel(size.x, size.y, size.z)
-				camera.setUniformMVP(tilesShader)
+				camera.translate(pos.x, pos.y, pos.z)
+				camera.scale(size.x, size.y, size.z)
+				camera.uniformMVP(tilesShader)
 				state.draw(gl)
 				//tilesMesh.lastVertexArray.draw(tilesMesh.drawAs)
 			}

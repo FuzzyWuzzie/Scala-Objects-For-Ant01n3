@@ -236,7 +236,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 
 	protected def displayGrid() {
 		gridShader.use
-		camera.setUniformMVP(gridShader)
+		camera.uniformMVP(gridShader)
 		grid.lastVertexArray.draw(grid.drawAs)
 	}
 
@@ -245,14 +245,14 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 		
 		camera.pushpop {
 			val scale = 0.0007
-			camera.translateModel(-0.7, 0.3, 0)			
+			camera.translate(-0.7, 0.3, 0)			
 			camera.pushpop {
-				camera.scaleModel(scale, scale, scale)
+				camera.scale(scale, scale, scale)
 				text(TextFrameNo).draw(camera)
 			}
-			camera.translateModel(0, -0.1, 0)			
+			camera.translate(0, -0.1, 0)			
 			camera.pushpop {
-				camera.scaleModel(scale, scale, scale)
+				camera.scale(scale, scale, scale)
 				text(TextPartId).draw(camera)
 			}
 		}

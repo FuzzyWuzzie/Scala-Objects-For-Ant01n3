@@ -280,12 +280,12 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 		if(background ne null) {
 			backgroundShader.use
 			background.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
-			camera.setUniformMVP(backgroundShader)
+			camera.uniformMVP(backgroundShader)
 			backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
 	
 			gl.enable(gl.BLEND)
 			bgShadowShader.use
-			camera.setUniformMVP(bgShadowShader)
+			camera.uniformMVP(bgShadowShader)
 			bgShadowMesh.lastVertexArray.draw(bgShadowMesh.drawAs)
 			gl.disable(gl.BLEND)
 		}
@@ -298,7 +298,7 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 	protected def renderGrid() {
 		gl.enable(gl.BLEND)
 		gridShader.use
-		camera.setUniformMVP(gridShader)
+		camera.uniformMVP(gridShader)
 		grid.lastVertexArray.draw(grid.drawAs)
 		gl.disable(gl.BLEND)
 	}

@@ -140,13 +140,13 @@ class TestEditableMesh extends SurfaceRenderer {
 		planeShad.use
 		camera.viewLookAt
 		useLights(planeShad)
-		camera.uniformMVP(planeShad)
+		camera.uniform(planeShad)
 		plane.draw(planeMesh.drawAs)
 		
 		// TODO Thing
 		thingShad.use
 		useLights(thingShad)
-		camera.uniformMVP(thingShad)
+		camera.uniform(thingShad)
 		thing.draw(thingMesh.drawAs)
 		
 		surface.swapBuffers

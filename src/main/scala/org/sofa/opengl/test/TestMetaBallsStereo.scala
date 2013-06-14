@@ -6,40 +6,15 @@ import org.sofa.opengl.mesh.{PlaneMesh, PointsMesh, CubeMesh, AxisMesh, WireCube
 import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurfaceSimple, IsoSurface, IsoCube}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.ArrayBuffer
+import scala.math._
 
-object TestMetaBalls {
-	def main(args:Array[String]) = (new TestMetaBalls).test
+object TestMetaBallsStereo {
+	def main(args:Array[String]) = (new TestMetaBallsStereo).test
 }
 
-object MetaBall {
-	/** Speed factor of meta balls. */
-	val speed = 0.05
-}
+// Class MetaBall is defined in TestMetaBalls
 
-class MetaBall(xx:Double, yy:Double, zz:Double) extends SpatialPoint {
-	val x = Point3(xx, yy, zz)
-	val v = Vector3((math.random*2-1)*MetaBall.speed,
-			        (math.random*2-1)*MetaBall.speed,
-			        (math.random*2-1)*MetaBall.speed)
-	def from:Point3 = x
-	def to:Point3 = x
-	def move() {
-		move(x)
-	}
-	protected def move(p:Point3) {
-//		p.brownianMotion(0.05)
-		p.addBy(v)
-		val lim = 1.5
-		if(p.x > lim) { p.x = lim; v.x = -v.x }
-		else if(p.x < -lim) { p.x = -lim; v.x = -v.x }
-		if(p.y > lim) { p.y = lim; v.y = -v.y }
-		else if(p.y < -lim) { p.y = -lim; v.y = -v.y }
-		if(p.z > lim) { p.z = lim; v.z = -v.z }
-		else if(p.z < -lim) { p.z = -lim; v.z = -v.z }
-	}
-}
-
-class TestMetaBalls extends SurfaceRenderer {
+class TestMetaBallsStereo extends SurfaceRenderer {
 	
 	// --------------------------------------------------------------
 	// Settings
@@ -113,6 +88,15 @@ class TestMetaBalls extends SurfaceRenderer {
 	var isoSurfaceComp:IsoSurface = null
 	var spaceHash = new SpatialHash[MetaBall,MetaBall,SpatialCube](bucketSize)
 	var balls:ArrayBuffer[MetaBall] = null
+
+	var near = 0.3
+	var T1:Long = 0
+	var avgT:Double = 0.0
+	var steps = 1
+	var theta = 0.0
+	var eyeAngle = Pi/35
+	
+
 	
 	// --------------------------------------------------------------
 	// Commands
@@ -130,7 +114,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		caps.setSampleBuffers(true)
 		
 		camera         = new Camera()
-		ctrl           = new MetaBallsCameraController(camera, this)
+		ctrl           = new MetaBallsCameraControllerStereo(camera, this)
 		initSurface    = initializeSurface
 		frame          = display
 		surfaceChanged = reshape
@@ -139,11 +123,11 @@ class TestMetaBalls extends SurfaceRenderer {
 		scroll         = ctrl.scroll
 		close          = { surface => sys.exit }
 
-		//camera.viewport = (1600,600)
+		camera.viewport = (1600,600)
 
 		surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
 							camera, "Meta bouboules", caps,
-							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
+							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2, 30, false, true)	
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
@@ -153,7 +137,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		initShaders
 		initGeometry
 		
-		camera.viewCartesian(3, 3, 3)
+		camera.viewSpherical(Pi/8, Pi/3, 2)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -221,34 +205,57 @@ class TestMetaBalls extends SurfaceRenderer {
 		}
 	}
 	
-	var T1:Long = 0
-	var avgT:Double = 0.0
-	var steps = 1
-	
 	def display(surface:Surface) {
 
 		if(play)
 			updateParticles
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-		
-		camera.viewLookAt
 
+		theta = camera.theta
+
+		displayLeft(surface)
+		displayRight(surface)
+
+		camera.theta = theta
+
+		surface.swapBuffers
+		gl.checkErrors
+		
+		time
+	}
+
+	def displayLeft(surface:Surface) {
+		reshapeLeft(surface)
+		camera.theta = camera.theta + eyeAngle/2
+		camera.viewLookAt
+		draw(surface)
+	}
+
+	def displayRight(surface:Surface) {
+		reshapeRight(surface)
+		camera.theta = camera.theta - eyeAngle
+		camera.viewLookAt
+		draw(surface)
+	}
+
+	protected def draw(surface:Surface) {
 		drawIsoSurface
 		drawAxis
 		drawSpaceHash
 		drawIsoCubes
 		drawParticles
+	}
 
-		surface.swapBuffers
-		gl.checkErrors
-		
-		val T = scala.compat.Platform.currentTime
+	protected def time() {
+		val T   = scala.compat.Platform.currentTime
 		val fps = 1000.0 / (T-T1)
-		avgT += fps
-		println("%.2f fps (avg %.2f)".format(fps, avgT/steps))
-		T1 = T
-		steps+=1
+		avgT   += fps
+		
+		println("%.2f fps (avg %.2f) [near = %f  angle = %f]".format(fps, avgT/steps, near, eyeAngle))
+		
+		T1     = T
+		steps += 1
 	}
 
 	protected def drawAxis() {
@@ -425,7 +432,19 @@ class TestMetaBalls extends SurfaceRenderer {
 	def reshape(surface:Surface) {
 		camera.viewportPx(surface.width, surface.height)
 		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
-		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, 2)
+		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, near)
+	}
+
+	def reshapeLeft(surface:Surface) {
+		camera.viewport = (surface.width/2, surface.height)
+		gl.viewport(0, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
+		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, near)
+	}
+
+	def reshapeRight(surface:Surface) {
+		camera.viewport = (surface.width/2, surface.height)
+		gl.viewport(surface.width/2, 0, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt)
+		camera.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, near)
 	}
 	
 	protected def useLights(shader:ShaderProgram) {
@@ -436,7 +455,7 @@ class TestMetaBalls extends SurfaceRenderer {
 	}
 }
 
-class MetaBallsCameraController(camera:Camera, val mb:TestMetaBalls) extends BasicCameraController(camera) {
+class MetaBallsCameraControllerStereo(camera:Camera, val mb:TestMetaBallsStereo) extends BasicCameraController(camera) {
     override def key(surface:Surface, keyEvent:KeyEvent) {
         import keyEvent.ActionChar._
         if(keyEvent.isPrintable) {
@@ -444,11 +463,23 @@ class MetaBallsCameraController(camera:Camera, val mb:TestMetaBalls) extends Bas
             	case ' ' => { mb.pausePlay }
             	case 'p' => { mb.showParticles = !mb.showParticles }
             	case 's' => { mb.showSpaceHash = !mb.showSpaceHash }
-            	case 'c' => { mb.showIsoCubes = !mb.showIsoCubes }
+            	case 'c' => { mb.showIsoCubes  = !mb.showIsoCubes }
+            	case 'w' => { mb.eyeAngle += 0.01 }
+            	case 'x' => { mb.eyeAngle -= 0.01 }
+            	case 'b' => { mb.near += 0.1; if(mb.near > 10) mb.near = 10 }
+            	case 'n' => { mb.near -= 0.1; if(mb.near < 0.1) mb.near = 0.1 }
             	case _ => super.key(surface, keyEvent)
             }
         } else {
-            super.key(surface, keyEvent)
+        	keyEvent.actionChar match {
+		    	case PageUp   => { camera.viewTraveling(-step) } 
+		    	case PageDown => { camera.viewTraveling(step) }
+		    	case Up       => { camera.rotateViewVertical(step) }
+		    	case Down     => { camera.rotateViewVertical(-step) }
+		    	case Left     => { camera.rotateViewHorizontal(-step) }
+		    	case Right    => { camera.rotateViewHorizontal(step) }
+		    	case _        => super.key(surface, keyEvent)
+	    	}
         }
     }
 }
