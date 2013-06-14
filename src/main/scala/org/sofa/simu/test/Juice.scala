@@ -305,8 +305,8 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 
 	protected def initCamera(surface:Surface) {
 		camera.setFocus(0, 4, 0)
-//		camera.viewSpherical(0, 0, 50)
-		camera.viewCartesian(0, 15, 50)
+//		camera.eyeSpherical(0, 0, 50)
+		camera.eyeCartesian(0, 15, 50)
 		reshape(surface)
 	}
 
@@ -606,7 +606,7 @@ var angle = 0.0
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
 //		camera.rotateViewHorizontal(0.1)
-		camera.viewLookAt
+		camera.lookAt
 
 		drawWalls
 		drawObstacles
@@ -1122,12 +1122,12 @@ class JuiceInteractions(camera:Camera, val scene:JuiceScene) extends BasicCamera
             }
         } else {
 	    	keyEvent.actionChar match {
-		    	case PageUp   => { camera.viewTraveling(-step) } 
-		    	case PageDown => { camera.viewTraveling(step) }
-		    	case Up       => { camera.rotateViewVertical(step) }
-		    	case Down     => { camera.rotateViewVertical(-step) }
-		    	case Left     => { camera.rotateViewHorizontal(-step) }
-		    	case Right    => { camera.rotateViewHorizontal(step) }
+		    	case PageUp   => { camera.eyeTraveling(-step) } 
+		    	case PageDown => { camera.eyeTraveling(step) }
+		    	case Up       => { camera.rotateEyeVertical(step) }
+		    	case Down     => { camera.rotateEyeVertical(-step) }
+		    	case Left     => { camera.rotateEyeHorizontal(-step) }
+		    	case Right    => { camera.rotateEyeHorizontal(step) }
 		    	case _        => { super.key(surface, keyEvent) }
 	    	}
 

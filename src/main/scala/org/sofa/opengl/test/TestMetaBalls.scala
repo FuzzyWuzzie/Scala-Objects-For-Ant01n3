@@ -153,7 +153,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		initShaders
 		initGeometry
 		
-		camera.viewCartesian(3, 3, 3)
+		camera.eyeCartesian(3, 3, 3)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -232,7 +232,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
-		camera.viewLookAt
+		camera.lookAt
 
 		drawIsoSurface
 		drawAxis

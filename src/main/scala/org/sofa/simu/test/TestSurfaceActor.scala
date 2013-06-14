@@ -157,7 +157,7 @@ class TestSurfaceActor extends SurfaceRenderer {
         initModels
 	    initGeometry
 	    
-	    camera.viewCartesian(0, 10, 10)
+	    camera.eyeCartesian(0, 10, 10)
 	    camera.setFocus(0, 2, 0)
 	    reshape(surface)
 	}
@@ -223,7 +223,7 @@ class TestSurfaceActor extends SurfaceRenderer {
 
 //println("Display Inside thread %s".format(Thread.currentThread.getName))
 
-	    camera.viewLookAt
+	    camera.lookAt
 
 		// Ground
 
@@ -250,6 +250,6 @@ class TestSurfaceActor extends SurfaceRenderer {
 	}
 
 	def animate() {
-		camera.rotateViewHorizontal(0.01)
+		camera.rotateEyeHorizontal(0.01)
 	}
 }

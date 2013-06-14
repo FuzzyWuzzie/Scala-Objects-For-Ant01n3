@@ -86,7 +86,7 @@ class TestXMLArmature extends SurfaceRenderer {
         initArmatures("Robot.svg")
 	    initGeometry
 	    
-	    camera.viewCartesian(0, 10, 10)
+	    camera.eyeCartesian(0, 10, 10)
 	    camera.setFocus(0, 2, 0)
 	    reshape(surface)
 	}

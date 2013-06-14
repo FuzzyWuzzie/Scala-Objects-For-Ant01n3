@@ -96,7 +96,7 @@ class TestSkinning6 extends SurfaceRenderer {
         initModels
 	    initGeometry
 	    
-	    camera.viewCartesian(0, 10, 10)
+	    camera.eyeCartesian(0, 10, 10)
 	    camera.setFocus(0, 2, 0)
 	    reshape(surface)
 	}
@@ -192,7 +192,7 @@ println("Reshape Inside thread %s".format(Thread.currentThread.getName))
 
 println("Display Inside thread %s".format(Thread.currentThread.getName))
 
-	    camera.viewLookAt
+	    camera.lookAt
 
 		// Ground
 

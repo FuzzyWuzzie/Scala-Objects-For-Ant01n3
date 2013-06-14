@@ -4,48 +4,23 @@ import scala.math._
 
 import org.sofa.math._
 
-object Camera {
-    def apply() = new Camera()
-}
 
-/** A camera analogy for OpenGL.
-  *
-  * Objects of this class simulate a camera point of view (eye) and looked at point (focus). It
-  * can be freely positioned in Cartesian coordinates, and will automatically point at the focus.
-  * It can also be positioned in spherical coordinates around the focus. Its banking can be
-  * controlled using its up vector.
-  * 
-  * The camera maintains a projection and a model-view matrix. The model-view matrix allows to
-  * "move" the camera in space. The projection matrix allows to specify the camera viewing
-  * properties like the aperture. It also defines a far clipping plane, so that objects too far
-  * away are not drawn.
-  * 
-  * It stores a view port in pixels that express the rendering canvas dimensions. This canvas also
-  * allows to control the aspect-ratio of the camera. 
-  *
-  * TODO this is really two objects in one.
-  *   - PointOfView (handle the focus and eye)
-  *   - Camera extends PointOfView (handle the perspective and modelview)
-  *
-  * TODO uniformMVP, setUniformMVP, setUniformMV, setUniformMV3x3 are misnamed
-  *   - uniformMVP -> uniformMV_MV3x3_MVP ?
-  *   - setUniformMVP -> uniformMVP 
-  *   - setUniformMV -> uniformMV
-  *   - setUniformMV3x3 -> uniformMV3x3
-  */
-class Camera {
-    /** How to pass from view space to camera space. */
-    val projection:Matrix4 = Matrix4()
-    
-    /** How to pass from model to view space. */
-    val modelview = MatrixStack(Matrix4())
+// -- Point of View -----------------------------------------------------------------------
 
-    /** The projection matrix times the modelview matrix. We avoid to recompute or reallocate
-      * it since it is used very often. Memory/speed compromise. */
-    val mvp = new Matrix4()
 
-    /** Flag indicating if the modelview or projection changed since the last MVP compute. */
-    protected var needRecomputeMVP = true
+/** Objects of this class simulate a point of view (eye) and a looked at point (focus). It
+  * can be freely positioned in Cartesian coordinates. It can also be positioned in spherical
+  * coordinates around the focus. Its banking can be controlled using its up vector. 
+  * The object automatically updates the coordinates in Cartesian or spherical forms, when
+  * the other is changed so that both are always available.
+  *
+  * In spherical coordinates, we represent [[theta]] as the angle on the horizontal
+  * axis, [[phi]] as the angle on the vertical axis, and [[radius]] as the distance from
+  * the focus point.
+  *
+  * The object also stores a "eye angle" that represent the half angle between two eyes for
+  * stereo representations. */
+class PointOfView {
 
     /** Up direction, for camera banking. */
     var up = Vector3(0, 1,  0)
@@ -55,71 +30,63 @@ class Camera {
     
     /** Position of the camera eye in Cartesian coordinates. */
     var cartesianEye = Vector3(0, 0, -1)
-    
+
     /** The looked at point. */
     var focus = Vector3(0, 0, 0)
-    
-    /** View port size in pixels. */
-    var viewportPx = Vector2(800, 600)
-    
-    /** Maximum depth of the view (far clip-plane position). */
-    var maxDepth = 100.0
-    
+
+    /** Distance between the two eyes divided by two. This value is used
+      * by [[lookAtLeftEye]] and [[lookAtRightEye]]. */
+    var eyeAngle = Pi / 64.0
+
+	/** Distance from the eye to the focus. */    
     def radius_= (value:Double):Unit = { sphericalEye.z = value; cartesianFromSpherical }
     
+	/** Distance from the eye to the focus. */    
     def radius:Double = sphericalEye.z
-    
+
+	/** Horizontal spherical eye coordinate. */    
     def theta_= (value:Double):Unit = { sphericalEye.x = value; cartesianFromSpherical }
     
+	/** Horizontal spherical eye coordinate. */    
     def theta:Double = sphericalEye.x
     
+    /** Vertical spherical eye coordinate. */
     def phi_= (value:Double):Unit = { sphericalEye.y = value; cartesianFromSpherical }
     
+    /** Vertical spherical eye coordinate. */
     def phi:Double = sphericalEye.y
-
-    def viewportWidth:Double = viewportPx.x
-
-    def viewportWidth_= (value:Double):Unit = { viewportPx.x = value } 
-
-    def viewportHeight:Double = viewportPx.y
-
-    def viewportHeight_= (value:Double):Unit = { viewportPx.y = value }
-
-    def viewport:(Double,Double) = (viewportPx.x, viewportPx.y)
-
-    def viewport_=(values:(Double,Double)):Unit = { viewportPx.set(values._1, values._2) }
 
     /** Set the coordinates of the camera "eye" in spherical coordinates. This will be used
       * to define the "view" part of the model-view matrix when using [[setupView()]]. */
-    def viewSpherical(theta:Double, phi:Double, radius:Double) {
+    def eyeSpherical(theta:Double, phi:Double, radius:Double) {
        sphericalEye.set(theta, phi, radius)
        cartesianFromSpherical
     }
     
     /** Set the coordinates of the camera "eye" in Cartesian coordinates. This will be used
       * to define the "view" part of the model-view matrix when using [[setupView()]]. */
-    def viewCartesian(x:Double, y:Double, z:Double) {
+    def eyeCartesian(x:Double, y:Double, z:Double) {
         cartesianEye.set(x, y, z)
         sphericalFromCartesian
     }
     
     /** Modify the coordinates of the camera "eye" by rotating horizontally around its focus point
       * of the given amount `delta`. */
-    def rotateViewHorizontal(delta:Double) {
+    def rotateEyeHorizontal(delta:Double) {
         sphericalEye.x += delta
         cartesianFromSpherical
     } 
     
     /** Modify the coordinates of the camera "eye" by rotating vertically around its focus point
       * of the given amount `delta`. */
-    def rotateViewVertical(delta:Double) {
+    def rotateEyeVertical(delta:Double) {
         sphericalEye.y += delta
         cartesianFromSpherical
     }
 
     /** Modify the coodinates of the camera "eye" by rotating horizontally and vertically its focus point
       * of the amount (`thetaDouble`, `phiDelta`). */
-    def rotateView(thetaDelta:Double, phiDelta:Double) {
+    def rotateEye(thetaDelta:Double, phiDelta:Double) {
     	sphericalEye.x += thetaDelta
     	sphericalEye.y += phiDelta
     	cartesianFromSpherical
@@ -127,7 +94,7 @@ class Camera {
     
     /** Modify the distance between the camera "eye" and the focus point from the given amount
       * `delta`. */
-    def viewTraveling(delta:Double) {
+    def eyeTraveling(delta:Double) {
         sphericalEye.z += delta
         cartesianFromSpherical
     }
@@ -151,6 +118,61 @@ class Camera {
     	sphericalEye.x = atan(cartesianEye.z / cartesianEye.x)
     	//Console.err.println("sphe(%s) -> cart(%s)".format(sphericalEye, cartesianEye))
     }
+}
+
+
+// -- Camera ------------------------------------------------------------------------------
+
+
+object Camera { def apply() = new Camera() }
+
+
+/** A camera analogy for OpenGL.
+  *
+  * Objects of this class simulate a camera point of view (eye) and looked at point (focus). It
+  * can be freely positioned in Cartesian coordinates, and will automatically point at the focus.
+  * It can also be positioned in spherical coordinates around the focus. Its banking can be
+  * controlled using its up vector.
+  * 
+  * The camera maintains a projection and a model-view matrix. The model-view matrix allows to
+  * "move" the camera in space. The projection matrix allows to specify the camera viewing
+  * properties like the aperture. It also defines a far clipping plane, so that objects too far
+  * away are not drawn.
+  * 
+  * It stores a view port in pixels that express the rendering canvas dimensions. This canvas also
+  * allows to control the aspect-ratio of the camera. 
+  */
+class Camera extends PointOfView {
+    /** How to pass from view space to camera space. */
+    val projection:Matrix4 = Matrix4()
+    
+    /** How to pass from model to view space. */
+    val modelview = MatrixStack(Matrix4())
+
+    /** The projection matrix times the modelview matrix. We avoid to recompute or reallocate
+      * it since it is used very often. Memory/speed compromise. */
+    val mvp = new Matrix4()
+
+    /** Flag indicating if the modelview or projection changed since the last MVP compute. */
+    protected var needRecomputeMVP = true
+        
+    /** View port size in pixels. */
+    var viewportPx = Vector2(800, 600)
+    
+    /** Maximum depth of the view (far clip-plane position). */
+    var maxDepth = 100.0
+
+    def viewportWidth:Double = viewportPx.x
+
+    def viewportWidth_= (value:Double):Unit = { viewportPx.x = value } 
+
+    def viewportHeight:Double = viewportPx.y
+
+    def viewportHeight_= (value:Double):Unit = { viewportPx.y = value }
+
+    def viewport:(Double,Double) = (viewportPx.x, viewportPx.y)
+
+    def viewport_=(values:(Double,Double)):Unit = { viewportPx.set(values._1, values._2) }
     
     /** Set the width and height of the output view-port in pixels. */
     def viewportPx(width:Double, height:Double) {
@@ -195,19 +217,38 @@ class Camera {
         needRecomputeMVP = true
     }
     
-    /** Erase the model-view matrix at the top of the model-view matrix stack and copy in
-      * it the "view" matrix, according to the position of the eye, the focus point and the
-      * up vector.
+    /** Define a model-view matrix according to the eye position and pointing at the
+      * focus point. This erases the model-view matrix at the top of the stack and copy in
+      * it the new "look-at" matrix.
       * 
       * This method must be called before any transform done on the "model", usually first
       * before drawing anything. It is suitable for a 3D environment with a perspective
-      * transform. For an orthographic
+      * transform. For an orthographic transform, you should not need this (it should work
+      * however, if you know what you do).
       * 
       * This method does not empty the model-view matrix stack. */
-    def viewLookAt() {
+    def lookAt() {
         modelview.setIdentity
         modelview.lookAt(cartesianEye, focus, up)
         needRecomputeMVP = true
+    }
+
+    /** Same as [[lookAt]], but offset the eye around the focus point by `eyeAngle` to
+      * represent the scene as seen from the left eye. */
+    def lookAtLeftEye() {
+    	val t = theta
+    	theta = t + eyeAngle
+    	lookAt
+    	theta = t
+    }
+
+    /** Same as [[lookAt]], but offset the eye around the focus point by `eyeAngle` to
+      * represent the scene as seen from the right eye. */
+    def lookAtRightEye() {
+    	val t = theta
+    	theta = t - eyeAngle
+    	lookAt
+    	theta = t
     }
 
     /** Reset the modelview to the identity. This must be called before each display

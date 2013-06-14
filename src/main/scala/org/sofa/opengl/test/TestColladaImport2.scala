@@ -77,7 +77,7 @@ class TestColladaImport2 extends SurfaceRenderer {
 		initShaders
 		initGeometry
 		
-		camera.viewCartesian(5, 2, 5)
+		camera.eyeCartesian(5, 2, 5)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -156,7 +156,7 @@ class TestColladaImport2 extends SurfaceRenderer {
 
 		light1.z = lightZ
 
-		camera.viewLookAt
+		camera.lookAt
 		
 		// Plane
 

@@ -78,7 +78,7 @@ class TestEditableMesh2 extends SurfaceRenderer {
 		initShaders
 		initGeometry
 		
-		camera.viewCartesian(5, 2, 5)
+		camera.eyeCartesian(5, 2, 5)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -184,7 +184,7 @@ class TestEditableMesh2 extends SurfaceRenderer {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.disable(gl.BLEND)
 
-		camera.viewLookAt
+		camera.lookAt
 		
 		planeShad.use
 		useLights(planeShad)

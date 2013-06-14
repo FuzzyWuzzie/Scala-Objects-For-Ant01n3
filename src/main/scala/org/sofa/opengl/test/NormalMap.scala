@@ -85,7 +85,7 @@ class NormalMap extends SurfaceRenderer {
 	def setup(surface:Surface) {
 		import VertexAttribute._
 
-	    camera.viewCartesian(2, 2, 2)
+	    camera.eyeCartesian(2, 2, 2)
 	    
 	    nmapShader = new ShaderProgram(gl, "normal map phong",
 	            new VertexShader(gl, "nmap phong", "es2/nmapPhong.vert"),
@@ -135,7 +135,7 @@ class NormalMap extends SurfaceRenderer {
 	    
 	    nmapShader.use
 
-	    camera.viewLookAt
+	    camera.lookAt
 	    
 	    setupLights
 	    setupTextures

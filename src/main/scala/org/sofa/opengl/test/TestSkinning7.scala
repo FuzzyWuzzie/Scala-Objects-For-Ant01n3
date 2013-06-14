@@ -96,7 +96,7 @@ class TestSkinning7 extends SurfaceRenderer {
         initModels
 	    initGeometry
 	    
-	    camera.viewCartesian(0, 10, 10)
+	    camera.eyeCartesian(0, 10, 10)
 	    camera.setFocus(0, 2, 0)
 	    reshape(surface)
 	}
@@ -187,7 +187,7 @@ class TestSkinning7 extends SurfaceRenderer {
 	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	    
-	    camera.viewLookAt
+	    camera.lookAt
 
 		// Ground
 

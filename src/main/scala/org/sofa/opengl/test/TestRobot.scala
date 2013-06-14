@@ -173,7 +173,7 @@ class TestRobot extends SurfaceRenderer {
 	    initGeometry
 	    initBehaviors
 	    
-	    camera.viewCartesian(0, 10, 10)
+	    camera.eyeCartesian(0, 10, 10)
 	    camera.setFocus(0, 2, 0)
 	    reshape(surface)
 	}

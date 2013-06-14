@@ -75,7 +75,7 @@ class TestColladaImport extends SurfaceRenderer {
 		initShaders
 		initGeometry
 		
-		camera.viewCartesian(5, 2, 5)
+		camera.eyeCartesian(5, 2, 5)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -117,7 +117,7 @@ class TestColladaImport extends SurfaceRenderer {
 	def display(surface:Surface) {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)		
 
-		camera.viewLookAt
+		camera.lookAt
 
 		// Plane
 

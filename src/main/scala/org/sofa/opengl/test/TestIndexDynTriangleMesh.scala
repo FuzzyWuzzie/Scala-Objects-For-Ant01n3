@@ -85,7 +85,7 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 		initShaders
 		initGeometry
 		
-		camera.viewCartesian(5, 2, 5)
+		camera.eyeCartesian(5, 2, 5)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -171,7 +171,7 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
 		planeShad.use
-		camera.viewLookAt
+		camera.lookAt
 		useLights(planeShad)
 		camera.uniform(planeShad)
 		plane.draw(planeMesh.drawAs)

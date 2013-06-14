@@ -137,7 +137,7 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 		initShaders
 		initGeometry
 		
-		camera.viewSpherical(Pi/8, Pi/3, 2)
+		camera.eyeSpherical(Pi/8, Pi/3, 2)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -212,12 +212,8 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		theta = camera.theta
-
 		displayLeft(surface)
 		displayRight(surface)
-
-		camera.theta = theta
 
 		surface.swapBuffers
 		gl.checkErrors
@@ -227,15 +223,13 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 
 	def displayLeft(surface:Surface) {
 		reshapeLeft(surface)
-		camera.theta = camera.theta + eyeAngle/2
-		camera.viewLookAt
+		camera.lookAtLeftEye
 		draw(surface)
 	}
 
 	def displayRight(surface:Surface) {
 		reshapeRight(surface)
-		camera.theta = camera.theta - eyeAngle
-		camera.viewLookAt
+		camera.lookAtRightEye
 		draw(surface)
 	}
 
@@ -472,12 +466,12 @@ class MetaBallsCameraControllerStereo(camera:Camera, val mb:TestMetaBallsStereo)
             }
         } else {
         	keyEvent.actionChar match {
-		    	case PageUp   => { camera.viewTraveling(-step) } 
-		    	case PageDown => { camera.viewTraveling(step) }
-		    	case Up       => { camera.rotateViewVertical(step) }
-		    	case Down     => { camera.rotateViewVertical(-step) }
-		    	case Left     => { camera.rotateViewHorizontal(-step) }
-		    	case Right    => { camera.rotateViewHorizontal(step) }
+		    	case PageUp   => { camera.eyeTraveling(-step) } 
+		    	case PageDown => { camera.eyeTraveling(step) }
+		    	case Up       => { camera.rotateEyeVertical(step) }
+		    	case Down     => { camera.rotateEyeVertical(-step) }
+		    	case Left     => { camera.rotateEyeHorizontal(-step) }
+		    	case Right    => { camera.rotateEyeHorizontal(step) }
 		    	case _        => super.key(surface, keyEvent)
 	    	}
         }

@@ -70,7 +70,7 @@ class TestText extends SurfaceRenderer {
 		initGLText
 		initGeometry
 		
-		camera.viewCartesian(5, 2, 5)
+		camera.eyeCartesian(5, 2, 5)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -132,7 +132,7 @@ class TestText extends SurfaceRenderer {
 			count = 0
 		}
 
-		camera.viewLookAt
+		camera.lookAt
 		
 		// Axis
 		

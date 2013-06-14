@@ -85,7 +85,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		initTextureFB
 		initGeometry
 		
-		camera.viewCartesian(0, 0.4, 2.7)
+		camera.eyeCartesian(0, 0.4, 2.7)
 		camera.setFocus(0, 0.5, 0)
 		reshape(surface)
 	}
@@ -256,7 +256,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		gl.viewport(0, 0, surface.width, surface.height)
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
-		camera.viewLookAt
+		camera.lookAt
 
 		// Axis
 		

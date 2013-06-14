@@ -9,19 +9,19 @@ class BasicCameraController(val camera:Camera) {
 	protected var step = 0.1
 	
 	def scroll(surface:Surface, e:ScrollEvent) {
-	    camera.rotateViewHorizontal(e.amount * step * 0.05)
+	    camera.rotateEyeHorizontal(e.amount * step * 0.05)
 	} 
 	
 	def key(surface:Surface, e:KeyEvent) {
 	    import e.ActionChar._
 	    if(! e.isPrintable) {
 	    	e.actionChar match {
-		    	case PageUp   => { camera.viewTraveling(-step) } 
-		    	case PageDown => { camera.viewTraveling(step) }
-		    	case Up       => { camera.rotateViewVertical(step) }
-		    	case Down     => { camera.rotateViewVertical(-step) }
-		    	case Left     => { camera.rotateViewHorizontal(-step) }
-		    	case Right    => { camera.rotateViewHorizontal(step) }
+		    	case PageUp   => { camera.eyeTraveling(-step) } 
+		    	case PageDown => { camera.eyeTraveling(step) }
+		    	case Up       => { camera.rotateEyeVertical(step) }
+		    	case Down     => { camera.rotateEyeVertical(-step) }
+		    	case Left     => { camera.rotateEyeHorizontal(-step) }
+		    	case Right    => { camera.rotateEyeHorizontal(step) }
 		    	case _        => {}
 	    	}
 	    }

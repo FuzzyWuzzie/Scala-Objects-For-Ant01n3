@@ -196,7 +196,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		initShaders
 		initGeometry
 
-		camera.viewCartesian(0, 5, 14)
+		camera.eyeCartesian(0, 5, 14)
 		camera.setFocus(0, 4, 0)
 		reshape(surface)
 	}
@@ -327,7 +327,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		
-		camera.viewLookAt
+		camera.lookAt
 
 		drawPlane
 		drawObstacles

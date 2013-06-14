@@ -86,7 +86,7 @@ class Skinning extends SurfaceRenderer {
 	    initGeometry
 	    initTextures
 	    
-	    camera.viewCartesian(0, 5, 5)
+	    camera.eyeCartesian(0, 5, 5)
 	    camera.setFocus(0, 1.5, 0)
 	    reshape(surface)
 	}
@@ -175,7 +175,7 @@ class Skinning extends SurfaceRenderer {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	    
 	    nmapShader.use
-	    camera.viewLookAt
+	    camera.lookAt
 	    useLights(nmapShader)
 	    useTextures(nmapShader)
 	    camera.uniform(nmapShader)

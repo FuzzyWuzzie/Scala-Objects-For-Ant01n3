@@ -73,7 +73,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 		initTextureFB
 		initGeometry
 		
-		camera.viewCartesian(5, 2, 5)
+		camera.eyeCartesian(5, 2, 5)
 		camera.setFocus(0, 0, 0)
 		reshape(surface)
 	}
@@ -101,7 +101,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 	def initTextureFB() {
 		fb = new TextureFramebuffer(gl, 64, 64)
 
-		camera2.viewCartesian(2, 2, 2)
+		camera2.eyeCartesian(2, 2, 2)
 		camera2.setFocus(0, 0, 0)
 		camera2.viewportPx(fb.width, fb.height)
 		camera2.frustum(-camera.viewportRatio, camera.viewportRatio, -1, 1, 2)
@@ -125,8 +125,8 @@ class TestRenderToTexture extends SurfaceRenderer {
 			gl.disable(gl.DEPTH_TEST)
 			gl.clearColor(Rgba.Blue)
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-			camera2.rotateViewHorizontal(0.1)
-			camera2.viewLookAt
+			camera2.rotateEyeHorizontal(0.1)
+			camera2.lookAt
 			
 			//plainShad.use
 			//camera2.uniformMVP(plainShad)
@@ -147,7 +147,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.frontFace(gl.CW)
 		
-		camera.viewLookAt
+		camera.lookAt
 
 		// Plane
 		
