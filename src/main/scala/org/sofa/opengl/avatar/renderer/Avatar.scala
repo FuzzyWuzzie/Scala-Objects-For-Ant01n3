@@ -1,10 +1,10 @@
-package org.sofa.simu.oberon.renderer
+package org.sofa.opengl.avatar.renderer
 
 import scala.collection.mutable.{ArrayBuffer}
 import akka.actor.{ActorRef}
 
 import org.sofa.math.{Vector3, Point3, NumberSeq3, Rgba, SpatialCube, SpatialHash, SpatialHashException}
-import org.sofa.simu.oberon.{Acquaintance}
+
 
 /** When an avatar is not found. */
 case class NoSuchAvatarException(msg:String) extends Exception(msg)
@@ -194,4 +194,14 @@ class AvatarIndex2D(avatar:Avatar) extends AvatarIndex(avatar) {
 		 (x >= from.x && x < to.x
 		&&y >= from.y && y < to.y)
 	}
+}
+
+
+// == Acquaintance ==========================================================================================================
+
+
+/** Set of messages sent back by avatars when something occur on them. */
+object Acquaintance {
+	/** An avatar has been touched. */
+	case class TouchEvent(from:String, isStart:Boolean, isEnd:Boolean)	
 }

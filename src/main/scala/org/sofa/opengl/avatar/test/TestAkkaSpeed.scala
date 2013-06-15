@@ -1,12 +1,14 @@
+package org.sofa.opengl.avatar.test
 
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorContext}
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 object TestAkkaSpeed {
 	val ms =  20L;
 
-	case class Start
-	case class Exit
+	case class Start()
+	case class Exit()
 
 	def main(args:Array[String]) {
 		val actorSystem = ActorSystem("TestAkkaSpeed")

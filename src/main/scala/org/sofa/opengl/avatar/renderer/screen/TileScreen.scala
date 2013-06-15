@@ -1,4 +1,4 @@
-package org.sofa.simu.oberon.renderer.screen
+package org.sofa.opengl.avatar.renderer.screen
 
 import scala.collection.mutable.{HashMap, HashSet}
 import akka.actor.{ActorRef}
@@ -7,7 +7,7 @@ import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3, Spatia
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute, TrianglesMesh}
 import org.sofa.opengl.surface.{MotionEvent}
-import org.sofa.simu.oberon.renderer.{Screen, Renderer, NoSuchAxisException}
+import org.sofa.opengl.avatar.renderer.{Screen, Renderer, NoSuchAxisException}
 
 import scala.math._
 

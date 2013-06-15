@@ -1,4 +1,4 @@
-package org.sofa.simu.oberon.renderer
+package org.sofa.opengl.avatar.renderer
 
 import scala.collection.mutable.{HashMap}
 

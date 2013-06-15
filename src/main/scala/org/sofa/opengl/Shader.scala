@@ -10,6 +10,7 @@ case class ShaderCompilationException(msg:String, nested:Throwable=null) extends
 case class ShaderLinkException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
 case class ShaderAttributeException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
 
+
 /** Shader companion object. */
 object Shader {
     /** A regular expression that matches any line that contains an include. */
@@ -45,11 +46,13 @@ object Shader {
     }
 }
 
+
 /** Pluggable loader for shader sources. */
 trait ShaderLoader extends FileLoader {
     /** Try to open a resource, or throw an IOException if not available. */
     def open(resource:String):InputStream
 }
+
 
 /** Default loader for shaders, based on files and the include path.
   * This loader tries to open the given resource directly, then if not
@@ -61,6 +64,7 @@ class DefaultShaderLoader extends ShaderLoader {
     }
 }
 
+
 object ShaderProgram {
     /** Create a new shader program from a vertex shader and a fragment shader. */
     def apply(gl:SGL, name:String, vertexShaderFileName:String, fragmentShaderFileName:String):ShaderProgram = {
@@ -69,6 +73,7 @@ object ShaderProgram {
     			new FragmentShader(gl, name, fragmentShaderFileName))
     }
 }
+
 
 /** Represents a shader, either vertex, fragment or geometry.
  *  
@@ -140,6 +145,7 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
     }
 }
 
+
 /** A vertex shader/ */
 class VertexShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl, name, source) {
     protected val shaderType = gl.VERTEX_SHADER
@@ -153,6 +159,7 @@ class VertexShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl,
     def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(stream))
 }
 
+
 /** A fragment shader. */
 class FragmentShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl, name, source) {
     protected val shaderType = gl.FRAGMENT_SHADER
@@ -165,6 +172,7 @@ class FragmentShader(gl:SGL, name:String, source:Array[String]) extends Shader(g
     /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(stream))
 }
+
 
 /** Composition of several shaders into a program. */
 class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject(gl) {

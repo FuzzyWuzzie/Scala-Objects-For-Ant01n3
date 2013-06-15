@@ -1,4 +1,4 @@
-package org.sofa.simu.oberon.renderer
+package org.sofa.opengl.avatar.renderer
 
 import scala.collection.mutable.{HashMap, HashSet}
 import akka.actor.{ActorRef}
@@ -8,8 +8,10 @@ import org.sofa.opengl.{Camera, Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
 
+
 /** Sent when a screen is not found. */
 case class NoSuchScreenException(msg:String) extends Exception(msg)
+
 
 /** A screen in the game.
   *
@@ -17,12 +19,11 @@ case class NoSuchScreenException(msg:String) extends Exception(msg)
   * Only one screen is active and rendered at a time.
   */
 abstract class Screen(val name:String, val renderer:Renderer) extends Renderable {
+	/** OpenGL. */
+	val gl = renderer.gl
 
 	/** The spatial index used in screens to retrieve indexed avatars. */
 	type SpatialIndex = SpatialHash[SpatialObject, SpatialPoint, AvatarIndex]
-
-	/** OpenGL. */
-	val gl = renderer.gl
 
 	/** Frame buffer. */
 	val surface = renderer.surface

@@ -1,3 +1,5 @@
+package org.sofa.opengl.avatar.test
+
 import javax.media.opengl.{GLCapabilities, GLEventListener, GLAutoDrawable, GLProfile}
 import com.jogamp.newt.opengl.GLWindow
 import com.jogamp.newt.event.{KeyEvent=>JoglKeyEvent, MouseEvent=>JoglMouseEvent, MouseListener=>JoglMouseListener, WindowListener=>JoglWindowListener, KeyListener=>JoglKeyListener, WindowEvent=>JoglWindowEvent, WindowUpdateEvent=>JoglWindowUpdateEvent}

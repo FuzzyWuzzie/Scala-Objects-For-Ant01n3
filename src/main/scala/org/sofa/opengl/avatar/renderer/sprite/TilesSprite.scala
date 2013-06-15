@@ -1,4 +1,4 @@
-package org.sofa.simu.oberon.renderer.sprite
+package org.sofa.opengl.avatar.renderer.sprite
 
 import scala.collection.mutable.{HashMap}
 
@@ -6,7 +6,7 @@ import org.sofa.math.{Vector3, NumberSeq3, SpatialCube}
 import org.sofa.opengl.{SGL, Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute, QuadsMesh}
 
-import org.sofa.simu.oberon.renderer.{Sprite,Screen,Avatar,AvatarIndex,AvatarState,AvatarIndex2D,NoSuchStateException}
+import org.sofa.opengl.avatar.renderer.{Sprite,Screen,Avatar,AvatarIndex,AvatarState,AvatarIndex2D,NoSuchStateException}
 
 /** TileSprite companion object defining the messages that can be received (change()). */
 object TilesSprite {

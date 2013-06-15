@@ -206,7 +206,7 @@ class IsoSegment(val a:Int, val b:Int) {}
   * http://paulbourke.net/geometry/polygonise/  web page as well as the C++ implementation
   * at http://www.idevgames.com/forums/thread-8761.html.
   *
-  * This implementation used a space-hash to locate the marching squares already computed.
+  * This implementation uses a space-hash to locate the marching squares already computed.
   * Each marching square is associated with a position in a spatial space where coordinates
   * are integers (the indices of the squares in the two axes). The `cellSize`
   * parameter gives the side of a square. Therefore the real coordinates of each square are

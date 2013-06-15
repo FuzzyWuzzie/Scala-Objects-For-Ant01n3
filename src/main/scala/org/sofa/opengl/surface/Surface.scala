@@ -29,6 +29,9 @@ abstract trait Surface {
     /** Try to change the surface width and height. */
     def resize(newWidth:Int, newHeight:Int)
 
+    /** Try to switch the fullscreen mode. */
+    def fullscreen(on:Boolean)
+
     /** Invoke some code to be executed while the OpenGL context is current,
       * after a call to the SurfaceRenderer.display() method. The given code
       * must return true if the code does not changed the framebuffer. */

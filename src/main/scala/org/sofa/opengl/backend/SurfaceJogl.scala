@@ -17,12 +17,6 @@ import com.jogamp.newt.event.{NEWTEvent=>JoglEvent, KeyEvent=>JoglKeyEvent, Mous
 import com.jogamp.opengl.util.FPSAnimator
 
 
-object SurfaceNewtGLBackend extends Enumeration {
-	val GL2ES2 = Value
-	val GL3 = Value
-}
-
-
 class SurfaceGLCanvas(
     val renderer:SurfaceRenderer,
     var w:Int, var h:Int,
@@ -104,6 +98,8 @@ class SurfaceGLCanvas(
     	)
    	}
 
+   	def fullscreen(on:Boolean) { throw new RuntimeException("not supported with non NEWT windows yet") }
+
     def windowActivated(e:AWTWindowEvent) {}
     def windowClosed(e:AWTWindowEvent) {}
     def windowClosing(e:AWTWindowEvent) {}
@@ -171,59 +167,83 @@ class MotionEventAWT(source:AWTMouseEvent, pressed:Boolean, released:Boolean) ex
     def sourceEvent:AnyRef = source
 }
 
-// =======================================================================================================================================
+
 // == NEWT ===============================================================================================================================
-// =======================================================================================================================================
+
+
+object SurfaceNewtGLBackend extends Enumeration {
+	val GL2ES2 = Value
+	val GL3 = Value
+	type SurfaceNewtGLBackend = Value
+}
+
 
 class SurfaceNewt(
+    
     val renderer:SurfaceRenderer,
-    var w:Int, var h:Int,
+    var w:Int,
+    var h:Int,
     val title:String,
     val caps:GLCapabilities,
     val backend:SurfaceNewtGLBackend.Value,
     var fps:Int,
     var decorated:Boolean,
     var fullScreen:Boolean)
+	
 	extends Surface
 	with    JoglWindowListener
 	with    JoglKeyListener
 	with    JoglMouseListener
 	with    GLEventListener {
 
-	/** Synchronized queue for events coming from the EDT (event dispatching thread), as
-	  * with NEWT, events are handled in a distinct thread from rendering. */
-	private[this] val eventQueue = new SynchronizedQueue[Event]
+	import SurfaceNewtGLBackend._
 
     def this(renderer:SurfaceRenderer,
     		 camera:Camera,
     		 title:String,
     		 caps:GLCapabilities,
-             backend:SurfaceNewtGLBackend.Value, fps:Int = 30, decorated:Boolean = true, fullScreen:Boolean = false) { 
+             backend:SurfaceNewtGLBackend.Value,
+             fps:Int = 30,
+             decorated:Boolean = true,
+             fullScreen:Boolean = false) { 
     	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt, title, caps, backend, fps, decorated, fullScreen)
     }	
 
+	/** Synchronized queue for events coming from the EDT (event dispatching thread), as
+	  * with NEWT, events are handled in a distinct thread from rendering. */
+	private[this] val eventQueue = new SynchronizedQueue[Event]
+
+	/** NEWT window. */
     protected var win:GLWindow = null
+    
+    /** Animator thread. */
     protected var anim:FPSAnimator = null
+
+    /** Used to fasten invoke, in order to test if we are in the correct thread. */
+    private[this] var invokeThread:Thread = null
+    
+    /** OpenGL. */
     protected var sgl:SGL = null
     
     build(backend)
     
-    protected def build(backend:SurfaceNewtGLBackend.Value) {
+    protected def build(backend:SurfaceNewtGLBackend) {
         win  = GLWindow.create(caps)
         anim = new FPSAnimator(win, fps)
         sgl  = null
 
         win.setFullscreen(fullScreen)
-        win.setUndecorated(!decorated)
+        win.setUndecorated(! decorated)
 	   	win.setVisible(true)	
+	   	
 	   	// XXX The jogl specs tell to create the window before setting the size in order to know the native
-	   	// XXX decoration insets. However it clearly do not work. Subsequent messages when the window is
+	   	// XXX decoration insets. However it clearly does not work. Subsequent messages when the window is
 	   	// resized will send the correct size, leading to an incoherent behavior (the sizes given cannot
 	   	// to be trusted, when the window appear, the reshape receives the size with the insets, subsequent
 	   	// resets will receive a size without the insets ... how to tell when ?).
 		// Is this only on Os X ?
 
-	    win.setSize(w+win.getInsets.getTotalWidth, h+win.getInsets.getTotalHeight)
+	    win.setSize(w + win.getInsets.getTotalWidth, h + win.getInsets.getTotalHeight)
 	    win.setTitle(title)
 
 	    win.addWindowListener(this)
@@ -243,17 +263,20 @@ class SurfaceNewt(
     	}
     	sgl
     }
-    def swapBuffers():Unit = {}//win.swapBuffers // Automatic
+
+    def swapBuffers():Unit = {} // Automatic, nothing to do.
+    
     def width = w
+    
     def height = h
     
-    def init(win:GLAutoDrawable) { renderer.initSurface(gl, this) }
+    def init(win:GLAutoDrawable) { if(renderer.initSurface ne null) renderer.initSurface(gl, this) }
+    
     def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) { w = width; h = height; if(renderer.surfaceChanged ne null) renderer.surfaceChanged(this) }
+    
     def display(win:GLAutoDrawable) { processEvents; if(renderer.frame ne null) renderer.frame(this) }
+    
     def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
-
-    /** Used to fasten invoke, in order to test if we are in the correct thread. */
-    private[this] var invokeThread:Thread = null
     
     def invoke(code:(Surface)=>Boolean) {
     	val me = this
@@ -279,6 +302,8 @@ class SurfaceNewt(
     	}
    	}
 
+   	def fullscreen(on:Boolean) { win.setFullscreen(on) }
+
    	/** Process all pending events in the event queue. */
    	protected def processEvents() {
    		while(! eventQueue.isEmpty) {
@@ -292,6 +317,17 @@ class SurfaceNewt(
    		}
    	}
 
+    def resize(newWidth:Int, newHeight:Int) {
+    	win.setSize(newWidth, newHeight)
+    	w = newWidth
+    	h = newHeight
+    }
+
+   	// -- GUI Events --------------------------------------------------------------
+   	//
+   	// All events enqueue to the event queue and are processed by processEvents() when
+   	// the surface display() method is called.
+
     def windowDestroyNotify(ev:JoglWindowEvent) {}
     def windowDestroyed(e:JoglWindowEvent) {}
     def windowGainedFocus(e:JoglWindowEvent) {} 
@@ -303,7 +339,7 @@ class SurfaceNewt(
 	def keyPressed(e:JoglKeyEvent) {} 
 	def keyReleased(e:JoglKeyEvent) { eventQueue.enqueue(new KeyEventJogl(e)) }
 	def keyTyped(e:JoglKeyEvent) {}
-	
+    
     def mouseClicked(e:JoglMouseEvent) {
         e.getButton match {
             case 1 => { eventQueue.enqueue(new ActionEvent()) }
@@ -318,17 +354,16 @@ class SurfaceNewt(
     def mouseDragged(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, false, false)) }
     def mouseReleased(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, false, true)) }
     def mouseWheelMoved(e:JoglMouseEvent) { eventQueue.enqueue(new ScrollEventJogl(e)) }
-
-    def resize(newWidth:Int, newHeight:Int) {
-    	win.setSize(newWidth, newHeight)
-    	w = newWidth
-    	h = newHeight
-    }
 }
 
+
+// -- NEWT events -------------------------------------------------------------------------------------------
+
+
 class KeyEventJogl(val source:JoglKeyEvent) extends KeyEvent {
-    def isPrintable:Boolean = !source.isActionKey
+    
     def unicodeChar:Char = source.getKeyChar
+    
     def actionChar:ActionChar.Value = {
         import JoglKeyEvent._
         import ActionChar._
@@ -345,6 +380,7 @@ class KeyEventJogl(val source:JoglKeyEvent) extends KeyEvent {
         }
     }
     
+    def isPrintable:Boolean = !source.isActionKey
     def isControlDown:Boolean = source.isControlDown
     def isAltDown:Boolean = source.isAltDown
     def isAltGrDown:Boolean = source.isAltGraphDown

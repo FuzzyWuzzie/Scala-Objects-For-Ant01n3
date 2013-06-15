@@ -4,8 +4,7 @@ import scala.math._
 
 object AxisRange { def apply(r:(Double,Double)):AxisRange = AxisRange(r._1, r._2) }
 
-/** Range along an axis, the from part is smaller thant the to part.
-  * Usually the from part is negative and the to part is positive. */	
+/** Range along an axis, the `from` part is smaller thant the `to` part. */
 case class AxisRange(from:Double, to:Double) {
 	assert(from <= to)
 

@@ -30,17 +30,17 @@ import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
 
 // == Actors ========================================================================
 
-object RendererActor {
+object RobotRendererActor {
 	def apply(system:ActorSystem, renderer:TestRobot):ActorRef = {
 		SurfaceExecutorService.setSurface(renderer.surface)
-		system.actorOf(Props(new RendererActor(renderer)).withDispatcher(SurfaceExecutorService.configKey), name="renderer-actor")
+		system.actorOf(Props(new RobotRendererActor(renderer)).withDispatcher(SurfaceExecutorService.configKey), name="renderer-actor")
 	}
 }
 
 
 
 /** Models the behavior of the robot (give hi-level orders). */
-class RendererActor(val renderer:TestRobot) extends Actor {
+class RobotRendererActor(val renderer:TestRobot) extends Actor {
 	var count = 0
 	
 	var startTime = Platform.currentTime
@@ -152,7 +152,7 @@ class TestRobot extends SurfaceRenderer {
       * called when this class is created automatically. */
 	def configureActors() {
 		system = ActorSystem("Robot")
-		surfaceActor = RendererActor(system, this)
+		surfaceActor = RobotRendererActor(system, this)
 		surfaceActor ! "start"
 	}
 

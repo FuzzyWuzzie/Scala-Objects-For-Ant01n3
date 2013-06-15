@@ -1,4 +1,4 @@
-package org.sofa.simu.oberon.renderer
+package org.sofa.opengl.avatar.renderer
 
 /** Allow to specify sizes for avatar.
   * A size object express a size using a given set of descriptors, some

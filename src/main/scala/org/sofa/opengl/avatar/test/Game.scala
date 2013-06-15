@@ -1,4 +1,4 @@
-package org.sofa.simu.oberon
+package org.sofa.opengl.avatar.test
 
 import scala.collection.mutable.HashMap
 import scala.concurrent.duration._
@@ -7,18 +7,20 @@ import scala.language.postfixOps
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorContext, Terminated}
 
 import org.sofa.math.{Axes, Vector3, Point3, NumberSeq3}
-import org.sofa.simu.oberon.renderer.{Screen, Avatar, AvatarFactory, Renderer, RendererActor, NoSuchScreenException, NoSuchAvatarException, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth}
-import org.sofa.simu.oberon.renderer.screen.{MenuScreen, TileScreen}
-import org.sofa.simu.oberon.renderer.sprite.{ImageSprite, TilesSprite}
+import org.sofa.opengl.avatar.renderer.{Screen, Avatar, AvatarFactory, Renderer, RendererNewt, RendererActor, NoSuchScreenException, NoSuchAvatarException, Size, SizeTriplet, SizeFromTextureHeight, SizeFromTextureWidth, SizeFromScreenWidth, Acquaintance}
+import org.sofa.opengl.avatar.renderer.screen.{MenuScreen, TileScreen}
+import org.sofa.opengl.avatar.renderer.sprite.{ImageSprite, TilesSprite}
 import org.sofa.opengl.{Shader, Texture, TexParams, Libraries, ShaderResource, TextureResource}
 import org.sofa.opengl.akka.SurfaceExecutorService
 import org.sofa.opengl.io.collada.{ColladaFile}
+
 
 object GameMap {
 	val maps = new HashMap[String,GameMap]()
 	def apply(size:(Int,Int), position:(Int,Int), texture:(String,Int,Int), tiles:HashMap[String,Int], map:Array[String]):GameMap =
 					new GameMap(size, position, texture, tiles, map)
 }
+
 
 class GameMap(
 	/** The size of the level in game units (tiles). */
@@ -131,7 +133,7 @@ object GameActor {
 class GameActor extends Actor {
 	import GameActor._
 
-	val renderer = new Renderer(self)
+	val renderer = new RendererNewt(self)
 
 	val rendererActor:ActorRef = RendererActor(context.system, renderer, new BruceAvatarFactory(renderer), "Bruce the miner", 1280, 800, 30/*fps*/)
 
@@ -168,7 +170,7 @@ class GameActor extends Actor {
 			rendererActor ! AddResource(TextureResource("tile-nothing", "tile_nothing.png", TexParams()))
 			rendererActor ! AddResource(TextureResource("tile-mud", "tile_mud.png", TexParams()))
 			rendererActor ! AddResource(TextureResource("tile-stone", "tile_stone.png", TexParams()))
-			rendererActor ! Start(21)
+			rendererActor ! Start()
 			
 			menuActor = context.actorOf(Props[MenuActor], name = "menu")
 			
@@ -421,14 +423,6 @@ class LevelActor extends Actor {
 			level      = 0
 		}
 	}
-}
-
-// == Acquaintance ==========================================================================================================
-
-/** Set of messages sent back by avatars when something occur on them. */
-object Acquaintance {
-	/** An avatar has been touched. */
-	case class TouchEvent(from:String, isStart:Boolean, isEnd:Boolean)	
 }
 
 // == Sprite ================================================================================================================
