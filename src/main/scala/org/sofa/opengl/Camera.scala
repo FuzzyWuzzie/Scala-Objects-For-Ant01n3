@@ -118,6 +118,8 @@ class PointOfView {
     	sphericalEye.x = atan(cartesianEye.z / cartesianEye.x)
     	//Console.err.println("sphe(%s) -> cart(%s)".format(sphericalEye, cartesianEye))
     }
+
+    override def toString() = "lookAt{cartesian(%s) spherical(%s) focus(%s) up(%s)}".format(cartesianEye, sphericalEye, focus, up)
 }
 
 
@@ -352,4 +354,6 @@ class Camera extends PointOfView {
     
     /** Store as uniform variable the top 3x3 matrix of the model-view. The default uniform name is "MV3x3". */
     def uniformMV3x3(shader:ShaderProgram, mv3x3Name:String="MV3x3") { shader.uniformMatrix(mv3x3Name, modelview.top3x3) }   
+
+    override def toString() = "cam{cartesian(%s) spherical(%s) focus(%s) up(%s) vp(%s)}".format(cartesianEye, sphericalEye, focus, up, viewportPx)
 }

@@ -7,7 +7,7 @@ import scala.math._
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 
 import org.sofa.math.{Rgba, Point2, Point3, Matrix3}
-import org.sofa.simu.oberon.renderer._
+//import org.sofa.simu.oberon.renderer._
 
 // -- Exceptions ----------------------------------------------------------------------------------------------
 

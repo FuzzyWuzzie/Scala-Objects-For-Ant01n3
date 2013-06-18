@@ -27,7 +27,7 @@ import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.akka.SurfaceExecutorService
 import org.sofa.opengl.avatar.renderer.{Renderer, RendererActor, AvatarFactory, Screen, Avatar, NoSuchAvatarException, NoSuchScreenException}
 import org.sofa.opengl.avatar.renderer.sprite.{TilesSprite, ImageSprite}
-import org.sofa.opengl.avatar.renderer.screen.{MenuScreen}
+import org.sofa.opengl.avatar.renderer.screen.PerspectiveScreen
 
 
 // == TestRobot2 and Renderer ========================================================
@@ -36,7 +36,7 @@ import org.sofa.opengl.avatar.renderer.screen.{MenuScreen}
 class RobotAvatarFactory(val renderer:Renderer) extends AvatarFactory {
 	def screenFor(name:String, screenType:String):Screen = {
 		screenType match {
-			case "menu" ⇒ new MenuScreen(name, renderer)
+			case "perspective" ⇒ new PerspectiveScreen(name, renderer)
 			case _      ⇒ throw NoSuchScreenException("cannot create a screen of type %s, unknown type".format(screenType))
 		}
 	}
@@ -88,6 +88,13 @@ class TestRobot2 extends Actor {
 	protected def declareResources() {
 		import RendererActor._
 
+		Shader.path   += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2"
+		Shader.path   += "shaders"
+	    Texture.path  += "/Users/antoine/Documents/Art/Images/Bruce_Art"
+	    Texture.path  += "textures"
+	    Armature.path += "/Users/antoine/Documents/Art/Images/Bruce_Art"
+	    Armature.path += "svg"
+
 		rendererActor ! AddResource(ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
 		rendererActor ! AddResource(ShaderResource("plain-shader", "plain_shader.vert.glsl", "plain_shader.frag.glsl"))
 		rendererActor ! AddResource(TextureResource("scene-near-bg", "scene_near_bg.png", TexParams()))
@@ -100,7 +107,7 @@ class TestRobot2 extends Actor {
 	protected def setupScreen() {
 		import RendererActor._
 
-		rendererActor ! AddScreen("robot-screen", "robot-screen")
+		rendererActor ! AddScreen("robot-screen", "perspective")
 		rendererActor ! SwitchScreen("robot-screen")
 		rendererActor ! ChangeScreenSize(Axes((-0.5, 0.5), (-0.5, 0.5), (-1.0, 1.0)), 0.05)
 	}

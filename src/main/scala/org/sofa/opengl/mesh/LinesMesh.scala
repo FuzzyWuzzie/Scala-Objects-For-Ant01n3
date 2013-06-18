@@ -140,7 +140,11 @@ class LinesMesh(val count:Int) extends Mesh {
 		}
 	}
 
-	def setXYGrid(w:Float, h:Float, originx:Float, originy:Float, countx:Int, county:Int, incrx:Float, incry:Float, color:Rgba, xAxisColor:Rgba = Rgba.Red, yAxisColor:Rgba = Rgba.Green) {
+	def setXYGrid(w:Float, h:Float,
+		originx:Float, originy:Float, 
+		countx:Int, county:Int, 
+		incrx:Float, incry:Float, 
+		color:Rgba, xAxisColor:Rgba = Rgba.Red, yAxisColor:Rgba = Rgba.Green) {
 		var i = 0
 		var x = originx - (incrx * (countx/2))
 		var y = originy - (incry * (county/2))

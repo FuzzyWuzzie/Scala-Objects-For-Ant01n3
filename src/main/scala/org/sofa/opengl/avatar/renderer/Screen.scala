@@ -16,7 +16,8 @@ case class NoSuchScreenException(msg:String) extends Exception(msg)
 /** A screen in the game.
   *
   * A screen is necessarily (actually) occupying the whole display.
-  * Only one screen is active and rendered at a time.
+  * Only one screen is active and rendered at a time. The role of a screen is to
+  * define a space where avatar can be placed and interacted upon.
   */
 abstract class Screen(val name:String, val renderer:Renderer) extends Renderable {
 	/** OpenGL. */
@@ -45,10 +46,10 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 
 	// Acccess
 
-	/** Width of the screen in game units. This is the maximum visible space, independant of any camera zoom. */
+	/** Width of the screen in game units, these are not pixels. This is the maximum visible space, independant of any camera zoom. */
 	def width:Double = axes.x.length
 
-	/** Height of the screen in game units. This is the maximum visible space, independant of any camera zoom. */
+	/** Height of the screen in game units, these are not pixels. This is the maximum visible space, independant of any camera zoom. */
 	def height:Double = axes.y.length
 
 	// Modification
