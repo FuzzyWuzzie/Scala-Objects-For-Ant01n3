@@ -71,7 +71,7 @@ class TestRobot2 extends Actor {
 
 	val renderer = Renderer(self)
 
-	val rendererActor:ActorRef = RendererActor(context.system, renderer, new RobotAvatarFactory(renderer), "Robot", 800, 600, 30)
+	val rendererActor:ActorRef = RendererActor(context.system, renderer, new RobotAvatarFactory(renderer), "Robot", 1200, 744, 30)
 
 	def receive = {
 		case Start => start
@@ -91,17 +91,14 @@ class TestRobot2 extends Actor {
 		Shader.path   += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2"
 		Shader.path   += "shaders"
 	    Texture.path  += "/Users/antoine/Documents/Art/Images/Bruce_Art"
+	    Texture.path  += "/Users/antoine/Documents/Art/Images"
 	    Texture.path  += "textures"
 	    Armature.path += "/Users/antoine/Documents/Art/Images/Bruce_Art"
 	    Armature.path += "svg"
 
 		rendererActor ! AddResource(ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
 		rendererActor ! AddResource(ShaderResource("plain-shader", "plain_shader.vert.glsl", "plain_shader.frag.glsl"))
-		rendererActor ! AddResource(TextureResource("scene-near-bg", "scene_near_bg.png", TexParams()))
-		rendererActor ! AddResource(TextureResource("scene-far-bg", "scene_far_bg.png", TexParams()))
-		rendererActor ! AddResource(TextureResource("scene-fg", "scene_fg.png", TexParams()))
-		rendererActor ! AddResource(TextureResource("robot", "robot.png", TexParams()))
-		//rendererActor ! AddResource(ArmatureResource())
+		rendererActor ! AddResource(TextureResource("grid10x10", "Grid10x10.png", TexParams(mipMap = TexMipMap.Generate, minFilter = TexMin.LinearAndMipMapLinear)))
 	}
 
 	protected def setupScreen() {

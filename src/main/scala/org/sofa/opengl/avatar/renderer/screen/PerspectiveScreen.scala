@@ -42,10 +42,10 @@ object PerspectiveScreen {
   * give an order for the avatars. */
 class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, renderer) {
 	/** Color for parts not covered by the background image. */
-	val clearColor = Rgba(0, 0, 0, 1)
+	val clearColor = Rgba(0.9, 0.9, 0.9, 1)
 
 	/** The background plane. */
-	val backgroundMesh = new PlaneMesh(2, 2, 1, 1, true)
+	val backgroundMesh = new PlaneMesh(2, 2, 10, 10, true)
 
 	/** The background shader. */
 	var backgroundShader:ShaderProgram =null
@@ -91,9 +91,7 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
         beginShader
         beginGeometry
 
-        //camera.eyeSpherical(0.01, 0.01, 4)
-        camera.eyeCartesian(0, 0, 4)
-println("camera = %s".format(camera))
+        camera.eyeCartesian(0, 0, 2)
 
 		super.begin
 
@@ -101,13 +99,16 @@ println("camera = %s".format(camera))
 	}
 
 	protected def beginShader() {
-		//backgroundShader = renderer.libraries.shaders.get(gl, "image-shader")
+		backgroundShader = renderer.libraries.shaders.get(gl, "image-shader")
 		gridShader = renderer.libraries.shaders.get(gl, "plain-shader")
 	}
 
 	protected def beginGeometry() {
 		import VertexAttribute._
-        //backgroundMesh.newVertexArray(gl, backgroundShader, Vertex -> "position", TexCoord -> "texCoords")
+
+		background = renderer.libraries.textures.get(gl, "grid10x10")
+		backgroundMesh.setTextureRepeat(10, 10)
+        backgroundMesh.newVertexArray(gl, backgroundShader, Vertex -> "position", TexCoord -> "texCoords")
 
         setGrid
 	}
@@ -162,10 +163,10 @@ println("camera = %s".format(camera))
 
 		camera.lookAt
 
-		renderGrid
-
-		//renderBackground
+		renderBackground
+		
 		//super.render
+		
 		// In order to handle all the transparencies we have
 		// to sort elements. Therefore, we can disable the
 		// depth test.
@@ -186,30 +187,31 @@ println("camera = %s".format(camera))
 
 	override def animate() {
 		super.animate
-		camera.rotateEyeHorizontal(0.01)
-		camera.rotateEyeVertical(0.005)
+//		camera.rotateEyeHorizontal(0.01)
+//		camera.rotateEyeVertical(0.005)
 	}
 
 	override def end() {
 		super.end
 	}
 
-	// /** Render the background image (if any). */
-	// protected def renderBackground() {
-	// 	// Origin is in the middle of the screen and of the image.
-	// 	if(background ne null) {
-	// 		backgroundShader.use
-	// 		background.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
-	// 		camera.pushpop {
-	// 			camera.scale(w, h, 1)
-	// 			camera.uniformMVP(backgroundShader)
-	// 			backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
-	// 		}
-	// 	}
-	// 	if(debug) {
-	// 		renderGrid
-	// 	}
-	// }
+	/** Render the background image (if any). */
+	protected def renderBackground() {
+		// Origin is in the middle of the screen and of the image.
+		if(background ne null) {
+			gl.enable(gl.BLEND)
+			backgroundShader.use
+			background.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
+			camera.pushpop {
+				camera.uniformMVP(backgroundShader)
+				backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
+			}
+			gl.disable(gl.BLEND)
+		}
+		if(debug) {
+			renderGrid
+		}
+	}
 
 	/** Render a grid alligned with the spash. */
 	protected def renderGrid() {

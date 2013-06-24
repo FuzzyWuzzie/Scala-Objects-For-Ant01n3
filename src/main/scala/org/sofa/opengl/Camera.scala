@@ -44,20 +44,23 @@ class PointOfView {
 	/** Distance from the eye to the focus. */    
     def radius:Double = sphericalEye.z
 
-	/** Horizontal spherical eye coordinate. */    
+	/** Horizontal spherical eye coordinate in radians, positive values go CCW. */    
     def theta_= (value:Double):Unit = { sphericalEye.x = value; cartesianFromSpherical }
     
-	/** Horizontal spherical eye coordinate. */    
+	/** Horizontal spherical eye coordinate in radians. */    
     def theta:Double = sphericalEye.x
     
-    /** Vertical spherical eye coordinate. */
+    /** Vertical spherical eye coordinate in radians, positive values go CW. */
     def phi_= (value:Double):Unit = { sphericalEye.y = value; cartesianFromSpherical }
     
-    /** Vertical spherical eye coordinate. */
+    /** Vertical spherical eye coordinate in radians. */
     def phi:Double = sphericalEye.y
 
     /** Set the coordinates of the camera "eye" in spherical coordinates. This will be used
-      * to define the "view" part of the model-view matrix when using [[setupView()]]. */
+      * to define the "view" part of the model-view matrix when using [[setupView()]].
+      * The coordinates (0,0,x) (with x > 0) are just above the world, aligned with the
+      * y axis. Positive values for theta angle go CCW and positive values for phi go CW.
+      * Angles are in radians. */
     def eyeSpherical(theta:Double, phi:Double, radius:Double) {
        sphericalEye.set(theta, phi, radius)
        cartesianFromSpherical
@@ -269,6 +272,7 @@ class Camera extends PointOfView {
       * previous one as the current top mode-view matrix. */
     def pop() {
         modelview.pop
+        needRecomputeMVP = true
     }
     
     /** Push a copy of the current model-view matrix on top of the model-view matrix stack, and
