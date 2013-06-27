@@ -9,8 +9,15 @@ import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
 
 
+
+trait ScreenState {}
+
+
 /** Sent when a screen is not found. */
 case class NoSuchScreenException(msg:String) extends Exception(msg)
+
+/** When a state does not exist in an avatar or screen. */
+case class NoSuchScreenStateException(state:ScreenState) extends Exception(state.toString)
 
 
 /** A screen in the game.
@@ -55,7 +62,7 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	// Modification
 
 	/** Something changed in the screen. */
-	def change(axis:String, values:AnyRef*)
+	def change(state:ScreenState)
 
 	/** Change the axes and therefore the size of the drawing space in the screen (not related
 	  * with the real pixel width). */

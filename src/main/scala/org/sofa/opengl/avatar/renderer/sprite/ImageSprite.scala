@@ -1,17 +1,19 @@
 package org.sofa.opengl.avatar.renderer.sprite
 
+import scala.math._
 import scala.collection.mutable.{HashMap}
 
-import org.sofa.math.{Vector3, NumberSeq3, SpatialCube}
+import org.sofa.math.Axis._
+import org.sofa.math.{Vector3, NumberSeq3, SpatialCube, Axis}
 import org.sofa.opengl.{Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute}
-
-import org.sofa.opengl.avatar.renderer.{Sprite,Screen,Avatar,AvatarIndex,AvatarState,AvatarIndex2D,NoSuchStateException}
+import org.sofa.opengl.avatar.renderer.{Sprite, Screen, Avatar, AvatarIndex, AvatarState, AvatarIndex2D, NoSuchStateException}
 
 /** ImageSprite companion object defining the messages that can be received (change()), and
   * the [[ImageSprite.Animator]] class that can be used to tell how the sprite moves and
   * reshapes itself. */
 object ImageSprite {
+
 	/** Declare a new state for the sprite, and associate it an image in the resources library.
 	  * If the `change` field is true, the current state is changed with the new declared
 	  * state as if a [[ChangeState]] message was received. */
@@ -25,6 +27,9 @@ object ImageSprite {
 
 	/** Change the current state of the sprite. */
 	case class ChangeState(state:String) extends AvatarState
+
+	/** Change the orientation of the image, by giving the axis it is perpendicular to. By default the image is perpendicular to the Z axis. */
+	case class ChangeOrientation(orientation:Axis) extends AvatarState
 
 	/** An image sprite animator specifies  */
 	trait Animator {
@@ -55,7 +60,9 @@ object ImageSprite {
 /** A sprite that displays one image at a time.
   *
   * The image sprite defines a set of images. Each image is associated to a state. Switching
-  * the sprite state switches the image. */
+  * the sprite state switches the image.
+  * 
+  * The size and position of the sprite can be animated separately for each sprite. */
 class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = false) extends Sprite(name, screen) {
 	import ImageSprite._
 
@@ -73,6 +80,9 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 
 	/** Geometry to display the image. */
 	protected var imageMesh = new PlaneMesh(2, 2, 1, 1, true)
+
+	/** Orientation of the image along one of the three Cartesian axes. */
+	protected var orientation = Axis.Z
 
 	/** The spatial index anchor. */
 	protected val idx:AvatarIndex = if(isIndexed) new AvatarIndex2D(this) else null
@@ -116,12 +126,19 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 			case ChangeState(state:String) ⇒ {
 				changeState(state)
 			}
+			case ChangeOrientation(axis:Axis) ⇒ {
+				changeOrientation(axis)
+			}
 			case _ ⇒ { super.change(st) }
 		}
 	}
 
 	protected def changeState(st:String) {
 		state = states.get(st).getOrElse(throw NoSuchStateException("avatar %s has no state %s".format(name, state)))
+	}
+
+	protected def changeOrientation(axis:Axis) {
+		orientation = axis
 	}
 
 	def render() {
@@ -133,6 +150,11 @@ class ImageSprite(name:String, screen:Screen, override val isIndexed:Boolean = f
 			state.texture.bindUniform(gl.TEXTURE0, imageShader, "texColor")
 			camera.pushpop {
 				camera.translate(pos.x, pos.y, pos.z)
+				orientation match {
+					case Axis.X ⇒ { camera.rotate(-Pi/2.0, Axis.Y) }
+					case Axis.Y ⇒ { camera.rotate(-Pi/2.0, Axis.X) }
+					case _      ⇒ { /* NOP */ }
+				}
 				camera.scale(size.x, size.y, size.z)
 				camera.uniformMVP(imageShader)
 				imageMesh.lastVertexArray.draw(imageMesh.drawAs)

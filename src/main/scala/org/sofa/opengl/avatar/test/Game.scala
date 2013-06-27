@@ -243,6 +243,7 @@ class MenuActor extends Actor {
 	def receive() = {
 		case Start(rActor, gActor) ⇒ {
 			import RendererActor._
+			import MenuScreen._
 
 			rendererActor = rActor
 			gameActor     = gActor
@@ -250,7 +251,7 @@ class MenuActor extends Actor {
 			rendererActor ! AddScreen("menu", "menu")
 			rendererActor ! SwitchScreen("menu")
 			rendererActor ! ChangeScreenSize(Axes((-0.5, 0.5), (-0.5, 0.5), (-1.0, 1.0)), 0.05)
-			rendererActor ! ChangeScreen("background-image", "screen-intro")
+			rendererActor ! ChangeScreen(BackgroundImage("screen-intro"))
 
 			playButton = ButtonActor(context, "play")
 			watchList.watch(playButton, context)
@@ -393,6 +394,7 @@ class LevelActor extends Actor {
 	def receive() = {
 		case Start(rActor, gActor, level) ⇒ {
 			import RendererActor._
+			import TileScreen._
 
 			rendererActor = rActor
 			gameActor     = gActor
@@ -403,7 +405,7 @@ class LevelActor extends Actor {
 			rendererActor ! AddScreen(screenName, "tile")
 			rendererActor ! SwitchScreen(screenName)
 			rendererActor ! ChangeScreenSize(Axes((-map.size._1/2.0, map.size._1/2.0), (-map.size._2/2.0, map.size._2/2.0), (-1.0, 1.0)), 1)
-			rendererActor ! ChangeScreen("background-image", "tile-nothing")
+			rendererActor ! ChangeScreen(BackgroundImage("tile-nothing"))
 
 			val tname = screenName
 

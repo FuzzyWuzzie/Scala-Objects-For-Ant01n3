@@ -2,6 +2,14 @@ package org.sofa.math
 
 import scala.math._
 
+/** Simple axes names. */
+object Axis extends Enumeration {
+	val X = Value
+	val Y = Value
+	val Z = Value
+	type Axis = Value
+}
+
 object AxisRange { def apply(r:(Double,Double)):AxisRange = AxisRange(r._1, r._2) }
 
 /** Range along an axis, the `from` part is smaller thant the `to` part. */

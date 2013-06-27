@@ -1,6 +1,8 @@
 package org.sofa.opengl
 
 import org.sofa.math._
+import org.sofa.math.Axis._
+import scala.language.implicitConversions
 
 object MatrixStack {
 	implicit def toMatrix4(stack:MatrixStack[Matrix4]):Matrix4 = stack.top
@@ -87,7 +89,13 @@ class MatrixStack[M<:Matrix4](initialMatrix:M) {
      * around axis (`x`, `y`, `z`). */
     def rotate(angle:Double, x:Double, y:Double, z:Double) = stack(end).rotate(angle, x, y, z)
     
+    /** Multiply the top matrix by a rotation matrix defining a rotation of `angle` degrees
+     * around `axis`. */
     def rotate(angle:Double, axis:NumberSeq3) = stack(end).rotate(angle, axis)
+
+    /** Multiply the top matrix by a rotation matrix defining a rotation of `angle` degrees
+     * around `axis`. */
+    def rotate(angle:Double, axis:Axis) = stack(end).rotate(angle, axis)
     
     /** Multiply the top matrix by a scaling matrix with factors (`sx`, `sy`, `sz`). */
     def scale(sx:Double, sy:Double, sz:Double) = stack(end).scale(sx, sy, sz)

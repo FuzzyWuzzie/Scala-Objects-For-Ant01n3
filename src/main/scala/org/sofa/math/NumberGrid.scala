@@ -3,6 +3,7 @@ package org.sofa.math
 import org.sofa.nio._
 import scala.math._
 import scala.compat.Platform
+import org.sofa.math.Axis._
 
 /** A 2D grid of numbers.
   * 
@@ -830,19 +831,19 @@ trait NumberGrid4 extends NumberGrid {
 		multBy(tmpM4)
 	}
 	
-	/** Mutliply this matris by a rotation matrix defined by the given
+	/** Mutliply this matrix by a rotation matrix defined by the given
 	  * `angle` in radians, and the rotation `axis`.
 	  * 
 	  * The matrix is changed in place.
 	  */
 	def rotate(angle:Double, axis:NumberSeq3) { rotate(angle, axis.x, axis.y, axis.z) }	    
 	
-	/** Mutliply this matris by a rotation matrix defined by the given
+	/** Mutliply this matrix by a rotation matrix defined by the given
 	  * `angle` in radians, and the rotation axis (`u`, `v`, `w`).
 	  * 
 	  * The matrix is changed in place.
 	  */
-	def rotate(angle:Double, u:Double, v:Double, w:Double) = {
+	def rotate(angle:Double, u:Double, v:Double, w:Double) {
 //		val R = newInstance(4, 4).asInstanceOf[NumberGrid4]
 //		R.copy(this)
 //		setIdentity
@@ -851,6 +852,20 @@ trait NumberGrid4 extends NumberGrid {
 		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
 		tmpM4.setRotation(angle, u, v, w)	// This fills the matrix, no need for setIdentity
 		multBy(tmpM4)
+	}
+
+	/** Mutliply this matrix by a rotation matrix defined by the given
+	  * `angle` in radians, and the rotation `axis`.
+	  * 
+	  * The matrix is changed in place.
+	  */
+	def rotate(angle:Double, axis:Axis) {
+		axis match {
+			case Axis.X => rotate(angle, 1, 0, 0)
+			case Axis.Y => rotate(angle, 0, 1, 0)
+			case Axis.Z => rotate(angle, 0, 0, 1)
+			case _      => throw new RuntimeException("unknown axis")
+		}
 	}
 	
 	/**

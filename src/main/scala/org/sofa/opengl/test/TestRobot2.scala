@@ -15,7 +15,8 @@ import com.jogamp.newt.opengl._
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef, ActorContext, Terminated}
 
 import org.sofa.nio._
-import org.sofa.math.{Rgba, Point2, Point3, Vector3, Vector4, Axes, AxisRange}
+import org.sofa.math.Axis._
+import org.sofa.math.{Rgba, Point2, Point3, Vector3, Vector4, Axes, AxisRange, Axis}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap, TexAlpha, Libraries, ShaderResource, TextureResource, ArmatureResource}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.armature.{Armature, Joint}
@@ -25,7 +26,7 @@ import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttr
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.akka.SurfaceExecutorService
-import org.sofa.opengl.avatar.renderer.{Renderer, RendererActor, AvatarFactory, Screen, Avatar, NoSuchAvatarException, NoSuchScreenException}
+import org.sofa.opengl.avatar.renderer.{Renderer, RendererActor, AvatarFactory, Screen, Avatar, NoSuchAvatarException, NoSuchScreenException, SizeFromTextureHeight}
 import org.sofa.opengl.avatar.renderer.sprite.{TilesSprite, ImageSprite}
 import org.sofa.opengl.avatar.renderer.screen.PerspectiveScreen
 
@@ -42,7 +43,6 @@ class RobotAvatarFactory(val renderer:Renderer) extends AvatarFactory {
 	}
 	def avatarFor(name:String, avatarType:String, indexed:Boolean):Avatar = {
 		avatarType match {
-			case "tiles" ⇒ new TilesSprite(name, renderer.screen, false)
 			case "image" ⇒ new ImageSprite(name, renderer.screen, indexed)
 			case _       ⇒ throw new NoSuchAvatarException("cannot create an avatar of type %s, unknown type".format(avatarType))
 		}
@@ -88,29 +88,38 @@ class TestRobot2 extends Actor {
 	protected def declareResources() {
 		import RendererActor._
 
-		Shader.path   += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2"
-		Shader.path   += "shaders"
-	    Texture.path  += "/Users/antoine/Documents/Art/Images/Bruce_Art"
-	    Texture.path  += "/Users/antoine/Documents/Art/Images"
-	    Texture.path  += "textures"
-	    Armature.path += "/Users/antoine/Documents/Art/Images/Bruce_Art"
-	    Armature.path += "svg"
+		rendererActor ! AddResources("/TestRobot2.xml")
 
-		rendererActor ! AddResource(ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
-		rendererActor ! AddResource(ShaderResource("plain-shader", "plain_shader.vert.glsl", "plain_shader.frag.glsl"))
-		rendererActor ! AddResource(TextureResource("grid10x10", "Grid10x10.png", TexParams(mipMap = TexMipMap.Generate, minFilter = TexMin.LinearAndMipMapLinear)))
+//		rendererActor ! AddResource(TextureResource("grid10x10", "Grid10x10.png", TexParams(mipMap = TexMipMap.Load, minFilter = TexMin.LinearAndMipMapLinear)))
+//		rendererActor ! AddResource(TextureResource("bg-image", "bg_image.png", TexParams()))
+//		rendererActor ! AddResource(TextureResource("ground-image", "ground.png", TexParams()))
 	}
 
 	protected def setupScreen() {
 		import RendererActor._
+		import PerspectiveScreen._
 
 		rendererActor ! AddScreen("robot-screen", "perspective")
 		rendererActor ! SwitchScreen("robot-screen")
-		rendererActor ! ChangeScreenSize(Axes((-0.5, 0.5), (-0.5, 0.5), (-1.0, 1.0)), 0.05)
+		// TODO should be named ChangeScreeenCamera
+		rendererActor ! ChangeScreenSize(Axes((-0.25, 0.25), (-0.25, 0.25), (-1.0, 0.5)), 0.05)
+		rendererActor ! ChangeScreen(EyeCartesian(0, 0, 1.5))
 	}
 
 	protected def setupScene() {
+		import RendererActor._
+		import ImageSprite._
 
+		rendererActor ! AddAvatar("bg", "image", false)
+		rendererActor ! ChangeAvatar("bg", AddState("bg-image", "default", true))
+		rendererActor ! ChangeAvatarPosition("bg", Point3(0, 0.25, 0.1))
+		rendererActor ! ChangeAvatarSize("bg", SizeFromTextureHeight(1.0, "bg-image"))
+
+		rendererActor ! AddAvatar("ground", "image", false)
+		rendererActor ! ChangeAvatar("ground", AddState("ground-image", "default", true))
+		rendererActor ! ChangeAvatarPosition("ground", Point3(0, -0.25, 0.6))
+		rendererActor ! ChangeAvatarSize("ground", SizeFromTextureHeight(1.0, "ground-image"))
+		rendererActor ! ChangeAvatar("ground", ChangeOrientation(Axis.Y))
 	}
 
 	protected def setupActors() {

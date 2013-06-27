@@ -7,7 +7,11 @@ import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3, Spatia
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
-import org.sofa.opengl.avatar.renderer.{Screen, Renderer, NoSuchAxisException}
+import org.sofa.opengl.avatar.renderer.{Screen, ScreenState, Renderer, NoSuchScreenStateException}
+
+object MenuScreen {
+	case class BackgroundImage(resource:String) extends ScreenState
+}
 
 /** A screen where an image serve as the background and several button sprites
   * can be added.
@@ -18,6 +22,8 @@ import org.sofa.opengl.avatar.renderer.{Screen, Renderer, NoSuchAxisException}
   * The full height is always visible, and most of the time, more than the width is visible as
   * screens will be used un landscape mode. */
 class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) {
+	import MenuScreen._
+
 	/** Color for parts not covered by the background image. */
 	val clearColor = Rgba(1, 0, 0, 1)
 
@@ -83,17 +89,15 @@ class MenuScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
         setGrid
 	}
 
-	def change(axis:String, values:AnyRef*) {
-		axis match {
-			case "background-image" ⇒ {
-				if(values(0).isInstanceOf[String]) {
-					background = renderer.libraries.textures.get(gl, values(0).asInstanceOf[String])
-					h = axes.y.length
-					w = h * background.ratio
-				}
+	def change(state:ScreenState) {
+		state match {
+			case BackgroundImage(res) ⇒ {
+				background = renderer.libraries.textures.get(gl, res)
+				h = axes.y.length
+				w = h * background.ratio
 			}
 			case _ ⇒ {
-				throw NoSuchAxisException(axis)
+				throw NoSuchScreenStateException(state)
 			}
 		}
 	}

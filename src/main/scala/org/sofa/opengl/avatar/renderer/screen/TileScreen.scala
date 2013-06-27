@@ -7,7 +7,7 @@ import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3, Spatia
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute, TrianglesMesh}
 import org.sofa.opengl.surface.{MotionEvent}
-import org.sofa.opengl.avatar.renderer.{Screen, Renderer, NoSuchAxisException}
+import org.sofa.opengl.avatar.renderer.{Screen, Renderer, NoSuchScreenStateException, ScreenState}
 
 import scala.math._
 
@@ -26,8 +26,14 @@ class TouchMotion {
 	def delta:Vector2 = start --> end
 }
 
+object TileScreen {
+	case class BackgroundImage(resource:String) extends ScreenState
+}
+
 /** A screen where a 2D set of tiles are arranged in a zoomable grid. */
 class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) {
+	import TileScreen._
+
 	/** Color for parts not covered by the background image. */
 	val clearColor = Rgba(0.9, 0.9, 0.9, 1)
 
@@ -178,25 +184,23 @@ class TileScreen(name:String, renderer:Renderer) extends Screen(name, renderer) 
 		else bgShadowMesh.updateVertexArray(gl)
 	}
 
-	def change(axis:String, values:AnyRef*) {
-		axis match {
-			case "background-image" ⇒ {
-				if(values(0).isInstanceOf[String]) {
-					val w = (max(axes.x.length, axes.y.length) * 3).toInt
+	def change(state:ScreenState) {
+		state match {
+			case BackgroundImage(res) ⇒ {
+				val w = (max(axes.x.length, axes.y.length) * 3).toInt
 
-					background = renderer.libraries.textures.get(gl, values(0).asInstanceOf[String])
+				background = renderer.libraries.textures.get(gl, res)
 
-					if(backgroundMesh ne null) {
-						backgroundMesh.lastVertexArray.dispose
-					}
-
-					backgroundMesh = new PlaneMesh(2, 2, w, w, true)
-					backgroundMesh.setTextureRepeat(w, w)
-			  	    backgroundMesh.newVertexArray(gl, backgroundShader, VertexAttribute.Vertex -> "position", VertexAttribute.TexCoord -> "texCoords")
+				if(backgroundMesh ne null) {
+					backgroundMesh.lastVertexArray.dispose
 				}
+
+				backgroundMesh = new PlaneMesh(2, 2, w, w, true)
+				backgroundMesh.setTextureRepeat(w, w)
+			  	backgroundMesh.newVertexArray(gl, backgroundShader, VertexAttribute.Vertex -> "position", VertexAttribute.TexCoord -> "texCoords")
 			}
 			case _ ⇒ {
-				throw NoSuchAxisException(axis)
+				throw NoSuchScreenStateException(state)
 			}
 		}
 	}

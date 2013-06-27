@@ -3,7 +3,7 @@ package org.sofa.opengl
 import scala.math._
 
 import org.sofa.math._
-
+import org.sofa.math.Axis._
 
 // -- Point of View -----------------------------------------------------------------------
 
@@ -305,6 +305,12 @@ class Camera extends PointOfView {
     def rotate(angle:Double, axis:NumberSeq3) {
         modelview.rotate(angle, axis)
         needRecomputeMVP = true
+    }
+
+    /** Apply a rotation of `angle` around `axis` to the current model-view matrix. */
+    def rotate(angle:Double, axis:Axis) {
+    	modelview.rotate(angle, axis)
+    	needRecomputeMVP = true
     }
     
     /** Scale the current model-view matrix by coefficients `(sx, sy, sz)`. */

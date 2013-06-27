@@ -38,6 +38,9 @@ object RendererActor {
 	/** Define a new resource in the renderer. */
 	case class AddResource(res:ResourceDescriptor[AnyRef])
 
+	/** Setup pathes and resources from an XML configuration file. */
+	case class AddResources(xmlFileName:String)
+
 	/** A a new avatar in the current screen. The name of the avatar is free. Its type
 	  * depends on the [[AvatarFactory]], and the indexed flag tells if the screen must
 	  * index the avatar position to send it touch events.  */
@@ -62,8 +65,8 @@ object RendererActor {
 	  * You also give the size of the grid used by the space index. */
 	case class ChangeScreenSize(axes:Axes, spashUnit:Double)
 
-	/** Change some value for a screen. Possible axes depend on the screen type. */
-	case class ChangeScreen(axis:String, values:AnyRef*)
+	/** Change some value for the current screen. Possible axes depend on the screen type. */
+	case class ChangeScreen(state:ScreenState)
 
 	/** Change an avatar position. */
 	case class ChangeAvatarPosition(name:String, newPos:NumberSeq3)
@@ -141,11 +144,12 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 		case ChangeScreenSize(axes, spashUnit)        ⇒ { renderer.currentScreen.changeAxes(axes, spashUnit) }
 		case AddAvatar(name, atype, indexed)          ⇒ { renderer.currentScreen.addAvatar(name, avatarFactory.avatarFor(name, atype, indexed)) }
 		case RemoveAvatar(name)                       ⇒ { renderer.currentScreen.removeAvatar(name) }
-		case ChangeScreen(axis, values)               ⇒ { renderer.currentScreen.change(axis, values) }
+		case ChangeScreen(state)                      ⇒ { renderer.currentScreen.change(state) }
 		case ChangeAvatarPosition(name, newPos)       ⇒ { renderer.currentScreen.changeAvatarPosition(name, newPos) }
 		case ChangeAvatarSize(name, newSize)          ⇒ { renderer.currentScreen.changeAvatarSize(name, renderer.toTriplet(newSize)) }
 		case ChangeAvatar(name, state)                ⇒ { renderer.currentScreen.changeAvatar(name, state) }
 		case AddAvatarAcquaintance(name, acqaintance) ⇒ { renderer.currentScreen.addAvatarAcquaintance(name, acqaintance) }
 		case AddResource(res)                         ⇒ { renderer.libraries.addResource(res) }
+		case AddResources(xmlFileName)                ⇒ { renderer.libraries.addResources(xmlFileName) }
 	}
 }

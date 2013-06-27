@@ -7,16 +7,15 @@ import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3, Spatia
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
-import org.sofa.opengl.avatar.renderer.{Screen, Renderer, NoSuchAxisException}
+import org.sofa.opengl.avatar.renderer.{Screen, Renderer, NoSuchScreenStateException, ScreenState}
 
 
 object PerspectiveScreen {
-	case class Plane(id:String, z:Double)
-	case class Planes(planes:Plane *)
-//	case class Debug(on:Boolean)
-//	case class Tavelling(delta:Double)
+	case class FocusCartesian(x:Double, y:Double, z:Double) extends ScreenState
+	case class EyeCartesian(x:Double, y:Double, z:Double) extends ScreenState
+	case class EyeSpherical(theta:Double, phi:Double, radius:Double) extends ScreenState
 }
-
+	
 
 /** A screen made of several 2D planes all parrallel to the screen, where 2D elements are
   * positionned and rendered.
@@ -41,6 +40,8 @@ object PerspectiveScreen {
   * Planes will be drawn in order starting from the farthest to the closest. This allows to
   * give an order for the avatars. */
 class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, renderer) {
+	import PerspectiveScreen._
+
 	/** Color for parts not covered by the background image. */
 	val clearColor = Rgba(0.9, 0.9, 0.9, 1)
 
@@ -79,7 +80,8 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
 		gl.clearColor(clearColor)
 		gl.clearDepth(1f)
 	    
-	    gl.disable(gl.DEPTH_TEST)
+//	    gl.disable(gl.DEPTH_TEST)
+		gl.enable(gl.DEPTH_TEST)
 	    
 //		gl.enable(gl.CULL_FACE)
 //		gl.cullFace(gl.BACK)
@@ -91,7 +93,7 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
         beginShader
         beginGeometry
 
-        camera.eyeCartesian(0, 0, 2)
+        camera.eyeCartesian(0, 0, 1)
 
 		super.begin
 
@@ -113,18 +115,12 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
         setGrid
 	}
 
-	def change(axis:String, values:AnyRef*) {
-		axis match {
-			// case "background-image" ⇒ {
-			// 	if(values(0).isInstanceOf[String]) {
-			// 		background = renderer.libraries.textures.get(gl, values(0).asInstanceOf[String])
-			// 		h = axes.y.length
-			// 		w = h * background.ratio
-			// 	}
-			// }
-			case _ ⇒ {
-				throw NoSuchAxisException(axis)
-			}
+	def change(state:ScreenState) {
+		state match {
+			case FocusCartesian(x,y,z) ⇒ { camera.setFocus(x,y,z) }
+			case EyeCartesian(x,y,z)   ⇒ { camera.eyeCartesian(x,y,z) }
+			case EyeSpherical(t,p,r)   ⇒ { camera.eyeSpherical(t,p,r) }
+			case _                     ⇒ { throw NoSuchScreenStateException(state) }
 		}
 	}
 
@@ -185,10 +181,22 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
 		camera.frustum(axes.x.from*ratio, axes.x.to*ratio, axes.y.from, axes.y.to, axes.z.to)
 	}
 
+var xx = 0.01
+var yy = 0.01
+var camx = 0.0
+var camy = 0.0
+
 	override def animate() {
 		super.animate
-//		camera.rotateEyeHorizontal(0.01)
-//		camera.rotateEyeVertical(0.005)
+
+		// camx += xx
+		// camy += yy
+		// if(camx > 1.0) { camx = 1.0; xx = -xx }
+		// else if(camx < 0.0) { camx = 0.0; xx = -xx }
+		// if(camy > 1.0) { camy = 1.0; yy = -yy }
+		// else if(camy < 0.0) { camy = 0.0; yy = -yy }
+
+		// camera.eyeCartesian(camx, camy, 1.5)
 	}
 
 	override def end() {

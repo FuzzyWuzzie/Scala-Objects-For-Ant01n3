@@ -5,18 +5,18 @@ import akka.actor.{ActorRef}
 
 import org.sofa.math.{Vector3, Point3, NumberSeq3, Rgba, SpatialCube, SpatialHash, SpatialHashException}
 
+/** All specific messages */
+trait AvatarState {}
+
 
 /** When an avatar is not found. */
 case class NoSuchAvatarException(msg:String) extends Exception(msg)
 
-/** When an axis does not exist in an avatar or screen. */
-case class NoSuchAxisException(msg:String) extends Exception(msg)
+/** When a state does not exist in an avatar or screen. */
+case class NoSuchAvatarStateException(state:AvatarState) extends Exception(state.toString)
 
 /** When a value change on an axis failed. */
 case class InvalidValuesException(msg:String) extends Exception(msg)
-
-/** All specific messages */
-trait AvatarState {}
 
 /** When an avatar cannot change to a given state. */
 case class NoSuchStateException(msg:String) extends Exception(msg)
@@ -92,7 +92,7 @@ abstract class Avatar(val name:String, val screen:Screen) extends Renderable {
 
 	/** By default throw a NoSuchAxisException for any axis. */
 	def change(state:AvatarState) {
-		throw NoSuchAxisException("avatar %s has no such state named %s".format(name, state))
+		throw NoSuchAvatarStateException(state)
 	}
 
 	/** By default set the rendering flag to true. */
