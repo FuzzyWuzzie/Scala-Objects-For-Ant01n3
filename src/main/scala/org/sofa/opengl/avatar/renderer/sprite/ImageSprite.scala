@@ -9,6 +9,7 @@ import org.sofa.opengl.{Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute}
 import org.sofa.opengl.avatar.renderer.{Sprite, Screen, Avatar, AvatarIndex, AvatarState, AvatarIndex2D, NoSuchStateException}
 
+
 /** ImageSprite companion object defining the messages that can be received (change()), and
   * the [[ImageSprite.Animator]] class that can be used to tell how the sprite moves and
   * reshapes itself. */
@@ -31,14 +32,17 @@ object ImageSprite {
 	/** Change the orientation of the image, by giving the axis it is perpendicular to. By default the image is perpendicular to the Z axis. */
 	case class ChangeOrientation(orientation:Axis) extends AvatarState
 
-	/** An image sprite animator specifies  */
+	/** An image sprite animator specifies how to move and resize the image sprite. */
 	trait Animator {
 		/** True if the animator can define a next position. */
 		def hasNextPosition:Boolean = true
+
 		/** True if the animator can define a next size. */
 		def hasNextSize:Boolean = true
+		
 		/** Provide the next position of the sprite at `time` by copying the position into the given number sequence. */
 		def nextPosition(time:Long):NumberSeq3
+		
 		/** Provide the next dimension of the sprite at `time` by copying the size into the given number sequence. */
 		def nextSize(time:Long):NumberSeq3
 	}
@@ -46,16 +50,19 @@ object ImageSprite {
 	/** A state of an image sprite. */
 	case class State(val animator:Animator, val texture:Texture, val avatar:Avatar) {
 		def hasAnimator:Boolean = (animator ne null)
+		
 		def nextPosition(time:Long) {
 			if(hasAnimator && animator.hasNextPosition) 
 				avatar.screen.changeAvatarPosition(avatar.name, animator.nextPosition(time))
 		}
+		
 		def nextSize(time:Long) {
 		 	if(hasAnimator && animator.hasNextSize)
 		 		avatar.screen.changeAvatarSize(avatar.name, animator.nextSize(time))
 		}
 	}
 }
+
 
 /** A sprite that displays one image at a time.
   *

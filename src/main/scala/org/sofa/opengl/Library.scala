@@ -7,7 +7,8 @@ import scala.collection.mutable.HashMap
 import org.sofa.FileLoader
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
-import org.sofa.opengl.armature.Armature
+import org.sofa.opengl.armature.{Armature, Joint}
+import org.sofa.opengl.armature.behavior.{ArmatureBehavior, InterpToAngle, InterpToPosition, BehaviorLoop, DoInParallel, DoInSequence, InterpMove, JointVisibilitySwitch, ArmatureKeyInterp}
 
 import scala.xml.{XML, Elem, Node, NodeSeq}
 
@@ -25,7 +26,7 @@ abstract class ResourceDescriptor[+T](val name:String) {
 
 
 /** A set of resources of a given type. */
-abstract class Library[T](val gl:SGL) {
+abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescriptor[T])] {
 	/** Set of loaded resources. */
 	protected val library = new HashMap[String,ResourceDescriptor[T]]
 
@@ -38,24 +39,32 @@ abstract class Library[T](val gl:SGL) {
 	def +=(newResource:ResourceDescriptor[T], load:Boolean = false) { add(newResource, load) }
 
 	/** Load or retrieve a resource. */
-	def get(gl:SGL, name:String):T = {
-		library.get(name).getOrElse(
+	def get(gl:SGL, name:String):T = library.get(name).getOrElse(
 			throw new NoSuchResourceException("resource %s unknown, did you put it in the Library ? use Library.add()".format(name))
 		).value(gl)
-	}
 
 	/** Remove an free a previously loaded resource. */
 	def forget(name:String) { library -= name }
+
+	def iterator = new Iterator[(String,ResourceDescriptor[T])] {
+		var i = library.iterator
+		def hasNext = i.hasNext
+		def next = i.next
+	}
 }
 
 
 // == Libraries ==========================================
 
 
-//object Libraries { def apply(gl:SGL):Libraries = { new Libraries(gl) } }
+object Libraries {
+	final val PositionExpression = """\s*\(\s*([+-]?\d+(\.?\d*))\s*,\s*([+-?]\d+(\.?\d*))\s*\)\s*""".r
+
+	def apply(gl:SGL):Libraries = { new Libraries(gl) } 
+}
 
 /** The set of libraries for shaders, textures and models. */
-case class Libraries(gl:SGL) {
+class Libraries(gl:SGL) {
 	/** Shader resources. */
 	val shaders = ShaderLibrary(gl)
 
@@ -70,6 +79,9 @@ case class Libraries(gl:SGL) {
 
 	/** Armature resources. */
 	val armatures = ArmatureLibrary(gl)
+
+	/** Behavior resources. */
+	val behaviors = BehaviorLibrary(gl)
 
 	/** Add a new resource in the corresponding library. */
 	def addResource(res:ResourceDescriptor[AnyRef]) {
@@ -102,6 +114,7 @@ case class Libraries(gl:SGL) {
 	  *				<tex>path/to/texturess</tex>
 	  *				<armature>path/to/armatures</armature>
 	  *				<tex>there/can/be/several/pathes</tex>
+	  *             <behavior>path/to/sifz/behavior/descriptions</behavior>
 	  *			</pathes>
 	  *			<shaders>
 	  *				<shader id="mandatoryId" vert="vertexShader" frag="fragmentShader"/>
@@ -110,19 +123,35 @@ case class Libraries(gl:SGL) {
 	  *				<tex id="mandatoryId" res="resource"/>
 	  *				<tex id="anId" res="aResource" mipmap="sameAsTexMipMap" minfilter="" magfilter="" alpha="" wrap=""/>
 	  *			</texs>
+	  *         <armatures>
+	  *             <armature id="man" tex="man-tex" shader="man-shader" svg="man-svg"/>
+	  *         </armatures>
+	  *         <behaviors>
+	  *             <in-parallel id="" arm="" behaviors=",,,,"/>
+	  *				<in-sequence id="" arm="" behaviors=",,,,"/>
+	  *             <loop        id="" arm="" limit="" behaviors=",,,,"/>
+	  *             <to-angle    id="" arm="" joint="" value="" duration=""/>
+	  *             <to-position id="" arm="" joint="" value="(,)" duration=""/>
+	  *             <move        id="" arm="" joint="" value="(,)", duration=""/>
+	  *             <visibility  id="" arm="" joints=",,,," duration=""/>
+	  *             <keys        id="" arm="" filename="" scale=""/>
+	  *         </behaviors>
 	  *		</resources>
 	  *
 	  * See the [[TexParams]] class for an explanation of the attributes of tex elements. */
 	def addResources(xml:Elem) {
-		parsePathes(xml \\ "pathes")
-		parseShaders(xml \\ "shaders")
-		parseTexs(xml \\ "texs")
+		parsePathes(   xml \\ "pathes")
+		parseShaders(  xml \\ "shaders")
+		parseTexs(     xml \\ "texs")
+		parseArmatures(xml \\ "armatures")
+		parseBehaviors(xml \\ "behaviors")
 	}
 
 	protected def parsePathes(nodes:NodeSeq) {
-		nodes \\ "shader"   foreach { Shader.path   += _.text }		
-		nodes \\ "tex"      foreach { Texture.path  += _.text }
-		nodes \\ "armature" foreach { Armature.path += _.text }
+		nodes \\ "shader"   foreach { Shader.path           += _.text }		
+		nodes \\ "tex"      foreach { Texture.path          += _.text }
+		nodes \\ "armature" foreach { Armature.path         += _.text }
+		nodes \\ "behavior" foreach { ArmatureBehavior.path += _.text }
 	}
 
 	protected def parseShaders(nodes:NodeSeq) {
@@ -169,6 +198,80 @@ case class Libraries(gl:SGL) {
 
 			textures.add(TextureResource(id, res, params))
 		}
+	}
+
+	protected def parseArmatures(nodes:NodeSeq) {
+		nodes \\ "armature" foreach { armature ⇒
+			armatures.add(ArmatureResource(
+				(armature \\ "@id").text,
+				(armature \\ "@tex").text,
+				(armature \\ "@shader").text,
+				(armature \\ "@svg").text))
+		}
+	}
+
+	protected def parseBehaviors(nodes:NodeSeq) {
+	  	nodes foreach { node =>
+		  	node.child foreach { child => 
+		  		val armature = armatures.get(gl, (child \\ "@arm").text)
+		  		val name     = (node \\ "@id").text
+		  		
+		  		child match {
+		  			case node:Node if node.label == "in-parallel" => {
+		  				behaviors += BehaviorResource(name, DoInParallel(
+		  					name, parseArray((node \\ "@behaviors").text):_*))
+		  			}
+		  			case node:Node if node.label == "in-sequence" => {
+		  				behaviors += BehaviorResource(name, DoInSequence(
+		  					name, parseArray((node \\ "@behaviors").text):_*))
+		  			}
+		  			case node:Node if node.label == "loop" => {
+		  				behaviors += BehaviorResource(name, BehaviorLoop(
+		  					name, (node \\ "@limit").text.toInt, parseArray((node \\ "@behaviors").text):_*))
+		  			}
+		  			case node:Node if node.label == "to-angle" => {
+		  				behaviors += BehaviorResource(name, InterpToAngle(
+		  					name, armature \\ (node \\ "@joint").text,
+		  					(node \\ "@value").text.toDouble, (node \\ "@duration").text.toLong))
+		  			}
+		  			case node:Node if node.label == "to-position" => {
+		  				behaviors += BehaviorResource(name, InterpToPosition(
+		  					name, armature \\ (node \\ "@joint").text,
+		  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
+		  			}
+		  			case node:Node if node.label == "move" => {
+		  				behaviors += BehaviorResource(name, InterpMove(
+		  					name, armature \\ (node \\ "@joint").text,
+		  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
+		  			}
+		  			case node:Node if node.label == "visibility" => {
+		  				behaviors += BehaviorResource(name, JointVisibilitySwitch(
+		  					name, (node \\ "@duration").text.toLong, parseJoints(armature, (node \\ "@joints").text):_*))
+		  			}
+		  			case node:Node if node.label == "keys" => {
+		  				behaviors += BehaviorResource(name, ArmatureKeyInterp(
+		  					name, armature, (node \\ "@filename").text, (node \\ "@scale").text.toDouble))
+		  			}
+		  			case _ => {}
+	  			}
+	  		}
+	  	}
+	}
+
+	protected def parsePosition(pos:String):(Double,Double) = {
+		import Libraries._
+		pos match {
+			case PositionExpression(a,b) => (a.toDouble,b.toDouble) 
+			case _ => throw new RuntimeException("cannot parse position '%s'".format(pos))
+		}
+	}
+
+	protected def parseArray(behaviorList:String):Array[ArmatureBehavior] = {
+		behaviorList.split(",").map(s => behaviors.get(gl,s.trim))
+	}
+
+	protected def parseJoints(armature:Armature, jointList:String):Array[Joint] = {
+		jointList.split(",").map(s => armature \\ s.trim)
 	}
 }
 
@@ -303,3 +406,22 @@ class ArmatureResource(name:String, texRes:String, shaderRes:String, fileName:St
 object ArmatureLibrary { def apply(gl:SGL):ArmatureLibrary = new ArmatureLibrary(gl) }
 
 class ArmatureLibrary(gl:SGL) extends Library[Armature](gl)
+
+
+// == Behaviors ========================================
+
+
+object BehaviorResource {
+	def apply(name:String, behavior:ArmatureBehavior):BehaviorResource = {
+		new BehaviorResource(name, behavior)
+	}
+}
+
+class BehaviorResource(name:String, val data:ArmatureBehavior) extends ResourceDescriptor[ArmatureBehavior](name) {
+	def value(gl:SGL):ArmatureBehavior = data
+}
+
+object BehaviorLibrary { def apply(gl:SGL):BehaviorLibrary = new BehaviorLibrary(gl) }
+
+class BehaviorLibrary(gl:SGL) extends Library[ArmatureBehavior](gl)
+

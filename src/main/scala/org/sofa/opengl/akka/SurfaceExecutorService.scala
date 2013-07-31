@@ -8,6 +8,7 @@ import scala.collection.mutable.HashMap
 import java.util.Collections
 import scala.collection.JavaConversions._
 
+
 /** Wraps a [[Surface.invoke()]] as an Akka ExecutorService. This service can then be
   * used in a [[ExecutorServiceConfigurator]], specifically here 
   * [[SurfaceExecutorConfigurator]], that is created from the application.conf.
@@ -27,10 +28,10 @@ object SurfaceExecutorService extends AbstractExecutorService {
 	  * "application.conf" and still setup the SurfaceExecutorService.
 	  * @param tickDurationMS the interval at wich the scheduler wakes up. */
 	def configure(tickDurationMs:Long) {
-		sys.props += ("akka.scheduler.tick-duration" -> f"$tickDurationMs%dms")
-		sys.props += (s"${configKey}.type"       -> "Dispatcher")
-		sys.props += (s"${configKey}.executor"   -> "org.sofa.opengl.akka.SurfaceExecutorServiceConfigurator")
-		sys.props += (s"${configKey}.throughput" -> "1")
+		sys.props += ("akka.scheduler.tick-duration" → f"$tickDurationMs%dms")
+		sys.props += (s"${configKey}.type"           → "Dispatcher")
+		sys.props += (s"${configKey}.executor"       → "org.sofa.opengl.akka.SurfaceExecutorServiceConfigurator")
+		sys.props += (s"${configKey}.throughput"     → "1")
 	}
 
 	/** You can call this to create a config to pass (or to merge) to the ActorSystem when 
@@ -44,10 +45,10 @@ object SurfaceExecutorService extends AbstractExecutorService {
 	  * @param tickDurationMS the interval at wich the scheduler wakes up. */
 	def config(tickDurationMs:Long):Config = {
 		ConfigFactory.parseMap(HashMap[String,AnyRef](
-				("akka.scheduler.tick-duration" -> f"$tickDurationMs%dms"),
-				(s"${configKey}.type"       -> "Dispatcher"),
-				(s"${configKey}.executor"   -> "org.sofa.opengl.akka.SurfaceExecutorServiceConfigurator"),
-				(s"${configKey}.throughput" -> "1")
+				("akka.scheduler.tick-duration" → f"$tickDurationMs%dms"),
+				(s"${configKey}.type"           → "Dispatcher"),
+				(s"${configKey}.executor"       → "org.sofa.opengl.akka.SurfaceExecutorServiceConfigurator"),
+				(s"${configKey}.throughput"     → "1")
 			))
 	}
 

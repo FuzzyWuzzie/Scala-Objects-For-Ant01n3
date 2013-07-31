@@ -12,6 +12,7 @@ import GL2ES2._
 import GL3._ 
 import scala.collection.mutable.HashMap
 
+
 /** Predefined vertex attribute names. More are possible. */
 object VertexAttribute extends Enumeration {
 	type VertexAttribute = Value
@@ -31,6 +32,7 @@ object VertexAttribute extends Enumeration {
 	/** Convert a VertexAttribute to a String. */
 	implicit def Va2St(v:VertexAttribute):String = v.toString
 }
+
 
 /** A mesh is a set of vertex data.
   * 
@@ -100,6 +102,9 @@ trait Mesh {
       * mesh. Such meshes are dynamic. */
     def lastVertexArray():VertexArray = va
 
+    /** The last created vertex array. See [[lastVertexArray]]. */
+    def lastva():VertexArray = va
+
     /** Always called before creating a new vertex array. Hook for descendants. */
     protected def beforeNewVertexArray() {}
 
@@ -122,7 +127,6 @@ trait Mesh {
     	var i    = 0
     	
     	attributes.foreach { name => locs(i) = (name, i); i+= 1 }
-
     	newVertexArray(gl, locs:_*)
     }
     
@@ -137,27 +141,6 @@ trait Mesh {
       * and for some meshes updated from new data if the mesh is dynamic. */
     def newVertexArray(gl:SGL, locations:Tuple2[String,Int]*):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, locations:_*)
 
-    /** Create a vertex array from the given map of attribute names / locations.
-      * The draw mode for the array buffers is STATIC_DRAW.
-      *
-      * Example usage: newVertexArray(gl, (Vertex, 0), (Normal, 1))
-	  *
-      * The last created vertex array is remembered by the mesh and can be accessed later,
-      * and for some meshes updated from new data if the mesh is dynamic. */
-//    def newVertexArray(gl:SGL, locations:Tuple2[VertexAttribute.Value,Int]*):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, locations:_*)
-    
-    /** Create a vertex array from the given map of attribute names / locations.
-      * You can specify the draw mode for the array buffers, either STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW.
-      * 
-      * Example usage: newVertexArray(gl, gl.DYNAMIC_DRAW, ("vertices", 0), ("normals", 1))
-	  *
-      * The last created vertex array is remembered by the mesh and can be accessed later,
-      * and for some meshes updated from new data if the mesh is dynamic. */
-    // def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple2[VertexAttribute.Value,Int]*):VertexArray = {    
-    // 	val locs = locations.map { item => (item._1.toString, item._2) }
-    // 	newVertexArray(gl, drawMode, locs:_*)
-    // }
-
     /** Create a vertex array from the given map of attribute name / shader attribute names.
       * The given `shader` is directly used to query the position of attribute names.
       * The draw mode for the array buffers is STATIC_DRAW.
@@ -167,9 +150,7 @@ trait Mesh {
 	  *
       * The last created vertex array is remembered by the mesh and can be accessed later,
       * and for some meshes updated from new data if the mesh is dynamic. */
-    def newVertexArray(gl:SGL, shader:ShaderProgram, locations:Tuple2[String,String]*):VertexArray = {
-    	newVertexArray(gl, gl.STATIC_DRAW, shader, locations:_*)
-    }
+    def newVertexArray(gl:SGL, shader:ShaderProgram, locations:Tuple2[String,String]*):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, shader, locations:_*)
 
     /** Create a vertex array from the given map of attribute name / shader attribute names.
       * The given `shader` is directly used to query the position of attribute names.
@@ -202,6 +183,7 @@ trait Mesh {
 
     	val locs = new Array[Tuple4[String,Int,Int,NioBuffer]](locations.size)
     	var pos = 0
+    	
     	locations.foreach { value => 
     		locs(pos) = (value._1, value._2, components(value._1), attribute(value._1))
     		pos += 1

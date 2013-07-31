@@ -35,17 +35,13 @@ import org.sofa.opengl.avatar.renderer.screen.PerspectiveScreen
 
 
 class RobotAvatarFactory(val renderer:Renderer) extends AvatarFactory {
-	def screenFor(name:String, screenType:String):Screen = {
-		screenType match {
-			case "perspective" ⇒ new PerspectiveScreen(name, renderer)
-			case _      ⇒ throw NoSuchScreenException("cannot create a screen of type %s, unknown type".format(screenType))
-		}
+	def screenFor(name:String, screenType:String):Screen = screenType match {
+		case "perspective" ⇒ new PerspectiveScreen(name, renderer)
+		case _             ⇒ throw NoSuchScreenException("cannot create a screen of type %s, unknown type".format(screenType))
 	}
-	def avatarFor(name:String, avatarType:String, indexed:Boolean):Avatar = {
-		avatarType match {
-			case "image" ⇒ new ImageSprite(name, renderer.screen, indexed)
-			case _       ⇒ throw new NoSuchAvatarException("cannot create an avatar of type %s, unknown type".format(avatarType))
-		}
+	def avatarFor(name:String, avatarType:String, indexed:Boolean):Avatar = avatarType match {
+		case "image" ⇒ new ImageSprite(name, renderer.screen, indexed)
+		case _       ⇒ throw new NoSuchAvatarException("cannot create an avatar of type %s, unknown type".format(avatarType))
 	}	
 }
 
@@ -56,18 +52,16 @@ object TestRobot2 extends App {
 
 	case class Exit()
 
-	start 
+	val actorSystem = ActorSystem("Robot", SurfaceExecutorService.config(10L))
+	
+	val test = actorSystem.actorOf(Props[TestRobot2], name="test")
 
-	def start() {
-		val actorSystem = ActorSystem("Robot", SurfaceExecutorService.config(10L))
-		val test        = actorSystem.actorOf(Props[TestRobot2], name="test")
-
-		test ! Start
-	}
+	test ! Start
 }
 
+
 class TestRobot2 extends Actor {
-	import TestRobot2._
+	import TestRobot2.{Start, Exit}
 
 	val renderer = Renderer(self)
 
@@ -77,6 +71,10 @@ class TestRobot2 extends Actor {
 		case Start => start
 		case Exit  => exit
 	}
+
+	protected def exit() { context.stop(self) /* All other actors are child to this. */ }
+
+	override def postStop() { sys.exit }
 
 	protected def start() {
 		declareResources
@@ -89,10 +87,6 @@ class TestRobot2 extends Actor {
 		import RendererActor._
 
 		rendererActor ! AddResources("/TestRobot2.xml")
-
-//		rendererActor ! AddResource(TextureResource("grid10x10", "Grid10x10.png", TexParams(mipMap = TexMipMap.Load, minFilter = TexMin.LinearAndMipMapLinear)))
-//		rendererActor ! AddResource(TextureResource("bg-image", "bg_image.png", TexParams()))
-//		rendererActor ! AddResource(TextureResource("ground-image", "ground.png", TexParams()))
 	}
 
 	protected def setupScreen() {
@@ -125,8 +119,4 @@ class TestRobot2 extends Actor {
 	protected def setupActors() {
 
 	}
-
-	protected def exit() { context.stop(self) /* All other actors are child to this. */ }
-
-	override def postStop() { sys.exit }
 }

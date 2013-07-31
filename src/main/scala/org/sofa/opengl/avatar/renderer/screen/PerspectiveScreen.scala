@@ -102,7 +102,7 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
 
 	protected def beginShader() {
 		backgroundShader = renderer.libraries.shaders.get(gl, "image-shader")
-		gridShader = renderer.libraries.shaders.get(gl, "plain-shader")
+		gridShader       = renderer.libraries.shaders.get(gl, "plain-shader")
 	}
 
 	protected def beginGeometry() {
@@ -115,25 +115,18 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
         setGrid
 	}
 
-	def change(state:ScreenState) {
-		state match {
-			case FocusCartesian(x,y,z) ⇒ { camera.setFocus(x,y,z) }
-			case EyeCartesian(x,y,z)   ⇒ { camera.eyeCartesian(x,y,z) }
-			case EyeSpherical(t,p,r)   ⇒ { camera.eyeSpherical(t,p,r) }
-			case _                     ⇒ { throw NoSuchScreenStateException(state) }
-		}
+	def change(state:ScreenState) = state match {
+		case FocusCartesian(x, y, z) ⇒ camera.setFocus(x, y, z)
+		case EyeCartesian(x, y, z)   ⇒ camera.eyeCartesian(x, y, z)
+		case EyeSpherical(t, p, r)   ⇒ camera.eyeSpherical(t, p, r)
+		case _                       ⇒ throw NoSuchScreenStateException(state)
 	}
 
 	override def changeAxes(newAxes:Axes, spashUnit:Double) {
 		super.changeAxes(newAxes, spashUnit)
 
-		// if(background ne null) {
-		// 	h = axes.y.length
-		// 	w = h * background.ratio
-		// } else {
-  			w = axes.x.length
-  			h = axes.y.length
-  		// }
+  		w = axes.x.length
+  		h = axes.y.length
 
 		setGrid
 	}
@@ -141,9 +134,8 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
   	protected def setGrid() {
 		import VertexAttribute._
 
-		if(grid.lastVertexArray ne null) {
+		if(grid.lastVertexArray ne null)
 			grid.lastVertexArray.dispose
-		}
 
 		grid.setXYGrid((w/2).toFloat, (h/2).toFloat, 0f, 0f,
 			(w/0.1).toInt,
@@ -156,9 +148,7 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
 
 	override def render() {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
 		camera.lookAt
-
 		renderBackground
 		
 		//super.render
@@ -170,15 +160,14 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
 		// We can sort avatars only when moving them to avoid do it
 		// at each display().
 
-		val sorted = avatars.toArray.sortWith(_._2.pos.z < _._2.pos.z)
-		sorted.foreach { _._2.render }
+		avatars.toArray.sortWith(_._2.pos.z < _._2.pos.z).foreach { _._2.render }
 	}
 
 	override def reshape() {
 		super.reshape
 		val ratio = camera.viewportRatio
 		//camera.orthographic(axes.x.from*(ratio), axes.x.to*(ratio), axes.y.from, axes.y.to, axes.z.to, axes.z.from)
-		camera.frustum(axes.x.from*ratio, axes.x.to*ratio, axes.y.from, axes.y.to, axes.z.to)
+		camera.frustum(axes.x.from * ratio, axes.x.to * ratio, axes.y.from, axes.y.to, axes.z.to)
 	}
 
 var xx = 0.01
@@ -212,13 +201,13 @@ var camy = 0.0
 			background.bindUniform(gl.TEXTURE0, backgroundShader, "texColor")
 			camera.pushpop {
 				camera.uniformMVP(backgroundShader)
-				backgroundMesh.lastVertexArray.draw(backgroundMesh.drawAs)
+				backgroundMesh.lastva.draw(backgroundMesh.drawAs)
 			}
 			gl.disable(gl.BLEND)
 		}
-		if(debug) {
+
+		if(debug)
 			renderGrid
-		}
 	}
 
 	/** Render a grid alligned with the spash. */

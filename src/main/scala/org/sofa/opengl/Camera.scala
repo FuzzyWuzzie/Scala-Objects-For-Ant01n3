@@ -141,8 +141,8 @@ object Camera { def apply() = new Camera() }
   * 
   * The camera maintains a projection and a model-view matrix. The model-view matrix allows to
   * "move" the camera in space. The projection matrix allows to specify the camera viewing
-  * properties like the aperture. It also defines a far clipping plane, so that objects too far
-  * away are not drawn.
+  * properties like the aperture and type of projection. It also defines a far clipping plane,
+  * so that objects too far away are not drawn.
   * 
   * It stores a view port in pixels that express the rendering canvas dimensions. This canvas also
   * allows to control the aspect-ratio of the camera. 
@@ -167,16 +167,22 @@ class Camera extends PointOfView {
     /** Maximum depth of the view (far clip-plane position). */
     var maxDepth = 100.0
 
+    /** Viewport width in pixels. */
     def viewportWidth:Double = viewportPx.x
 
+    /** Change the viewport width in pixels. */
     def viewportWidth_= (value:Double):Unit = { viewportPx.x = value } 
 
+    /** Viewport height in pixels. */
     def viewportHeight:Double = viewportPx.y
 
+    /** Change the viewport height in pixels. */
     def viewportHeight_= (value:Double):Unit = { viewportPx.y = value }
 
+    /** The viewport in pixels. */
     def viewport:(Double,Double) = (viewportPx.x, viewportPx.y)
 
+    /** Change the viewport in pixels. */
     def viewport_=(values:(Double,Double)):Unit = { viewportPx.set(values._1, values._2) }
     
     /** Set the width and height of the output view-port in pixels. */

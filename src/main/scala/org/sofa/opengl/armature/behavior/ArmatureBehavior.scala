@@ -7,7 +7,6 @@ import org.sofa.math.{Point2, Vector2}
 import org.sofa.opengl.armature.{Armature, Joint, SifzArmatureBehaviorLoader, TimedKeys, TimedValue, TimedVector}
 
 
-
 // A set of "behaviors" for armatures.
 //
 // This is still a prototype of a pseudo DSL of composable behaviors.
@@ -59,6 +58,12 @@ abstract class ArmatureBehavior(val name:String) {
 // -- Grouping behaviors ---------------------------------------------------------------------------------
 
 
+object DoInParallel { 
+	def apply(name:String, behaviors:ArmatureBehavior*):DoInParallel = 
+		new DoInParallel(name, behaviors:_*)
+}
+
+
 class DoInParallel(name:String, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	def start(t:Long):ArmatureBehavior = { behaviors.foreach { _.start(t) }; this }
 	def animate(t:Long) { behaviors.foreach { _.animate(t) } }
@@ -67,6 +72,12 @@ class DoInParallel(name:String, val behaviors:ArmatureBehavior *) extends Armatu
 			case _    => false
 		}
 	}
+}
+
+
+object DoInSequence {
+	def apply(name:String, behaviors:ArmatureBehavior*):DoInSequence = 
+		new DoInSequence(name, behaviors:_*)
 }
 
 
@@ -98,132 +109,13 @@ class DoInSequence(name:String, b:ArmatureBehavior *) extends ArmatureBehavior(n
 }
 
 
-// -- Joint behaviors -----------------------------------------------------------------------------------------
-
-
-abstract class JointBehavior(name:String, val joint:Joint) extends ArmatureBehavior(name) {}
-
-
-abstract class InterpolateBehavior(name:String, joint:Joint, val duration:Long) extends JointBehavior(name, joint) {
-	var from = 0L
-
-	var to = 0L
-	
-	def start(t:Long):ArmatureBehavior = { from = t; to = t + duration; this }
-
-	protected def interpolation(t:Long):Double = (t-from).toDouble / (to-from).toDouble
-
-	def finished(t:Long):Boolean = (t >= to)
-}
-
-
-class InterpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:Long) extends InterpolateBehavior(name, joint, duration) {
-	var startAngle:Double = 0.0
-
-	override def start(t:Long):ArmatureBehavior = {
-		startAngle = joint.transform.angle
-		super.start(t)
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joint.transform.angle = targetAngle
-		} else {
-			joint.transform.angle = startAngle + ((targetAngle - startAngle) * interpolation(t))
-//println("joint %s angle %f (%% == %f)".format(joint.name, joint.angle, percent))
-		}
-	}
-}
-
-
-/** Absolute displacement. */
-class InterpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
-	var startPosition = new Point2(0,0)
-
-	override def start(t:Long):ArmatureBehavior = {
-		startPosition.copy(joint.transform.translation)
-		super.start(t)
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joint.transform.translation.set(targetPosition._1, targetPosition._2)
-		} else {
-			val interp =  interpolation(t)
-			joint.transform.translation.set(
-				startPosition.x + ((targetPosition._1 - startPosition.x) * interp),
-				startPosition.y + ((targetPosition._2 - startPosition.y) * interp)
-			)
-		}
-	}
-}
-
-
-/** Relative displacement. */
-class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
-	var startPosition = new Point2(0,0)
-
-	override def start(t:Long):ArmatureBehavior = {
-		startPosition.copy(joint.transform.translation)
-		super.start(t)
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joint.transform.translation.set(startPosition.x + displacement._1, startPosition.y + displacement._2)
-		} else {
-			val interp = interpolation(t)
-			joint.transform.translation.set(
-				startPosition.x + (displacement._1 * interp),
-				startPosition.y + (displacement._2 * interp)
-			)
-		}
-	}
-}
-
-// -- Switches -------------------------------------------------------------------------------------------
-
-object JointVisibilitySwitch {
-	def apply(name:String, duration:Long, joints:Joint *):JointVisibilitySwitch = new JointVisibilitySwitch(name, duration, joints:_*)
-}
-
-class JointVisibilitySwitch(name:String, val duration:Long, val joints:Joint *) extends ArmatureBehavior(name) {
-	protected var index = 0
-
-	protected var startTime = 0L
-
-	def start(t:Long):ArmatureBehavior = {
-		index = 0
-		joints.foreach { _.visible = false }
-		joints(index).visible = true
-		startTime = t
-		this
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joints(index).visible = false
-			index = joints.size - 1
-			joints(index).visible = true
-		} else {
-			val idx = (t - startTime) / duration
-
-			if(idx > index) {
-				joints(index).visible = false
-				index = idx.toInt
-				joints(index).visible = true
-			}
-		}
-	}
-
-	def finished(t:Long):Boolean = (t > (startTime + (duration * joints.size)))
-}
-
 // -- Loops ----------------------------------------------------------------------------------------------
+
 
 object BehaviorLoop {
 	def apply(name:String, limit:Int, behaviors:ArmatureBehavior *):BehaviorLoop = new BehaviorLoop(name, limit, behaviors:_*)
 }
+
 
 /** Repeats each behavior either a given number of times or infinitely.
   * 
@@ -275,7 +167,150 @@ class BehaviorLoop(name:String, val limit:Int, val behaviors:ArmatureBehavior *)
 	def finished(t:Long):Boolean = (howManyFinished == behaviors.size)
 }
 
+
+// -- Joint behaviors -----------------------------------------------------------------------------------------
+
+
+abstract class JointBehavior(name:String, val joint:Joint) extends ArmatureBehavior(name) {}
+
+
+abstract class InterpolateBehavior(name:String, joint:Joint, val duration:Long) extends JointBehavior(name, joint) {
+	var from = 0L
+
+	var to = 0L
+	
+	def start(t:Long):ArmatureBehavior = { from = t; to = t + duration; this }
+
+	protected def interpolation(t:Long):Double = (t-from).toDouble / (to-from).toDouble
+
+	def finished(t:Long):Boolean = (t >= to)
+}
+
+
+object InterpToAngle {
+	def apply(name:String, joint:Joint, targetAngle:Double, duration:Long):InterpToAngle = 
+		new InterpToAngle(name, joint, targetAngle, duration)
+}
+
+class InterpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:Long) extends InterpolateBehavior(name, joint, duration) {
+	var startAngle:Double = 0.0
+
+	override def start(t:Long):ArmatureBehavior = {
+		startAngle = joint.transform.angle
+		super.start(t)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.transform.angle = targetAngle
+		} else {
+			joint.transform.angle = startAngle + ((targetAngle - startAngle) * interpolation(t))
+//println("joint %s angle %f (%% == %f)".format(joint.name, joint.angle, percent))
+		}
+	}
+}
+
+
+object InterpToPosition {
+	def apply(name:String, joint:Joint, targetPosition:(Double,Double), duration:Long):InterpToPosition =
+		new InterpToPosition(name, joint, targetPosition, duration)
+}
+
+
+/** Absolute displacement. */
+class InterpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
+	var startPosition = new Point2(0,0)
+
+	override def start(t:Long):ArmatureBehavior = {
+		startPosition.copy(joint.transform.translation)
+		super.start(t)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.transform.translation.set(targetPosition._1, targetPosition._2)
+		} else {
+			val interp =  interpolation(t)
+			joint.transform.translation.set(
+				startPosition.x + ((targetPosition._1 - startPosition.x) * interp),
+				startPosition.y + ((targetPosition._2 - startPosition.y) * interp)
+			)
+		}
+	}
+}
+
+
+object InterpMove {
+	def apply(name:String, joint:Joint, displacement:(Double,Double), duration:Long):InterpMove = 
+		new InterpMove(name, joint, displacement, duration)
+}
+
+
+/** Relative displacement. */
+class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
+	var startPosition = new Point2(0,0)
+
+	override def start(t:Long):ArmatureBehavior = {
+		startPosition.copy(joint.transform.translation)
+		super.start(t)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.transform.translation.set(startPosition.x + displacement._1, startPosition.y + displacement._2)
+		} else {
+			val interp = interpolation(t)
+			joint.transform.translation.set(
+				startPosition.x + (displacement._1 * interp),
+				startPosition.y + (displacement._2 * interp)
+			)
+		}
+	}
+}
+
+// -- Switches -------------------------------------------------------------------------------------------
+
+
+object JointVisibilitySwitch {
+	def apply(name:String, duration:Long, joints:Joint *):JointVisibilitySwitch = new JointVisibilitySwitch(name, duration, joints:_*)
+}
+
+
+class JointVisibilitySwitch(name:String, val duration:Long, val joints:Joint *) extends ArmatureBehavior(name) {
+	protected var index = 0
+
+	protected var startTime = 0L
+
+	def start(t:Long):ArmatureBehavior = {
+		index = 0
+		joints.foreach { _.visible = false }
+		joints(index).visible = true
+		startTime = t
+		this
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joints(index).visible = false
+			index = joints.size - 1
+			joints(index).visible = true
+		} else {
+			val idx = (t - startTime) / duration
+
+			if(idx > index) {
+				joints(index).visible = false
+				index = idx.toInt
+				joints(index).visible = true
+			}
+		}
+	}
+
+	def finished(t:Long):Boolean = (t > (startTime + (duration * joints.size)))
+}
+
+
 // -- KeyInterp ------------------------------------------------------------------------------------------
+
 
 /** Base interpolator for joints using a sequence of keys at specific times. */
 abstract class JointKeyInterp(name:String, joint:Joint) extends JointBehavior(name, joint) {
@@ -300,6 +335,7 @@ abstract class JointKeyInterp(name:String, joint:Joint) extends JointBehavior(na
 	/** True if there is a next key. */
 	protected def hasNext():Boolean
 }
+
 
 /** Relative displacement according to a set of key positions in time. 
   *

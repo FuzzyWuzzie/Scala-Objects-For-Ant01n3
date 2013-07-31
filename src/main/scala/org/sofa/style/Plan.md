@@ -6,11 +6,11 @@ Goal: provide a way to attribute style to elements of a something that is drawn,
 Goal: to be very general on what we apply style to.
 
     +----------------------+
-    | A   +---------+ +---+|    A: parent none      Classes: View
-    |     | B       | |D  ||    B: parent A         Classes: View, important
-    |     |    +---+| +---+|    C: parent B         Classes: Button, flashy
-    |     |    |C  || +---+|    D: parent A         Classes: Button
-    |     |    +---+| |E  ||    E: parent A         Classes: Button
+    | A   +---------+ +---+| A: parent none Classes: View
+    |     | B       | |D  || B: parent A    Classes: View, important
+    |     |    +---+| +---+| C: parent B    Classes: Button, flashy
+    |     |    |C  || +---+| D: parent A    Classes: Button
+    |     |    +---+| |E  || E: parent A    Classes: Button
     |     +---------+ +---+|
     +----------------------+
 
@@ -86,9 +86,12 @@ The stylesheet syntax is reminiscent of the CSS syntax, but with some difference
 
 The selectors (`View`, `Button`, `flashy`) are in fact classes at the level of the style sheet. The `View.important` class is a class that can only by applied to views. The `flashy` class in contrast is a class that can be applyied to any stylable (as well as `Button`, and `View`). Internally, style classes will be represented by _base styles_.
 
-The notation `View#A` creates a class that can only by applied to the stylable with identifier `A`. Indeed, the notation `.` and `#` merely allow to express constraints on which stylables a class can apply. The notation `.flashy` could be used instead of `flashy` since selectors are also classes, they have the same meaning. Identically, the notation `#A` could be used for any element with identifier `A`.
+The notation `View#A` creates a class that can only by applied to the stylable with identifier `A`. Indeed, the notation `.` and `#` merely allow to express constraints on which stylables a class can apply to. The notation `.flashy` could be used instead of `flashy` since selectors are also classes, they have the same meaning. Identically, the notation `#A` could be used for any element with identifier `A`.
 
 The notation `Button:click` allows to define styles that are applyied only when a special condition in the interaction system occurs. Like `.` and `#` they only apply to the class they are preceded by, and the notation `:Button` for example is possible to avoid restricting to a given class.
+
+Like other classes, these events will be formed by aggregated styles,
+and switched on the Stylable they target when such an event occurs.
 
 The `root` style is the base style any other style inherits (we cannot use `body`, we do not know how the stylables will be organized).
 
@@ -145,4 +148,7 @@ Open questions:
 ---------------
 
 * For some stylable, it may be interesting to ignore the style of the parent.
+* In fact, do we really need the parenting ?
+* The stylable will have to maintain a list of classes. Why not using this list of classes to define the precedence ?
 * Do we introduce the notion of precedence for several style sheets ?
+* How are "events" represented ?
