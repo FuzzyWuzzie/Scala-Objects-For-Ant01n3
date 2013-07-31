@@ -8,7 +8,7 @@ import org.sofa.FileLoader
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.armature.{Armature, Joint}
-import org.sofa.opengl.armature.behavior.{ArmatureBehavior, InterpToAngle, InterpToPosition, BehaviorLoop, DoInParallel, DoInSequence, InterpMove, JointVisibilitySwitch, ArmatureKeyInterp}
+import org.sofa.opengl.armature.behavior.{ArmatureBehavior, LerpToAngle, LerpToPosition, LerpMove, InParallel, InSequence, Loop, Switch, LerpKeyArmature}
 
 import scala.xml.{XML, Elem, Node, NodeSeq}
 
@@ -127,14 +127,14 @@ class Libraries(gl:SGL) {
 	  *             <armature id="man" tex="man-tex" shader="man-shader" svg="man-svg"/>
 	  *         </armatures>
 	  *         <behaviors>
-	  *             <in-parallel id="" arm="" behaviors=",,,,"/>
-	  *				<in-sequence id="" arm="" behaviors=",,,,"/>
-	  *             <loop        id="" arm="" limit="" behaviors=",,,,"/>
-	  *             <to-angle    id="" arm="" joint="" value="" duration=""/>
-	  *             <to-position id="" arm="" joint="" value="(,)" duration=""/>
-	  *             <move        id="" arm="" joint="" value="(,)", duration=""/>
-	  *             <visibility  id="" arm="" joints=",,,," duration=""/>
-	  *             <keys        id="" arm="" filename="" scale=""/>
+	  *             <in-parallel      id="" arm="" behaviors=",,,,"/>
+	  *				<in-sequence      id="" arm="" behaviors=",,,,"/>
+	  *             <loop             id="" arm="" limit="" behaviors=",,,,"/>
+	  *             <switch           id="" arm="" joints=",,,," duration=""/>
+	  *             <lerp-to-angle    id="" arm="" joint="" value="" duration=""/>
+	  *             <lerp-to-position id="" arm="" joint="" value="(,)" duration=""/>
+	  *             <lerp-move        id="" arm="" joint="" value="(,)", duration=""/>
+	  *             <lerp-keys        id="" arm="" filename="" scale=""/>
 	  *         </behaviors>
 	  *		</resources>
 	  *
@@ -218,38 +218,38 @@ class Libraries(gl:SGL) {
 		  		
 		  		child match {
 		  			case node:Node if node.label == "in-parallel" => {
-		  				behaviors += BehaviorResource(name, DoInParallel(
+		  				behaviors += BehaviorResource(name, InParallel(
 		  					name, parseArray((node \\ "@behaviors").text):_*))
 		  			}
 		  			case node:Node if node.label == "in-sequence" => {
-		  				behaviors += BehaviorResource(name, DoInSequence(
+		  				behaviors += BehaviorResource(name, InSequence(
 		  					name, parseArray((node \\ "@behaviors").text):_*))
 		  			}
 		  			case node:Node if node.label == "loop" => {
-		  				behaviors += BehaviorResource(name, BehaviorLoop(
+		  				behaviors += BehaviorResource(name, Loop(
 		  					name, (node \\ "@limit").text.toInt, parseArray((node \\ "@behaviors").text):_*))
 		  			}
-		  			case node:Node if node.label == "to-angle" => {
-		  				behaviors += BehaviorResource(name, InterpToAngle(
+		  			case node:Node if node.label == "switch" => {
+		  				behaviors += BehaviorResource(name, Switch(
+		  					name, (node \\ "@duration").text.toLong, parseJoints(armature, (node \\ "@joints").text):_*))
+		  			}
+		  			case node:Node if node.label == "lerp-to-angle" => {
+		  				behaviors += BehaviorResource(name, LerpToAngle(
 		  					name, armature \\ (node \\ "@joint").text,
 		  					(node \\ "@value").text.toDouble, (node \\ "@duration").text.toLong))
 		  			}
-		  			case node:Node if node.label == "to-position" => {
-		  				behaviors += BehaviorResource(name, InterpToPosition(
+		  			case node:Node if node.label == "lerp-to-position" => {
+		  				behaviors += BehaviorResource(name, LerpToPosition(
 		  					name, armature \\ (node \\ "@joint").text,
 		  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
 		  			}
-		  			case node:Node if node.label == "move" => {
-		  				behaviors += BehaviorResource(name, InterpMove(
+		  			case node:Node if node.label == "lerp-move" => {
+		  				behaviors += BehaviorResource(name, LerpMove(
 		  					name, armature \\ (node \\ "@joint").text,
 		  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
 		  			}
-		  			case node:Node if node.label == "visibility" => {
-		  				behaviors += BehaviorResource(name, JointVisibilitySwitch(
-		  					name, (node \\ "@duration").text.toLong, parseJoints(armature, (node \\ "@joints").text):_*))
-		  			}
-		  			case node:Node if node.label == "keys" => {
-		  				behaviors += BehaviorResource(name, ArmatureKeyInterp(
+		  			case node:Node if node.label == "lerp-keys" => {
+		  				behaviors += BehaviorResource(name, LerpKeyArmature(
 		  					name, armature, (node \\ "@filename").text, (node \\ "@scale").text.toDouble))
 		  			}
 		  			case _ => {}

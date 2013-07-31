@@ -301,46 +301,46 @@ class RobotBehavior(val armature:Armature) {
 		behavior = walkRight.start(Platform.currentTime) //upRLeg(Platform.currentTime)
 	}
 
-	def walkRight = new DoInSequence("walkRight", upRLeg, moveRight, downRLeg, upLLeg, downLLeg)
+	def walkRight = new InSequence("walkRight", upRLeg, moveRight, downRLeg, upLLeg, downLLeg)
 
-	def walkLeft = new DoInSequence("walkLeft", upLLeg, moveLeft, downLLeg, upRLeg, downRLeg)
+	def walkLeft = new InSequence("walkLeft", upLLeg, moveLeft, downLLeg, upRLeg, downRLeg)
 
-	def upRLeg = new DoInParallel("upRLeg",
-		new InterpToAngle("a", (armature \\ "rleg"),      0.7, durationMs),
-		new InterpToAngle("b", (armature \\ "rforeleg"), -0.5, durationMs),
-		new InterpToAngle("c", (armature \\ "rfoot"),    -0.2, durationMs)
+	def upRLeg = new InParallel("upRLeg",
+		new LerpToAngle("a", (armature \\ "rleg"),      0.7, durationMs),
+		new LerpToAngle("b", (armature \\ "rforeleg"), -0.5, durationMs),
+		new LerpToAngle("c", (armature \\ "rfoot"),    -0.2, durationMs)
 	)
 
-	def upLLeg = new DoInParallel("upLLeg",
-		new InterpToAngle("a", (armature \\ "lleg"),     -0.7, durationMs),
-		new InterpToAngle("b", (armature \\ "lforeleg"),  0.5, durationMs),
-		new InterpToAngle("c", (armature \\ "lfoot"),     0.2, durationMs)
-	)
-	
-	def downRLeg = new DoInParallel("downRLeg",
-		new InterpToAngle("a", (armature \\ "rleg"),      0.3, durationMs),
-		new InterpToAngle("b", (armature \\ "rforeleg"), -0.3, durationMs),
-		new InterpToAngle("c", (armature \\ "rfoot"),     0.0, durationMs)
-	)
-
-	def downLLeg = new DoInParallel("downLLeg",
-		new InterpToAngle("a", (armature \\ "lleg"),     -0.3, durationMs),
-		new InterpToAngle("b", (armature \\ "lforeleg"),  0.3, durationMs),
-		new InterpToAngle("c", (armature \\ "lfoot"),     0.0, durationMs)
-	)
-
-	def moveLeft = new DoInParallel("moveLeft",
-		new InterpMove("a",    (armature \\ "root"),    (-0.025, 0), durationMs),
-		new InterpToAngle("b", (armature \\ "rleg"),      0.4,       durationMs),
-		new InterpToAngle("c", (armature \\ "rforeleg"),  0.0,       durationMs),
-		new InterpToAngle("d", (armature \\ "rfoot"),    -0.1,       durationMs)
+	def upLLeg = new InParallel("upLLeg",
+		new LerpToAngle("a", (armature \\ "lleg"),     -0.7, durationMs),
+		new LerpToAngle("b", (armature \\ "lforeleg"),  0.5, durationMs),
+		new LerpToAngle("c", (armature \\ "lfoot"),     0.2, durationMs)
 	)
 	
-	def moveRight = new DoInParallel("moveRight",
-		new InterpMove("a",    (armature \\ "root"),     (0.025, 0), durationMs),
-		new InterpToAngle("b", (armature \\ "lleg"),     -0.4,       durationMs),
-		new InterpToAngle("c", (armature \\ "lforeleg"),  0.0,       durationMs),
-		new InterpToAngle("d", (armature \\ "lfoot"),     0.1,       durationMs)
+	def downRLeg = new InParallel("downRLeg",
+		new LerpToAngle("a", (armature \\ "rleg"),      0.3, durationMs),
+		new LerpToAngle("b", (armature \\ "rforeleg"), -0.3, durationMs),
+		new LerpToAngle("c", (armature \\ "rfoot"),     0.0, durationMs)
+	)
+
+	def downLLeg = new InParallel("downLLeg",
+		new LerpToAngle("a", (armature \\ "lleg"),     -0.3, durationMs),
+		new LerpToAngle("b", (armature \\ "lforeleg"),  0.3, durationMs),
+		new LerpToAngle("c", (armature \\ "lfoot"),     0.0, durationMs)
+	)
+
+	def moveLeft = new InParallel("moveLeft",
+		new LerpMove("a",    (armature \\ "root"),    (-0.025, 0), durationMs),
+		new LerpToAngle("b", (armature \\ "rleg"),      0.4,       durationMs),
+		new LerpToAngle("c", (armature \\ "rforeleg"),  0.0,       durationMs),
+		new LerpToAngle("d", (armature \\ "rfoot"),    -0.1,       durationMs)
+	)
+	
+	def moveRight = new InParallel("moveRight",
+		new LerpMove("a",    (armature \\ "root"),     (0.025, 0), durationMs),
+		new LerpToAngle("b", (armature \\ "lleg"),     -0.4,       durationMs),
+		new LerpToAngle("c", (armature \\ "lforeleg"),  0.0,       durationMs),
+		new LerpToAngle("d", (armature \\ "lfoot"),     0.1,       durationMs)
 	)
 }
 

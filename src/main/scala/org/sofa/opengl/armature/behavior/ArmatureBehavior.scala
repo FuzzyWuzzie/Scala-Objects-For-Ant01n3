@@ -45,6 +45,7 @@ object ArmatureBehavior {
 	var loader:ArmatureBehaviorLoader = new DefaultArmatureBehaviorLoader()
 }
 
+
 /** Base abstract behavior class. */
 abstract class ArmatureBehavior(val name:String) {
 	def start(t:Long):ArmatureBehavior
@@ -58,13 +59,13 @@ abstract class ArmatureBehavior(val name:String) {
 // -- Grouping behaviors ---------------------------------------------------------------------------------
 
 
-object DoInParallel { 
-	def apply(name:String, behaviors:ArmatureBehavior*):DoInParallel = 
-		new DoInParallel(name, behaviors:_*)
+object InParallel { 
+	def apply(name:String, behaviors:ArmatureBehavior*):InParallel = 
+		new InParallel(name, behaviors:_*)
 }
 
 
-class DoInParallel(name:String, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
+class InParallel(name:String, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	def start(t:Long):ArmatureBehavior = { behaviors.foreach { _.start(t) }; this }
 	def animate(t:Long) { behaviors.foreach { _.animate(t) } }
 	def finished(t:Long):Boolean = { behaviors.find { b => b.finished(t) == false } match {
@@ -75,13 +76,13 @@ class DoInParallel(name:String, val behaviors:ArmatureBehavior *) extends Armatu
 }
 
 
-object DoInSequence {
-	def apply(name:String, behaviors:ArmatureBehavior*):DoInSequence = 
-		new DoInSequence(name, behaviors:_*)
+object InSequence {
+	def apply(name:String, behaviors:ArmatureBehavior*):InSequence = 
+		new InSequence(name, behaviors:_*)
 }
 
 
-class DoInSequence(name:String, b:ArmatureBehavior *) extends ArmatureBehavior(name) {
+class InSequence(name:String, b:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	val behaviors = b.toArray
 	
 	var index = 0
@@ -109,18 +110,15 @@ class DoInSequence(name:String, b:ArmatureBehavior *) extends ArmatureBehavior(n
 }
 
 
-// -- Loops ----------------------------------------------------------------------------------------------
-
-
-object BehaviorLoop {
-	def apply(name:String, limit:Int, behaviors:ArmatureBehavior *):BehaviorLoop = new BehaviorLoop(name, limit, behaviors:_*)
+object Loop {
+	def apply(name:String, limit:Int, behaviors:ArmatureBehavior *):Loop = new Loop(name, limit, behaviors:_*)
 }
 
 
 /** Repeats each behavior either a given number of times or infinitely.
   * 
   * Indicate a negative or zero `limit` to repeat indefinitely. */
-class BehaviorLoop(name:String, val limit:Int, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
+class Loop(name:String, val limit:Int, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	/** Number of repetitions for each behavior. */
 	protected val repeated = new Array[Int](behaviors.size)
 
@@ -168,115 +166,12 @@ class BehaviorLoop(name:String, val limit:Int, val behaviors:ArmatureBehavior *)
 }
 
 
-// -- Joint behaviors -----------------------------------------------------------------------------------------
-
-
-abstract class JointBehavior(name:String, val joint:Joint) extends ArmatureBehavior(name) {}
-
-
-abstract class InterpolateBehavior(name:String, joint:Joint, val duration:Long) extends JointBehavior(name, joint) {
-	var from = 0L
-
-	var to = 0L
-	
-	def start(t:Long):ArmatureBehavior = { from = t; to = t + duration; this }
-
-	protected def interpolation(t:Long):Double = (t-from).toDouble / (to-from).toDouble
-
-	def finished(t:Long):Boolean = (t >= to)
+object Switch {
+	def apply(name:String, duration:Long, joints:Joint *):Switch = new Switch(name, duration, joints:_*)
 }
 
 
-object InterpToAngle {
-	def apply(name:String, joint:Joint, targetAngle:Double, duration:Long):InterpToAngle = 
-		new InterpToAngle(name, joint, targetAngle, duration)
-}
-
-class InterpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:Long) extends InterpolateBehavior(name, joint, duration) {
-	var startAngle:Double = 0.0
-
-	override def start(t:Long):ArmatureBehavior = {
-		startAngle = joint.transform.angle
-		super.start(t)
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joint.transform.angle = targetAngle
-		} else {
-			joint.transform.angle = startAngle + ((targetAngle - startAngle) * interpolation(t))
-//println("joint %s angle %f (%% == %f)".format(joint.name, joint.angle, percent))
-		}
-	}
-}
-
-
-object InterpToPosition {
-	def apply(name:String, joint:Joint, targetPosition:(Double,Double), duration:Long):InterpToPosition =
-		new InterpToPosition(name, joint, targetPosition, duration)
-}
-
-
-/** Absolute displacement. */
-class InterpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
-	var startPosition = new Point2(0,0)
-
-	override def start(t:Long):ArmatureBehavior = {
-		startPosition.copy(joint.transform.translation)
-		super.start(t)
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joint.transform.translation.set(targetPosition._1, targetPosition._2)
-		} else {
-			val interp =  interpolation(t)
-			joint.transform.translation.set(
-				startPosition.x + ((targetPosition._1 - startPosition.x) * interp),
-				startPosition.y + ((targetPosition._2 - startPosition.y) * interp)
-			)
-		}
-	}
-}
-
-
-object InterpMove {
-	def apply(name:String, joint:Joint, displacement:(Double,Double), duration:Long):InterpMove = 
-		new InterpMove(name, joint, displacement, duration)
-}
-
-
-/** Relative displacement. */
-class InterpMove(name:String, joint:Joint, val displacement:(Double,Double), duration:Long) extends InterpolateBehavior(name, joint, duration) {
-	var startPosition = new Point2(0,0)
-
-	override def start(t:Long):ArmatureBehavior = {
-		startPosition.copy(joint.transform.translation)
-		super.start(t)
-	}
-
-	def animate(t:Long) {
-		if(finished(t)) {
-			joint.transform.translation.set(startPosition.x + displacement._1, startPosition.y + displacement._2)
-		} else {
-			val interp = interpolation(t)
-			joint.transform.translation.set(
-				startPosition.x + (displacement._1 * interp),
-				startPosition.y + (displacement._2 * interp)
-			)
-		}
-	}
-}
-
-// -- Switches -------------------------------------------------------------------------------------------
-
-
-object JointVisibilitySwitch {
-	def apply(name:String, duration:Long, joints:Joint *):JointVisibilitySwitch = new JointVisibilitySwitch(name, duration, joints:_*)
-}
-
-
-class JointVisibilitySwitch(name:String, val duration:Long, val joints:Joint *) extends ArmatureBehavior(name) {
+class Switch(name:String, val duration:Long, val joints:Joint *) extends ArmatureBehavior(name) {
 	protected var index = 0
 
 	protected var startTime = 0L
@@ -309,11 +204,112 @@ class JointVisibilitySwitch(name:String, val duration:Long, val joints:Joint *) 
 }
 
 
+// -- Joint behaviors -----------------------------------------------------------------------------------------
+
+
+abstract class JointBehavior(name:String, val joint:Joint) extends ArmatureBehavior(name) {}
+
+
+abstract class LerpBehavior(name:String, joint:Joint, val duration:Long) extends JointBehavior(name, joint) {
+	var from = 0L
+
+	var to = 0L
+	
+	def start(t:Long):ArmatureBehavior = { from = t; to = t + duration; this }
+
+	protected def interpolation(t:Long):Double = (t-from).toDouble / (to-from).toDouble
+
+	def finished(t:Long):Boolean = (t >= to)
+}
+
+
+object LerpToAngle {
+	def apply(name:String, joint:Joint, targetAngle:Double, duration:Long):LerpToAngle = 
+		new LerpToAngle(name, joint, targetAngle, duration)
+}
+
+class LerpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:Long) extends LerpBehavior(name, joint, duration) {
+	var startAngle:Double = 0.0
+
+	override def start(t:Long):ArmatureBehavior = {
+		startAngle = joint.transform.angle
+		super.start(t)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.transform.angle = targetAngle
+		} else {
+			joint.transform.angle = startAngle + ((targetAngle - startAngle) * interpolation(t))
+//println("joint %s angle %f (%% == %f)".format(joint.name, joint.angle, percent))
+		}
+	}
+}
+
+
+object LerpToPosition {
+	def apply(name:String, joint:Joint, targetPosition:(Double,Double), duration:Long):LerpToPosition =
+		new LerpToPosition(name, joint, targetPosition, duration)
+}
+
+
+/** Absolute displacement. */
+class LerpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends LerpBehavior(name, joint, duration) {
+	var startPosition = new Point2(0,0)
+
+	override def start(t:Long):ArmatureBehavior = {
+		startPosition.copy(joint.transform.translation)
+		super.start(t)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.transform.translation.set(targetPosition._1, targetPosition._2)
+		} else {
+			val interp =  interpolation(t)
+			joint.transform.translation.set(
+				startPosition.x + ((targetPosition._1 - startPosition.x) * interp),
+				startPosition.y + ((targetPosition._2 - startPosition.y) * interp)
+			)
+		}
+	}
+}
+
+
+object LerpMove {
+	def apply(name:String, joint:Joint, displacement:(Double,Double), duration:Long):LerpMove = 
+		new LerpMove(name, joint, displacement, duration)
+}
+
+
+/** Relative displacement. */
+class LerpMove(name:String, joint:Joint, val displacement:(Double,Double), duration:Long) extends LerpBehavior(name, joint, duration) {
+	var startPosition = new Point2(0,0)
+
+	override def start(t:Long):ArmatureBehavior = {
+		startPosition.copy(joint.transform.translation)
+		super.start(t)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.transform.translation.set(startPosition.x + displacement._1, startPosition.y + displacement._2)
+		} else {
+			val interp = interpolation(t)
+			joint.transform.translation.set(
+				startPosition.x + (displacement._1 * interp),
+				startPosition.y + (displacement._2 * interp)
+			)
+		}
+	}
+}
+
+
 // -- KeyInterp ------------------------------------------------------------------------------------------
 
 
 /** Base interpolator for joints using a sequence of keys at specific times. */
-abstract class JointKeyInterp(name:String, joint:Joint) extends JointBehavior(name, joint) {
+abstract class LerpKeyJoint(name:String, joint:Joint) extends JointBehavior(name, joint) {
 	/** Time at start (used to avoid time drift). */
 	var init = 0L
 
@@ -341,7 +337,7 @@ abstract class JointKeyInterp(name:String, joint:Joint) extends JointBehavior(na
   *
   * The set of translation vectors are absolute positions according to the start position, not relative one
   * with another. Each vector has a time that is relative to the start not to the previous key. */
-class JointKeyMoveInterp(name:String, joint:Joint, val translate:Array[TimedVector]) extends JointKeyInterp(name, joint) {
+class LerpKeyMoveJoint(name:String, joint:Joint, val translate:Array[TimedVector]) extends LerpKeyJoint(name, joint) {
 	var index = -1
 
 	var startPosition = Vector2(0,0)
@@ -394,7 +390,7 @@ class JointKeyMoveInterp(name:String, joint:Joint, val translate:Array[TimedVect
   *
   * The set of angles are absolute values, not relative one with another.
   * Each rotation has a time that is relative to the start not to the previous key. */
-class JointKeyRotateInterp(name:String, joint:Joint, val rotate:Array[TimedValue]) extends JointKeyInterp(name, joint) {
+class LerpKeyRotateJoint(name:String, joint:Joint, val rotate:Array[TimedValue]) extends LerpKeyJoint(name, joint) {
 	var index = -1
 
 	var startAngle = 0.0
@@ -439,10 +435,10 @@ class JointKeyRotateInterp(name:String, joint:Joint, val rotate:Array[TimedValue
 	protected def hasNext():Boolean = (index+1 < rotate.length)
 }
 
-object  ArmatureKeyInterp {
+object  LerpKeyArmature {
 	def loadFrom(fileName:String, armature:Armature, scal:Double = 1.0):Array[ArmatureBehavior] = {
 		val keys = ArmatureBehavior.loader.load(fileName)
-		val behaviors = new ArrayBuffer[JointKeyInterp]
+		val behaviors = new ArrayBuffer[LerpKeyJoint]
 
 		keys.foreach { keyset =>
 			val name  = keyset._1
@@ -450,10 +446,10 @@ object  ArmatureKeyInterp {
 			val joint = (armature \\ name)
 
 			if((anim.translate ne null) && anim.translate.size > 0)
-				behaviors += new JointKeyMoveInterp(name, joint, scale(scal, anim.translate.toArray))
+				behaviors += new LerpKeyMoveJoint(name, joint, scale(scal, anim.translate.toArray))
 			
 			if((anim.rotate ne null) && anim.rotate.size > 0)
-				behaviors += new JointKeyRotateInterp(name, joint, anim.rotate.toArray)
+				behaviors += new LerpKeyRotateJoint(name, joint, anim.rotate.toArray)
 		}
 
 		behaviors.toArray
@@ -466,15 +462,15 @@ object  ArmatureKeyInterp {
 		translate
 	}
 
-	def apply(name:String, armature:Armature, fileName:String, scale:Double = 1.0):ArmatureKeyInterp = new ArmatureKeyInterp(name, armature, fileName, scale)
-	def apply(name:String, armature:Armature, behaviors:ArmatureBehavior *):ArmatureKeyInterp = new ArmatureKeyInterp(name, armature, behaviors:_*)
+	def apply(name:String, armature:Armature, fileName:String, scale:Double = 1.0):LerpKeyArmature = new LerpKeyArmature(name, armature, fileName, scale)
+	def apply(name:String, armature:Armature, behaviors:ArmatureBehavior *):LerpKeyArmature = new LerpKeyArmature(name, armature, behaviors:_*)
 }
 
 /** A set of joint key interpolators. */
-class ArmatureKeyInterp(name:String, armature:Armature, behaviors:ArmatureBehavior *) extends DoInParallel(name, behaviors:_*) {
-	import ArmatureKeyInterp._
+class LerpKeyArmature(name:String, armature:Armature, behaviors:ArmatureBehavior *) extends InParallel(name, behaviors:_*) {
+	import LerpKeyArmature._
 
 	def this(name:String, armature:Armature, fileName:String, scale:Double = 1.0) {
-		this(name, armature, ArmatureKeyInterp.loadFrom(fileName, armature, scale):_*)
+		this(name, armature, LerpKeyArmature.loadFrom(fileName, armature, scale):_*)
 	}
 }
