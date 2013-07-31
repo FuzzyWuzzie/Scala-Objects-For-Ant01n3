@@ -8,13 +8,20 @@ import org.sofa.math.{Point3, Point2, Vector2}
 import org.sofa.opengl.{Texture, ShaderProgram, Libraries}
 import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 
+
+/** Raised when a joint cannot be found in an armature. */
 case class NoSuchJointException(message:String) extends Exception(message)
+
+
+// == Loader ======================================================================================
+
 
 /** Pluggable loader for armature sources. */
 trait ArmatureLoader extends FileLoader {
     /** Try to open a resource, or throw an IOException if not available. */
     def open(name:String, texRes:String, shaderRes:String, resource:String):Armature
 }
+
 
 /** Default loader for armatures, based on files and the include path.
   * This loader tries to open the given resource directly, then if not
@@ -28,11 +35,12 @@ class DefaultArmatureLoader extends ArmatureLoader {
     }
 }
 
-object Armature {
-//	/** The set of armatures, added elsewhere. */
-//	val armatures = new HashMap[String, Armature]()
 
-	/** The set of paths to try to load a shader. */
+// == Armature ====================================================================================
+
+
+object Armature {
+	/** The set of paths to try to load an armature. */
 	val path = scala.collection.mutable.ArrayBuffer[String]()
 
 	/** Loader for armatures. */
@@ -41,6 +49,7 @@ object Armature {
 	def apply(name:String, scale:Double, area:(Double,Double), texResource:String, shaderResource:String, root:Joint):Armature = 
 		new Armature(name, scale, Point2(area._1, area._2), texResource, shaderResource, root)
 }
+
 
 /** A hierachical set of joints, and a way to render them. */
 class Armature(val name:String,
@@ -100,9 +109,8 @@ class Armature(val name:String,
 
 	override def toString():String = "Armature(%s, [%s], {%s})".format(name, area, root)
 
-	def toIndentedString():String = {
-		"Armature(%s, [%s] {%n%s%n})%n".format(name, area, root.toIndentedString(1))
-	}
+	/** Representation of the armature including newlines for better lisibility. */
+	def toIndentedString():String = "Armature(%s, [%s] {%n%s%n})%n".format(name, area, root.toIndentedString(1))
 }
 
 
@@ -111,11 +119,11 @@ class Armature(val name:String,
 
 /** Transformation of a joint. 
   *
-  * Lots of work remains to do. It would be interesting to be able to change the implementation
+  * TODO Lots of work remains to do. It would be interesting to be able to change the implementation
   * of this class, but behaviors expect to be able to specify thing according to a given 
-  * JointTransform implementation. An interface is not really possible since tranform methods are very
-  * different. One way of doing things would be to let the behaviors set the transforms of a joint.
-  * But what if a joint is controlled by two behaviors ? A list of transforms ?  */
+  * JointTransform implementation. An interface or closures are not really possible since tranform
+  * methods are very different. One way of doing things would be to let the behaviors set the
+  * transforms of a joint. But what if a joint is controlled by two behaviors ? A list of transforms ?  */
 class JointTransform {
 
 	/** Current rotation in radians. */
@@ -147,7 +155,7 @@ class JointTransform {
 object Joint {
 	/** Create a joint.
 	  *
-	  * The joint maps to an area in a  texture whose pixels are indexed with an origin at the top-left corner (as usual).
+	  * The joint maps to an area in a texture whose pixels are indexed with an origin at the top-left corner (as usual).
 	  *
 	  * @param name      The joint identifier.
 	  * @param z         The z level.

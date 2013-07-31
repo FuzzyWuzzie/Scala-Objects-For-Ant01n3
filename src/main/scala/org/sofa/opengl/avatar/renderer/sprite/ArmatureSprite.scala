@@ -22,7 +22,7 @@ object ArmatureSprite {
 	/** Declare a new behavior for the sprite.
 	  * If the `start` field is true, the behavior is activated as soon as added.
 	  * As a behavior as a duration, several behavior can be activated at the same time. */
-	case class AddBehavior(name:String, behavior:ArmatureBehavior, start:Boolean) extends AvatarState
+	case class AddBehavior(name:String, behavior:String, start:Boolean) extends AvatarState
 
 	/** Activate a behavior for the sprite. Several behaviors can be activated at the same time. */
 	case class StartBehavior(name:String) extends AvatarState
@@ -77,8 +77,8 @@ class ArmatureSprite(name:String, screen:Screen, override val isIndexed:Boolean 
 			case SetArmature(res:String) ⇒ {
 				armature = screen.renderer.libraries.armatures.get(gl, res)
 			}
-			case AddBehavior(name:String, behavior:ArmatureBehavior, start:Boolean) ⇒ {
-				// val behavior = screen.renderer.libraries.textures.get(gl, res)
+			case AddBehavior(name:String, behavior:String, start:Boolean) ⇒ {
+				behaviors += (name -> screen.renderer.libraries.behaviors.get(gl, behavior))
 			}
 			case StartBehavior(name:String) ⇒ {
 			}

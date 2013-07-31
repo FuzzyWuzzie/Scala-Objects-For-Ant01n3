@@ -48,8 +48,16 @@ object ArmatureBehavior {
 
 /** Base abstract behavior class. */
 abstract class ArmatureBehavior(val name:String) {
+	/** Start the behavior.
+	  * @param t current time. */
 	def start(t:Long):ArmatureBehavior
+	
+	/** Animate the armature or a part of it.
+	  * @param t current time. */
 	def animate(t:Long)
+	
+	/** True if the behavior is finished. In this case, you can use
+	  * [[start(Long)]] to restart it. */
 	def finished(t:Long):Boolean
 
 	override def toString():String = "%s".format(name)
@@ -65,6 +73,10 @@ object InParallel {
 }
 
 
+/** Execute all agregated behaviors in parallel. The duration of this
+  * behavior is the maximum duration of its agregated behaviors. In other words
+  * as long as it remains an agregated behavior that is not finished this
+  * behavior will not be finished. */
 class InParallel(name:String, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	def start(t:Long):ArmatureBehavior = { behaviors.foreach { _.start(t) }; this }
 	def animate(t:Long) { behaviors.foreach { _.animate(t) } }
@@ -82,6 +94,9 @@ object InSequence {
 }
 
 
+/** Execute all the agregated behaviors one after the other. The order is the
+  * the one of the given behavior list. The duration of this behavior is the
+  * sum of the duration of its agregated behaviors. */
 class InSequence(name:String, b:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	val behaviors = b.toArray
 	
@@ -117,7 +132,9 @@ object Loop {
 
 /** Repeats each behavior either a given number of times or infinitely.
   * 
-  * Indicate a negative or zero `limit` to repeat indefinitely. */
+  * Indicate a negative or zero `limit` to repeat indefinitely. The duration of one loop
+  * turn is the sum of the duration of the agregated behaviors. This behavior may never
+  * finish if the `limit` is zero or negative. */
 class Loop(name:String, val limit:Int, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	/** Number of repetitions for each behavior. */
 	protected val repeated = new Array[Int](behaviors.size)
@@ -171,6 +188,11 @@ object Switch {
 }
 
 
+/** Change the visibility of a set of joints so that only one is visible at a given time.
+  *
+  * The duration is the time during which a joint is visible. Once this duration is
+  * passed, the joint is made invisible and another is made visible. This in an infinite
+  * loop. The joints visibility order it the one of the given parameter list. */
 class Switch(name:String, val duration:Long, val joints:Joint *) extends ArmatureBehavior(name) {
 	protected var index = 0
 
@@ -210,6 +232,11 @@ class Switch(name:String, val duration:Long, val joints:Joint *) extends Armatur
 abstract class JointBehavior(name:String, val joint:Joint) extends ArmatureBehavior(name) {}
 
 
+/** Base implementation of something able to linearly interpolate values for joints position,
+  * rotation and scale.
+  *
+  * The interpolation is time based, this means that knowing the start of the behavior and its
+  * duration, when [[animate()]] is called, the interpolated value depends on the time. */
 abstract class LerpBehavior(name:String, joint:Joint, val duration:Long) extends JointBehavior(name, joint) {
 	var from = 0L
 
@@ -228,6 +255,8 @@ object LerpToAngle {
 		new LerpToAngle(name, joint, targetAngle, duration)
 }
 
+/** Animate a rotation of the joint until it reaches a given `targetAngle` a the given start date plus the `duration`. 
+  * This is an absolute rotation. The joint will at the end be oriented by the given `targetAngle`. */
 class LerpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:Long) extends LerpBehavior(name, joint, duration) {
 	var startAngle:Double = 0.0
 
@@ -253,7 +282,8 @@ object LerpToPosition {
 }
 
 
-/** Absolute displacement. */
+/** Animate a displacement of the joint until it reaches a given `targetPosition` at the givne start date plus the `duration`. 
+  * This is an absolute displacement. The joint will at the end be at the given `targetPosition`. */
 class LerpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends LerpBehavior(name, joint, duration) {
 	var startPosition = new Point2(0,0)
 
@@ -282,7 +312,9 @@ object LerpMove {
 }
 
 
-/** Relative displacement. */
+/** Animate a displacement of the joint by a given `displacement` during a given `duration`.
+  * This is a relative displacement. The joint will start at its current position and end at this
+  * position plus the `displacement` after the given duration. */
 class LerpMove(name:String, joint:Joint, val displacement:(Double,Double), duration:Long) extends LerpBehavior(name, joint, duration) {
 	var startPosition = new Point2(0,0)
 
