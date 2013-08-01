@@ -59,6 +59,7 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 
 object Libraries {
 	final val PositionExpression = """\s*\(\s*([+-]?\d+(\.?\d*))\s*,\s*([+-?]\d+(\.?\d*))\s*\)\s*""".r
+	final val DoubleExpression   = """([+-]?\d+(\.?\d*))""".r
 
 	def apply(gl:SGL):Libraries = { new Libraries(gl) } 
 }
@@ -124,7 +125,7 @@ class Libraries(gl:SGL) {
 	  *				<tex id="anId" res="aResource" mipmap="sameAsTexMipMap" minfilter="" magfilter="" alpha="" wrap=""/>
 	  *			</texs>
 	  *         <armatures>
-	  *             <armature id="man" tex="man-tex" shader="man-shader" svg="man-svg"/>
+	  *             <armature id="man" tex="man-tex" shader="man-shader" svg="man-svg" scale="1.0"/>
 	  *         </armatures>
 	  *         <behaviors>
 	  *             <in-parallel      id="" arm="" behaviors=",,,,"/>
@@ -201,12 +202,17 @@ class Libraries(gl:SGL) {
 	}
 
 	protected def parseArmatures(nodes:NodeSeq) {
+		import Libraries._
 		nodes \\ "armature" foreach { armature ⇒
 			armatures.add(ArmatureResource(
 				(armature \\ "@id").text,
 				(armature \\ "@tex").text,
 				(armature \\ "@shader").text,
-				(armature \\ "@svg").text))
+				(armature \\ "@svg").text, this,
+				(armature \\ "@scale").text match {
+					case DoubleExpression(dbl) => dbl.toDouble
+					case _                     => 1.0
+				}))
 		}
 	}
 
@@ -375,25 +381,26 @@ class FontLibrary(gl:SGL) extends Library[GLFont](gl)
 
 
 object ArmatureResource {
-	def apply(name:String, texRes:String, shaderRes:String, fileName:String):ArmatureResource = {
-		new ArmatureResource(name, texRes, shaderRes, fileName)
+	def apply(name:String, texRes:String, shaderRes:String, fileName:String, libraries:Libraries, scale:Double=1.0):ArmatureResource = {
+		new ArmatureResource(name, texRes, shaderRes, fileName, libraries)
 	}
 }
 
-class ArmatureResource(name:String, texRes:String, shaderRes:String, fileName:String, private var data:Armature) extends ResourceDescriptor[Armature](name) {
+class ArmatureResource(name:String, texRes:String, shaderRes:String, fileName:String, val libraries:Libraries, private var data:Armature, scale:Double=1.0) extends ResourceDescriptor[Armature](name) {
 
-	def this(name:String, texRes:String, shaderRes:String, fileName:String) {
-		this(name, texRes, shaderRes, fileName, null)
+	def this(name:String, texRes:String, shaderRes:String, fileName:String, libraries:Libraries, scale:Double=1.0) {
+		this(name, texRes, shaderRes, fileName, libraries, null, scale)
 	}
 
-	def this(name:String, armature:Armature) {
-		this(name, armature.texResource, armature.shaderResource, null, armature)
+	def this(name:String, armature:Armature, libraries:Libraries, scale:Double=1.0) {
+		this(name, armature.texResource, armature.shaderResource, null, libraries, armature, scale)
 	}
 
 	def value(gl:SGL):Armature = {
 		if(data eq null) {
 			try {
 				data = Armature.loader.open(name, texRes, shaderRes, fileName)
+				data.init(gl, libraries)
 			} catch {
 				case e:IOException => throw NoSuchResourceException(e.getMessage, e)
 			}

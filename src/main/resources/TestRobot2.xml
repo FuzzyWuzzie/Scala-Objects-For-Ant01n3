@@ -6,16 +6,21 @@
 		<tex>/Users/antoine/Documents/Art/Images/Box_Art</tex>
 		<tex>/Users/antoine/Documents/Art/Images</tex>
 		<tex>textures</tex>
-		<armature>/Users/antoine/Documents/Art/Images/Bruce_Art</armature>
+		<armature>/Users/antoine/Documents/Art/Images/Box_Art</armature>
 		<armature>svg</armature>
 	</pathes>
 	<shaders>
-		<shader id="image-shader" vert="image_shader.vert.glsl" frag="image_shader.frag.glsl"/>
-		<shader id="plain-shader" vert="plain_shader.vert.glsl" frag="plain_shader.frag.glsl"/>
+		<shader id="image-shader"    vert="image_shader.vert.glsl"    frag="image_shader.frag.glsl"/>
+		<shader id="plain-shader"    vert="plain_shader.vert.glsl"    frag="plain_shader.frag.glsl"/>
+		<shader id="armature-shader" vert="armature_shader.vert.glsl" frag="armature_shader.frag.glsl"/>
 	</shaders>
 	<texs>
-		<tex id="grid10x10" res="Grid10x10.png" mipmap="load" minfilter="linearandmipmaplinear"/>
-		<tex id="bg-image" res="bg_image.png"/>
-		<tex id="ground-image" res="ground.png"/>
+		<tex id="grid10x10"         res="Grid10x10.png" mipmap="load" minfilter="linearandmipmaplinear"/>
+		<tex id="bg-image"          res="bg_image.png"/>
+		<tex id="ground-image"      res="ground.png"/>
+		<tex id="black-box-1-image" res="BlackBox1_Armature.png" alpha="premultiply"/>
 	</texs>
+	<armatures>
+		<armature id="black-box-1-arm" tex="black-box-1-image" shader="armature-shader" svg="BlackBox1_Armature.svg" scale="0.001"/>
+	</armatures>
 </resources>

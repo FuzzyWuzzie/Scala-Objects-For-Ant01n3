@@ -174,7 +174,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	}
 
 	protected def initArmatures(armatureFileName:String) {
-		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName)
+		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, libraries)
 	}
 	
 	protected def initGeometry() {
@@ -184,8 +184,6 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 		grid.newVertexArray(gl, gridShader, Vertex -> "position", Color -> "color")
 
 		armature = libraries.armatures.get(gl, "armature-test")
-
-		armature.init(gl, libraries)
 
 		(armature \\ "bipbip2").visible = false
 		(armature \\ "mouthoh").visible = false

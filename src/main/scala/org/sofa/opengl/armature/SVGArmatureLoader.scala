@@ -219,7 +219,7 @@ class SVGArmatureLoader {
 		val rect     = (area \ "rect")
 
 		if(rect.size < 1) {
-			throw ArmatureParseException("Area without SVG 'rect' delimiter. Draw a rectangle to delimit the area.")
+			throw ArmatureParseException("Area '%s' without SVG 'rect' delimiter. Draw a rectangle to delimit the area.".format(name))
 		}
 
 		// I do not know why, but inskape origin in the GUI seems to be at bottom-left
@@ -251,7 +251,7 @@ class SVGArmatureLoader {
 		}
 
 		if(pivot eq null)
-			throw ArmatureParseException("Area without pivot point !")
+			throw ArmatureParseException("Area '%s' without pivot point !".format(name))
 
 		Area(name,p.x,p.y,w,h,pivot,anchors.toArray)
 	}

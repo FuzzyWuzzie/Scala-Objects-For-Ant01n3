@@ -93,11 +93,17 @@ class ArmatureSprite(name:String, screen:Screen, override val isIndexed:Boolean 
 		val camera = screen.camera
 
 		if(armature ne null) {
-		// 	gl.enable(gl.BLEND)
+		 	gl.enable(gl.BLEND)
 			gl.disable(gl.DEPTH_TEST)
 	    	gl.disable(gl.CULL_FACE)
-			armature.display(gl, camera)
-		// 	gl.disable(gl.BLEND)
+			
+			camera.pushpop {
+				camera.translate(pos.x, pos.y, pos.z)
+				camera.scale(size.x, size.y, size.z)
+				armature.display(gl, camera)
+			}
+
+		 	gl.disable(gl.BLEND)
 		}
 	}
 

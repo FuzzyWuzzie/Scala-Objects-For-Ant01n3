@@ -27,7 +27,7 @@ import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.akka.SurfaceExecutorService
 import org.sofa.opengl.avatar.renderer.{Renderer, RendererActor, AvatarFactory, Screen, Avatar, NoSuchAvatarException, NoSuchScreenException, SizeFromTextureHeight}
-import org.sofa.opengl.avatar.renderer.sprite.{TilesSprite, ImageSprite}
+import org.sofa.opengl.avatar.renderer.sprite.{TilesSprite, ImageSprite, ArmatureSprite}
 import org.sofa.opengl.avatar.renderer.screen.PerspectiveScreen
 
 
@@ -40,8 +40,9 @@ class RobotAvatarFactory(val renderer:Renderer) extends AvatarFactory {
 		case _             ⇒ throw NoSuchScreenException("cannot create a screen of type %s, unknown type".format(screenType))
 	}
 	def avatarFor(name:String, avatarType:String, indexed:Boolean):Avatar = avatarType match {
-		case "image" ⇒ new ImageSprite(name, renderer.screen, indexed)
-		case _       ⇒ throw new NoSuchAvatarException("cannot create an avatar of type %s, unknown type".format(avatarType))
+		case "image"    ⇒ new ImageSprite(name, renderer.screen, indexed)
+		case "armature" ⇒ new ArmatureSprite(name, renderer.screen, indexed)
+		case _          ⇒ throw new NoSuchAvatarException("cannot create an avatar of type %s, unknown type".format(avatarType))
 	}	
 }
 
@@ -117,6 +118,11 @@ class TestRobot2 extends Actor {
 	}
 
 	protected def setupActors() {
+		import RendererActor._
+		import ArmatureSprite._
 
+		rendererActor ! AddAvatar("black-box-1", "armature", false)
+		rendererActor ! ChangeAvatar("black-box-1", SetArmature("black-box-1-arm"))
+		rendererActor ! ChangeAvatarPosition("black-box-1", Point3(0, -0.5, 0.2))
 	}
 }

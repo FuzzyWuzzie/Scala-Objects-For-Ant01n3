@@ -82,14 +82,16 @@ class Armature(val name:String,
 	def init(gl:SGL, libraries:Libraries) {
 		import VertexAttribute._
 
-		texture   = libraries.textures.get(gl, texResource)
-		shader    = libraries.shaders.get(gl, shaderResource)
-		val count = root.init(null, this)
-		triangles = new TrianglesMesh(count*2)
+		if((texture eq null) && (shader eq null) && (count == 0)) { 
+			texture   = libraries.textures.get(gl, texResource)
+			shader    = libraries.shaders.get(gl, shaderResource)
+			val count = root.init(null, this)
+			triangles = new TrianglesMesh(count*2)
 
-		root.build(this)
-		assert(this.count == count)
-		triangles.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
+			root.build(this)
+			assert(this.count == count)
+			triangles.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
+		}
 	}
 
 	/** Display the whole armature, but only joints that are visible. */

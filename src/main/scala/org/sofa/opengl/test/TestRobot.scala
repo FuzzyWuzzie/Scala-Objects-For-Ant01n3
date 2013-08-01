@@ -213,7 +213,7 @@ class TestRobot extends SurfaceRenderer {
 	}
 
 	protected def initArmatures(armatureFileName:String) {
-		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName)
+		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, libraries)
 	}
 	
 	protected def initGeometry() {
