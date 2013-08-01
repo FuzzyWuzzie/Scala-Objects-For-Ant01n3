@@ -1,6 +1,6 @@
 package org.sofa.opengl.armature.behavior
 
-import scala.collection.mutable.{ArrayBuffer, HashMap}
+import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
 import org.sofa.FileLoader
 import org.sofa.math.{Point2, Vector2}
@@ -80,11 +80,56 @@ object InParallel {
 class InParallel(name:String, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	def start(t:Long):ArmatureBehavior = { behaviors.foreach { _.start(t) }; this }
 	def animate(t:Long) { behaviors.foreach { _.animate(t) } }
-	def finished(t:Long):Boolean = { behaviors.find { b => b.finished(t) == false } match {
-			case None => true
-			case _    => false
+	def finished(t:Long):Boolean = { behaviors.find { b ⇒ b.finished(t) == false } match {
+			case None ⇒ true
+			case _    ⇒ false
 		}
 	}
+}
+
+
+object InParallelDynamic {
+	def apply(name:String, behaviors:ArmatureBehavior*):InParallelDynamic = 
+		new InParallelDynamic(name, behaviors:_*)
+}
+
+
+/** Execute all agregated behaviors in parallel. The difference with [[InParallel]]
+  * is that you can add or remove new behaviors at any time, and that finished behaviors
+  * are automatically removed. As long as it remains an agregated behavior that is not
+  * finished, this behavior will not be finished. When finished this is empty. */
+class InParallelDynamic(name:String, behaviorList:ArmatureBehavior *) extends ArmatureBehavior(name) {
+	val behaviors = new HashSet[ArmatureBehavior]()
+
+	behaviors ++= behaviorList
+
+	def start(t:Long):ArmatureBehavior = { 
+		behaviors.foreach { _.start(t) }
+		this 
+	}
+
+	/** Add an start the given `behavior` at time `t`. */
+	def add(t:Long, behavior:ArmatureBehavior) {
+		behaviors += behavior
+		behavior.start(t)
+	}
+
+	/** Remove the given `behavior`. */
+	def remove(behavior:ArmatureBehavior) {
+		behaviors -= behavior
+	}
+	
+	def animate(t:Long) {
+		behaviors.foreach { behavior ⇒
+			if(behavior.finished(t)) {
+				behaviors -= behavior
+			} else {
+				behavior.animate(t)
+			}
+		} 
+	}
+
+	def finished(t:Long):Boolean = behaviors.isEmpty
 }
 
 
@@ -472,7 +517,7 @@ object  LerpKeyArmature {
 		val keys = ArmatureBehavior.loader.load(fileName)
 		val behaviors = new ArrayBuffer[LerpKeyJoint]
 
-		keys.foreach { keyset =>
+		keys.foreach { keyset ⇒
 			val name  = keyset._1
 			val anim  = keyset._2
 			val joint = (armature \\ name)
@@ -488,7 +533,7 @@ object  LerpKeyArmature {
 	}	
 
 	private def scale(scale:Double, translate:Array[TimedVector]):Array[TimedVector] = {
-		translate.foreach { tv =>
+		translate.foreach { tv ⇒
 			tv.vector.set(tv.vector.x * scale, tv.vector.y * scale)
 		}
 		translate

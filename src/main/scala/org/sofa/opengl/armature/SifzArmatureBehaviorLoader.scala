@@ -51,7 +51,7 @@ object SifzArmatureBehaviorLoader {
 
 /** Parse a Sinfig Sifz file and extract PasteCanvas elements and their translate and
   * rotate sub-layers. Try to export a set of rotate and translate timed keys for each
-  * PasteCanvas considering these PasteCanvas will match the various joints or an
+  * PasteCanvas considering these PasteCanvas will match the various joints of an
   * armature. */
 class SifzArmatureBehaviorLoader {
 	import SifzArmatureBehaviorLoader._
