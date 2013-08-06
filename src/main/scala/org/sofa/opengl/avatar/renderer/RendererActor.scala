@@ -80,6 +80,9 @@ object RendererActor {
 	/** Ask the avatar `name` to send messages to `acquaintance` when something occurs. */
 	case class AddAvatarAcquaintance(name:String, acqaintance:ActorRef)
 
+	/** Ask the renderer to print its status on the console. */
+	case class PrintStatus()
+
 	//== Sent messages ======================================
 
 	/** Sent when the window or screen is closed. */
@@ -138,18 +141,19 @@ class RendererActor(val renderer:Renderer, val avatarFactory:AvatarFactory) exte
 
 	def receive() = {
 		case Start()                                  ⇒ { }
-		case AddScreen(name, stype)                   ⇒ { renderer.addScreen(name, avatarFactory.screenFor(name, stype)) }
-		case RemoveScreen(name)                       ⇒ { renderer.removeScreen(name) }
-		case SwitchScreen(name)                       ⇒ { renderer.switchToScreen(name) }
-		case ChangeScreenSize(axes, spashUnit)        ⇒ { renderer.currentScreen.changeAxes(axes, spashUnit) }
-		case AddAvatar(name, atype, indexed)          ⇒ { renderer.currentScreen.addAvatar(name, avatarFactory.avatarFor(name, atype, indexed)) }
-		case RemoveAvatar(name)                       ⇒ { renderer.currentScreen.removeAvatar(name) }
-		case ChangeScreen(state)                      ⇒ { renderer.currentScreen.change(state) }
-		case ChangeAvatarPosition(name, newPos)       ⇒ { renderer.currentScreen.changeAvatarPosition(name, newPos) }
-		case ChangeAvatarSize(name, newSize)          ⇒ { renderer.currentScreen.changeAvatarSize(name, renderer.toTriplet(newSize)) }
-		case ChangeAvatar(name, state)                ⇒ { renderer.currentScreen.changeAvatar(name, state) }
-		case AddAvatarAcquaintance(name, acqaintance) ⇒ { renderer.currentScreen.addAvatarAcquaintance(name, acqaintance) }
-		case AddResource(res)                         ⇒ { renderer.libraries.addResource(res) }
-		case AddResources(xmlFileName)                ⇒ { renderer.libraries.addResources(xmlFileName) }
+		case AddScreen(name, stype)                   ⇒ renderer.addScreen(name, avatarFactory.screenFor(name, stype))
+		case RemoveScreen(name)                       ⇒ renderer.removeScreen(name)
+		case SwitchScreen(name)                       ⇒ renderer.switchToScreen(name)
+		case ChangeScreenSize(axes, spashUnit)        ⇒ renderer.currentScreen.changeAxes(axes, spashUnit)
+		case AddAvatar(name, atype, indexed)          ⇒ renderer.currentScreen.addAvatar(name, avatarFactory.avatarFor(name, atype, indexed))
+		case RemoveAvatar(name)                       ⇒ renderer.currentScreen.removeAvatar(name)
+		case ChangeScreen(state)                      ⇒ renderer.currentScreen.change(state)
+		case ChangeAvatarPosition(name, newPos)       ⇒ renderer.currentScreen.changeAvatarPosition(name, newPos)
+		case ChangeAvatarSize(name, newSize)          ⇒ renderer.currentScreen.changeAvatarSize(name, renderer.toTriplet(newSize))
+		case ChangeAvatar(name, state)                ⇒ renderer.currentScreen.changeAvatar(name, state)
+		case AddAvatarAcquaintance(name, acqaintance) ⇒ renderer.currentScreen.addAvatarAcquaintance(name, acqaintance)
+		case AddResource(res)                         ⇒ renderer.libraries.addResource(res)
+		case AddResources(xmlFileName)                ⇒ renderer.libraries.addResources(xmlFileName)
+		case PrintStatus                              ⇒ println(renderer)
 	}
 }

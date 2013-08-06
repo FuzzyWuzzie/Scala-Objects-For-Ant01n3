@@ -23,7 +23,7 @@ object ArmatureSprite {
 	/** Declare a new behavior for the sprite.
 	  * If the `start` field is true, the behavior is activated as soon as added.
 	  * As a behavior as a duration, several behavior can be activated at the same time. */
-	case class AddBehavior(name:String, behavior:String, start:Boolean) extends AvatarState
+	case class AddBehavior(name:String, behavior:String, start:Boolean=false) extends AvatarState
 
 	/** Activate a behavior for the sprite. Several behaviors can be activated at the same time. */
 	case class StartBehavior(name:String) extends AvatarState

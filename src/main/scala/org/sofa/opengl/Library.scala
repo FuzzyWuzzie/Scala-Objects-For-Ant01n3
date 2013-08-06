@@ -40,7 +40,7 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 
 	/** Load or retrieve a resource. */
 	def get(gl:SGL, name:String):T = library.get(name).getOrElse(
-			throw new NoSuchResourceException("resource %s unknown, did you put it in the Library ? use Library.add()".format(name))
+			throw new NoSuchResourceException("resource '%s' unknown, did you put it in the Library ? use Library.add()".format(name))
 		).value(gl)
 
 	/** Remove an free a previously loaded resource. */
@@ -58,14 +58,17 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 
 
 object Libraries {
-	final val PositionExpression = """\s*\(\s*([+-]?\d+(\.?\d*))\s*,\s*([+-?]\d+(\.?\d*))\s*\)\s*""".r
-	final val DoubleExpression   = """([+-]?\d+(\.?\d*))""".r
+	final val PositionExpression    = """\s*\(\s*(\s*[-+]?\d+\.?\d*\s*)\s*,\s*(\s*[-+]?\d+\.?\d*\s*)\s*\)\s*""".r
+	final val DoubleExpression      = """([+-]?\d+(\.?\d*))""".r
+	final val PositiveIntExpression = """\s*(\+?\d)\s*""".r
 
 	def apply(gl:SGL):Libraries = { new Libraries(gl) } 
 }
 
 /** The set of libraries for shaders, textures and models. */
 class Libraries(gl:SGL) {
+	import Libraries._
+	
 	/** Shader resources. */
 	val shaders = ShaderLibrary(gl)
 
@@ -92,6 +95,7 @@ class Libraries(gl:SGL) {
 			case r:ModelResource    ⇒ models.add(r)
 			case r:FontResource     ⇒ fonts.add(r)
 			case r:ArmatureResource ⇒ armatures.add(r)
+			case r:BehaviorResource ⇒ behaviors.add(r)
 			case _ ⇒ throw NoSuchResourceException("unknown kind of resource %s".format(res))
 		}
 	}
@@ -216,68 +220,89 @@ class Libraries(gl:SGL) {
 		}
 	}
 
+	/** */
 	protected def parseBehaviors(nodes:NodeSeq) {
 	  	nodes foreach { node =>
-		  	node.child foreach { child => 
-		  		val armature = armatures.get(gl, (child \\ "@arm").text)
-		  		val name     = (node \\ "@id").text
-		  		
-		  		child match {
-		  			case node:Node if node.label == "in-parallel" => {
-		  				behaviors += BehaviorResource(name, InParallel(
-		  					name, parseArray((node \\ "@behaviors").text):_*))
-		  			}
-		  			case node:Node if node.label == "in-sequence" => {
-		  				behaviors += BehaviorResource(name, InSequence(
-		  					name, parseArray((node \\ "@behaviors").text):_*))
-		  			}
-		  			case node:Node if node.label == "loop" => {
-		  				behaviors += BehaviorResource(name, Loop(
-		  					name, (node \\ "@limit").text.toInt, parseArray((node \\ "@behaviors").text):_*))
-		  			}
-		  			case node:Node if node.label == "switch" => {
-		  				behaviors += BehaviorResource(name, Switch(
-		  					name, (node \\ "@duration").text.toLong, parseJoints(armature, (node \\ "@joints").text):_*))
-		  			}
-		  			case node:Node if node.label == "lerp-to-angle" => {
-		  				behaviors += BehaviorResource(name, LerpToAngle(
-		  					name, armature \\ (node \\ "@joint").text,
-		  					(node \\ "@value").text.toDouble, (node \\ "@duration").text.toLong))
-		  			}
-		  			case node:Node if node.label == "lerp-to-position" => {
-		  				behaviors += BehaviorResource(name, LerpToPosition(
-		  					name, armature \\ (node \\ "@joint").text,
-		  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
-		  			}
-		  			case node:Node if node.label == "lerp-move" => {
-		  				behaviors += BehaviorResource(name, LerpMove(
-		  					name, armature \\ (node \\ "@joint").text,
-		  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
-		  			}
-		  			case node:Node if node.label == "lerp-keys" => {
-		  				behaviors += BehaviorResource(name, LerpKeyArmature(
-		  					name, armature, (node \\ "@filename").text, (node \\ "@scale").text.toDouble))
-		  			}
-		  			case _ => {}
-	  			}
+		  	node.child foreach { child => child match {
+		  			case elem:Elem => {
+				  		val armature = armatures.get(gl, (elem \\ "@arm").text)
+				  		val name     = (elem \\ "@id").text
+				  		
+				  		elem match {
+				  			case node:Node if node.label == "in-parallel" => {
+				  				behaviors += BehaviorResource(name, InParallel(
+				  					name, parseArray((node \\ "@behaviors").text):_*))
+				  			}
+				  			case node:Node if node.label == "in-sequence" => {
+				  				behaviors += BehaviorResource(name, InSequence(
+				  					name, parseArray((node \\ "@behaviors").text):_*))
+				  			}
+				  			case node:Node if node.label == "loop" => {
+				  				behaviors += BehaviorResource(name, Loop(
+				  					name, optInt((node \\ "@limit").text), parseArray((node \\ "@behaviors").text):_*))
+				  			}
+				  			case node:Node if node.label == "switch" => {
+				  				behaviors += BehaviorResource(name, Switch(
+				  					name, (node \\ "@duration").text.toLong, parseJoints(armature, (node \\ "@joints").text):_*))
+				  			}
+				  			case node:Node if node.label == "lerp-to-angle" => {
+				  				behaviors += BehaviorResource(name, LerpToAngle(
+				  					name, armature \\ (node \\ "@joint").text,
+				  					(node \\ "@value").text.toDouble, (node \\ "@duration").text.toLong))
+				  			}
+				  			case node:Node if node.label == "lerp-to-position" => {
+				  				behaviors += BehaviorResource(name, LerpToPosition(
+				  					name, armature \\ (node \\ "@joint").text,
+				  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
+				  			}
+				  			case node:Node if node.label == "lerp-move" => {
+				  				behaviors += BehaviorResource(name, LerpMove(
+				  					name, armature \\ (node \\ "@joint").text,
+				  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
+				  			}
+				  			case node:Node if node.label == "lerp-keys" => {
+				  				behaviors += BehaviorResource(name, LerpKeyArmature(
+				  					name, armature, (node \\ "@filename").text, (node \\ "@scale").text.toDouble))
+				  			}
+				  			case _ => throw new RuntimeException("unknown behavior %s".format(node.label))
+			  			}
+
+			  		}
+			  		case _ => {}
+			  	}
 	  		}
 	  	}
 	}
 
-	protected def parsePosition(pos:String):(Double,Double) = {
-		import Libraries._
-		pos match {
-			case PositionExpression(a,b) => (a.toDouble,b.toDouble) 
-			case _ => throw new RuntimeException("cannot parse position '%s'".format(pos))
-		}
+	/** Return the position integer stored in `intExp` or -1 if not an integer. */
+	protected def optInt(intExp:String):Int = intExp match {
+		case PositiveIntExpression(i) => i.toInt
+		case _                        => -1
 	}
 
-	protected def parseArray(behaviorList:String):Array[ArmatureBehavior] = {
-		behaviorList.split(",").map(s => behaviors.get(gl,s.trim))
+	/** Parse two double numbers inside parenthesis separated by a comma. */
+	protected def parsePosition(pos:String):(Double,Double) = pos match {
+		case PositionExpression(a,b) => (a.toDouble,b.toDouble) 
+		case _ => throw new RuntimeException("cannot parse position '%s'".format(pos))
 	}
 
-	protected def parseJoints(armature:Armature, jointList:String):Array[Joint] = {
-		jointList.split(",").map(s => armature \\ s.trim)
+	/** Parse an array of behavior names separated by commas. */
+	protected def parseArray(behaviorList:String):Array[ArmatureBehavior] = behaviorList.split(",").map(s => behaviors.get(gl,s.trim))
+
+	/** Parse an array of joint name in the `armature` separated by commas. */
+	protected def parseJoints(armature:Armature, jointList:String):Array[Joint] = jointList.split(",").map(s => armature \\ s.trim)
+
+	override def toString():String = {
+		val result = new StringBuilder()
+
+		result ++= "shaders   (%d)%n".format(shaders.size)
+		result ++= "textures  (%d)%n".format(textures.size)
+		result ++= "models    (%d)%n".format(models.size)
+		result ++= "fonts     (%d)%n".format(fonts.size)
+		result ++= "behaviors (%d)%n".format(behaviors.size)
+		result ++= "armatures (%d)%n".format(armatures.size)
+
+		result.toString
 	}
 }
 

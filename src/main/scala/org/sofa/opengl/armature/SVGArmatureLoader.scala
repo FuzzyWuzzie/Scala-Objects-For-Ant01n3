@@ -9,6 +9,16 @@ import scala.collection.mutable.{ArrayBuffer, HashMap}
 import org.sofa.math.{Rgba, Point2, Point3, Matrix3}
 //import org.sofa.simu.oberon.renderer._
 
+
+// TODO : this thing is horribly slow. 
+//
+// Make it faster, and create an intermediary format for armatures:
+//   -> Still read armatures from SVG since it is easy to edit by hand.
+//   -> Still transform SVG to an armatures.
+//   -> Allow the armature to write an intermediary format (say .arm).
+//   -> Create a loader for intermediary formats.
+
+
 // -- Exceptions ----------------------------------------------------------------------------------------------
 
 /** Thrown during parsing of the SVG file when loading the armature. */
@@ -100,13 +110,14 @@ object SVGArmatureLoader {
   * Inside the document:
   *   - Each area must be in a layer with a name between square brackets.
   *   - Each area must contain only one rectangle that will delimit its area.
-  *   - Each area must contain one circle, of color red (FF0000) wich will become
+  *   - Each area must contain one circle, of fill color red (FF0000) wich will become
   *     its pivot point.
-  *   - Each area can contain other circles, of color (FFxx00) with xx being the
+  *   - Each area can contain other circles, of fill color (FFxx00) with xx being the
   *     anchor identifier (between 0 and 255).
   *
   * The Z level and the hierachy or areas and how they are anchored one above the
-  * other is expressed in a layer of the document that must be named "Armature".
+  * other is expressed in a layer of the document that must be named "Armature" (other
+  * layers are ignored).
   *
   * In this layer one or more text elements define the arangement of Joints in an
   * Armature. We create each joint by giving a free name followed by an equal sign

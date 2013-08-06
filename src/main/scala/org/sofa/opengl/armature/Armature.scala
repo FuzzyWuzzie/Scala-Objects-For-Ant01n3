@@ -28,11 +28,10 @@ trait ArmatureLoader extends FileLoader {
   * found, tries to find it in each of the pathes provided by the include
   * path. If not found it throws an IOException. */
 class DefaultArmatureLoader extends ArmatureLoader {
-	private[this] val SVGLoader = new SVGArmatureLoader()
+	private[this] val SVGLoader = new SVGArmatureLoader
 
-    def open(name:String, texRes:String, shaderRes:String, resource:String):Armature = {
+    def open(name:String, texRes:String, shaderRes:String, resource:String):Armature =
         SVGLoader.load(name, texRes, shaderRes, findPath(resource, Armature.path))
-    }
 }
 
 
@@ -70,7 +69,7 @@ class Armature(val name:String,
 	/** Set of triangles, two for each joint. TODO, use a quad mesh. */
 	var triangles:TrianglesMesh = null
 
-	/** Number of pair of triangle (each joint uses one pair of triangles). */
+	/** Number of pair of triangles (each joint uses one pair of triangles). */
 	var count:Int = 0
 
 	/** For fast retrieval of joints. */
@@ -82,7 +81,7 @@ class Armature(val name:String,
 	def init(gl:SGL, libraries:Libraries) {
 		import VertexAttribute._
 
-		if((texture eq null) && (shader eq null) && (count == 0)) { 
+		if(triangles eq null) { 
 			texture   = libraries.textures.get(gl, texResource)
 			shader    = libraries.shaders.get(gl, shaderResource)
 			val count = root.init(null, this)
@@ -90,21 +89,19 @@ class Armature(val name:String,
 
 			root.build(this)
 			assert(this.count == count)
-			triangles.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
+			triangles.newVertexArray(gl, shader, Vertex → "position", TexCoord → "texCoords")
 		}
 	}
 
-	/** Display the whole armature, but only joints that are visible. */
-	def display(gl:SGL, camera:Camera) {
-		camera.pushpop {
-			shader.use
-			texture.bindUniform(gl.TEXTURE0, shader, "texColor")
-			root.display(gl, this, camera, shader)
-		}
+	/** Display the whole armature, starting at root, but only joints that are visible. */
+	def display(gl:SGL, camera:Camera) = camera.pushpop {
+		shader.use
+		texture.bindUniform(gl.TEXTURE0, shader, "texColor")
+		root.display(gl, this, camera, shader)
 	}
 
 	/** Obtain the joint corresponding to the given name or throw a [[NoSuchJointException]] exception. */
-	def apply(jointName:String):Joint = { jointMap.get(jointName).getOrElse(throw NoSuchJointException("Joint %s is not registered in armature".format(jointName))) } 
+	def apply(jointName:String):Joint = jointMap.get(jointName).getOrElse(throw NoSuchJointException("Joint %s is not registered in armature".format(jointName)))
 
 	/** Obtain the joint corresponding to the given name or throw a [[NoSuchJointException]] exception. */
 	def \\ (jointName:String):Joint = apply(jointName)
@@ -140,7 +137,7 @@ class JointTransform {
 	/** Apply the transform to the given `camera`. */
 	def transform(camera:Camera) {
 		if(translation.x != 0 || translation.y != 0)
-			camera.translate(translation.x, translation.y, 1)
+			camera.translate(translation.x, translation.y, 0)
 
 		if(scale.x != 0 || scale.y != 0)
 			camera.scale(scale.x, scale.y, 1)
@@ -148,6 +145,9 @@ class JointTransform {
 		if(angle != 0)
 			camera.rotate(angle, 0, 0, 1)
 	}
+
+	override def toString():String =
+		"joint-transform(rotation %f, translation %s, scale %s)".format(angle, translation, scale)
 }
 
 
@@ -243,10 +243,10 @@ class Joint(val name:String,
 
 	/** The given sub joint if any. */
 	def apply(id:String):Joint = {
-		// Not really efficient ...
+		// Not really efficient ... nor elegant ...
 		if(subUnder ne null) subUnder.find(_.name == id).getOrElse {
 			if(subAbove ne null) subAbove.find(_.name == id).getOrElse { null } else null
-		} else null
+		} else if(subAbove ne null) subAbove.find(_.name == id).getOrElse { null } else null
 	}
 
 	/** The given sub joint if any. */

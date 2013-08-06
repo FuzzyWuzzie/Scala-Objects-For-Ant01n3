@@ -58,7 +58,7 @@ abstract class Renderer(val controler:ActorRef) extends SurfaceRenderer {
    
 // == Resources ==============================
 
-	/** The set of shaders. */
+	/** The set of resources. */
 	var libraries:Libraries = null
 
 // == Init. ==================================
@@ -160,6 +160,15 @@ abstract class Renderer(val controler:ActorRef) extends SurfaceRenderer {
 	}
 
 // == Utility ===================================
+
+	override def toString():String = {
+		val result = new StringBuilder()
+
+		result ++= "renderer (%d screens)%n".format(screens.size)
+		result ++= "libraries :%n%s".format(libraries.toString)
+
+		result.toString
+	}
 
 	/** Transforms a Size into a triplet of values. */
 	def toTriplet(sz:Size):NumberSeq3 = {

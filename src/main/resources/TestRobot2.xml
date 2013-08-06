@@ -23,4 +23,10 @@
 	<armatures>
 		<armature id="black-box-1-arm" tex="black-box-1-image" shader="armature-shader" svg="BlackBox1_Armature.svg" scale="0.001"/>
 	</armatures>
+	<behaviors>
+		<lerp-to-position arm="black-box-1-arm" joint="eyes" id="eyes-to-left" value="(-0.1,0)" duration="1000"/>
+		<lerp-to-position arm="black-box-1-arm" joint="eyes" id="eyes-to-right" value="(0,0)" duration="1000"/>
+		<in-sequence id="eyes-seq" arm="black-box-1-arm" behaviors="eyes-to-left, eyes-to-right"/>
+		<loop id="eyes-loop" arm="black-box-1-arm" behaviors="eyes-seq"/>
+	</behaviors>
 </resources>

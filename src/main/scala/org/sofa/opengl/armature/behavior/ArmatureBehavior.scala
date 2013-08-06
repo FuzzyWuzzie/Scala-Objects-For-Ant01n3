@@ -177,9 +177,10 @@ object Loop {
 
 /** Repeats each behavior either a given number of times or infinitely.
   * 
-  * Indicate a negative or zero `limit` to repeat indefinitely. The duration of one loop
-  * turn is the sum of the duration of the agregated behaviors. This behavior may never
-  * finish if the `limit` is zero or negative. */
+  * Indicate a negative or zero `limit` to repeat indefinitely. Each behavior is repeated in
+  * parallel. Each time a behavior is finished, it restarts (if it did not reached the limit).
+  * When there is no limit a behavior twice faster than another will run twice more.
+  * This behavior may never finish if the `limit` is zero or negative. */
 class Loop(name:String, val limit:Int, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	/** Number of repetitions for each behavior. */
 	protected val repeated = new Array[Int](behaviors.size)
@@ -211,8 +212,10 @@ class Loop(name:String, val limit:Int, val behaviors:ArmatureBehavior *) extends
 						if(repeated(i) < l) {
 							behaviors(i).start(t)
 						} else {
-							if(limit > 0)
+							if(limit > 0) {
 								howManyFinished += 1
+								// TODO remove the finished behavior !
+							}	
 						}
 					} else {
 						behaviors(i).animate(t)

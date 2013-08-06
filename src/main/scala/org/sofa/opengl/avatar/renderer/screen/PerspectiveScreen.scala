@@ -170,22 +170,22 @@ class PerspectiveScreen(name:String, renderer:Renderer) extends Screen(name, ren
 		camera.frustum(axes.x.from * ratio, axes.x.to * ratio, axes.y.from, axes.y.to, axes.z.to)
 	}
 
-var xx = 0.01
-var yy = 0.01
-var camx = 0.0
-var camy = 0.0
+// var xx = 0.01
+// var yy = 0.01
+// var camx = 0.0
+// var camy = 0.0
 
 	override def animate() {
 		super.animate
 
-		camx += xx
-		camy += yy
-		if(camx > 1.0) { camx = 1.0; xx = -xx }
-		else if(camx < 0.0) { camx = 0.0; xx = -xx }
-		if(camy > 1.0) { camy = 1.0; yy = -yy }
-		else if(camy < 0.0) { camy = 0.0; yy = -yy }
+		// camx += xx
+		// camy += yy
+		// if(camx > 1.0) { camx = 1.0; xx = -xx }
+		// else if(camx < 0.0) { camx = 0.0; xx = -xx }
+		// if(camy > 1.0) { camy = 1.0; yy = -yy }
+		// else if(camy < 0.0) { camy = 0.0; yy = -yy }
 
-		camera.eyeCartesian(camx, camy, 1.5)
+		// camera.eyeCartesian(camx, camy, 1.5)
 	}
 
 	override def end() {

@@ -49,7 +49,7 @@ trait Mesh {
 	import VertexAttribute._
 
 	/** Last produced vertex array. */
-	protected var va:VertexArray = null 
+	protected var va:VertexArray = _
 
 	/** A vertex attribute by its name. */
 	def attribute(name:String):FloatBuffer
@@ -102,8 +102,11 @@ trait Mesh {
       * mesh. Such meshes are dynamic. */
     def lastVertexArray():VertexArray = va
 
-    /** The last created vertex array. See [[lastVertexArray]]. */
+    /** The last created vertex array. Synonym of [[lastVertexArray]]. */
     def lastva():VertexArray = va
+
+    /** True if at least one vertex array was created. You can access it using [[lastva()]]. */
+    def hasva:Boolean = (va ne null)
 
     /** Always called before creating a new vertex array. Hook for descendants. */
     protected def beforeNewVertexArray() {}

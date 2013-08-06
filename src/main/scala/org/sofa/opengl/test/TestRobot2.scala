@@ -96,7 +96,7 @@ class TestRobot2 extends Actor {
 
 		rendererActor ! AddScreen("robot-screen", "perspective")
 		rendererActor ! SwitchScreen("robot-screen")
-		// TODO should be named ChangeScreeenCamera
+		// TODO should be named ChangeScreenCamera
 		rendererActor ! ChangeScreenSize(Axes((-0.25, 0.25), (-0.25, 0.25), (-1.0, 0.5)), 0.05)
 		rendererActor ! ChangeScreen(EyeCartesian(0, 0, 1.5))
 	}
@@ -121,8 +121,12 @@ class TestRobot2 extends Actor {
 		import RendererActor._
 		import ArmatureSprite._
 
+		//rendererActor ! PrintStatus
+
 		rendererActor ! AddAvatar("black-box-1", "armature", false)
 		rendererActor ! ChangeAvatar("black-box-1", SetArmature("black-box-1-arm"))
 		rendererActor ! ChangeAvatarPosition("black-box-1", Point3(0, -0.5, 0.2))
+		rendererActor ! ChangeAvatar("black-box-1", AddBehavior("eyes-loop", "eyes-loop"))
+		rendererActor ! ChangeAvatar("black-box-1", StartBehavior("eyes-loop"))
 	}
 }

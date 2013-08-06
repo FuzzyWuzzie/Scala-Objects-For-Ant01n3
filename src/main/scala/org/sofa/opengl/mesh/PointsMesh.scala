@@ -96,12 +96,13 @@ class PointsMesh(val size:Int) extends Mesh {
 	// -- Dynamic edition ----------------------------------------------
 	
     override def beforeNewVertexArray() {
-    	cbeg = size; cend = 0; vbeg = size; vend = 0
+    	cbeg = size
+    	cend = 0
+    	vbeg = size
+    	vend = 0
 	}
 
-    def updateVertexArray(gl:SGL) {
-    	updateVertexArray(gl, true, true)
-    }
+    def updateVertexArray(gl:SGL) { updateVertexArray(gl, true, true) }
 	
     /** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
 	  * avoid moving data between the CPU and GPU. */
