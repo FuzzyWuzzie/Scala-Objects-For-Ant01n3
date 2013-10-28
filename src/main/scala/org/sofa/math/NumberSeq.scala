@@ -13,7 +13,13 @@ import scala.math._
   * The choice in designing the math library was to always use double real numbers instead of
   * creating a version of each class for floats or doubles, or using type parameters. This
   * design choice  implies that sometimes one will have to copy an array in a given format to
-  * another. */
+  * another. 
+  *
+  * == Operators ==
+  *
+  * Be careful, operators like += for example do not work like for collections, here +=
+  * means arithmetic add.
+  */
 trait NumberSeq extends IndexedSeq[Double] {
     
 // Attribute
@@ -30,7 +36,7 @@ trait NumberSeq extends IndexedSeq[Double] {
     protected[math] val data:Array[Double]
  
 // Access
-    
+
     /** Number of elements. This is defined in SeqLike, do not confuse with norm !!. */
     def length:Int = data.length
 
@@ -86,10 +92,7 @@ trait NumberSeq extends IndexedSeq[Double] {
     /** This sequence as an array of doubles. There is no convertion, since this is the native format. */
     def toDoubleArray:Array[Double] = data
     
-    /** This sequence converted as an array of floats.
-      *
-      * If the sequence is not backed by a float array, a conversion occurs.
-      */
+    /** This sequence converted as an array of floats. */
     def toFloatArray:Array[Float] = {
         val n     = data.length
         var i     = 0
@@ -101,10 +104,7 @@ trait NumberSeq extends IndexedSeq[Double] {
         array
     }
     
-    /** This sequence converted as a NIO buffer of doubles.
-      *
-      * If the sequence is not backed by a NIO buffer of doubles, a conversion occurs.
-      */
+    /** This sequence converted as a NIO buffer of doubles. */
     def toDoubleBuffer:DoubleBuffer = {
         val n   = data.length
         var i   = 0
@@ -117,10 +117,7 @@ trait NumberSeq extends IndexedSeq[Double] {
         buf
     }
     
-    /** This sequence converted  as a NIO buffer of floats.
-      *
-      * If the sequence is not backed by a NIO buffer of floats, a conversion occurs.
-      */
+    /** This sequence converted  as a NIO buffer of floats. */
     def toFloatBuffer:FloatBuffer = {
         val n   = data.length
         var i   = 0

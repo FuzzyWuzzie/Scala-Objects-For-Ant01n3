@@ -63,7 +63,9 @@ case class TouchEvent(x:Double, y:Double, z:Double, isStart:Boolean, isEnd:Boole
 // -- Avatar ------------------------------------------------------------------------------------------------
 
 
-/** Graphical representation of an actor in the renderer. */
+/** Graphical representation of an actor in the renderer. 
+  *
+  * The avatar has a position and an overall size. */
 abstract class Avatar(val name:String, val screen:Screen) extends Renderable {
 
 	/** Avatar center. */

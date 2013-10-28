@@ -5,8 +5,16 @@ import scala.compat.Platform
 import java.io.PrintStream
 import java.lang.System
 
+
+/** Timer companion object. */
+object Timer {
+	def apply():Timer = new Timer()
+	def apply(out:PrintStream):Timer = Timer(out)
+}
+
+
 /** Timer allowing to measure the duration of a code block. */
-class Timer(val out:PrintStream) {
+class Timer(val out:PrintStream = Console.out) {
 	/** The set of measures, identified by names. */
 	val measures = new HashMap[String,Measures]()
 
@@ -59,11 +67,20 @@ class Measures(val name:String) {
 	/** The last measure. */
 	var last = 0L
 
+	/** The maximum measure. */
+	var max = 0L
+
+	/** The minimum measure. */
+	var min = Long.MaxValue
+
 	/** Add a measure. */
 	def addMeasure(value:Long) {
 		count += 1
 		sum   += value
 		last   = value
+
+		if(value > max) max = value
+		if(value < min) min = value
 	}
 
 	/** The average of all measures until now. */
@@ -72,7 +89,7 @@ class Measures(val name:String) {
 	/** Print the average measure to the given output stream. */
 	def printAvg(out:PrintStream):Double = {
 		val avg = average
-		out.println("    %s: ~ %.2f msecs (%d measures) (last %.2f)".format(name, avg/100000.0, count, last/100000.0))
+		out.println("    %s: ~ %.2f msecs (%d measures) (last %.2f, max %.2f, min %.2f)".format(name, avg/100000.0, count, last/100000.0, max/100000.0, min/100000.0))
 		avg
 	}
 }

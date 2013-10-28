@@ -2,6 +2,7 @@ package org.sofa.nio
 
 import scala.collection.mutable.ArrayBuffer
 
+
 trait NioBuffer {
     def isByte:Boolean
     def isInt:Boolean
@@ -11,20 +12,31 @@ trait NioBuffer {
     def rewind()
 }
 
+
 /** Base for NIO buffers, seen as Scala IndexedSeq. */
 trait NioTypedBuffer[T] extends IndexedSeq[T] with NioBuffer {
+	
 	type BufferLike <: { def get(i:Int):T }
+	
 	/** The maximum capacity of the buffer. */
     var capacity:Int
+    
     /** The maximum capacity of the buffer, synonym of `capacity()`. */
 	def length:Int = capacity
+	
 	/** The underlying buffer. */
     var buffer:BufferLike
+    
     /** The `i`-th element of the buffer, array-like access. */
-	def apply(i:Int):T = buffer.get(i)
+//	def apply(i:Int):T = buffer.get(i)
+	// TODO Avoid a reflective call here. Sorry by we have to duplicate
+	// the apply(i:Int) method in each subclass for efficiency reasons.
+	def apply(i:Int):T
+	
 	/** Size of the buffer. */
 	override def size():Int = capacity
 }
+
 
 object ByteBuffer {
     implicit def ByteBufferToNio(bb:ByteBuffer):java.nio.ByteBuffer = { bb.rewind; bb.buffer }
@@ -33,13 +45,21 @@ object ByteBuffer {
     def apply(direct:Boolean, data:Byte*) = {
         val buffer = new ByteBuffer(data.size, direct)
 	    var i = 0
-	    data.foreach { item =>
-	        buffer(i) = item
-	        i += 1
-	    }
+	    
+	    // data.foreach { item =>
+	    //     buffer(i) = item
+	    //     i += 1
+	    // }
+	    // buffer
+
+	    val n = data.length
+
+	    while(i < n) { buffer(i) = data(i); i += 1 }
+
 	    buffer
     }
 }
+
 
 object IntBuffer {
     implicit def IntBufferToNio(ib:IntBuffer):java.nio.IntBuffer = { ib.rewind; ib.buffer }
@@ -65,6 +85,7 @@ object IntBuffer {
     }
 }
 
+
 object FloatBuffer {
     implicit def FloatBufferToNio(fb:FloatBuffer):java.nio.FloatBuffer = { fb.rewind; fb.buffer }
     def apply(capacity:Int, direct:Boolean) = new FloatBuffer(capacity, direct)
@@ -89,6 +110,7 @@ object FloatBuffer {
     }
 }
 
+
 object DoubleBuffer {
     implicit def DoubleBufferToNio(db:DoubleBuffer):java.nio.DoubleBuffer = { db.rewind; db.buffer }   
     def apply(capacity:Int, direct:Boolean) = new DoubleBuffer(capacity, direct)
@@ -112,6 +134,7 @@ object DoubleBuffer {
         }
     }
 }
+
 
 class ByteBuffer(var capacity:Int, direct:Boolean, data:Array[Byte]) extends NioTypedBuffer[Byte] {
 	type BufferLike = java.nio.ByteBuffer
@@ -142,7 +165,9 @@ class ByteBuffer(var capacity:Int, direct:Boolean, data:Array[Byte]) extends Nio
     def isInt:Boolean = false
     def isFloat:Boolean = false
     def isDouble:Boolean = false
+    def apply(i:Int):Byte = buffer.get(i)
 }
+
 
 class IntBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Int] {
 	type BufferLike = java.nio.IntBuffer
@@ -160,7 +185,9 @@ class IntBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Int] {
     def isInt:Boolean = true
     def isFloat:Boolean = false
     def isDouble:Boolean = false
+    def apply(i:Int):Int = buffer.get(i)
 }
+
 
 class FloatBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Float] {
 	type BufferLike = java.nio.FloatBuffer
@@ -178,7 +205,9 @@ class FloatBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Float
     def isInt:Boolean = false
     def isFloat:Boolean = true
     def isDouble:Boolean = false
+    def apply(i:Int):Float = buffer.get(i)
 }
+
 
 class DoubleBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Double] {
     type BufferLike = java.nio.DoubleBuffer
@@ -196,4 +225,5 @@ class DoubleBuffer(var capacity:Int, direct:Boolean) extends NioTypedBuffer[Doub
     def isInt:Boolean = false
     def isFloat:Boolean = false
     def isDouble:Boolean = true
+    def apply(i:Int):Double = buffer.get(i)
 }
