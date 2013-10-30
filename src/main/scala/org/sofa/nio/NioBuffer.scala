@@ -1,6 +1,7 @@
 package org.sofa.nio
 
 import scala.collection.mutable.ArrayBuffer
+import language.implicitConversions
 
 
 trait NioBuffer {
@@ -28,10 +29,11 @@ trait NioTypedBuffer[T] extends IndexedSeq[T] with NioBuffer {
     var buffer:BufferLike
     
     /** The `i`-th element of the buffer, array-like access. */
-//	def apply(i:Int):T = buffer.get(i)
+	def apply(i:Int):T
+
+	// def apply(i:Int):T = buffer.get(i)
 	// TODO Avoid a reflective call here. Sorry by we have to duplicate
 	// the apply(i:Int) method in each subclass for efficiency reasons.
-	def apply(i:Int):T
 	
 	/** Size of the buffer. */
 	override def size():Int = capacity
