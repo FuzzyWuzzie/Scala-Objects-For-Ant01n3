@@ -48,7 +48,7 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 	import HexaTilesScreen._
 
 	/** Color for parts not covered by the background image. */
-	val clearColor = Rgba(1, 0, 0, 1)
+	val clearColor = Rgba(0, 0, 0, 1)
 
 	// == View ============================
 
@@ -59,7 +59,7 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 	var h = 1.0
 
 	/** A zoom of 1 means we see a cell entirely. The units are cells. */
-	var zoom = 1.0
+	var zoom = 2.0
 
 	/** A position of (0, 0) means the lowest-left cell in the 2D plane. The
 	  * Units are cells. */
@@ -140,7 +140,7 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 			grid.lastVertexArray.dispose
 		}
 
-		grid = HexaGridMesh(w.toInt, h.toInt)
+		grid = HexaGridMesh(w.toInt, h.toInt, perspectiveRatio=0.5f)
 		grid.newVertexArray(gl, gridShader, Vertex -> "position", Color -> "color")
 	}
 

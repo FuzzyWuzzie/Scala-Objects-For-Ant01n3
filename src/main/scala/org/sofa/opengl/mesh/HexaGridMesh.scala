@@ -15,8 +15,8 @@ import scala.math._
 object HexaGridMesh {
 	def apply(width:Int, height:Int,
 		defaultColor:Rgba = Rgba.White,
-		ratio:Double = 1.0,
-		perspectiveRatio:Double = 1.0):HexaGridMesh = 
+		ratio:Float = 1f,
+		perspectiveRatio:Float = 1.0f):HexaGridMesh = 
 			new HexaGridMesh(width, height, defaultColor, ratio, perspectiveRatio)
 }
 
@@ -50,14 +50,14 @@ object HexaGridMesh {
 class HexaGridMesh(
 		val width            :Int,
 		val height           :Int,
-		val defaultColor     :Rgba   = Rgba.White,
-		val ratio            :Double = 1.0,
-		val perspectiveRatio :Double = 1.0
+		val defaultColor     :Rgba  = Rgba.White,
+		val ratio            :Float = 1f,
+		val perspectiveRatio :Float = 1f
 	) extends Mesh {
 
 	protected val vcount = (((height * 2) + 2) * (width + 1))
 
-	protected val icount = (((width * 2) + 1) * (height + 1))
+	protected val icount = ((((width * 2) + 1) * (height + 1)) + ((width + 1) * height)) * 2
 
 	/** The mutable set of coordinates. */
     protected lazy val V = allocateVertices
@@ -91,17 +91,16 @@ class HexaGridMesh(
     protected def allocateVertices():FloatBuffer = {
     	// generate a set of points, organized first in rows (X) then
     	// in columns (Y).
-    	val xunit = (sqrt(3) * ratio).toFloat 	// size of a cell along X.
-    	val yunit = (ratio * 2).toFloat 		// size of a cell along Y.
+    	val xunit = sqrt(3).toFloat * ratio 	// size of a cell along X.
+    	val yunit = ratio * 2f 					// size of a cell along Y.
     	val cols  = width + 1					// Number of columns of points.
     	val rows  = (height * 2) + 2 			// Number of rows of points.
     	val data  = FloatBuffer(rows * cols * 3)
-Console.err.println("vertices beg(%d vertices)".format(rows*cols))
 
     	var row = 0  							// Current row.
     	var col = 0 							// Current column.
     	var x   = 0f 							// Current x position for current point.
-    	var y   = - yunit / 2f 					// Current y position for current point.
+    	var y   = -((yunit / 4f) + ((yunit / 4f) * perspectiveRatio.toFloat)) 					// Current y position for current point.
 
     	vbeg = 0
     	vend = 0
@@ -109,28 +108,30 @@ Console.err.println("vertices beg(%d vertices)".format(rows*cols))
     	while(row < rows) {
     		val r4 = row % 4
 
-    		if(r4 == 0 || r4 == 3) x = xunit/2 else x = 0f
+    		if(r4 == 0 || r4 == 3) x = 0f else x = -xunit/2f
+
+    		col = 0
 
     		while(col < cols) {
     			data(vend*3+0) = x
     			data(vend*3+1) = y
     			data(vend*3+2) = 0f
 
-    			x    += xunit * 2
+    			x    += xunit
     			col  += 1
     			vend += 1
     		}
 
-    		y   += (if(r4 == 0 || r4 == 2) yunit/4 else yunit/2)
+    		y   += (if(r4 == 0 || r4 == 2) yunit/4f else ((yunit/2f)*perspectiveRatio.toFloat))
     		row += 1
     	}
-Console.err.println("vertices end")
+
+		assert(vend == vcount)
 
     	data
     }
 
     protected def allocateColors():FloatBuffer = {
-Console.err.println("colors beg")
     	val cols = width + 1
     	val rows = (height * 2) + 2
     	val size = rows * cols
@@ -147,15 +148,17 @@ Console.err.println("colors beg")
 			cend += 1
 		}
 
-Console.err.println("colors end")
+		assert(cend == vcount)
+
 		data
     }
 
     protected def allocateIndices():IntBuffer = {
-    	val diag = width * 2 + 1
-    	val vert = height + 1
-    	val data = IntBuffer(diag * vert * 2)
-Console.err.println("indices beg(%d lines)".format(diag*vert))
+    	val diag  = width * 2 + 1
+    	val diagc = height + 1
+    	val vert  = width + 1
+    	val vertc = height
+    	val data  = IntBuffer((diag*diagc + vert*vertc) * 2)
 
     	// Allocate diagonals
 
@@ -170,17 +173,32 @@ Console.err.println("indices beg(%d lines)".format(diag*vert))
     	while(line < lines) {
     		col = 0
     		
-    		while(col < (width+1)) {
+    		while(col <= width) {
     			data(iend+0) = pt + width + 1
 		    	data(iend+1) = pt
 
-		    	iend += 2
+		    	if(line%2 == 0) {
+		    		if(col < width) {
+		    			iend += 2
+		    			data(iend+0) = pt
+		    			data(iend+1) = pt + width + 2
+		    		}
+		    	} else {
+		    		if(col > 0) {
+		    			iend += 2
+		    			data(iend+0) = pt
+		    			data(iend+1) = pt + width
+		    		}
+		    	}
+			    
+			    iend += 2
+
     			col  += 1
 		    	pt   += 1
     		}
 
     		line += 1
-    		pt   += width + 2
+    		pt   += width + 1
     	}
 
     	// Allocate verticals.
@@ -192,7 +210,7 @@ Console.err.println("indices beg(%d lines)".format(diag*vert))
     	while(line < lines) {
     		col = 0
 
-    		while(col < (width+1)) {
+    		while(col <= width) {
     			data(iend+0) = pt
     			data(iend+1) = pt + width + 1
 
@@ -202,12 +220,11 @@ Console.err.println("indices beg(%d lines)".format(diag*vert))
     		}
 
     		line += 1
-    		pt += width + 2
+    		pt += width + 1
     	}
 
-    	// TODO
+    	assert(iend == icount)
 
-Console.err.println("indices end")
     	data
     }
 
