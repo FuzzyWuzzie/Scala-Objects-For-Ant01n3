@@ -6,6 +6,7 @@ import scala.compat.Platform
 
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
 
+import org.sofa.math.Axes
 import org.sofa.opengl.akka.SurfaceExecutorService
 import org.sofa.opengl.avatar.renderer.{Renderer, RendererActor, AvatarFactory, Screen, Avatar, NoSuchAvatarException, NoSuchScreenException}
 import org.sofa.opengl.avatar.renderer.sprite.{ImageSprite}
@@ -70,6 +71,6 @@ class HexaWorld extends Actor {
 
 		rendererActor ! AddScreen("hexaworld-screen", "hexatiles")
 		rendererActor ! SwitchScreen("hexaworld-screen")
-//		rendererActor ! ChangeScreenSize(Axes((), (), (), 0.0))
+		rendererActor ! ChangeScreenSize(Axes((0.0, 2.0), (0.0, 2.0), (0.0, 0.0)), 1.0)
 	}
 }

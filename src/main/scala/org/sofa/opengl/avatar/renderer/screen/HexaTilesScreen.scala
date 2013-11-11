@@ -6,7 +6,7 @@ import akka.actor.{ActorRef}
 
 import org.sofa.math.{Rgba, Axes, AxisRange, Point2, Point3, Vector3, NumberSeq3, SpatialHash, SpatialObject, SpatialPoint}
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
-import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
+import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, HexaGridMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
 import org.sofa.opengl.avatar.renderer.{Screen, ScreenState, Renderer, NoSuchScreenStateException}
 
@@ -77,7 +77,7 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 
 	var gridShader:ShaderProgram = null
 	
-	val grid = new LinesMesh(42)
+	var grid:HexaGridMesh = null
 
 	// == Access ============================
 
@@ -131,17 +131,17 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 		w = axes.x.length
 
 		setGrid
+		reshape
 	}
 
   	protected def setGrid() {
-//		import VertexAttribute._
+		import VertexAttribute._
+		if((grid ne null) && (grid.lastVertexArray ne null)) {
+			grid.lastVertexArray.dispose
+		}
 
-//		if(grid.lastVertexArray ne null) {
-//			grid.lastVertexArray.dispose
-//		}
-
-//		grid.setXYGrid((w/2).toFloat, (h/2).toFloat, 0f, 0f, (w/spash.bucketSize).toInt, (h/spash.bucketSize).toInt, spash.bucketSize.toFloat, spash.bucketSize.toFloat, Rgba(0.7, 0.2, 0.9, 0.5))
-//		grid.newVertexArray(gl, gridShader, Vertex -> "position", Color -> "color")
+		grid = HexaGridMesh(w.toInt, h.toInt)
+		grid.newVertexArray(gl, gridShader, Vertex -> "position", Color -> "color")
 	}
 
 	override def render() {
@@ -152,15 +152,16 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 		// // depth test.
 		// val sorted = avatars.toArray.sortWith(_._2.pos.z < _._2.pos.z)
 		// sorted.foreach { _._2.render }
+		renderBackground
 	}
 
 	override def reshape() {
 		super.reshape
 		val ratio = camera.viewportRatio
-		val h     = (3.0 * zoom) / 2
-		val w     = (sqrt(3) * 2.0 * zoom) / 2
-
-		camera.orthographic(-w*ratio, w*(ratio), -h, h, -10, 10)
+		val hh    = (2.0 * h * zoom) / 2
+		val ww    = (sqrt(3) * w * zoom) / 2
+println("ortho(%f - %f, %f - %f".format(-ww*ratio, ww*ratio, -hh, hh))
+		camera.orthographic(-ww*ratio, ww*(ratio), -hh, hh, -1, 1)
 	}
 
 	override def animate() {
@@ -181,9 +182,9 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 
 	/** Render a grid alligned with the spash. */
 	protected def renderGrid() {
-//		gridShader.use
-//		camera.uniformMVP(gridShader)
-//		grid.lastVertexArray.draw(grid.drawAs)
+		gridShader.use
+		camera.uniformMVP(gridShader)
+		grid.lastVertexArray.draw(grid.drawAs)
 	}
 	
 	/** Pass from pixels to game units. */

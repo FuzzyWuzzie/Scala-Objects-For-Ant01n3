@@ -12,6 +12,15 @@ import GL3._
 import scala.math._
 
 
+object HexaGridMesh {
+	def apply(width:Int, height:Int,
+		defaultColor:Rgba = Rgba.White,
+		ratio:Double = 1.0,
+		perspectiveRatio:Double = 1.0):HexaGridMesh = 
+			new HexaGridMesh(width, height, defaultColor, ratio, perspectiveRatio)
+}
+
+
 /** A hexagonal 2D grid. 
   *
   * A mesh of lines representing a grid of hexagonal cells. The grid is
@@ -46,7 +55,9 @@ class HexaGridMesh(
 		val perspectiveRatio :Double = 1.0
 	) extends Mesh {
 
-	protected val count = (((height * 2) + 2) * (width + 1))
+	protected val vcount = (((height * 2) + 2) * (width + 1))
+
+	protected val icount = (((width * 2) + 1) * (height + 1))
 
 	/** The mutable set of coordinates. */
     protected lazy val V = allocateVertices
@@ -58,19 +69,19 @@ class HexaGridMesh(
     protected lazy val I = allocateIndices
 
     /** Start position of the last modification inside the index array. */
-	protected var ibeg = 0
+	protected var ibeg = icount
 	
 	/** End position of the last modification inside the index array. */
 	protected var iend = 0
 	
     /** Start position of the last modification inside the coordinates array. */
-    protected var vbeg = count
+    protected var vbeg = vcount
     
     /** End position of the last modification inside the coordinates array. */
     protected var vend = 0
         
     /** Start position of the last modification inside the color array. */
-    protected var cbeg = count
+    protected var cbeg = vcount
     
     /** End position of the last modification inside the color array. */
     protected var cend = 0
@@ -80,12 +91,12 @@ class HexaGridMesh(
     protected def allocateVertices():FloatBuffer = {
     	// generate a set of points, organized first in rows (X) then
     	// in columns (Y).
-
     	val xunit = (sqrt(3) * ratio).toFloat 	// size of a cell along X.
     	val yunit = (ratio * 2).toFloat 		// size of a cell along Y.
     	val cols  = width + 1					// Number of columns of points.
     	val rows  = (height * 2) + 2 			// Number of rows of points.
     	val data  = FloatBuffer(rows * cols * 3)
+Console.err.println("vertices beg(%d vertices)".format(rows*cols))
 
     	var row = 0  							// Current row.
     	var col = 0 							// Current column.
@@ -101,9 +112,9 @@ class HexaGridMesh(
     		if(r4 == 0 || r4 == 3) x = xunit/2 else x = 0f
 
     		while(col < cols) {
-    			V(vend*3+0) = x
-    			V(vend*3+1) = y
-    			V(vend*3+2) = 0f
+    			data(vend*3+0) = x
+    			data(vend*3+1) = y
+    			data(vend*3+2) = 0f
 
     			x    += xunit * 2
     			col  += 1
@@ -113,11 +124,13 @@ class HexaGridMesh(
     		y   += (if(r4 == 0 || r4 == 2) yunit/4 else yunit/2)
     		row += 1
     	}
+Console.err.println("vertices end")
 
     	data
     }
 
     protected def allocateColors():FloatBuffer = {
+Console.err.println("colors beg")
     	val cols = width + 1
     	val rows = (height * 2) + 2
     	val size = rows * cols
@@ -126,14 +139,15 @@ class HexaGridMesh(
 		cend = 0
 
 		while(cend < size) {
-			C(cend*4+0) = defaultColor.red.toFloat
-			C(cend*4+1) = defaultColor.green.toFloat
-			C(cend*4+2) = defaultColor.blue.toFloat
-			C(cend*4+3) = defaultColor.alpha.toFloat
+			data(cend*4+0) = defaultColor.red.toFloat
+			data(cend*4+1) = defaultColor.green.toFloat
+			data(cend*4+2) = defaultColor.blue.toFloat
+			data(cend*4+3) = defaultColor.alpha.toFloat
 
 			cend += 1
 		}
 
+Console.err.println("colors end")
 		data
     }
 
@@ -141,6 +155,7 @@ class HexaGridMesh(
     	val diag = width * 2 + 1
     	val vert = height + 1
     	val data = IntBuffer(diag * vert * 2)
+Console.err.println("indices beg(%d lines)".format(diag*vert))
 
     	// Allocate diagonals
 
@@ -156,8 +171,8 @@ class HexaGridMesh(
     		col = 0
     		
     		while(col < (width+1)) {
-    			I(iend+0) = pt + width + 1
-		    	I(iend+1) = pt
+    			data(iend+0) = pt + width + 1
+		    	data(iend+1) = pt
 
 		    	iend += 2
     			col  += 1
@@ -178,8 +193,8 @@ class HexaGridMesh(
     		col = 0
 
     		while(col < (width+1)) {
-    			I(iend+0) = pt
-    			I(iend+1) = pt + width + 1
+    			data(iend+0) = pt
+    			data(iend+1) = pt + width + 1
 
     			iend += 2
     			col  += 1
@@ -192,6 +207,7 @@ class HexaGridMesh(
 
     	// TODO
 
+Console.err.println("indices end")
     	data
     }
 
@@ -247,31 +263,13 @@ class HexaGridMesh(
       * points are shared.
       */
 	def setCellColor(x:Int, y:Int, r:Float, g:Float, b:Float, a:Float) {
-
+		throw new RuntimeException("TODO setCellColor")
 	}
-
- //    def setColor(i:Int, ra:Float, ga:Float, ba:Float, aa:Float,
- //                        rb:Float, gb:Float, bb:Float, ab:Float) {
- //        val pos = i*4*2
-
- //        C(pos+0) = ra
- //        C(pos+1) = ga
- //        C(pos+2) = ba
- //        C(pos+3) = aa
-
- //        C(pos+4) = rb
- //        C(pos+5) = gb
- //        C(pos+6) = bb
- //        C(pos+7) = ab
-
- //        if(i < cbeg) cbeg = i
- //        if(i+1 > cend) cend = i+1
- //    }
 
     // -- Dynamic mesh --------------------------------------------------
 
     override def beforeNewVertexArray() {
-        vbeg = count; vend = 0
+        vbeg = vcount; vend = 0
 	}
 
     /** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
@@ -283,24 +281,27 @@ class HexaGridMesh(
     def updateVertexArray(gl:SGL, updateVertices:Boolean, updateColors:Boolean) {
         if(va ne null) {
             if(vend > vbeg) {
-                if(vbeg == 0 && vend == count)
+                if(vbeg == 0 && vend == vcount)
                      va.buffer(VertexAttribute.Vertex.toString).update(V)
                 else va.buffer(VertexAttribute.Vertex.toString).update(vbeg, vend, V)
                 
-                vbeg = count
+                vbeg = vcount
                 vend = 0
             }
             if(cend > cbeg) {
-                if(cbeg == 0 && cend == count)
+                if(cbeg == 0 && cend == vcount)
                      va.buffer(VertexAttribute.Color.toString).update(C)
                 else va.buffer(VertexAttribute.Color.toString).update(cbeg, cend, C)
                 
-                cbeg = count
+                cbeg = vcount
                 cend = 0                
             }
 			if(iend > ibeg) {
-				va.indices.update(ibeg, iend, I)
-				ibeg = 1
+				if(ibeg == 0 && iend == icount)
+				     va.indices.update(I)
+				else va.indices.update(ibeg, iend, I)
+
+				ibeg = icount
 				iend = 0
         	}
     	}
