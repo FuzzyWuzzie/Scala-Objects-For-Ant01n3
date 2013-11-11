@@ -41,7 +41,7 @@ object RendererActor {
 	/** Setup pathes and resources from an XML configuration file. */
 	case class AddResources(xmlFileName:String)
 
-	/** A a new avatar in the current screen. The name of the avatar is free. Its type
+	/** Add a new avatar in the current screen. The name of the avatar is free. Its type
 	  * depends on the [[AvatarFactory]], and the indexed flag tells if the screen must
 	  * index the avatar position to send it touch events.  */
 	case class AddAvatar(name:String, avatarType:String, indexed:Boolean)

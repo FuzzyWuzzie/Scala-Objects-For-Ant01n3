@@ -1,0 +1,31 @@
+<resources>
+	<pathes>
+		<shader>/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2</shader>
+		<shader>shaders</shader>
+		<tex>/Users/antoine/Documents/Art/Images/HexaLife</tex>
+		<tex>/Users/antoine/Documents/Art/Images</tex>
+		<tex>textures</tex>
+		<armature>/Users/antoine/Documents/Art/Images/HexaLife</armature>
+		<armature>svg</armature>
+	</pathes>
+	<shaders>
+		<!--shader id="image-shader"    vert="image_shader.vert.glsl"    frag="image_shader.frag.glsl"/-->
+		<shader id="plain-shader"    vert="plain_shader.vert.glsl"    frag="plain_shader.frag.glsl"/>
+		<!--shader id="armature-shader" vert="armature_shader.vert.glsl" frag="armature_shader.frag.glsl"/-->
+	</shaders>
+	<texs>
+		<!--tex id="grid10x10"         res="Grid10x10.png" mipmap="load" minfilter="linearandmipmaplinear"/-->
+		<!--tex id="bg-image"          res="bg_image.png"/-->
+		<!--tex id="ground-image"      res="ground.png"/-->
+		<!--tex id="black-box-1-image" res="BlackBox1_Armature.png" alpha="premultiply"/-->
+	</texs>
+	<!--armatures>
+		<armature id="black-box-1-arm" tex="black-box-1-image" shader="armature-shader" svg="BlackBox1_Armature.svg" scale="0.001"/>
+	</armatures>
+	<behaviors>
+		<lerp-to-position arm="black-box-1-arm" joint="eyes" id="eyes-to-left" value="(-0.1,0)" duration="1000"/>
+		<lerp-to-position arm="black-box-1-arm" joint="eyes" id="eyes-to-right" value="(0,0)" duration="1000"/>
+		<in-sequence id="eyes-seq" arm="black-box-1-arm" behaviors="eyes-to-left, eyes-to-right"/>
+		<loop id="eyes-loop" arm="black-box-1-arm" behaviors="eyes-seq"/>
+	</behaviors-->
+</resources>

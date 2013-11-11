@@ -13,7 +13,7 @@ object MenuScreen {
 	case class BackgroundImage(resource:String) extends ScreenState
 }
 
-/** A screen where an image serve as the background and several button sprites
+/** A screen where an image serves as the background and several button sprites
   * can be added.
   *
   * The screen dimensions are given by the axes (user units) and the screen viewport in pixels.

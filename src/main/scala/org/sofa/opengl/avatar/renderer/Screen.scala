@@ -9,12 +9,12 @@ import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
 
 
-
 trait ScreenState {}
 
 
 /** Sent when a screen is not found. */
 case class NoSuchScreenException(msg:String) extends Exception(msg)
+
 
 /** When a state does not exist in an avatar or screen. */
 case class NoSuchScreenStateException(state:ScreenState) extends Exception(state.toString)

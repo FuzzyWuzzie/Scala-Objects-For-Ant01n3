@@ -2,6 +2,7 @@ package org.sofa.math
 
 import scala.collection.mutable.{Set, ArrayBuffer, HashMap, HashSet}
 
+
 /** An integer position in "bucket" space that can be easily hashed with
   * a specific hash function. */
 class HashPoint3(val x:Int, val y:Int, val z:Int) {	
@@ -19,10 +20,12 @@ class HashPoint3(val x:Int, val y:Int, val z:Int) {
 	override def toString():String = "[%d, %d, %d]".format(x, y, z)
 }
 
+
 /** HashPoint3 companion object. */
 object HashPoint3 {
 	def apply(x:Int, y:Int, z:Int):HashPoint3 = new HashPoint3(x,y,z)
 }
+
 
 /** An object that can be handled by the spatial hash. */
 trait SpatialObject { 
@@ -47,6 +50,7 @@ trait SpatialObject {
 	  * was previously. */
 	def removeBuckets(bucketSet:HashMap[HashPoint3,Bucket[SpatialObject,SpatialPoint,SpatialCube]])
 }
+
 
 /** A spatial object that is infinitely small. */
 trait SpatialPoint extends SpatialObject {
@@ -74,6 +78,7 @@ trait SpatialPoint extends SpatialObject {
 		bucket = null
 	}
 }
+
 
 /** A spatial object that occupies a given region of space, defined
   * by a bounding box. */
@@ -105,6 +110,7 @@ trait SpatialCube extends SpatialObject {
 		buckets.clear
 	}
 }
+
 
 /** A space area that can contain spatial objects. A spatial object
   * can appear in several spatial areas if it is larger or overlaps
@@ -157,7 +163,9 @@ class Bucket[T<:SpatialObject,P<:SpatialPoint,V<:SpatialCube](val position:HashP
 	override def toString():String = "Bucket(%d pts, %d vols)[%s]".format(pointCount, volumeCount, position)
 }
 
+
 case class SpatialHashException(msg:String) extends Exception(msg)
+
 
 /** A spatial indexing that place objects in cubic areas or "buckets"
   * that have a given side size.
@@ -179,7 +187,8 @@ case class SpatialHashException(msg:String) extends Exception(msg)
   * Object added to the spatial hash must inherit the `SpatialObject`
   * trait, and be either a `SpatialPoint`, an infinitely small point,
   * or a `SpatialVolume` that is a an object that occupies a given
-  * bounding box in the "user" space.
+  * bounding box in the "user" space (more interesting volumes, or lines,
+  * or spheres can be added later).
   * 
   * Each time an object is added to the spatial index, either
   * a bucket already exist for this position and the object is

@@ -5,6 +5,7 @@ import akka.actor.{ActorRef}
 
 import org.sofa.math.{Vector3, Point3, NumberSeq3, Rgba, SpatialCube, SpatialHash, SpatialHashException}
 
+
 /** All specific messages */
 trait AvatarState {}
 
@@ -173,7 +174,8 @@ class AvatarIndex(val avatar:Avatar) extends SpatialCube {
 		avatar.touched(TouchEvent(x-from.x, y-from.y, z-from.z, isStart, isEnd)) 
 	}
 
-	/** Update the `from` and `to` fields from the `pos` and `size` fields of the avatar. */
+	/** Update the `from` and `to` fields from the `pos` and `size` fields of the avatar,
+	  * considering the avatar position is its center. */
 	protected def updateFromTo() {
 		val pos = avatar.pos
 		val siz = avatar.size
@@ -202,7 +204,7 @@ class AvatarIndex2D(avatar:Avatar) extends AvatarIndex(avatar) {
 // == Acquaintance ==========================================================================================================
 
 
-/** Set of messages sent back by avatars when something occur on them. */
+/** Set of messages sent back by avatars when something occurs on them. */
 object Acquaintance {
 	/** An avatar has been touched. */
 	case class TouchEvent(from:String, isStart:Boolean, isEnd:Boolean)	

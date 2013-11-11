@@ -19,6 +19,8 @@ object Rgba {
     final val Grey80  = new Rgba(0.8, 0.8, 0.8, 1)
     final val Grey90  = new Rgba(0.9, 0.9, 0.9, 1)
 
+    def apply(from:Rgba):Rgba = new Rgba(from.red, from.green, from.blue, from.alpha)
+
     def apply(from:NumberSeq4):Rgba = new Rgba(from.x, from.y, from.z, from.w)
 
     def apply(from:NumberSeq3):Rgba = new Rgba(from.x, from.y, from.z, 1)
@@ -72,7 +74,7 @@ class Rgba(
 	}
 
 	/** Multiply red, green and blue components by alpha. */
-	def alphPremultiply() {
+	def alphaPremultiply() {
 		red   *= alpha
 		green *= alpha
 		blue  *= alpha
