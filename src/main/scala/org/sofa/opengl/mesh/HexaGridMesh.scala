@@ -286,7 +286,7 @@ class HexaGridMesh(
     // -- Dynamic mesh --------------------------------------------------
 
     override def beforeNewVertexArray() {
-        vbeg = vcount; vend = 0
+        vbeg = vcount; vend = 0; cbeg = vcount; cend = 0; ibeg = icount; iend = 0;
 	}
 
     /** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
