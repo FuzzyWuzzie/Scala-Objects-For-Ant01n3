@@ -17,7 +17,7 @@ object HexaTilesMesh {
 		width:Int,
 	    height:Int,
 		ratio:Float            = 1f,
-		perspectiveRatio:Float = 1.0f,
+		perspectiveRatio:Float = 1f,
 		textureWidth:Int       = 1,
 		textureHeight:Int      = 1
 			):HexaTilesMesh = 
@@ -68,7 +68,7 @@ class HexaTilesMesh(
 
 	protected val vcount = height * width * 6
 
-	protected val icount = 0
+	protected val icount = height * width * 12
 
 	/** The mutable set of coordinates. */
     protected lazy val V = allocateVertices
@@ -109,22 +109,32 @@ class HexaTilesMesh(
     	data(p*3+2) = 0f
     }
 
-    protected def setTexCoord(p:Int, u:Float, v:Float, data:FloatBuffer=V) {
+    protected def setTexCoord(p:Int, u:Float, v:Float, data:FloatBuffer=T) {
     	data(p*2+0) = u
     	data(p*2+1) = v
     }
 
+    protected def setTriangle(t:Int, p0:Int, p1:Int, p2:Int, data:IntBuffer=I) {
+    	data(t)   = p0
+    	data(t+1) = p1
+    	data(t+2) = p2    	
+    }
+
     protected def setHexagonPoints(p0:Int, xc:Float, yc:Float, xunit:Float, yunit:Float, data:FloatBuffer=V) {
-   		setPoint(p0,   xc,          yc-yunit,    data)
-   		setPoint(p0+1, xc+xunit/2f, yc-yunit/2f, data)
-    	setPoint(p0+2, xc+xunit/2f, yc+yunit/2f, data)
-    	setPoint(p0+3, xc,          yc+yunit,    data)
-    	setPoint(p0+4, xc-xunit/2f, yc+yunit/2f, data)
-    	setPoint(p0+5, xc-xunit/2f, yc-yunit/2f, data)
+    	val y4 = ((yunit / 4f) * perspectiveRatio)
+    	val y2 = (y4 + (yunit / 4f))
+    	val x2 = xunit / 2f
+
+   		setPoint(p0,   xc,    yc-y2, data)
+   		setPoint(p0+1, xc+x2, yc-y4, data)
+    	setPoint(p0+2, xc+x2, yc+y4, data)
+    	setPoint(p0+3, xc,    yc+y2, data)
+    	setPoint(p0+4, xc-x2, yc+y4, data)
+    	setPoint(p0+5, xc-x2, yc-y4, data)
     }
 
     protected def setHexagonTexCoords(p0:Int, x:Float, y:Float, data:FloatBuffer=T) {
-    	val xunit = sqrt(3).toFloat / 2f
+    	val xunit = sqrt(3).toFloat / 4f
     	val yunit = 1f
 
     	setTexCoord(p0,   xunit,    0,          data)
@@ -133,6 +143,13 @@ class HexaTilesMesh(
     	setTexCoord(p0+3, xunit,    yunit,      data)
     	setTexCoord(p0+4, 0,        yunit/4f*3, data)
     	setTexCoord(p0+5, 0,        yunit/4f,   data)
+    }
+
+    protected def setHexagonTriangles(t:Int, p0:Int, data:IntBuffer=I) {
+    	setTriangle(t,   p0,   p0+1, p0+5, data)
+    	setTriangle(t+3, p0+1, p0+4, p0+5, data)
+    	setTriangle(t+6, p0+1, p0+2, p0+4, data)
+    	setTriangle(t+9, p0+2, p0+3, p0+4, data)
     }
 
     protected def allocateVertices():FloatBuffer = {
@@ -152,16 +169,17 @@ class HexaTilesMesh(
     	while(y < height) {
     		x = 0
 
-    		while(x < width) {
-    			var xx = if(y%2==0) 0f else xunit/2f
+    		var xx = if(y%2==0) 0f else xunit/2f
 
+    		while(x < width) {
     			setHexagonPoints(vend, xx, yy, xunit, yunit, data)
 
+    			xx   += xunit
     			vend += 6
     			x    += 1
     		}
 
-    		yy += yunit
+    		yy += ((yunit/2f) * perspectiveRatio) + (yunit/4f)
     		y  += 1
     	}
 
@@ -196,79 +214,39 @@ class HexaTilesMesh(
     }
 
     protected def allocateIndices():IntBuffer = {
-    	// val diag  = width * 2 + 1
-    	// val diagc = height + 1
-    	// val vert  = width + 1
-    	// val vertc = height
-    	// val data  = IntBuffer((diag*diagc + vert*vertc) * 2)
+    	// We would need multidrawarrays to draw a lot of triangle fans/strips but
+    	// this does not exist in ES2.0. I do not know the difference in performance
+    	// between drawing a lot of hexatiles using triangle strip (6 indices) or
+    	// using a whole set of hexatiles made of several 4 triangles (12 indices).
+    	//
+    	// TODO make a test....
+    	//
+    	// Things to consider : we may have a lot of tiles to draw when unzooming,
+    	// however the detail level will decrease. Most of the time we draw only
+    	// few tiles. Furthermore, when zoomed in, instead of drawing the whole tiles
+    	// mesh, and letting OpenGL decide which part is visible or not by testing each
+    	// part, we decide to draw only the visible tiles. It may be far more efficient
+    	// ...
 
-    	// // Allocate diagonals
+    	val data  = IntBuffer(width * height * 12)	// each cell is 4 triangles, so 12 points.
 
-    	// var lines = height + 1
-    	// var line  = 0
-    	// var col   = 0
-    	// var pt    = 0
+    	var i = 0
+    	var p = 0
+    	var n = width * height
 
-    	// ibeg = 0
-    	// iend = 0
+    	iend = 0
 
-    	// while(line < lines) {
-    	// 	col = 0
-    		
-    	// 	while(col <= width) {
-    	// 		data(iend+0) = pt + width + 1
-		   //  	data(iend+1) = pt
+    	while(i < n) {
+    		setHexagonTriangles(iend, p, data)
 
-		   //  	if(line%2 == 0) {
-		   //  		if(col < width) {
-		   //  			iend += 2
-		   //  			data(iend+0) = pt
-		   //  			data(iend+1) = pt + width + 2
-		   //  		}
-		   //  	} else {
-		   //  		if(col > 0) {
-		   //  			iend += 2
-		   //  			data(iend+0) = pt
-		   //  			data(iend+1) = pt + width
-		   //  		}
-		   //  	}
-			    
-			  //   iend += 2
+    		i    += 1
+    		p    += 6
+    		iend += 12
+    	}
 
-    	// 		col  += 1
-		   //  	pt   += 1
-    	// 	}
+    	assert(iend == icount)
 
-    	// 	line += 1
-    	// 	pt   += width + 1
-    	// }
-
-    	// // Allocate verticals.
-
-    	// lines = height
-    	// line  = 0
-    	// pt    = width + 1
-
-    	// while(line < lines) {
-    	// 	col = 0
-
-    	// 	while(col <= width) {
-    	// 		data(iend+0) = pt
-    	// 		data(iend+1) = pt + width + 1
-
-    	// 		iend += 2
-    	// 		col  += 1
-    	// 		pt   += 1
-    	// 	}
-
-    	// 	line += 1
-    	// 	pt += width + 1
-    	// }
-
-    	// assert(iend == icount)
-
-    	// data
-    	null
+    	data
     }
 
     // -- Mesh Interface -----------------------------------------------

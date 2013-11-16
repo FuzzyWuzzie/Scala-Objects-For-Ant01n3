@@ -13,10 +13,12 @@ import scala.math._
 
 
 object HexaGridMesh {
-	def apply(width:Int, height:Int,
-		defaultColor:Rgba = Rgba.White,
-		ratio:Float = 1f,
-		perspectiveRatio:Float = 1.0f):HexaGridMesh = 
+	def apply(
+		width:Int,
+	    height:Int,
+		defaultColor:Rgba      = Rgba.White,
+		ratio:Float            = 1f,
+		perspectiveRatio:Float = 1f):HexaGridMesh = 
 			new HexaGridMesh(width, height, defaultColor, ratio, perspectiveRatio)
 }
 

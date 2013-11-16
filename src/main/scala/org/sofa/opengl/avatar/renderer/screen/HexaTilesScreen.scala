@@ -6,7 +6,7 @@ import akka.actor.{ActorRef}
 
 import org.sofa.math.{Rgba, Axes, AxisRange, Point2, Point3, Vector3, NumberSeq3, SpatialHash, SpatialObject, SpatialPoint}
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
-import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, HexaGridMesh, VertexAttribute}
+import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, HexaGridMesh, HexaTilesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
 import org.sofa.opengl.avatar.renderer.{Screen, ScreenState, Renderer, NoSuchScreenStateException}
 
@@ -77,7 +77,13 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 
 	var gridShader:ShaderProgram = null
 	
+	var tilesShader:ShaderProgram = null
+
 	var grid:HexaGridMesh = null
+
+	var tiles:HexaTilesMesh = null
+
+	var tilesTex:Texture = null
 
 	// == Access ============================
 
@@ -101,6 +107,7 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
         beginShader
+        beginTexture
         beginGeometry
 
 		super.begin
@@ -109,11 +116,17 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 	}
 
 	protected def beginShader() {
-		gridShader = renderer.libraries.shaders.get(gl, "plain-shader")
+		gridShader  = renderer.libraries.shaders.get(gl, "plain-shader")
+		tilesShader = renderer.libraries.shaders.get(gl, "image-shader")
+	}
+
+	protected def beginTexture() {
+		tilesTex = renderer.libraries.textures.get(gl, "tiles-image")
 	}
 
 	protected def beginGeometry() {
         setGrid
+        setTiles
 	}
 
 	def change(state:ScreenState) {
@@ -131,6 +144,7 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 		w = axes.x.length
 
 		setGrid
+		setTiles
 		reshape
 	}
 
@@ -140,8 +154,18 @@ class HexaTilesScreen(name:String, renderer:Renderer) extends Screen(name, rende
 			grid.lastVertexArray.dispose
 		}
 
-		grid = HexaGridMesh(w.toInt, h.toInt, perspectiveRatio=0.5f)
+		grid = HexaGridMesh(w.toInt, h.toInt, defaultColor=Rgba.Red, perspectiveRatio=0.5f)
 		grid.newVertexArray(gl, gridShader, Vertex -> "position", Color -> "color")
+	}
+
+	protected def setTiles() {
+		import VertexAttribute._
+		if((tiles ne null) && (tiles.lastVertexArray ne null)) {
+			tiles.lastVertexArray.dispose
+		}
+
+		tiles = HexaTilesMesh(w.toInt, h.toInt, perspectiveRatio=0.5f)
+		tiles.newVertexArray(gl, tilesShader, Vertex -> "position", TexCoord -> "texCoords")
 	}
 
 	override def render() {
@@ -176,8 +200,18 @@ println("ortho(%f - %f, %f - %f".format(-ww*ratio, ww*ratio, -hh, hh))
 	protected def renderBackground() {
 		// Origin is in the middle of the screen and of the image.
 		if(debug) {
-			renderGrid
 		}
+		renderTiles
+		renderGrid
+	}
+
+	protected def renderTiles() {
+        gl.enable(gl.BLEND)
+		tilesShader.use
+		tilesTex.bindUniform(gl.TEXTURE0, tilesShader, "texColor")
+		camera.uniformMVP(tilesShader)
+		tiles.lastVertexArray.draw(tiles.drawAs)
+        gl.disable(gl.BLEND)
 	}
 
 	/** Render a grid alligned with the spash. */

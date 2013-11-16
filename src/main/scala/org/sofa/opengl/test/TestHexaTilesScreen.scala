@@ -71,6 +71,6 @@ class HexaWorld extends Actor {
 
 		rendererActor ! AddScreen("hexaworld-screen", "hexatiles")
 		rendererActor ! SwitchScreen("hexaworld-screen")
-		rendererActor ! ChangeScreenSize(Axes((0.0, 10.0), (0.0, 10.0), (0.0, 0.0)), 1.0)
+		rendererActor ! ChangeScreenSize(Axes((0.0, 5.0), (0.0, 5.0), (0.0, 0.0)), 1.0)
 	}
 }
