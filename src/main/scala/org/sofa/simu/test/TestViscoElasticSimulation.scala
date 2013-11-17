@@ -23,9 +23,9 @@ import org.sofa.opengl.mesh.CubeMesh
 import org.sofa.opengl.mesh.WireCubeMesh
 import org.sofa.opengl.mesh.LinesMesh
 import org.sofa.opengl.mesh.AxisMesh
-import org.sofa.math.SpatialPoint
-import org.sofa.math.SpatialCube
-import org.sofa.math.SpatialHash
+import org.sofa.collection.SpatialPoint
+import org.sofa.collection.SpatialCube
+import org.sofa.collection.SpatialHash
 import org.sofa.opengl.Texture
 import org.sofa.math.IsoSurfaceSimple
 import org.sofa.opengl.mesh.TrianglesMesh

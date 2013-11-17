@@ -2,7 +2,8 @@ package org.sofa.simu.test
 
 import org.sofa.{Timer, Environment}
 import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
-import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Vector2, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurface, IsoSurfaceSimple, IsoContour}
+import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Vector2, Point3, IsoSurface, IsoSurfaceSimple, IsoContour}
+import org.sofa.collection.{SpatialPoint, SpatialCube, SpatialHash}
 
 import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture, TextureFramebuffer, TexParams, TexMipMap}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, PointsMesh, WireCubeMesh, LinesMesh, AxisMesh, TrianglesMesh, CylinderMesh, EditableMesh, UnindexedTrianglesMesh, VertexAttribute}

@@ -3,7 +3,8 @@ package org.sofa.opengl.test
 import org.sofa.opengl.{SGL, MatrixStack, ShaderProgram, VertexArray, Camera, Shader}
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, PointsMesh, CubeMesh, AxisMesh, WireCubeMesh, TrianglesMesh, VertexAttribute}
-import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3, Point3, SpatialPoint, SpatialCube, SpatialHash, IsoSurfaceSimple, IsoSurface, IsoCube}
+import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3, Point3, IsoSurfaceSimple, IsoSurface, IsoCube}
+import org.sofa.collection.{SpatialPoint, SpatialCube, SpatialHash}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.ArrayBuffer
 import scala.math._

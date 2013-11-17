@@ -1,6 +1,9 @@
-package org.sofa.math
+package org.sofa.collection
+
 
 import scala.collection.mutable.{Set, ArrayBuffer, HashMap, HashSet}
+
+import org.sofa.math.{Point3, Point2}
 
 
 /** An integer position in "bucket" space that can be easily hashed with
@@ -536,8 +539,8 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 					if(b.points ne null) {
 						b.points.foreach { point =>
 							if(point ne thing) {
-								val dx = point.from.data(0) - p.data(0)
-								val dy = point.from.data(1) - p.data(1)
+								val dx = point.from(0) - p(0)
+								val dy = point.from(1) - p(1)
 								val l = math.sqrt(dx*dx + dy*dy)
 								//val l = point.from.distance(p)
 								if(l < radius) {
@@ -571,9 +574,9 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 						if(b.points ne null) {
 							b.points.foreach { point =>
 								if(point ne thing) {
-									val dx = point.from.data(0) - p.data(0)
-									val dy = point.from.data(1) - p.data(1)
-									val dz = point.from.data(2) - p.data(2)
+									val dx = point.from(0) - p(0)
+									val dy = point.from(1) - p(1)
+									val dz = point.from(2) - p(2)
 									val l = math.sqrt(dx*dx + dy*dy + dz*dz)
 									//val l = point.from.distance(p)
 									if(l < radius) {
@@ -608,8 +611,8 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 						b.points.foreach { point =>
 							//if(point ne thing) {
 								//val l = point.from.distance(p)
-								val dx = point.from.data(0) - p.data(0)
-								val dy = point.from.data(1) - p.data(1)
+								val dx = point.from(0) - p(0)
+								val dy = point.from(1) - p(1)
 								val l = math.sqrt(dx*dx + dy*dy)
 								if(l < radius) {
 									f(l,point)

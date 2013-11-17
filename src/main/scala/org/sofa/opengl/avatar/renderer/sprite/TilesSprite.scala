@@ -2,7 +2,8 @@ package org.sofa.opengl.avatar.renderer.sprite
 
 import scala.collection.mutable.{HashMap}
 
-import org.sofa.math.{Vector3, NumberSeq3, SpatialCube}
+import org.sofa.math.{Vector3, NumberSeq3}
+import org.sofa.collection.SpatialCube
 import org.sofa.opengl.{SGL, Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute, QuadsMesh}
 

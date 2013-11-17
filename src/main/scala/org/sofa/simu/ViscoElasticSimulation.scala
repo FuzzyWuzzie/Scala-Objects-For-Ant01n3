@@ -1,7 +1,8 @@
 package org.sofa.simu
 
 import org.sofa.Timer
-import org.sofa.math.{Point3, Point2, Vector3, NumberSeq3, SpatialHash, SpatialPoint, SpatialObject, SpatialCube, Triangle, ConstTriangle}
+import org.sofa.math.{Point3, Point2, Vector3, NumberSeq3, Triangle, ConstTriangle}
+import org.sofa.collection.{SpatialHash, SpatialPoint, SpatialObject, SpatialCube}
 import scala.collection.mutable.{Set, HashMap, HashSet, ArrayBuffer, ArrayStack}
 import scala.util.Random
 

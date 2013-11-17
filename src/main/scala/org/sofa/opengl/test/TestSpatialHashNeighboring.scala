@@ -23,7 +23,7 @@ import org.sofa.math.Point3
 import org.sofa.opengl.mesh.CubeMesh
 import org.sofa.opengl.mesh.WireCubeMesh
 import org.sofa.opengl.mesh.AxisMesh
-import org.sofa.math.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject}
+import org.sofa.collection.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject}
 
 object TestSpatialHashNeighboring {
 	def main(args:Array[String]) = (new TestSpatialHashNeighboring).test

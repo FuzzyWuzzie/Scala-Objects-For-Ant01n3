@@ -3,7 +3,8 @@ package org.sofa.opengl.avatar.renderer
 import scala.collection.mutable.{ArrayBuffer}
 import akka.actor.{ActorRef}
 
-import org.sofa.math.{Vector3, Point3, NumberSeq3, Rgba, SpatialCube, SpatialHash, SpatialHashException}
+import org.sofa.math.{Vector3, Point3, NumberSeq3, Rgba}
+import org.sofa.collection.{SpatialCube, SpatialHash, SpatialHashException}
 
 
 /** All specific messages */

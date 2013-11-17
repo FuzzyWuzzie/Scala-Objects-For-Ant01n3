@@ -1,6 +1,7 @@
 package org.sofa.opengl.test
 
-import org.sofa.math.{Point3, SpatialObject, SpatialPoint, SpatialCube, SpatialHash, Rgba, Matrix4, Vector3, Vector4}
+import org.sofa.math.{Point3, Rgba, Matrix4, Vector3, Vector4}
+import org.sofa.collection.{SpatialObject, SpatialPoint, SpatialCube, SpatialHash}
 import org.sofa.opengl.surface.{SurfaceRenderer, Surface, BasicCameraController}
 import org.sofa.opengl.{SGL, MatrixStack, ShaderProgram, Camera, VertexArray, Shader}
 import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute, PointsMesh, CubeMesh, WireCubeMesh, AxisMesh}

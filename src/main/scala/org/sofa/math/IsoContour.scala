@@ -4,6 +4,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 
+import org.sofa.collection.{SpatialHash, HashPoint3}
+
 /** One iso-square of the marching squares algorithm used by the `IsoContour`.
   *
   * An iso-square evaluates the surface implicit function at its height vertices

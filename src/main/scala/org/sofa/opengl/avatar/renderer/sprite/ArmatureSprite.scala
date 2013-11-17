@@ -5,7 +5,8 @@ import scala.compat.Platform
 import scala.collection.mutable.{HashMap, ArrayBuffer}
 
 import org.sofa.math.Axis._
-import org.sofa.math.{Vector3, NumberSeq3, SpatialCube, Axis}
+import org.sofa.math.{Vector3, NumberSeq3, Axis}
+import org.sofa.collection.SpatialCube
 import org.sofa.opengl.{Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, VertexAttribute}
 import org.sofa.opengl.avatar.renderer.{Sprite, Screen, Avatar, AvatarIndex, AvatarState, AvatarIndex2D, NoSuchStateException}

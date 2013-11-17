@@ -4,7 +4,8 @@ import scala.math._
 import scala.collection.mutable.{HashMap, HashSet}
 import akka.actor.{ActorRef}
 
-import org.sofa.math.{Rgba, Axes, AxisRange, Point2, Point3, Vector3, NumberSeq3, SpatialHash, SpatialObject, SpatialPoint}
+import org.sofa.math.{Rgba, Axes, AxisRange, Point2, Point3, Vector3, NumberSeq3}
+import org.sofa.collection.{SpatialHash, SpatialObject, SpatialPoint}
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
 import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, HexaGridMesh, HexaTilesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
@@ -231,3 +232,47 @@ println("ortho(%f - %f, %f - %f".format(-ww*ratio, ww*ratio, -hh, hh))
 		 axes.y.from + (axes.y.length * (1-(y / camera.viewportPx(1)))))
 	}
 }
+
+
+// /** A dynamic set of layers of tiles. */
+// class HexaTiles(val width:Int, val height:Int) {
+// 	/** The set of layers in order. We can deal with an array
+// 	  * since there will be very few addition and removal. */
+// 	protected val layers = new ArrayBuffer[HexaTilesLayer]()
+
+// 	def apply(i:Int):HexaTilesLayer = layers(i)
+
+// 	def add() {
+// 		+= new HexaTilesLayer()
+// 	}
+
+// 	def +=(layer:HexaTilesLayer) { layers += layer }
+
+// 	def -=(layer:HexaTilesLayer) { layers.remove(layer) }
+
+// 	def insert(i:Int, layer:HexaTilesLayer) { layers.insert(i, layer) }
+
+// 	def draw() { layers.foreach { layer => layer.draw } }
+
+// 	def visibility(from:Point3, to:Point3) { layers.foreach { layer => layer.visibility(from, to) } }
+// }
+
+
+// /** A layer of tiles. */
+// abstract class HexaTilesLayer(val width:Int, val height:Int, val texture:Texture) {
+// 	def set(x:Int, y:Int) {
+
+// 	}
+
+// 	def clear(x:Int, y:Int) {
+
+// 	}
+
+// 	def draw() {
+
+// 	}
+
+// 	def visibility(from:Point3, to:Point3) {
+
+// 	}
+// }

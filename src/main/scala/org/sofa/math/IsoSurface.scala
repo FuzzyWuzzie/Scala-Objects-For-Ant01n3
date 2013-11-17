@@ -4,6 +4,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 
+import org.sofa.collection.{SpatialHash, HashPoint3}
+
 /** One iso-cube of the marching cubes algorithm used by the `IsoSurface`.
   * 
   * An iso-cube evaluates the surface implicit function at its height vertices
