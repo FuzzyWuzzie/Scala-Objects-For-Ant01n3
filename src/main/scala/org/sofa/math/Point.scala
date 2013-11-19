@@ -1,12 +1,17 @@
 package org.sofa.math
 
+
+import scala.language.implicitConversions
 import scala.math._
+
 
 object Point2 {
     implicit def point2ToTuple(v:Point2):(Double, Double) = (v.x, v.y)
 
     def apply(x:Double, y:Double) = new Point2(x, y)
+  
     def apply() = new Point2()
+  
     def apply(other:NumberSeq) = {
         if(other.size < 1) // Nooooo !!!
              new Point2()
@@ -14,8 +19,10 @@ object Point2 {
              new Point2(other.data(0), 0)
         else new Point2(other.data(0), other.data(1))
     }
+  
     def apply(xy:(Double, Double)) = new Point2(xy._1, xy._2)
 }
+
 
 class Point2(xInit:Double, yInit:Double) extends NumberSeq2 {
 
@@ -77,13 +84,17 @@ class Point2(xInit:Double, yInit:Double) extends NumberSeq2 {
     def -->(other:Point2):Vector2 = new Vector2(other.x-x, other.y-y)
 }
 
+
 //===================================================
+
 
 object Point3 {
     implicit def point3ToTuple(v:Point3):(Double, Double, Double) = (v.x, v.y, v.z)
 
     def apply(x:Double, y:Double, z:Double) = new Point3(x, y, z)
+    
     def apply() = new Point3()
+    
     def apply(other:NumberSeq) = {
         if(other.size < 1) // Nooooo !!!
              new Point3()
@@ -93,10 +104,14 @@ object Point3 {
              new Point3(other.data(0), other.data(1), 0)
         else new Point3(other.data(0), other.data(1), other.data(2))
     }
+    
     def apply(xyz:(Double, Double, Double)) = new Point3(xyz._1, xyz._2, xyz._3)
+    
     def apply(xy:(Double, Double), z:Double) = new Point3(xy._1, xy._2, z)
+    
     def apply(x:Double, yz:(Double, Double)) = new Point3(x, yz._1, yz._2)
 }
+
 
 class Point3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
 
@@ -210,7 +225,9 @@ class Point3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
     def -->(other:Point3):Vector3 = new Vector3(other.x-x, other.y-y, other.z-z)
 }
 
+
 //===================================================
+
 
 object Point4 {
     implicit def point4ToTuple(v:Point4):(Double, Double, Double, Double) = (v.x, v.y, v.z, v.w)
@@ -236,6 +253,7 @@ object Point4 {
     def apply(x:Double, yz:(Double,Double), w:Double)   = new Point4(x, yz._1, yz._2, w)
     def apply(x:Double, y:Double, zw:(Double,Double))   = new Point4(x, y, zw._1, zw._2)
 }
+
 
 class Point4(xInit:Double, yInit:Double, zInit:Double, wInit:Double) extends NumberSeq4 {
 

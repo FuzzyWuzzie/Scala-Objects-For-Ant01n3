@@ -811,7 +811,9 @@ trait NumberSeq3 extends NumberSeq2 {
     }
 }
 
+
 //===================================================
+
 
 trait NumberSeq4 extends NumberSeq3 {
 	final def w:Double = data(3)
@@ -833,4 +835,59 @@ trait NumberSeq4 extends NumberSeq3 {
     final def xyzw_=(value:(Double, Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(2) = value._3; data(3) = value._4 }
 
     def set(x:Double, y:Double, z:Double, w:Double):ReturnType = { data(0) = x; data(1) = y; data(2) = z; data(3) = w; this.asInstanceOf[ReturnType] }
+}
+
+
+//===================================================
+
+
+trait ConstantNumberSeq extends NumberSeq {
+	protected def error():ReturnType = { throw new RuntimeException("immutable Point3") }
+
+	override def update(i:Int, value:Double)          { error }
+	override def copy(data:Traversable[Double])       { error }
+    override def copy(other:NumberSeq)                { error }
+	override def fill(value:Double)                   { error }
+	override def addBy(other:NumberSeq):ReturnType  = { error }
+	override def addBy(value:Double):ReturnType     = { error }
+	override def subBy(other:NumberSeq):ReturnType  = { error }
+	override def subBy(value:Double):ReturnType     = { error }
+	override def multBy(other:NumberSeq):ReturnType = { error }
+	override def multBy(value:Double):ReturnType    = { error }
+	override def divBy(other:NumberSeq):ReturnType  = { error }
+	override def divBy(value:Double):ReturnType     = { error }
+	override def normalize():Double                 = { error; return 0.0 }
+	override def brownianMotion(factor:Double)        { error }
+	override def maxBy(other:NumberSeq):ReturnType  = { error }
+	override def minBy(other:NumberSeq):ReturnType  = { error }
+}
+
+
+trait ConstantNumberSeq2 extends NumberSeq2 with ConstantNumberSeq {
+    override def set(x:Double, y:Double):ReturnType  = { error }
+    override def copy(other:NumberSeq2)                { error }
+    override def addBy(other:NumberSeq2):ReturnType  = { error }
+    override def subBy(other:NumberSeq2):ReturnType  = { error }
+    override def multBy(other:NumberSeq2):ReturnType = { error }
+    override def divBy(other:NumberSeq2):ReturnType  = { error }
+}
+
+
+trait ConstantNumberSeq3 extends NumberSeq3 with ConstantNumberSeq {
+    override def set(x:Double, y:Double, z:Double):ReturnType = { error }
+    override def copy(other:NumberSeq3)                         { error }
+    override def addBy(other:NumberSeq3):ReturnType           = { error }
+    override def subBy(other:NumberSeq3):ReturnType           = { error }
+    override def multBy(other:NumberSeq3):ReturnType          = { error }
+    override def divBy(other:NumberSeq3):ReturnType           = { error }
+}
+
+
+trait ConstantNumberSeq4 extends NumberSeq4 with ConstantNumberSeq {
+    override def set(x:Double, y:Double, z:Double, w:Double):ReturnType = { error }
+    // override def copy(other:NumberSeq4)                                   { error }
+    // override def addBy(other:NumberSeq4):ReturnType                     = { error }
+    // override def subBy(other:NumberSeq4):ReturnType                     = { error }
+    // override def multBy(other:NumberSeq4):ReturnType                    = { error }
+    // override def divBy(other:NumberSeq4):ReturnType                     = { error }
 }

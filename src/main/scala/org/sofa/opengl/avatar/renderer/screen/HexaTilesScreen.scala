@@ -234,6 +234,28 @@ println("ortho(%f - %f, %f - %f".format(-ww*ratio, ww*ratio, -hh, hh))
 }
 
 
+// TODO a list of layers.
+//
+// This is the underlying model of this screen. A hexa tile screen is a set
+// of layers. Some layers contain dynamic movable objects in a continuous space.
+// Some layers contains non movable static tiles in a discrete space of 2D positions.
+// The user describes the number of layers, their types and Z order.
+//
+//		- A layer describe both movable or static elements.
+//		- Layers are drawn in Z order.
+//		- Specific layers are created for dynamic elements.
+//		- Specific layers are created for tiles.
+//		- A layer contains only elements of one kind. Elements of the
+//		  same kind may have several representations inside the same texture.
+//		  goal: allow to push graphic state (textures) only once for several
+//		  tiles.
+//		- Layers are sets of rectangular patches that divide the space in areas
+//		  goal: to avoid redrawing the whole scene, but only visible patches.
+//		- Each patch is made of a list of tiles or dynamic elements. The list
+//		  is a chained list.
+//		  goal: avoid to store a 2D array with a lot of holes.
+
+
 // /** A dynamic set of layers of tiles. */
 // class HexaTiles(val width:Int, val height:Int) {
 // 	/** The set of layers in order. We can deal with an array

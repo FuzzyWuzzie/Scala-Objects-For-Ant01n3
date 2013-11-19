@@ -7,7 +7,8 @@ import org.sofa.opengl.mesh.{AxisMesh, LinesMesh, QuadsMesh, VertexAttribute}
 import org.sofa.opengl.text.{GLFont, GLString}
 import javax.media.opengl.{GLCapabilities, GLProfile}
 import scala.collection.mutable.{ArrayBuffer, HashSet, Set}
-import org.sofa.math.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject, Point3, Vector3, Vector4, Rgba, Matrix4}
+import org.sofa.math.{Point3, Vector3, Vector4, Rgba, Matrix4}
+import org.sofa.collection.{SpatialPoint, SpatialCube, SpatialHash, SpatialObject}
 
 object TestText2 {
 	def main(args:Array[String]) = {

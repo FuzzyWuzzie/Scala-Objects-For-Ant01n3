@@ -1,5 +1,9 @@
 package org.sofa.math
 
+
+import scala.language.implicitConversions
+
+
 //===================================================
 
 
