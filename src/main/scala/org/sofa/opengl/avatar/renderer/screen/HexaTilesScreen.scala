@@ -1,18 +1,26 @@
 package org.sofa.opengl.avatar.renderer.screen
 
 import scala.math._
-import scala.collection.mutable.{HashMap, HashSet}
+import scala.collection.mutable.{HashMap, HashSet, ArrayBuffer}
 import akka.actor.{ActorRef}
 
 import org.sofa.math.{Rgba, Axes, AxisRange, Point2, Point3, Vector3, NumberSeq3}
-import org.sofa.collection.{SpatialHash, SpatialObject, SpatialPoint}
+import org.sofa.collection.{SpatialHash, SpatialObject, SpatialPoint, SpatialCube}
 import org.sofa.opengl.{Camera, Texture, ShaderProgram}
-import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, HexaGridMesh, HexaTilesMesh, VertexAttribute}
+import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, HexaGridMesh, HexaTilesMesh, HexaTileMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
 import org.sofa.opengl.avatar.renderer.{Screen, ScreenState, Renderer, NoSuchScreenStateException}
 
 
 object HexaTilesScreen {
+	case class AddTileLayer(z:Int, texture:String)
+	case class AddEntityLayer(z:Int, texture:String)
+	case class RemoveLayer(z:Int)
+	case class AddLayerKind(z:Int, kind:String, x:Int, y:Int)
+	case class AddTileToLayer(z:Int, x:Int, y:Int, kind:String)
+	case class RemoveTileFromLayer(z:Int, x:Int, y:Int)
+	case class AddEntityToLayer(z:Int, name:String, x:Double, y:Double, kind:String)
+	case class RemoveEntityFromLayer(z:Int, name:String)
 }
 
 
@@ -256,45 +264,92 @@ println("ortho(%f - %f, %f - %f".format(-ww*ratio, ww*ratio, -hh, hh))
 //		  goal: avoid to store a 2D array with a lot of holes.
 
 
-// /** A dynamic set of layers of tiles. */
-// class HexaTiles(val width:Int, val height:Int) {
-// 	/** The set of layers in order. We can deal with an array
-// 	  * since there will be very few addition and removal. */
-// 	protected val layers = new ArrayBuffer[HexaTilesLayer]()
+/** A dynamic set of layers of tiles. */
+class HexaLayers(val width:Int, val height:Int) {
 
-// 	def apply(i:Int):HexaTilesLayer = layers(i)
+	/** The set of layers in order. We can deal with an array
+	  * since there will be very few addition and removal. */
+	protected val layers = new ArrayBuffer[HexaLayer]()
 
-// 	def add() {
-// 		+= new HexaTilesLayer()
-// 	}
+	def apply(i:Int):HexaLayer = layers(i)
 
-// 	def +=(layer:HexaTilesLayer) { layers += layer }
+	def addTiles(z:Int, texture:Texture) { layers += new HexaTilesLayer(z, texture) }
 
-// 	def -=(layer:HexaTilesLayer) { layers.remove(layer) }
+	def addEntities() { /* TODO */ }
 
-// 	def insert(i:Int, layer:HexaTilesLayer) { layers.insert(i, layer) }
+	def remove(layer:HexaLayer) {  layers -= layer }
 
-// 	def draw() { layers.foreach { layer => layer.draw } }
+	def +=(layer:HexaLayer) { layers += layer }
 
-// 	def visibility(from:Point3, to:Point3) { layers.foreach { layer => layer.visibility(from, to) } }
-// }
+	def -=(layer:HexaLayer) { layers -= layer }
+
+	def insert(i:Int, layer:HexaLayer) { layers.insert(i, layer) }
+
+	def draw() { layers.foreach { layer => layer.draw } }
+
+	def visibility(from:Point3, to:Point3) { layers.foreach { layer => layer.visibility(from, to) } }
+}
 
 
-// /** A layer of tiles. */
-// abstract class HexaTilesLayer(val width:Int, val height:Int, val texture:Texture) {
-// 	def set(x:Int, y:Int) {
+trait HexaLayer {
+	val z:Int 
 
-// 	}
+	def draw()
 
-// 	def clear(x:Int, y:Int) {
+	def visibility(from:Point3, to:Point3)
+}
 
-// 	}
 
-// 	def draw() {
+/** A layer of tiles. */
+class HexaTilesLayer(
+	val z:Int,
+	val texture:Texture,
+	val ratio:Float            = 1f,
+	val perspectiveRatio:Float = 1f,
+	val textureWidth:Int       = 1,
+	val textureHeight:Int      = 1,
+	val bucketSize:Int         = 10)
+		extends HexaLayer {
+	
+	protected val hexaTile = HexaTileMesh(ratio, perspectiveRatio, textureWidth, textureHeight)
 
-// 	}
+	protected val spacehash = new SpatialHash[SpatialObject,SpatialPoint,HexaTile](bucketSize)
 
-// 	def visibility(from:Point3, to:Point3) {
+	def add(x:Int, y:Int, texX:Int=0, texY:Int=0) {
+		// Add a tile, update the current visible list of HexaTiles.
+	}
 
-// 	}
-// }
+	def remove(x:Int, y:Int) {
+		// Remove a tile, update the current visible list of HexaTiles.
+	}
+
+	def draw() {
+		// Draw the list of visible HexaTiles.
+	}
+
+	def visibility(from:Point3, to:Point3) {
+		// Create a list of visible buckets.
+		// From it, create a list of visible HexaTiles.
+		// Better to create the list once and keep it, since
+		// we will not always move the view and therefore we
+		// will not often change the visible area.
+	}
+
+	class HexaTile(x:Int, y:Int) extends SpatialCube {
+		val from:Point3 = Point3(0, 0, 0)
+
+		val to:Point3 = Point3(0, 0, 0)
+
+		protected def init(x:Int, y:Int) {
+			val xunit  = sqrt(3) * ratio
+			val yunit  = ratio * 2.0
+    		val y2 = (((yunit / 4.0) * perspectiveRatio) + (yunit / 4.0))
+    		val x2 = xunit / 2.0
+
+			from.set(-x2, -y2, 0)
+			to.set(x2, y2, 0)
+		}
+
+		init(x, y)
+	}
+}

@@ -95,24 +95,24 @@ class HexaTileMesh(
     }
 
 	protected def allocateVertices():FloatBuffer = {
-		 val data = new FloatBuffer(6*3)
+		val data = new FloatBuffer(6*3)
 
-		 val xunit  = sqrt(3).toFloat * ratio
-		 val yunit  = ratio * 2f
-		 val yunit4 = yunit / 4f
-		 val yunit2 = (yunit4 * perspectiveRatio) / yunit4
-		 val xunit2 = xunit / 2f
+		val xunit  = sqrt(3).toFloat * ratio
+		val yunit  = ratio * 2f
+    	val y4 = ((yunit / 4f) * perspectiveRatio)
+    	val y2 = (y4 + (yunit / 4f))
+    	val x2 = xunit / 2f
 
-		 setPoint(0,  0,      -yunit2, data)
-		 setPoint(1,  xunit2, -yunit4, data)
-		 setPoint(2,  xunit2,  yunit4, data)
-		 setPoint(3,  0,       yunit2, data)
-		 setPoint(4, -xunit2,  yunit4, data)
-		 setPoint(5, -xunit2, -yunit4, data)
+		setPoint(0,  0,  -y2, data)
+		setPoint(1,  x2, -y4, data)
+		setPoint(2,  x2,  y4, data)
+		setPoint(3,  0,   y2, data)
+		setPoint(4, -x2,  y4, data)
+		setPoint(5, -x2, -y4, data)
 
-		 vend = 6*3
+		vend = 6*3
 
-		 data
+		data
 	}
 
 	protected def allocateTextures():FloatBuffer = {

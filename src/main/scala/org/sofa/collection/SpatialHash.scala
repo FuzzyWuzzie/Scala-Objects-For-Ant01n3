@@ -9,6 +9,7 @@ import org.sofa.math.{Point3, Point2}
 /** An integer position in "bucket" space that can be easily hashed with
   * a specific hash function. */
 class HashPoint3(val x:Int, val y:Int, val z:Int) {	
+
 	override def hashCode():Int = { (x*73856093)^(y*19349663)^(z*83492791) }
 	
 	override def equals(other:Any):Boolean = {
@@ -25,9 +26,7 @@ class HashPoint3(val x:Int, val y:Int, val z:Int) {
 
 
 /** HashPoint3 companion object. */
-object HashPoint3 {
-	def apply(x:Int, y:Int, z:Int):HashPoint3 = new HashPoint3(x,y,z)
-}
+object HashPoint3 { def apply(x:Int, y:Int, z:Int):HashPoint3 = new HashPoint3(x,y,z) }
 
 
 /** An object that can be handled by the spatial hash. */
@@ -49,14 +48,18 @@ trait SpatialObject {
 	def addBucket(bucket:Bucket[SpatialObject,SpatialPoint,SpatialCube])
 	
 	/** The object is removed from the spatial hash.
-	  * This returns a list of buckets were the object
-	  * was previously. */
+	  * The given set is the set of buckets of the spatial hash.
+	  * The object removes itself from it. It also removes buckets that
+	  * becomre empty. */
 	def removeBuckets(bucketSet:HashMap[HashPoint3,Bucket[SpatialObject,SpatialPoint,SpatialCube]])
+	// We allow the spatial object to interfere with the spatial hash bucket list
+	// to avoid creating and returning a list of buckets to clear.
 }
 
 
 /** A spatial object that is infinitely small. */
 trait SpatialPoint extends SpatialObject {
+
 	/** The area where the spatial object as a point appears. */
 	protected var bucket:Bucket[SpatialObject,SpatialPoint,SpatialCube] = null
 
@@ -83,11 +86,22 @@ trait SpatialPoint extends SpatialObject {
 }
 
 
-/** A spatial object that occupies a given region of space, defined
+/** A spatial object that occupies a given region of space defined
   * by a bounding box. */
 trait SpatialCube extends SpatialObject {
+
 	/** Set of areas the object appears in. */
-	protected var buckets:HashSet[Bucket[SpatialObject,SpatialPoint,SpatialCube]] = null
+//	protected var buckets:HashSet[Bucket[SpatialObject,SpatialPoint,SpatialCube]] = null
+	protected var buckets:ArrayBuffer[Bucket[SpatialObject,SpatialPoint,SpatialCube]] = null
+	// Switched from an 'heavy' hashset structure to an array because we do not need
+	// to check unicity, buckets are unique in the array "by construction". Further,
+	// an array buffer should be smaller in terms of memory than a HashSet (that hides
+	// an hash map, not a small data structure compared to the array), and because
+	// we do not have to search inside the array, we only need a fast list where
+	// we can append easily.
+	//
+	// We need a real benchmark. Tested on TestSpatialHash, it improves speed by a
+	// factor of 2.
 
 	override def isVolume = true
 
@@ -95,14 +109,22 @@ trait SpatialCube extends SpatialObject {
 
 	def addBucket(bucket:Bucket[SpatialObject,SpatialPoint,SpatialCube]) {
 		if(buckets eq null)
-			buckets = new HashSet[Bucket[SpatialObject,SpatialPoint,SpatialCube]]()
+//			buckets = new HashSet[Bucket[SpatialObject,SpatialPoint,SpatialCube]]()
+			buckets = new ArrayBuffer[Bucket[SpatialObject,SpatialPoint,SpatialCube]](4)
+			// Start with a small initial size since for objects smaller than the bucket
+			// size in 2D at max a volume occupies 4 buckets (8 in 3D). Keep the least
+			// size.
 		
+		// A verification that bucket unicity in this set is fullfilled.
+//		if(buckets.contains(bucket)) Console.err.println("FUCK")
+
 		buckets += bucket 
 	}
 	
 	def removeBuckets(bucketSet:HashMap[HashPoint3,Bucket[SpatialObject,SpatialPoint,SpatialCube]]) {
 		assert(buckets ne null)
 		assert(!buckets.isEmpty)
+	
 		buckets.foreach { bucket =>
 			bucket.removeVolume(this)
 			
@@ -110,6 +132,7 @@ trait SpatialCube extends SpatialObject {
 			 	bucketSet.remove(bucket.position)
 			}
 		}
+		
 		buckets.clear
 	}
 }
@@ -119,6 +142,7 @@ trait SpatialCube extends SpatialObject {
   * can appear in several spatial areas if it is larger or overlaps
   * spatial areas. */
 class Bucket[T<:SpatialObject,P<:SpatialPoint,V<:SpatialCube](val position:HashPoint3) {
+	
 	var points:HashSet[P] = null
 
 	var volumes:HashSet[V] = null
@@ -170,14 +194,18 @@ class Bucket[T<:SpatialObject,P<:SpatialPoint,V<:SpatialCube](val position:HashP
 case class SpatialHashException(msg:String) extends Exception(msg)
 
 
-/** A spatial indexing that place objects in cubic areas or "buckets"
-  * that have a given side size.
+/** A spatial indexing that allows to quickly retrieve nearby objects around
+  * another or a location.
   * 
   * The idea behind the spatial hash is to divide the 3D space into cubes
   * named buckets and forming a grid. The coordinates in the grid are called
   * "bucket space" whereas the objects the user places in the buckets lies in
   * a "user space". A bucket exists only if there are
   * some object at the positions of the "user" space it contains.
+  *
+  * The purpose of such a spatial indexing grid is to quicly find nearby objects,
+  * knowing one object or position. It has the advantage of being an "infinite"
+  * grid, since grid cells, buckets, are created and deleted on demand.
   * 
   * For example,
   * all objects between "user" coordinates (0,0,0) and (bucketSize,bucketSize,bucketSize)
