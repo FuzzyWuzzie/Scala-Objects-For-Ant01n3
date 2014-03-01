@@ -23,6 +23,15 @@ object HexaTileMesh {
 }
 
 
+/** A set of independent tiles.
+  * 
+  * This class creates a set of tiles each centered around (0,0) with the
+  * same size. Each tile only differs by its texture coordinates. The mesh
+  * allows to choose which tile to draw.
+  *
+  * You select the number of tiles using the `textureWidth` and `textureHeight`.
+  * These size indicate a grid of texture elements
+  */
 class HexaTileMesh(
 	val ratio:Float            = 1f,
 	val perspectiveRatio:Float = 1f,
@@ -35,6 +44,9 @@ class HexaTileMesh(
 
 	/** The mutable set of texture coordinates. */
 	protected lazy val T:FloatBuffer = allocateTextures
+
+	/** Number of vertices stored in the vertex array. */
+	protected val vCount = 6 * textureWidth * textureHeight
 
     /** Start position of the last modification inside the coordinates array. */
     protected var vbeg = 0
@@ -95,7 +107,7 @@ class HexaTileMesh(
     }
 
 	protected def allocateVertices():FloatBuffer = {
-		val data = new FloatBuffer(6*3)
+		val data = new FloatBuffer(vCount * 3)
 
 		val xunit  = sqrt(3).toFloat * ratio
 		val yunit  = ratio * 2f
@@ -103,14 +115,16 @@ class HexaTileMesh(
     	val y2 = (y4 + (yunit / 4f))
     	val x2 = xunit / 2f
 
-		setPoint(0,  0,  -y2, data)
-		setPoint(1,  x2, -y4, data)
-		setPoint(2,  x2,  y4, data)
-		setPoint(3,  0,   y2, data)
-		setPoint(4, -x2,  y4, data)
-		setPoint(5, -x2, -y4, data)
+    	for(i <- 0 until textureWidth * textureHeight) {
+			setPoint(i*6,    0,  -y2, data)
+			setPoint(i*6+1,  x2, -y4, data)
+			setPoint(i*6+2,  x2,  y4, data)
+			setPoint(i*6+3,  0,   y2, data)
+			setPoint(i*6+4, -x2,  y4, data)
+			setPoint(i*6+5, -x2, -y4, data)
+    	}
 
-		vend = 6*3
+		vend = vCount * 3
 
 		data
 	}

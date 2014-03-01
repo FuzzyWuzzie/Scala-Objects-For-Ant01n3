@@ -40,6 +40,10 @@ abstract trait Surface {
     /** Invoke some code to be executed while the OpenGL context is current,
       * after a call to the SurfaceRenderer.display() method. */
     def invoke(runnable:Runnable)
+
+    /** Stop the animation, remove the surface, and free resources. The
+      * surface cannot be reused after this. */
+    def destroy()
 }
 
 /** Rendering and event managing class associated to a rendering surface.
@@ -50,37 +54,58 @@ abstract trait Surface {
 trait SurfaceRenderer {
     /** Code to call to render a frame. */
 	type Frame = (Surface)=>Unit
+	
 	/** Code to call to initialize a rendering surface. */
 	type InitSurface  = (SGL, Surface)=>Unit
+	
 	/** Code to call at each surface reconfiguration. The two arguments are the width and height in pixels. */
 	type SurfaceChanged = (Surface)=>Unit
+	
 	/** Code to call when the application pauses. */
 	type Pause = (Surface)=>Unit
+	
 	/** Code to call when the application resumes. */
 	type Resume = (Surface)=>Unit
+	
 	/** Code to call when a key was type and the rendering surface was active. */
 	type Key = (Surface, KeyEvent)=>Unit
+	
 	/** Code to call when the surface has been clicked (touch-click on touchable devices, left-click on desktops). */
+	
 	type Action = (Surface, ActionEvent)=>Unit
+	
 	/** Code to call when the user requested configuration (long-click on touchable devices, right-click on desktops). */
 	type Configure = (Surface, ConfigureEvent)=>Unit
+	
 	/** Code to call when the user moved one or more pointers (the mouse on desktops, touch motions of touchable devices). */
 	type Motion = (Surface, MotionEvent)=>Unit
+	
 	/** Code to call when a scroll wheel is used. */
 	type Scroll = (Surface, ScrollEvent)=>Unit
+	
 	/** Code to call when closing the surface. */
 	type Close = (Surface)=>Unit
 	
 	var frame:Frame = null
+	
 	var initSurface:InitSurface = null
+	
 	var surfaceChanged:SurfaceChanged = null
+	
 	var key:Key = null
+	
 	var action:Action = null
+	
 	var configure:Configure = null
+	
 	var motion:Motion = null
+	
 	var scroll:Scroll = null
+	
 	var pause:Pause = null
+	
 	var resume:Resume = null
+	
 	var close:Close = null
 }
 

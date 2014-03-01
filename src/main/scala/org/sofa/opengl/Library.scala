@@ -369,13 +369,32 @@ class TextureLibrary(gl:SGL) extends Library[Texture](gl)
 // == Models ============================================
 
 
-object ModelResource { def apply(name:String,fileName:String):ModelResource = new ModelResource(name,fileName) }
+object ModelResource {
+	def apply(name:String, fileName:String, geometry:String):ModelResource = new ModelResource(name,fileName, geometry)
+	def apply(name:String, mesh:Mesh):ModelResource = new ModelResource(name, mesh)
+}
 
-class ModelResource(name:String, val fileName:String) extends ResourceDescriptor[Mesh](name) {
-	private var data:Mesh = null
+class ModelResource(name:String, mesh:Mesh, aFileName:String = "", aGeometry:String = "") extends ResourceDescriptor[Mesh](name) {
+	private var data:Mesh = mesh
+
+	private var fileName = aFileName
+
+	private var geometry = aGeometry
+
+	def this(name:String, fileName:String, geometry:String) {
+		this(name, null, fileName, geometry)
+	}
 
 	def value(gl:SGL):Mesh = {
-		throw NoSuchResourceException("TODO")
+		if(data eq null) {
+			try {
+				data = Mesh.loader.open(fileName, geometry)
+			} catch {
+				case e:IOException => throw NoSuchResourceException(e.getMessage, e)
+			}
+		}
+
+		data
 	}
 }
 

@@ -1,4 +1,5 @@
-package org.sofa.opengl.test
+/*package org.sofa.opengl.test
+
 
 import scala.math._
 import scala.concurrent.duration._
@@ -11,6 +12,7 @@ import org.sofa.opengl.akka.SurfaceExecutorService
 import org.sofa.opengl.avatar.renderer.{Renderer, RendererActor, AvatarFactory, Screen, Avatar, NoSuchAvatarException, NoSuchScreenException}
 import org.sofa.opengl.avatar.renderer.sprite.{ImageSprite}
 import org.sofa.opengl.avatar.renderer.screen.{HexaTilesScreen}
+
 
 class HexaAvatarFactory(val renderer:Renderer) extends AvatarFactory {
 	def screenFor(name:String, screenType:String):Screen = screenType match {
@@ -73,4 +75,4 @@ class HexaWorld extends Actor {
 		rendererActor ! SwitchScreen("hexaworld-screen")
 		rendererActor ! ChangeScreenSize(Axes((0.0, 5.0), (0.0, 5.0), (0.0, 0.0)), 1.0)
 	}
-}
+}*/

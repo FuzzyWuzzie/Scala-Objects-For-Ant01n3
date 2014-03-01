@@ -1,4 +1,4 @@
-package org.sofa.opengl.test
+/*package org.sofa.opengl.test
 
 import scala.math._
 import scala.collection.mutable.HashMap
@@ -129,4 +129,4 @@ class TestRobot2 extends Actor {
 		rendererActor ! ChangeAvatar("black-box-1", AddBehavior("eyes-loop", "eyes-loop"))
 		rendererActor ! ChangeAvatar("black-box-1", StartBehavior("eyes-loop"))
 	}
-}
+}*/

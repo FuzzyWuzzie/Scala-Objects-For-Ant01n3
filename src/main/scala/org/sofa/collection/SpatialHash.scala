@@ -45,15 +45,13 @@ trait SpatialObject {
 	def to:Point3
 
 	/** The object appears in the given spatial area. */
-	def addBucket(bucket:Bucket[SpatialObject,SpatialPoint,SpatialCube])
+	def addBucket(bucket:GenericBucket)
 	
 	/** The object is removed from the spatial hash.
-	  * The given set is the set of buckets of the spatial hash.
-	  * The object removes itself from it. It also removes buckets that
-	  * becomre empty. */
-	def removeBuckets(bucketSet:HashMap[HashPoint3,Bucket[SpatialObject,SpatialPoint,SpatialCube]])
-	// We allow the spatial object to interfere with the spatial hash bucket list
-	// to avoid creating and returning a list of buckets to clear.
+	  * The given function removes the object from the bucket and update the bucket
+	  * list to remove the bucket if it is empty. The function pertains to the 
+	  * spatial hash. */
+	def removeBuckets(remove:(GenericBucket,SpatialObject)=>Unit)
 }
 
 
@@ -61,26 +59,21 @@ trait SpatialObject {
 trait SpatialPoint extends SpatialObject {
 
 	/** The area where the spatial object as a point appears. */
-	protected var bucket:Bucket[SpatialObject,SpatialPoint,SpatialCube] = null
+	protected var bucket:GenericBucket = null
 
 	override def isVolume = false
 
 	override def bucketCount:Int = 1
 
-	def addBucket(bucket:Bucket[SpatialObject,SpatialPoint,SpatialCube]) {
+	def addBucket(bucket:GenericBucket) {
 		assert(this.bucket eq null)
 
 		this.bucket = bucket		
 	}
 	
-	def removeBuckets(bucketSet:HashMap[HashPoint3,Bucket[SpatialObject,SpatialPoint,SpatialCube]]) {
+	def removeBuckets(removePoint:(GenericBucket,SpatialObject)=>Unit) {
 		assert(bucket ne null)
-		bucket.removePoint(this)
-
-		if(bucket.isEmpty) {
-		 	bucketSet.remove(bucket.position)
-		}
-
+		removePoint(bucket, this)
 		bucket = null
 	}
 }
@@ -91,8 +84,8 @@ trait SpatialPoint extends SpatialObject {
 trait SpatialCube extends SpatialObject {
 
 	/** Set of areas the object appears in. */
-//	protected var buckets:HashSet[Bucket[SpatialObject,SpatialPoint,SpatialCube]] = null
-	protected var buckets:ArrayBuffer[Bucket[SpatialObject,SpatialPoint,SpatialCube]] = null
+//	protected var buckets:HashSet[GenericBucket] = null
+	protected var buckets:ArrayBuffer[GenericBucket] = null
 	// Switched from an 'heavy' hashset structure to an array because we do not need
 	// to check unicity, buckets are unique in the array "by construction". Further,
 	// an array buffer should be smaller in terms of memory than a HashSet (that hides
@@ -107,10 +100,10 @@ trait SpatialCube extends SpatialObject {
 
 	override def bucketCount:Int = if(buckets ne null) buckets.size else 0
 
-	def addBucket(bucket:Bucket[SpatialObject,SpatialPoint,SpatialCube]) {
+	def addBucket(bucket:GenericBucket) {
 		if(buckets eq null)
-//			buckets = new HashSet[Bucket[SpatialObject,SpatialPoint,SpatialCube]]()
-			buckets = new ArrayBuffer[Bucket[SpatialObject,SpatialPoint,SpatialCube]](4)
+//			buckets = new HashSet[.GenericBucket]()
+			buckets = new ArrayBuffer[GenericBucket](4)
 			// Start with a small initial size since for objects smaller than the bucket
 			// size in 2D at max a volume occupies 4 buckets (8 in 3D). Keep the least
 			// size.
@@ -121,18 +114,18 @@ trait SpatialCube extends SpatialObject {
 		buckets += bucket 
 	}
 	
-	def removeBuckets(bucketSet:HashMap[HashPoint3,Bucket[SpatialObject,SpatialPoint,SpatialCube]]) {
+	def removeBuckets(removeVolume:(GenericBucket,SpatialObject)=>Unit) {
 		assert(buckets ne null)
 		assert(!buckets.isEmpty)
-	
-		buckets.foreach { bucket =>
-			bucket.removeVolume(this)
-			
-			if(bucket.isEmpty) {
-			 	bucketSet.remove(bucket.position)
-			}
+
+		var i = 0
+		val n = buckets.length
+
+		while(i < n) {
+			removeVolume(buckets(i), this)
+			i+= 1
 		}
-		
+
 		buckets.clear
 	}
 }
@@ -155,6 +148,14 @@ class Bucket[T<:SpatialObject,P<:SpatialPoint,V<:SpatialCube](val position:HashP
 	def addVolume(volume:V) {
 		if(volumes eq null) volumes = new HashSet[V]()
 		volumes += volume
+	}
+
+	def remove(thing:T) {
+		if(thing.isVolume) {
+			volumes -= thing.asInstanceOf[V]
+		} else {
+			points -= thing.asInstanceOf[P]
+		}
 	}
 
 	def removePoint(point:P) {
@@ -297,7 +298,7 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 						var b = buckets.get(p).getOrElse({new Bucket(p)})
 						
 						b.addVolume(thing.asInstanceOf[V])
-						thing.addBucket(b.asInstanceOf[Bucket[SpatialObject,SpatialPoint,SpatialCube]])
+						thing.addBucket(b.asInstanceOf[GenericBucket])
 						buckets += ((p, b))
 					}
 				}
@@ -309,7 +310,7 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 			var b = buckets.get(p).getOrElse(new Bucket(p))
 		
 			b.addPoint(thing.asInstanceOf[P])
-			thing.addBucket(b.asInstanceOf[Bucket[SpatialObject,SpatialPoint,SpatialCube]])
+			thing.addBucket(b.asInstanceOf[GenericBucket])
 			buckets += ((p,b))
 
 			points += 1
@@ -319,21 +320,28 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 	/** Remove an object from the index. If the object is the last
 	  * one in its bucket(s), the bucket(s) is(are) removed. */
 	def remove(thing:T) {
+		def removeVolume(bucket:GenericBucket, volume:SpatialObject) {
+			bucket.remove(volume)
+			if(bucket.isEmpty) { buckets.remove(bucket.position) }
+		}
+
+		def removePoint(bucket:GenericBucket, point:SpatialObject) {
+			bucket.remove(point)
+			if(bucket.isEmpty) { buckets.remove(bucket.position) }
+		}
+
 		// We cannot hash the thing to know its bucket, since in
 		// between the thing may have moved. Therefore we use the
 		// set of bucket stored in the thing that tells inside
 		// which bucket the thing appears.
 
-		val b = thing.removeBuckets(buckets.asInstanceOf[HashMap[HashPoint3,Bucket[SpatialObject,SpatialPoint,SpatialCube]]])
-		// b.foreach { bucket =>
-		// 	bucket.remove(thing)
-		// 	if(bucket.isEmpty) {
-		// 		buckets.remove(bucket.position)
-		// 	}
-		// }
-
-		if(thing.isVolume) volumes -= 1
-		else points -= 1
+		if(thing.isVolume) {
+			thing.removeBuckets(removeVolume)
+			volumes -= 1
+		} else {
+			thing.removeBuckets(removePoint)
+			points -= 1
+		}
 	}
 	
 	/** Remove and re-add the given thing, therefore updating the

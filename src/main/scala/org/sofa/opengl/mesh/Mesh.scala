@@ -2,8 +2,10 @@ package org.sofa.opengl.mesh
 
 import scala.language.implicitConversions
 
+import org.sofa.FileLoader
 import org.sofa.nio._
 import org.sofa.opengl._
+import org.sofa.opengl.io.collada.ColladaFile
 
 import javax.media.opengl._
 import GL._
@@ -31,6 +33,33 @@ object VertexAttribute extends Enumeration {
 
 	/** Convert a VertexAttribute to a String. */
 	implicit def Va2St(v:VertexAttribute):String = v.toString
+}
+
+
+/** Pluggable loader for mesh sources. */
+trait MeshLoader extends FileLoader {
+    /** Try to open a resource, and inside this resource a given
+      * `geometry` part, or throw an IOException if not available. */
+    def open(resource:String, geometry:String):Mesh
+}
+
+
+/** Default loader for meshes, based on files and the include path, using
+  * the Collada format, to read the geometry of the object.
+  * This loader tries to open the given resource directly, then if not
+  * found, tries to find it in each of the pathes provided by the include
+  * path of [[ColladaFile]]. If not found it throws an IOException. */
+class ColladaMeshLoader extends MeshLoader {
+    def open(resource:String, geometry:String):Mesh = {
+    	val file = new ColladaFile(resource)
+
+    	file.library.geometry(geometry).get.mesh.toMesh 
+    }
+}
+
+
+object Mesh {
+	var loader = new ColladaMeshLoader()
 }
 
 

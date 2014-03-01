@@ -98,6 +98,11 @@ class SurfaceGLCanvas(
     	)
    	}
 
+    def destroy() {
+    	anim.stop
+    	canvas.destroy
+    }
+
    	def fullscreen(on:Boolean) { throw new RuntimeException("not supported with non NEWT windows yet") }
 
     def windowActivated(e:AWTWindowEvent) {}
@@ -321,6 +326,11 @@ class SurfaceNewt(
     	win.setSize(newWidth, newHeight)
     	w = newWidth
     	h = newHeight
+    }
+
+    def destroy() {
+    	anim.stop
+    	win.destroy
     }
 
    	// -- GUI Events --------------------------------------------------------------
