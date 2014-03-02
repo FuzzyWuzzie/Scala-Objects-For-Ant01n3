@@ -2,7 +2,8 @@ package org.sofa.opengl.actor.renderer.avatar.ui
 
 import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
 import org.sofa.opengl.actor.renderer.{Screen}
-import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarEvent, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState}
+import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState}
+import org.sofa.opengl.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarMotionEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarKeyEvent}
 import org.sofa.opengl.actor.renderer.{NoSuchAvatarException}
 
 import org.sofa.opengl.{SGL, ShaderProgram}//, Camera, VertexArray, Texture, HemisphereLight, ResourceDescriptor, Libraries}
@@ -69,7 +70,7 @@ trait UIrenderUtils {
 
 		shader.use
 		space.pushpop {
-			println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
+			//println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
 			shader.use
 			shader.uniform("uniformColor", color)
 			space.scale(subSpace.size(0), subSpace.size(1), 1)
@@ -100,7 +101,7 @@ class UIAvatarRenderRoot(avatar:Avatar) extends UIAvatarRender(avatar) {
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 		//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)		// Premultiplied alpha
 
-		println(s"* render ${self.name}")
+		//println(s"* render ${self.name}")
 		super.render
 	}
 }
@@ -108,7 +109,7 @@ class UIAvatarRenderRoot(avatar:Avatar) extends UIAvatarRender(avatar) {
 
 class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 	override def render() {
-		println(s"* render ${self.name}")
+		//println(s"* render ${self.name}")
 		self.space.pushSubSpace
 		fill
 		self.renderSubs
@@ -123,7 +124,7 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 	lineColor = Rgba.Yellow
 
 	override def render() {
-		println(s"* render ${self.name}")
+		//println(s"* render ${self.name}")
 		self.space.pushSubSpace
 		fill
 		self.renderSubs
@@ -175,8 +176,8 @@ class UIAvatarSpaceRoot(avatar:Avatar) extends UIAvatarSpace(avatar) {
 		toSpace.to.set(1, 1*ratiohw, 1)
 		toSpace.size.set(1, 1*ratiohw, 1)
 
-		println("------------------")
-		println(s"# layout root scale1cm=${scale1cm} ratiohw=${ratiohw} size(2, ${ratiohw*2}) subSize(${toSpace.size(0)}, ${toSpace.size(1)})")
+		//println("------------------")
+		//println(s"# layout root scale1cm=${scale1cm} ratiohw=${ratiohw} size(2, ${ratiohw*2}) subSize(${toSpace.size(0)}, ${toSpace.size(1)})")
 		layoutSubs
 	}
 
@@ -199,7 +200,7 @@ class UIAvatarSpaceRoot(avatar:Avatar) extends UIAvatarSpace(avatar) {
  		self.foreachSub { sub =>
  			sub.space.thisSpace.setSize(toSpace.size(0), toSpace.size(1), 1)
  			sub.space.thisSpace.setPosition(0, 0, 0)
- 			println("    | layout %d %s".format(i, sub))
+ 			//println("    | layout %d %s".format(i, sub))
  			i += 1
  		}		
 	}
@@ -221,17 +222,34 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  		to.set(1,1,1)
  	}
 
+	var offsety = 0.0
+
  	def thisSpace = fromSpace
 
  	def subSpace = toSpace
 
+	override def changeSpace(newState:AvatarSpaceState) {
+		newState match {
+			case AvatarOffsetState(amount) => {
+				offsety += amount*0.01
+
+				var offsetMax = -(toSpace.size.height - fromSpace.size.height)
+				
+				if(offsetMax > 0) offsetMax = 0
+
+				if(offsety > 0) offsety = 0
+				else if(offsety < offsetMax) offsety = offsetMax
+			}
+			case _ => super.changeSpace(newState)
+		}
+	}
  	override def animateSpace() {
  		scale1cm = self.parent.space.scale1cm
 
  		toSpace.to.set(1, scale1cm * itemHeight * avatar.subCount, 1)
 
- 		println(s"# layout list available space (${fromSpace.size(0)}, ${fromSpace.size(1)})")
- 		println(s"#        list pos(${fromSpace.pos.x}, ${fromSpace.pos.y}) scale1cm=${scale1cm} items=${avatar.subCount} size=(${toSpace.to.x}, ${toSpace.to.y})")
+ 		//println(s"# layout list available space (${fromSpace.size(0)}, ${fromSpace.size(1)})")
+ 		//println(s"#        list pos(${fromSpace.pos.x}, ${fromSpace.pos.y}) scale1cm=${scale1cm} items=${avatar.subCount} size=(${toSpace.to.x}, ${toSpace.to.y})")
 
  		layoutSubs
  	}
@@ -240,7 +258,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  		val space = avatar.screen.space
 
  		space.push
- 		space.translate(thisSpace.pos.x, thisSpace.pos.y, 0)
+ 		space.translate(thisSpace.pos.x, thisSpace.pos.y + offsety, 0)
  	}
 
  	def popSubSpace() {
@@ -252,12 +270,14 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  		self.foreachSub { sub =>
  			sub.space.thisSpace.setSize(1, itemHeight*scale1cm, 1)
  			sub.space.thisSpace.setPosition(0, itemHeight*scale1cm*i, 0)
- 			println("    | layout %d %s".format(i, sub))
+ 			//println("    | layout %d %s".format(i, sub))
  			i += 1
  		}
  	}
 }
 
+
+case class AvatarOffsetState(amount:Double) extends AvatarSpaceState {}
 
 class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 	var scale1cm = 1.0
@@ -282,7 +302,7 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
  		scale1cm = self.parent.space.scale1cm
 
- 		println(s"# layout ListItem pos=${fromSpace.pos} size=${fromSpace.from} sub -> pos=${toSpace.pos} size=${toSpace.size}")
+ 		//println(s"# layout ListItem pos=${fromSpace.pos} size=${fromSpace.from} sub -> pos=${toSpace.pos} size=${toSpace.size}")
 	}
 
 	def pushSubSpace() {
@@ -311,6 +331,11 @@ class UIRoot(name:AvatarName, screen:Screen)
 	var space = new UIAvatarSpaceRoot(this)
 	
 	var renderer = new UIAvatarRenderRoot(this)	
+
+	def consumeEvent(event:AvatarEvent):Boolean = {
+		println("%s ignore event %s".format(name, event))
+		false
+	}
 }
 
 class UIList(name:AvatarName, screen:Screen)
@@ -319,6 +344,32 @@ class UIList(name:AvatarName, screen:Screen)
 	var space = new UIAvatarSpaceList(this)
 
 	var renderer = new UIAvatarRenderList(this)
+
+	var prevMotionEvent:AvatarMotionEvent = null
+
+	def consumeEvent(event:AvatarEvent):Boolean = {
+		event match {
+			case e:AvatarMotionEvent => {
+				if(e.isEnd) {
+					println("%s consume event END".format(name))
+					prevMotionEvent = null
+				} else {
+					if(prevMotionEvent ne null) {
+						println("%s consume event move".format(name))
+						space.changeSpace(AvatarOffsetState(e.position.y - prevMotionEvent.position.y))
+					} else println("%s consume event no move".format(name))
+					prevMotionEvent = e
+				}
+				//println("%s consume event %s".format(name, event))
+
+				true
+			}
+			case _ => {
+				println("%s ignore event %s".format(name, event))
+				false
+			}
+		}
+	}
 }
 
 class UIListItem(name:AvatarName, screen:Screen)
@@ -327,4 +378,21 @@ class UIListItem(name:AvatarName, screen:Screen)
 	var space = new UIAvatarSpaceListItem(this)
 
 	var renderer = new UIAvatarRenderListItem(this)
+
+	def consumeEvent(event:AvatarEvent):Boolean = {
+		event match {
+			case e:AvatarClickEvent => {
+				println("%s received event %s".format(name, event))
+				false
+			}
+			case e:AvatarLongClickEvent => {
+				println("%s received event %s".format(name, event))
+				false
+			}
+			case _ => {
+				println("%s received event %s".format(name, event))
+				false
+			}
+		}
+	}
 }

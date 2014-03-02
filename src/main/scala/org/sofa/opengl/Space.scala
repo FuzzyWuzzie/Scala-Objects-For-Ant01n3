@@ -28,6 +28,9 @@ trait Space {
       * it since it is used very often. Memory/speed compromise. */
     val mvp = new Matrix4()
 
+    /** Inverse of the top-most mvp, computed only when needed. */
+    protected var inverseMVP:Matrix4 = null
+
     /** Flag indicating if the modelview or projection changed since the last MVP compute. */
     protected var needRecomputeMVP = true
         
@@ -105,17 +108,29 @@ trait Space {
     	modelview.setIdentity
         needRecomputeMVP = true
     }
-    
-    def pushProjection() { projection.push }
 
-    def popProjection() { projection.pop; needRecomputeMVP = true }
+    /** Transform the given `point` using the top most matrix. */
+    def transform(point:Point3):Point3 = mvp.mult(point)
+
+    /** If neede recompute the inverse of the top most mvp matrix, and transform the given point by this inverse. */
+    def inverseTransform(point:Point3):Point3 = {
+    	if(inverseMVP eq null) {
+    		inverseMVP = mvp.inverse
+    	}
+
+    	mvp.mult(point)
+    }
+    
+    def pushProjection() { projection.push; inverseMVP = null }
+
+    def popProjection() { projection.pop; needRecomputeMVP = true; inverseMVP = null }
 
     /** Push a copy of the current model-view matrix in the model-view matrix stack. */
-    def push() { modelview.push }
+    def push() { modelview.push; inverseMVP = null }
     
     /** Pop the top-most model-view matrix from the model-view matrix stack and restore the
       * previous one as the current top mode-view matrix. */
-    def pop() { modelview.pop; needRecomputeMVP = true }
+    def pop() { modelview.pop; needRecomputeMVP = true; inverseMVP = null }
     
     /** Push a copy of the current model-view matrix on top of the model-view matrix stack, and
       * execute the given code, then pop the top matrix and restore the previous one. */

@@ -5,8 +5,8 @@ import org.scalatest.FlatSpec
 import akka.actor.ActorSystem
 
 import org.sofa.opengl.{Shader}
-import org.sofa.opengl.actor.renderer.{AvatarName, RendererNewt}
-
+import org.sofa.opengl.actor.renderer.{AvatarName}
+import org.sofa.opengl.actor.renderer.backend.RendererNewt
 
 class TestUI extends FlatSpec {
 
@@ -14,7 +14,7 @@ class TestUI extends FlatSpec {
 	val renderer = new RendererNewt(null, new UIAvatarFactory())//actorSystem.deadLetters)
 
 	"A UI" should "allow adding a root" in {
-		renderer.start("title", initialWidth=320, initialHeight=240, fps=1, decorated=false, fullscreen=false, overSample=4)
+		renderer.start("title", initialWidth=320, initialHeight=240, fps=24, decorated=false, fullscreen=false, overSample=4)
 
 		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2"
 		Shader.path += "shaders"

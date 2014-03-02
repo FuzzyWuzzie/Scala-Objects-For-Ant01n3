@@ -32,6 +32,9 @@ trait AvatarContainer {
 	/** Apply the given code to each sub avatar. */
 	def foreachSub(code:(Avatar)=>Unit)
 
+	/** Apply code to each avatar, to find the first one that returns true. */
+	def findSub(code:(Avatar)=>Boolean):Option[Avatar]
+
 	/** Find an avatar in this one or in its hierarchy of sub-avatars. */
 	def avatar(name:AvatarName, prefix:Int = -1):Option[Avatar]
 }
@@ -96,11 +99,21 @@ trait AvatarContainerHashMap extends AvatarContainer {
 		} 
 	}
 
-	def renderSubs() { subs.foreach { _._2.render } }
+	def renderSubs() { if(subs ne null) subs.foreach { _._2.render } }
 
-	def animateSubs() { subs.foreach { _._2.animate } }
+	def animateSubs() { if(subs ne null) subs.foreach { _._2.animate } }
 
-	def foreachSub(code:(Avatar)=>Unit) { subs.foreach { item => code(item._2) } }
+	def foreachSub(code:(Avatar)=>Unit) { if(subs ne null) subs.foreach { item => code(item._2) } }
+
+	def findSub(code:(Avatar)=>Boolean):Option[Avatar] = { if(subs ne null) {
+			subs.find { a => code(a._2) } match {
+				case Some(i) => Some(i._2)
+				case None => None
+			}
+		} else {
+			None
+		}
+	}
 
 	def avatar(name:AvatarName, prefix:Int = -1):Option[Avatar] = {
 		if(prefix < 0) {
@@ -213,6 +226,14 @@ trait AvatarContainerArray extends AvatarContainer {
 			var i = 0
 			val n = subs.size
 			while(i < n) { code(subs(i)); i += 1 }	// for performance reasons.
+		}
+	}
+
+	def findSub(code:(Avatar)=>Boolean):Option[Avatar] = {
+		if(subs ne null) {
+			subs.find(code)
+		} else {
+			None
 		}
 	}
 

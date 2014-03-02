@@ -23,7 +23,7 @@ trait AvatarSpace {
 	/** The avatar. */
 	protected def self:Avatar 
 
-	/** The number of units that represent 1 centimeter inside the sub-space of this avatar avatar. */
+	/** The number of units that represent 1 centimeter inside the sub-space of this avatar. */
 	def scale1cm:Double
 
 	/** Handle changes in the position and eventually communicate it to the sub avatars.
@@ -44,4 +44,15 @@ trait AvatarSpace {
 
 	/** Position and size of this avatar in its own sub-space. */
 	def subSpace:Box3
+
+// Avatar location
+
+	// /** Convert a `point` from this avatar space to the avatar sub-space. */
+	// def to(point:Point3):Point3
+
+	// /** Convert a `point` from this avatar sub-space to the avatar space. */
+	// def from(point:Point3):Point3
+
+	// /** Find a sub-avatar that contains the given `point` if any. */
+	// def avatarAt(point:Point3):Avatar 
 }

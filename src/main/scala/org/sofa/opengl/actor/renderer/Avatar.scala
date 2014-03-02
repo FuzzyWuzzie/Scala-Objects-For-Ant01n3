@@ -43,7 +43,7 @@ case class NoSuchAvatarStateException(state:AvatarState) extends Exception(state
   * This modularity allows to decouple the various tasks an avatar has to handle:
   *
   * - [[AvatarContainer]]: Hierarchy (mixed).
-  * - [[AvatarEvent]]: Events (contained or mixed).
+  * - [[AvatarInteraction]]: Events (contained or mixed).
   * - [[AvatarSpace]]: Position, Dimension for this avatar an space for sub-avatars (contained or mixed).
   * - [[AvatarRender]]: Graphical representation (contained or mixed).
   *
@@ -75,7 +75,7 @@ abstract class Avatar(
 
 	def renderer:AvatarRender
 
-	def events:AvatarEvent
+	def events:AvatarInteraction
 
 // Interaction
 
@@ -140,7 +140,9 @@ abstract class Avatar(
 	/** Animate the sub-avatars. */
 	def animateSubs()
 
-	def foreachSub(code:(Avatar) => Unit)
+	def foreachSub(code:(Avatar)=>Unit)
+
+	def findSub(code:(Avatar)=>Boolean):Option[Avatar]
 
 // Utility
 
@@ -158,9 +160,9 @@ abstract class DefaultAvatar(
 		screen:Screen)
 	extends Avatar(
 		name, screen)
-	with AvatarContainerArray with AvatarEvent {
+	with AvatarContainerArray with AvatarInteraction {
 
-	def events:AvatarEvent = this
+	def events:AvatarInteraction = this
 }
 
 

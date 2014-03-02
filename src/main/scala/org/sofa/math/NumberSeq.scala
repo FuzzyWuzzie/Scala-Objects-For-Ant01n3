@@ -590,6 +590,12 @@ trait NumberSeq2 extends NumberSeq {
     final def y_=(value:Double) = data(1) = value
     final def xy_=(value:(Double, Double)) = { data(0) = value._1; data(1) = value._2 }
     
+    final def width:Double = data(0)
+    final def height:Double = data(1)
+
+    final def width_=(value:Double) = data(0) = value
+    final def height_=(value:Double) = data(1) = value
+
     def set(x:Double, y:Double):ReturnType = { data(0) = x; data(1) = y; this.asInstanceOf[ReturnType] }
     
     def copy(other:NumberSeq2) {
@@ -702,6 +708,10 @@ trait NumberSeq3 extends NumberSeq2 {
     final def xz_=(value:(Double, Double)) = { data(0) = value._1; data(2) = value._2 }
     final def xyz_=(value:(Double, Double, Double)) = { data(0) = value._1; data(1) = value._2; data(2) = value._3 }
     
+    final def depth:Double = data(2)
+
+    final def depth_=(value:Double) = data(2) = value
+
     def set(x:Double, y:Double, z:Double):ReturnType = { data(0) = x; data(1) = y; data(2) = z; this.asInstanceOf[ReturnType] }
         
     def copy(other:NumberSeq3) {

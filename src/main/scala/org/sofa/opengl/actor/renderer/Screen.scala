@@ -67,6 +67,9 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	  * avatar coordinates are considered. */
 	val space = new ScreenSpace()
 
+	/** Set of avatars in the active selection. */
+	val selection = new AvatarSelection
+
 // Hiden variable fields
 
 	/** Set to true after begin() and reset to false after end(). */
@@ -79,12 +82,20 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 
 // Interaction Events
 
-	/** The screen as been pinched or the mouse scroll wheel used. */
-	def pinch(amount:Int) {}
-
-	/** The screen has been touched or the pointer moved. Return true if the touch event was sent to an avatar,
-	  * else the touch event must be processed by the screen itself. */
-	def motion(e:MotionEvent):Boolean = { false }
+	/** Propagate an event to sub avatars. 
+	  * If there is a selection, the event is send to each member of the selection.
+	  * Else the event is propagated to each sub-avatar, down the hierarchy, until one consumes it. */
+	def propagateEvent(event:AvatarEvent):Boolean = {
+		if(selection.isEmpty) {
+			findSub { sub => sub.events.consumeOrPropagateEvent(event) } match {
+				case Some(a) => true
+				case _       => false
+			}
+		} else {
+			selection.broadcastEvent(event)
+			true
+		}
+	}
 
 	// Renderable -- Override these methods in subscreens.
 

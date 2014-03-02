@@ -6,8 +6,6 @@ import scala.collection.mutable.HashMap
 import javax.media.opengl._
 import javax.media.opengl.glu._
 import com.jogamp.opengl.util._
-import com.jogamp.newt.event._
-import com.jogamp.newt.opengl._
 
 import org.sofa.nio._
 import org.sofa.math.{Rgba, Vector3, Vector4, Axes, Point3, NumberSeq3}
@@ -27,7 +25,7 @@ case class RendererException(msg:String) extends Exception(msg)
 
 /** Renderer companion object. */
 object Renderer {
-	def apply(controler:ActorRef):Renderer = new RendererNewt(controler) 
+	def apply(controler:ActorRef):Renderer = new backend.RendererNewt(controler) 
 }
 
 
@@ -48,8 +46,9 @@ object Renderer {
   * screens can be seen as a set of avatars. See [[Screen]] and [[Avatar]].
   *
   * This renderer class is abstract, since it depends on a kind of surface. The
-  * only method to implement is `newSurface()` which will create a surface depending
-  * on the type of underlying system.
+  * only methods to implement are `newSurface()` which will create a surface depending
+  * on the type of underlying system, and [[Surface]] event callbacks `onKey()`,
+  * `onMotion()` and `onScroll()`.
   */
 abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null) extends SurfaceRenderer {
 // General
@@ -132,11 +131,11 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 
 // == Surface events ===========================
 
-	def onScroll(surface:Surface, e:ScrollEvent) { if(screen ne null) { screen.pinch(e.amount) } }
+	def onScroll(surface:Surface, e:ScrollEvent)
 
-	def onKey(surface:Surface, e:KeyEvent) {}
-	
-	def onMotion(surface:Surface, e:MotionEvent) { if(screen ne null) { screen.motion(e) } }
+	def onKey(surface:Surface, e:KeyEvent)
+
+	def onMotion(surface:Surface, e:MotionEvent)
 
 // == Rendering ================================
     
@@ -257,25 +256,6 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 	// 		case triplet:SizeTriplet ⇒ { Vector3(triplet.x, triplet.y, triplet.z) }
 	// 	}
 	// }
-}
-
-
-/** A renderer class for the Jogl NEWT system. It creates an OpenGL ES 2.0 context,
-  * with hardware acceleration and double buffering. */
-class RendererNewt(controller:ActorRef, factory:AvatarFactory=null) extends Renderer(controller, factory) {
-	protected def newSurface(renderer:SurfaceRenderer, width:Int, height:Int, title:String, fps:Int, decorated:Boolean, fullscreen:Boolean, overSample:Int):Surface = {
-	    val caps = new GLCapabilities(GLProfile.get(GLProfile.GL2ES2))
-
-		caps.setDoubleBuffered(true)
-		caps.setHardwareAccelerated(true)
-		caps.setSampleBuffers(overSample > 1)
-		caps.setNumSamples(overSample)
-
-	    new org.sofa.opengl.backend.SurfaceNewt(this,
-	    		width, height, title, caps,
-	    		org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2,
-	    		fps, decorated, fullscreen)
-	}
 }
 
 
