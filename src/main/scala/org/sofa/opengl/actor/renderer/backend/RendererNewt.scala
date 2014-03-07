@@ -20,11 +20,11 @@ import akka.actor.{ActorRef}
 class RendererNewt(controller:ActorRef, factory:AvatarFactory=null) extends Renderer(controller, factory) {
 	protected def newSurface(renderer:SurfaceRenderer, width:Int, height:Int, title:String, fps:Int, decorated:Boolean, fullscreen:Boolean, overSample:Int):Surface = {
 	    
-		println("GL2    %s".format(GLProfile.isAvailable(GLProfile.GL2)))
-		println("GL2ES2 %s".format(GLProfile.isAvailable(GLProfile.GL2ES2)))
-		println("GLES2  %s".format(GLProfile.isAvailable(GLProfile.GLES2)))
-		println("GL3bc  %s".format(GLProfile.isAvailable(GLProfile.GL3bc)))
-		println("GL4bc  %s".format(GLProfile.isAvailable(GLProfile.GL4bc)))
+		// println("GL2    %s".format(GLProfile.isAvailable(GLProfile.GL2)))
+		// println("GL2ES2 %s".format(GLProfile.isAvailable(GLProfile.GL2ES2)))
+		// println("GLES2  %s".format(GLProfile.isAvailable(GLProfile.GLES2)))
+		// println("GL3bc  %s".format(GLProfile.isAvailable(GLProfile.GL3bc)))
+		// println("GL4bc  %s".format(GLProfile.isAvailable(GLProfile.GL4bc)))
 
 
 //	    val caps = new GLCapabilities(GLProfile.get(GLProfile.GL3bc))

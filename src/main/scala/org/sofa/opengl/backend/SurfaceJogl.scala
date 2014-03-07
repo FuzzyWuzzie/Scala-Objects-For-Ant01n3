@@ -256,7 +256,14 @@ class SurfaceNewt(
 	    win.addKeyListener(this)
 	    win.addGLEventListener(this)
 
-        printCaps
+	    if(! caps.getGLProfile.isHardwareRasterizer) {
+	    	Console.err.println("### ATTENTION : using a software rasterizer !!! ###")
+	    	Console.err.println("%s".format(win.getContext.getGLVersion))
+	  	} else {
+	  		println("%s".format(win.getContext.getGLVersion))
+	  	} 
+
+        //printCaps
 
 	    anim.start
     }
