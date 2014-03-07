@@ -15,7 +15,7 @@ import GL2ES2._
   * The goal is to provide an easy access to some OpenGL methods, facilitating the use of NIO
   * buffers for example.
   */
-class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
+class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends SGL {
 	private[this] val ib1 = NioIntBuffer.allocate(1)
 	
 	import gl._
@@ -126,7 +126,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU) extends SGL {
 	def enableVertexAttribArray(id:Int) = glEnableVertexAttribArray(id)
 	def disableVertexAttribArray(id:Int) = glDisableVertexAttribArray(id)
 	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, j:Int) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, j)
-	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
+	//def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
     def drawArrays(mode:Int, i:Int, size:Int) = glDrawArrays(mode, i, size)
     def drawElements(mode:Int, count:Int, i:Int, offset:Int) = glDrawElements(mode, count, i, offset)
     def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) = throw new RuntimeException("no mutli draw arrays in GL ES 2.0 too bad")

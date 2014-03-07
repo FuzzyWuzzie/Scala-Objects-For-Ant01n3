@@ -10,5 +10,5 @@ uniform WhiteLight whitelight;
 #include <es2/whiteLight.glsl>
 
 void main(void) {
-	gl_FragColor = singleWhiteLight(P, N, C);
+	gl_FragColor = singleWhiteLightMatte(P, N, C);
 }

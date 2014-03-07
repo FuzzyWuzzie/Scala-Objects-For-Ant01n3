@@ -7,13 +7,41 @@ import javax.media.opengl._
 import GL._
 import GL2._
 import GL2ES2._
+import GL2GL3._
 import GL3._
+
+/** A dynamic set of quads, that can be updated and tries to send only changed informations to the GL. 
+  *
+  * As in new opengl implementations, quads are no more valid, this class mimics quads using a
+  * [[TrianglesMesh]].
+  */
+class QuadsMesh(quadCount:Int) extends TrianglesMesh(quadCount * 2) {
+	
+	/** Tell which vertex attribute to reference for the i-th triangle. */
+	def setQuad(i:Int, a:Int, b:Int, c:Int, d:Int) {
+		val q = i * 2
+		setTriangle(q,   a, b, c)
+		setTriangle(q+1, a, c, d)
+	}
+	
+	/** The i-th triangle in the index array. The returned tuple contains the three indices of
+	  * points in the position vertex array. See [[getPoint(Int)]]. */
+	def getQuad(i:Int):(Int,Int,Int,Int) = {
+		val q  = i * 2
+		val t1 = getTriangle(q)
+		val t2 = getTriangle(q+1)
+		
+		(t1._1, t1._2, t1._3, t2._3)
+	}
+}
+
 
 /** A dynamic set of quads that can be updated and tries to send only changed
   * informations to the GL.
   *
   * There are `size` quads at max in the mesh. */
-class QuadsMesh(val size:Int) extends Mesh {
+@deprecated(message="QUADS will be deprecated, use TrianglesMesh or for compatibility QuadsMesh", since="06 Feb 2014")
+class RealQuadsMesh(val size:Int) extends Mesh {
 	
 	/** The mutable set of coordinates. */
 	protected lazy val V:FloatBuffer = new FloatBuffer(size*3*4)
@@ -182,7 +210,7 @@ class QuadsMesh(val size:Int) extends Mesh {
 		Point3(V(p), V(p+1), V(p+2))
 	}
 	
-	def getPointTexCoords(i:Int):(Float,Float) = (T(i*2), T(i*2+1))
+	def getPointTexCoord(i:Int):(Float,Float) = (T(i*2), T(i*2+1))
 
 	/** The i-th triangle in the index array. The returned tuple contains the three indices of
 	  * points in the position vertex array. See [[getPoint(Int)]]. */

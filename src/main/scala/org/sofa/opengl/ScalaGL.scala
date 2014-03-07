@@ -95,6 +95,8 @@ abstract class SGL {
             
     val PROGRAM_POINT_SIZE:Int
 
+    var ShaderVersion:String
+
 // Info
     
     def isES:Boolean
@@ -110,7 +112,7 @@ abstract class SGL {
 	def enableVertexAttribArray(id:Int)
 	def disableVertexAttribArray(id:Int)
 	def vertexAttribPointer(number:Int, size:Int, typ:Int, b:Boolean, i:Int, j:Int)
-	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer)
+	//def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer)
     def drawArrays(mode:Int, i:Int, size:Int)
     def drawElements(mode:Int, count:Int, i:Int, offset:Int)
     def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int)

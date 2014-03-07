@@ -148,7 +148,7 @@ class PixelFlow2 extends WindowAdapter with GLEventListener {
     
     def init(win:GLAutoDrawable) {
 //		gl = new backend.SGLJogl3(win.getGL.getGL3, GLU.createGLU)
-        gl = new backend.SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU)
+        gl = new backend.SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU, win.getContext.getGLSLVersionString)
         
         gl.printInfos
         gl.clearColor(0f, 0f, 0f, 0f)

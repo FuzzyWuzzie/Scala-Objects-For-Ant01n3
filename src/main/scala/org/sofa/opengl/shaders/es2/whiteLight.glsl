@@ -86,4 +86,4 @@ vec4 singleWhiteLightMatte(vec3 P, vec3 N, vec4 C) {
 }
 
 
-#endif WHITE_LIGHT
+#endif

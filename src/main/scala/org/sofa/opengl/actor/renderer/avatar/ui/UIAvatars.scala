@@ -7,7 +7,7 @@ import org.sofa.opengl.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarMo
 import org.sofa.opengl.actor.renderer.{NoSuchAvatarException}
 
 import org.sofa.opengl.{SGL, ShaderProgram}//, Camera, VertexArray, Texture, HemisphereLight, ResourceDescriptor, Libraries}
-import org.sofa.opengl.mesh.{QuadsMesh, Mesh, VertexAttribute, LinesMesh}//, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
+import org.sofa.opengl.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}//, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 
 
 class UIAvatarFactory extends DefaultAvatarFactory {
@@ -26,7 +26,7 @@ class UIAvatarFactory extends DefaultAvatarFactory {
 
 
 trait UIrenderUtils {
-	var mesh:QuadsMesh = null
+	var mesh:TrianglesMesh = null
 
 	var lines:LinesMesh = null
 
@@ -50,12 +50,13 @@ trait UIrenderUtils {
 		}
 
 		if(mesh eq null) {
-			mesh = new QuadsMesh(1)
+			mesh = new TrianglesMesh(2)
 			mesh.setPoint(0, 0, 0, 0)
 			mesh.setPoint(1, 1, 0, 0)
 			mesh.setPoint(2, 1, 1, 0)
 			mesh.setPoint(3, 0, 1, 0)
-			mesh.setQuad(0, 0, 1, 2, 3)
+			mesh.setTriangle(0, 0, 1, 2)
+			mesh.setTriangle(1, 0, 2, 3)
 			mesh.newVertexArray(gl, shader, Vertex -> "position")
 
 			lines = new LinesMesh(4)
@@ -95,13 +96,14 @@ class UIAvatarRenderRoot(avatar:Avatar) extends UIAvatarRender(avatar) {
 		gl.clearColor(Rgba.White)
 		gl.clear(gl.COLOR_BUFFER_BIT)
 
-		gl.lineWidth(2)
+		gl.lineWidth(1f)
 		gl.disable(gl.DEPTH_TEST)
 		gl.enable(gl.BLEND)
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 		//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)		// Premultiplied alpha
 
 		//println(s"* render ${self.name}")
+		gl.checkErrors
 		super.render
 	}
 }

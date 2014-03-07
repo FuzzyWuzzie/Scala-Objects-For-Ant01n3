@@ -8,7 +8,7 @@ import android.opengl.{GLES20, GLU}
 import android.util.Log
 import android.graphics.BitmapFactory
 
-class SGLAndroidES20 extends SGL {
+class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     private[this] val ib1 = NioIntBuffer.allocate(1)
 
 // Awful constants

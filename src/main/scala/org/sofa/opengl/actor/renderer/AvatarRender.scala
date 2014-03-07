@@ -16,7 +16,7 @@ trait AvatarRenderState extends AvatarState {}
 /** A renderer for an avatar.
   *
   * The role of the renderer is to change the appearance of the avatar.
-  * The renderer acts knowing the space of the avatar. They often go by pair.
+  * The renderer acts knowing the space of the avatar.
   */
 trait AvatarRender {
 	/** The avatar being rendered. */

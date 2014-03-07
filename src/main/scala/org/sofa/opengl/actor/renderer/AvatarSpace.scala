@@ -15,9 +15,15 @@ trait AvatarSpaceState extends AvatarState {}
   * It first represent the dimensions and position of the avatar. These are
   * expressed in the space of the parent avatar. Then, it represents the same
   * space but as seen by sub-avatars and by the [[AvatarRender]] of this avatar.
+  *
   * In this case we call it sub-space. It defines
-  * a transformation that push the new space onto graphic state. It then allows
-  * to pop it back to restore the avatar space.
+  * a transformation that push the new space onto graphic state (`pushSubSpace()`,
+  * and `popSubSpace()`). It then allows to pop it back to restore the avatar space.
+  *
+  * The accessors `thisSpace` and `subSpace` define bounding boxes that define the
+  * overall size of the avatar and its origin. Note that the origin need not be
+  * inside the bouding box. Also the two bounding box, if seen from the same space,
+  * are free to be distinct.
   */
 trait AvatarSpace {
 	/** The avatar. */
@@ -27,10 +33,10 @@ trait AvatarSpace {
 	def scale1cm:Double
 
 	/** Handle changes in the position and eventually communicate it to the sub avatars.
-	  * If there is a layout for sub-avatars, it takes place here. */
+	  * For example, if there is a layout for sub-avatars, it takes place here. */
 	def animateSpace()
 
-	/** Change the space. */
+	/** Change the space. Send any kind of state change event to modify the space. */
 	def changeSpace(newState:AvatarSpaceState)
 
 	/** Setup the sub-space for sub avatars. */
@@ -44,15 +50,4 @@ trait AvatarSpace {
 
 	/** Position and size of this avatar in its own sub-space. */
 	def subSpace:Box3
-
-// Avatar location
-
-	// /** Convert a `point` from this avatar space to the avatar sub-space. */
-	// def to(point:Point3):Point3
-
-	// /** Convert a `point` from this avatar sub-space to the avatar space. */
-	// def from(point:Point3):Point3
-
-	// /** Find a sub-avatar that contains the given `point` if any. */
-	// def avatarAt(point:Point3):Avatar 
 }

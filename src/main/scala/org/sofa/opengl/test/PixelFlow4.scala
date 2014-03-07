@@ -80,7 +80,7 @@ class PixelFlow4 extends WindowAdapter with GLEventListener {
     
     def init(win:GLAutoDrawable) {
 //        gl = new backend.SGLJogl3(win.getGL.getGL3, GLU.createGLU)
-        gl = new backend.SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU)
+        gl = new backend.SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU, win.getContext.getGLSLVersionString)
 
         Shader.path  += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
 

@@ -13,30 +13,140 @@ case class ShaderAttributeException(msg:String, nested:Throwable=null) extends E
 
 /** Shader companion object. */
 object Shader {
+	var convertToCurrentShaderVersion = true
+
     /** A regular expression that matches any line that contains an include. */
-    val includeMatcher = "#include\\s+<([^>]+)>\\s*".r
+    val IncludeMatcher = "#include\\s+<([^>]+)>\\s*".r
+
+    /** A regular expression that matches the version and catches the number. */
+    val VersionMatcher = """#version\s+([0-9]+)\s*""".r
+
+    val AttributeMatcher = """\s*attribute\s+(.+)""".r
+
+    val VaryingMatcher = """\s*varying\s+(.+)""".r
+
+    val InMatcher = """\s*in\s+(.+)""".r
+
+    val OutMatcher = """\s*out\s+(.+)""".r
 
     /** The set of paths to try to load a shader. */
     val path = scala.collection.mutable.ArrayBuffer[String]()
 
     /** A way to load a shader source. */
     var loader:ShaderLoader = new DefaultShaderLoader()
-    
-    /** Transform a text file into an array of strings. */
-    def fileToArrayOfStrings(file:String):Array[String] = {
-        streamToArrayOfStrings(loader.open(file))
+  
+    /** Transform a text file into an array of strings.
+      *
+      * This version understands a "#include <file>" directive that will include the content of
+      * another file into the text of the shader. */
+    def fileToArrayOfStrings(gl:SGL, file:String, shaderType:Int):Array[String] = {
+        streamToArrayOfStrings(gl, loader.open(file), shaderType)
     }
-    /** Transform a text file from a stream into an array of strings, one cell in the array per line. */
-    def streamToArrayOfStrings(in:InputStream):Array[String] = {
+    /** Transform a text file from a stream into an array of strings, one cell in the array per line.
+      * 
+      * This version understands a "#include <file>" directive that will include the content of
+      * another file into the text of the shader. */
+    def streamToArrayOfStrings(gl:SGL, in:InputStream, shaderType:Int):Array[String] = {
+    	if(convertToCurrentShaderVersion)
+    	     streamToArrayOfStringsConvert(gl, in, shaderType, 0)
+    	else streamToArrayOfStringsSimple(gl, in, shaderType)
+	}
+
+	/** Transform a text file from a stream into an array of strings, one cell in the array per line 
+	  * and convert each line so that the shader uses the syntax corresponding to the actual GLSL
+	  * version of the drivers.
+	  *
+	  * This operation, maps the "#version" at the start of the shader to the real one,
+	  * and apply several transforms to use the correct syntax.
+      * 
+      * This version understands a "#include <file>" directive that will include the content of
+      * another file into the text of the shader. */
+	def streamToArrayOfStringsConvert(gl:SGL, in:InputStream, shaderType:Int, depth:Int):Array[String] = { 
         val buf = new scala.collection.mutable.ArrayBuffer[String]
         val src = new scala.io.BufferedSource(in)
+        val version = gl.ShaderVersion match {
+        	case VersionMatcher(number) => number.toInt
+        	case _ => throw new RuntimeException("cannot interpret gl context shader version %s".format(gl.ShaderVersion))
+        }
+
+        src.getLines.foreach { line =>
+        	line match {
+        		case IncludeMatcher(fileName) => {
+	        	    buf ++= streamToArrayOfStringsConvert(gl, loader.open(fileName), shaderType, depth+1)
+        		}
+        		case VersionMatcher(number) => {
+        			buf += gl.ShaderVersion
+        		}
+        		case AttributeMatcher(restOfLine) => {
+        			if(version < 130)
+        			     buf += "%s%n".format(line)
+        			else buf += "in %s%n".format(restOfLine)
+        		}
+        		case VaryingMatcher(restOfLine) => {
+        			if(version < 130)
+        			     buf += "%s%n".format(line)
+        			else {
+        				shaderType match {
+        					case gl.FRAGMENT_SHADER => buf += "in %s%n".format(restOfLine)
+        					case _                  => buf += "out %s%n".format(restOfLine)
+
+        				}
+        			}
+        		}
+        		case InMatcher(restOfLine) => {
+        			if(version >= 130)
+        			     buf += "%s%n".format(line)
+        			else buf += "attribute %s%n".format(restOfLine)
+        		}
+        		case OutMatcher(restOfLine) => {
+        			if(version >= 130)
+        			     buf += "%s%n".format(line)
+        			else buf += "varying %s%n".format(restOfLine)
+        		}
+        		case _ => {
+        			if(shaderType == gl.FRAGMENT_SHADER) {
+        				if(version >= 130) {
+        					var l:String = null
+        					l = line.replace("gl_FragColor", "mgl_FragColor")
+        					l = l.replace("texture2D", "texture")
+        					buf += "%s%n".format(l)
+        				} else {
+        					buf += "%s%n".format(line)
+        				}
+        			} else {
+        				buf += "%s%n".format(line)
+        			}
+        		}
+        	}
+        }
+
+        if(depth == 0 && shaderType == gl.FRAGMENT_SHADER) {
+        	if(version >= 130) {
+        		buf.insert(1, "out vec4 mgl_FragColor;%n".format())
+        	}
+        }
+
+        println("** %s:".format(if(shaderType==gl.VERTEX_SHADER) "vertex shader" else "fragment shader"))
+        buf.foreach {line => print("    %s".format(line))}
+
+        buf.toArray
+    }
+
+    /** Transform a text file from a stream into an array of strings, one cell in the array per line.
+      * 
+      * This version understands a "#include <file>" directive that will include the content of
+      * another file into the text of the shader. */
+    def streamToArrayOfStringsSimple(gl:SGL, in:InputStream, shaderType:Int):Array[String] = { 
+        val buf = new scala.collection.mutable.ArrayBuffer[String]
+        val src = new scala.io.BufferedSource(in)
+
         src.getLines.foreach { line =>
         	if(line.startsWith("#include")) {
         	    val fileName = line match {
-        	        case includeMatcher(file) => file 
+        	        case IncludeMatcher(file) => file 
         	        case _                    => throw new RuntimeException("invalid include statement '%s'".format(line))
         	    }
-        	    buf ++= streamToArrayOfStrings(loader.open(fileName))
+        	    buf ++= streamToArrayOfStrings(gl, loader.open(fileName), shaderType)
         	} else {
         		buf += "%s%n".format(line)
         	}
@@ -83,12 +193,6 @@ object ShaderProgram {
 abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends OpenGLObject(gl) {
     import gl._
 
-    /** Try to open the given `sourceFile` on the file system and compile it. */
-    def this(gl:SGL, name:String, sourceFile:String) = this(gl, name, Shader.fileToArrayOfStrings(sourceFile))
-
-    /** Try to read a shader source from the given input `stream` and compile it. */
-    def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(stream))
-    
     /** Kind of shader, vertex, fragment or geometry ? */
     protected val shaderType:Int
     
@@ -153,10 +257,10 @@ class VertexShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl,
     init
     
     /** Try to open the given `sourceFile` on the file system and compile it. */
-    def this(gl:SGL, name:String, fileSource:String) = this(gl, name, Shader.fileToArrayOfStrings(fileSource))
+    def this(gl:SGL, name:String, fileSource:String) = this(gl, name, Shader.fileToArrayOfStrings(gl, fileSource, gl.VERTEX_SHADER))
     
     /** Try to read a shader source from the given input `stream` and compile it. */
-    def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(stream))
+    def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.VERTEX_SHADER))
 }
 
 
@@ -167,10 +271,10 @@ class FragmentShader(gl:SGL, name:String, source:Array[String]) extends Shader(g
     init
     
     /** Try to open the given `sourceFile` on the file system and compile it. */
-    def this(gl:SGL, name:String, fileSource:String) = this(gl, name, Shader.fileToArrayOfStrings(fileSource))
+    def this(gl:SGL, name:String, fileSource:String) = this(gl, name, Shader.fileToArrayOfStrings(gl, fileSource, gl.FRAGMENT_SHADER))
 
     /** Try to read a shader source from the given input `stream` and compile it. */
-    def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(stream))
+    def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.FRAGMENT_SHADER))
 }
 
 

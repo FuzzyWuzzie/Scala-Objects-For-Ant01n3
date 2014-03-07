@@ -456,6 +456,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	protected def init() {
 		import VertexAttribute._
 		batchMesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
+Console.err.println("TODO URGENT ! create a TriangleStripMesh to replace TrianglesMesh (and QuadsMesh) in Text")
 	}
 
 	/** Size of the string in pixels. */
@@ -536,7 +537,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	    shader.uniform("texColor", 0)
 	    shader.uniform("textColor", clr)
 	    camera.uniformMVP(shader)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs, p)
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs, q*6)
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?		
 		
 		gl.blendFunc(src, dst)
@@ -564,7 +565,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:Shade
 	    shader.uniform("texColor", 0)
 	    shader.uniform("textColor", clr)
 	    shader.uniformMatrix("MVP", mvp)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs, p)
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs, q*6)
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?
 
 		gl.blendFunc(src, dst)

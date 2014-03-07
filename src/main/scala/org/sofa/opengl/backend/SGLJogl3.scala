@@ -18,7 +18,7 @@ import GL3._
   * The goal is to provide an easy access to some OpenGL methods, facilitating the use of NIO
   * buffers for example.
   */
-class SGLJogl3(val gl:GL3, val glu:GLU) extends SGL {
+class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
 	private[this] val ib1 = NioIntBuffer.allocate(1)
 	
 	import gl._
@@ -136,7 +136,7 @@ class SGLJogl3(val gl:GL3, val glu:GLU) extends SGL {
 	def enableVertexAttribArray(id:Int) = glEnableVertexAttribArray(id)
 	def disableVertexAttribArray(id:Int) = glDisableVertexAttribArray(id)
 	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, j:Int) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, j)
-	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
+//	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
     def drawArrays(mode:Int, i:Int, size:Int) = glDrawArrays(mode, i, size)
     def drawElements(mode:Int, count:Int, i:Int, offset:Int) = glDrawElements(mode, count, i, offset)
     def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) = glMultiDrawArrays(mode, firsts, counts, primcount)
@@ -309,14 +309,14 @@ class SGLJogl3(val gl:GL3, val glu:GLU) extends SGL {
     def uniform(loc:Int, i:Float, j:Float, k:Float) = glUniform3f(loc, i, j, k)
     def uniform(loc:Int, i:Float, j:Float, k:Float, l:Float) = glUniform4f(loc, i, j, k, l)
     def uniform(loc:Int, color:Rgba) = glUniform4f(loc, color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
-    def uniform(loc:Int, i:Double) = glUniform1d(loc, i)
-    def uniform(loc:Int, i:Double, j:Double) = glUniform2d(loc, i, j)
-    def uniform(loc:Int, i:Double, j:Double, k:Double) = glUniform3d(loc, i, j, k)
-    def uniform(loc:Int, i:Double, j:Double, k:Double, l:Double) = glUniform4d(loc, i, j, k, l)
+    def uniform(loc:Int, i:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform1d(loc, i)
+    def uniform(loc:Int, i:Double, j:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform2d(loc, i, j)
+    def uniform(loc:Int, i:Double, j:Double, k:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform3d(loc, i, j, k)
+    def uniform(loc:Int, i:Double, j:Double, k:Double, l:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform4d(loc, i, j, k, l)
     def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix3fv(loc, i, b, buffer.buffer)
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = glUniformMatrix3dv(loc, i, b, buffer.buffer)
+    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniformMatrix3dv(loc, i, b, buffer.buffer)
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix4fv(loc, i, b, buffer.buffer)
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = glUniformMatrix4dv(loc, i, b, buffer.buffer)
+    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniformMatrix4dv(loc, i, b, buffer.buffer)
     def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix3fv(loc, i, b, buffer, 0)
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix4fv(loc, i, b, buffer, 0)
     def uniform(loc:Int, v:Array[Float]) {

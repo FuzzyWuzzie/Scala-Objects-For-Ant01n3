@@ -69,8 +69,8 @@ class SurfaceGLCanvas(
     def gl:SGL = {
         if(sgl eq null) {
             sgl = backend match {
-                case SurfaceNewtGLBackend.GL2ES2 => new SGLJogl2ES2(canvas.getGL.getGL2ES2, GLU.createGLU)
-                case SurfaceNewtGLBackend.GL3    => new SGLJogl3(canvas.getGL.getGL3, GLU.createGLU)
+                case SurfaceNewtGLBackend.GL2ES2 => new SGLJogl2ES2(canvas.getGL.getGL2ES2, GLU.createGLU, canvas.getContext.getGLSLVersionString)
+                case SurfaceNewtGLBackend.GL3    => new SGLJogl3(canvas.getGL.getGL3, GLU.createGLU, canvas.getContext.getGLSLVersionString)
             }
         }
         sgl
@@ -256,14 +256,16 @@ class SurfaceNewt(
 	    win.addKeyListener(this)
 	    win.addGLEventListener(this)
 
+        printCaps
+
 	    anim.start
     }
     
     def gl:SGL = {
     	if(sgl eq null) {
     		sgl = backend match {
-        		case SurfaceNewtGLBackend.GL2ES2 => new SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU)
-        		case SurfaceNewtGLBackend.GL3    => new SGLJogl3(win.getGL.getGL3, GLU.createGLU)
+        		case SurfaceNewtGLBackend.GL2ES2 => new SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU, win.getContext.getGLSLVersionString)
+        		case SurfaceNewtGLBackend.GL3    => new SGLJogl3(win.getGL.getGL3, GLU.createGLU, win.getContext.getGLSLVersionString)
     		}
     	}
     	sgl
@@ -364,6 +366,16 @@ class SurfaceNewt(
     def mouseDragged(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, false, false)) }
     def mouseReleased(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, false, true)) }
     def mouseWheelMoved(e:JoglMouseEvent) { eventQueue.enqueue(new ScrollEventJogl(e)) }
+
+    def printCaps() {
+    	val prof = caps.getGLProfile
+    	val ctx  = win.getContext
+    	println("profile %s".format(prof.getName))
+    	println("impl    %s".format(prof.getImplName))
+    	println("HW      %s".format(prof.isHardwareRasterizer))
+    	println("GSSL    %s".format(ctx.getGLSLVersionString))
+    	println("version %s".format(ctx.getGLVersion))
+    }
 }
 
 
@@ -399,7 +411,7 @@ class KeyEventJogl(val source:JoglKeyEvent) extends KeyEvent {
 }
 
 class ScrollEventJogl(source:JoglMouseEvent) extends ScrollEvent {
-    def amount:Int = source.getWheelRotation.toInt
+    def amount:Int = source.getRotation()(0).toInt//source.getWheelRotation.toInt
 }
 
 class MotionEventJogl(source:JoglMouseEvent, pressed:Boolean, released:Boolean) extends MotionEvent {
@@ -408,10 +420,10 @@ class MotionEventJogl(source:JoglMouseEvent, pressed:Boolean, released:Boolean) 
     def isEnd:Boolean = released
     def x:Double = source.getX
     def y:Double = source.getY
-    def pressure:Double = source.getPressure
+    def pressure:Double = source.getPressure(true)
     def x(pointer:Int):Double = source.getX(pointer)
     def y(pointer:Int):Double = source.getY(pointer)
-    def pressure(pointer:Int):Double = source.getPressure(pointer)
+    def pressure(pointer:Int):Double = source.getPressure(pointer, true)
     def pointerCount:Int = source.getPointerCount
     def sourceEvent:AnyRef = source
     override def toString():String = "motion[%s%.1f, %.1f (%d)]".format(if(isStart) ">" else if(isEnd) "<" else "", x, y, pointerCount)
