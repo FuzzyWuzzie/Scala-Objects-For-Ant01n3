@@ -153,20 +153,26 @@ class GLFont(val gl:SGL, file:String, val size:Int, val shader:ShaderProgram, va
 	private[this] var ff:Int  = -1
 	private[this] var src:Int = -1
 	private[this] var dst:Int = -1
+	private[this] var blend   = true
+	private[this] var depth   = true
 
 	/** Push the GL state to draw strings using this font. */
 	def beginRender() {
 		ff  = gl.getInteger(gl.FRONT_FACE)
 		src = gl.getInteger(gl.BLEND_SRC) 
 		dst = gl.getInteger(gl.BLEND_DST)
+		blend = gl.isEnabled(gl.BLEND)
+		depth = gl.isEnabled(gl.DEPTH_TEST)
+
+		gl.enable(gl.BLEND)
+		gl.disable(gl.DEPTH_TEST)
+		gl.frontFace(gl.CCW)
 
 		if(isAlphaPremultiplied) {
 			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 	 	} else {
 	 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	 	}
-
-		gl.frontFace(gl.CCW)
 
 		shader.use
 		texture.bindTo(gl.TEXTURE0)
@@ -178,6 +184,9 @@ class GLFont(val gl:SGL, file:String, val size:Int, val shader:ShaderProgram, va
 		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?				
 		gl.blendFunc(src, dst)
 		gl.frontFace(ff)		
+
+		if(!blend) gl.disable(gl.BLEND)
+		if(depth) gl.enable(gl.DEPTH_TEST)
 
 		src = -1
 		dst = -1
@@ -487,6 +496,7 @@ object GLString {
 class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	/** Mesh used to build the quads of the batch. */
 	protected[this] val batchMesh = new QuadsMesh(maxCharCnt)
+	// Cannot use triangle strips, since chars can overlap (kerning).
 
 	/** Rendering color. */
 	protected[this] var color = Rgba.Black
@@ -524,14 +534,11 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	protected def init() {
 		import VertexAttribute._
 		batchMesh.newVertexArray(gl, font.shader, Vertex -> "position", TexCoord -> "texCoords")
-Console.err.println("TODO URGENT ! create a TriangleStripMesh to replace TrianglesMesh (and QuadsMesh) in Text")
+Console.err.println("TODO URGENT ! use a TrianglesMesh to replace TrianglesMesh (and QuadsMesh) in Text")
 	}
 
 	/** Release the resources of this string, the string is no more usable after this. */
 	def dispose() { batchMesh.dispose }
-
-	/** Length of the string in characters. */
-	def size:Int = l
 
 	/** Length of the string in characters. */
 	def length:Int = l

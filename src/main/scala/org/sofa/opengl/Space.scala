@@ -117,10 +117,15 @@ trait Space {
     }
 
     /** Transform the given `point` using the top most matrix. */
-    def transform(point:Point3):Point3 = mvp.mult(point)
+    def transform(point:Point4):Point4 = {
+    	recomputeMVP
+    	mvp.mult(point)
+    }
 
     /** If neede recompute the inverse of the top most mvp matrix, and transform the given point by this inverse. */
-    def inverseTransform(point:Point3):Point3 = {
+    def inverseTransform(point:Point4):Point4 = {
+    	recomputeMVP
+
     	if(inverseMVP eq null) {
     		inverseMVP = mvp.inverse
     	}

@@ -4,7 +4,7 @@ import scala.math._
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 
 import org.sofa.opengl.{SGL, Space, ShaderProgram}
-import org.sofa.math.{Point3, Rgba}
+import org.sofa.math.{Point3, Point4, Rgba}
 
 
 /** A text renderer that memorize couples of points and strings in pixel space,
@@ -12,8 +12,9 @@ import org.sofa.math.{Point3, Rgba}
 class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 
 	// TODO
-	// - Group texts string by font, so that we minimize texture and shader changes.
-	// - Allow some saving of some strings that are often used -> a cache ?
+	//
+	// - do not render items out of screen. We know the size and positions.
+	// - Allow some items to remain constant, when the user know it will reuse it.
 
 	val items = new ArrayBuffer[TextItem]()
 
@@ -26,9 +27,13 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	/** Current color. */
 	var color = Rgba.Black
 
+	var lastAdvance = -1.0
+
+	var lastHeight = -1.0
+
 	def font(fontName:String, size:Int) {
 		font = fonts.get((fontName,size)).getOrElse {
-			val f = new FontLayer(gl, new GLFont(gl, fontName, size, textShader))
+			val f = new FontLayer(gl, new GLFont(gl, fontName, size, textShader), this)
 			fonts += ((fontName, size) -> f)
 			f
 		}
@@ -38,9 +43,39 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 
 	def color(r:Double, g:Double, b:Double, a:Double) { color = Rgba(r, g, b, a) }
 
-	def string(text:String, x:Double, y:Double, z:Double) { string(text, Point3(x, y, z)) }
+	def stringpx(text:String, x:Double, y:Double) { stringpx(text, Point4(x, y, 0, 1)) }
 
-	def string(text:String, position:Point3) { font.addItem(text, position, color) }
+	def stringpx(text:String, x:Double, y:Double, depth:Double) { stringpx(text, Point4(x, y, depth, 1)) }
+
+	def stringpx(text:String, position:Point3) { stringpx(text, Point4(position.x, position.y, position.z, 1)) }
+
+	def stringpx(text:String, position:Point4) { font.addItem(text, position, Rgba(color)) }
+
+	def string(text:String, x:Double, y:Double, z:Double, space:Space) { string(text, Point4(x, y, z, 1), space) }
+
+	def string(text:String, position:Point3, space:Space) { string(text, Point4(position.x, position.y, position.z, 1), space) }
+
+	def string(text:String, position:Point4, space:Space) {
+		var pos:Point4 = position
+
+		//print(s"${position} --> ")
+		if(space ne null) {
+			pos = space.transform(position)
+			pos.perspectiveDivide
+
+			val w:Double = space.viewportPx(0)
+			val h:Double = space.viewportPx(1)
+
+			pos.x = pos.x / 2 * w + w / 2
+			pos.y = pos.y / 2 * h + h / 2
+			pos.z = 0
+		}
+
+		val item = font.addItem(text, pos, Rgba(color))
+
+		lastAdvance = item.advance
+		lastHeight  = item.height
+	}
 
 	def render(space:Space) {
 		space.pushpop {
@@ -79,7 +114,7 @@ object FontLayer {
   * This strategy allows to maintain a set of strings that is as large as
   * the max number of strings used at the last render.
   */
-class FontLayer(val gl:SGL, val font:GLFont) {
+class FontLayer(val gl:SGL, val font:GLFont, val textlayer:TextLayer) {
 
 	/** Pool of unused text items. */
 	protected[this] var pool = new ArrayBuffer[TextItem]()
@@ -106,7 +141,7 @@ class FontLayer(val gl:SGL, val font:GLFont) {
 	}
 
 	/** Add an item */
-	def addItem(text:String, position:Point3, color:Rgba) {
+	def addItem(text:String, position:Point4, color:Rgba):TextItem = {
 		// Take an item from the pool if possible or create it.
 
 		var item:TextItem = null
@@ -119,7 +154,9 @@ class FontLayer(val gl:SGL, val font:GLFont) {
 		}
 
 		items += item
-	} 
+
+		item
+	}
 }
 
 
@@ -129,16 +166,25 @@ class FontLayer(val gl:SGL, val font:GLFont) {
   * color. The string has by default a capacity of [[FontLayer.MaxChars]] characters.
   * It can grow if one uses a text string larger and will never shrink. 
   */
-class TextItem(var text:String, val font:FontLayer, val position:Point3, val color:Rgba) {
+class TextItem(var text:String, val font:FontLayer, val position:Point4, val color:Rgba) {
 	
 	/** The GL string used to render the text. */
 	protected[this] var string:GLString = font.font.newString(text, FontLayer.MaxChars)
+
+	/** Total advance in pixels. */
+	def advance:Double = string.advance
+
+	/** Total height in pixels. */
+	def height:Double = string.height
+
+	/** Advance and height in pixels. */
+	def sizes:(Double,Double) = (string.advance, string.height)
 
 	/** Release the resources of the string. */
 	def dispose() { string.dispose }
 
 	/** Rebuild the item with a `newText` string at `newPosition` with `newColor`. */
-	def rebuild(newText:String, newPosition:Point3, newColor:Rgba) {
+	def rebuild(newText:String, newPosition:Point4, newColor:Rgba) {
 		color.copy(newColor)
 		position.copy(newPosition)
 		text = newText
@@ -155,13 +201,13 @@ class TextItem(var text:String, val font:FontLayer, val position:Point3, val col
 	def render(space:Space) {
 		// Push and pop or translate and translate back ?
 		space.pushpop {
-			space.translate(position)
+			space.translate(position.x, position.y, 0)
 			string.setColor(color)
 			string.render(space)
 		}
-		// space.translate(position)
+		// space.translate(position.x, position.y, 0)
 		// string.setColor(color)
 		// string.render(space)
-		// space.translate(-position.x, -position.y, -position.z)
+		// space.translate(-position.x, -position.y, 0)
 	}
 }

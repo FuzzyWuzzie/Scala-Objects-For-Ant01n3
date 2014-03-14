@@ -363,6 +363,13 @@ class Point4(xInit:Double, yInit:Double, zInit:Double, wInit:Double) extends Num
         result
     }
 
+    def perspectiveDivide() {
+    	data(0) /= data(3)
+    	data(1) /= data(3)
+    	data(2) /= data(3)
+    	data(3) = 0
+    }
+
     /** Vector between this and an `other` point. 
       *
       * The direction goes from this to `other`. The length of the vector is

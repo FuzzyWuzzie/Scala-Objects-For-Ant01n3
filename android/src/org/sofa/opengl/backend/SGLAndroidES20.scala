@@ -104,6 +104,8 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     	ib1.get(0)
     }
 
+    def isEnabled(param:Int):Boolean = GLES20.glIsEnabled(param)
+
  // Vertex arrays
 	
 	def genVertexArray():Int = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")

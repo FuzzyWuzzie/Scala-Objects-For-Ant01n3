@@ -120,6 +120,8 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
     	ib1.get(0)
     }
 
+    def isEnabled(param:Int):Boolean = glIsEnabled(param)
+
 // Vertex arrays
 	
 	def genVertexArray():Int = {

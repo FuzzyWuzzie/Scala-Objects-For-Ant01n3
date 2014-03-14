@@ -117,6 +117,8 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
     	ib1.get(0)
     }
 
+    def isEnabled(param:Int):Boolean = glIsEnabled(param)
+
 // Vertex arrays
 	
 	def genVertexArray():Int = throw new RuntimeException("no vertex arrays in GL ES 2.0 too bad")

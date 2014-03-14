@@ -102,6 +102,8 @@ abstract class SGL {
     def isES:Boolean
 
     def getInteger(param:Int):Int
+
+    def isEnabled(param:Int):Boolean
     
 // Vertex arrays
 	
