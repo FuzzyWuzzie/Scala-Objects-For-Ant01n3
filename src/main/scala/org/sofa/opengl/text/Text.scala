@@ -11,7 +11,7 @@ import org.sofa.Timer
 import org.sofa.math.{Rgba,Matrix4}
 import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, Space, TexParams, TexAlpha, TexMin, TexMag, TexWrap, TexMipMap}
 import org.sofa.opengl.backend.{TextureImageAwt}
-import org.sofa.opengl.mesh.{QuadsMesh, VertexAttribute}
+import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
 
 
 // TODO:
@@ -495,14 +495,15 @@ object GLString {
   */
 class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	/** Mesh used to build the quads of the batch. */
-	protected[this] val batchMesh = new QuadsMesh(maxCharCnt)
+	//protected[this] val batchMesh = new QuadsMesh(maxCharCnt)
+	protected[this] val batchMesh = new TrianglesMesh(maxCharCnt*2)
 	// Cannot use triangle strips, since chars can overlap (kerning).
 
 	/** Rendering color. */
 	protected[this] var color = Rgba.Black
 
-	/** Current quad. */
-	protected[this] var q = 0
+	/** Current triangle. */
+	protected[this] var t = 0
 
 	/** Current point. */
 	protected[this] var p = 0
@@ -534,7 +535,6 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	protected def init() {
 		import VertexAttribute._
 		batchMesh.newVertexArray(gl, font.shader, Vertex -> "position", TexCoord -> "texCoords")
-Console.err.println("TODO URGENT ! use a TrianglesMesh to replace TrianglesMesh (and QuadsMesh) in Text")
 	}
 
 	/** Release the resources of this string, the string is no more usable after this. */
@@ -561,7 +561,7 @@ Console.err.println("TODO URGENT ! use a TrianglesMesh to replace TrianglesMesh 
 	  * before the first character. */
 	def begin() {
 		p = 0
-		q = 0
+		t = 0
 		x = 0f
 		y = 0f
 		l = 0
@@ -610,7 +610,7 @@ Console.err.println("TODO URGENT ! use a TrianglesMesh to replace TrianglesMesh 
 
 	    font.shader.uniform("textColor", clr)
 	    camera.uniformMVP(font.shader)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs, q*6)		
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs, t*3)		
 	}
 
 	def render(mvp:Matrix4) {
@@ -618,7 +618,7 @@ Console.err.println("TODO URGENT ! use a TrianglesMesh to replace TrianglesMesh 
 
 	    font.shader.uniform("textColor", clr)
 		font.shader.uniformMatrix("MVP", mvp)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs, q*6)	
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs, t*3)	
 	}
 
 	def render(space:Space) {
@@ -626,7 +626,7 @@ Console.err.println("TODO URGENT ! use a TrianglesMesh to replace TrianglesMesh 
 
 	    font.shader.uniform("textColor", clr)
 		space.uniformMVP(font.shader)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs, q*6)
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs, t*3)
 	}
 
 	/** Draw the string with the baseline at (0,0). Use the current translation of the camera.
@@ -658,22 +658,18 @@ Console.err.println("TODO URGENT ! use a TrianglesMesh to replace TrianglesMesh 
 	  * at the left of the start of the character. The character may extend before
 	  * and after, above and under this position. */
 	protected def addCharQuad(rgn:TextureRegion, width:Float) {
-		if(q < maxCharCnt) {
+		if(t/2 < maxCharCnt) {
 			val W = width + font.pad * 2 // rgn.width 		// Overall character drawing width
 			val H = font.cellHeight      // rgn.height 		// Overall character drawing height
 			val X = x - font.pad                            // Real X start of drawing.
 			val Y = y - font.descent                        // Real Y start of drawing.
 
-			//  u1 --> u2
-			//  
-			//  v1
-			//   |
-			//   v
-			//  v2
-
-			//  3--2   ^
-			//  |  |   |
-			//  0--1 >-+ CCW
+			//   u1 ---> u2
+			//
+			// v1   3--2     ^
+			//  |   | /|     |
+			//  v   |/ |     |
+			// v2   0--1   >-+ CCW
 
 			// Vertices
 
@@ -689,15 +685,17 @@ Console.err.println("TODO URGENT ! use a TrianglesMesh to replace TrianglesMesh 
 			batchMesh.setPointTexCoord(p+2, rgn.u2, rgn.v1)
 			batchMesh.setPointTexCoord(p+3, rgn.u1, rgn.v1)
 
-			// The quad
+			// The triangles
 
-			batchMesh.setQuad(q, p, p+1, p+2, p+3)
+			batchMesh.setTriangle(t,   p, p+1, p+2)
+			batchMesh.setTriangle(t+1, p, p+2, p+3)
 
-			// The QuadsMesh supports color per vertice, would it be interesting
-			// to allow to color individual characters in a string ?
+			// The TrianglesMesh supports color per vertice, would it be interesting
+			// to allow to color individual characters in a string ? However string
+			// would not be reusable for color.
 
 			p += 4
-			q += 1
+			t += 2
 		}
 	}
 }

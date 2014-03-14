@@ -200,8 +200,6 @@ class TestTextLayer extends SurfaceRenderer {
 		GLFont.path += "Fonts"
 
 		textLayer = new TextLayer(gl, textShad)
-
-		textLayer.color(Rgba.White)
 	}
 
 // Rendering
@@ -242,17 +240,19 @@ class TestTextLayer extends SurfaceRenderer {
 		
 		// Cubes
 		
+		var i = 0
+
 		textLayer.font("Ubuntu-L.ttf", 13)
 		phongShad.use
 		useLights(phongShad)
-		cubeSet.foreach { drawCube(_) }
+		cubeSet.foreach { cube => drawCube(cube, i); i += 1 }
 				
 		surface.swapBuffers
 		gl.checkErrors
 		
 		// Text
 
-		textLayer.font("LTe50138.ttf", 20)
+		textLayer.font("Ubuntu-B.ttf", 20)
 		textLayer.color(Rgba(1, 0.6, 0))
 		textLayer.stringpx("'TextLayer'", 10, 10)
 		textLayer.color(Rgba.White)
@@ -265,12 +265,12 @@ class TestTextLayer extends SurfaceRenderer {
 		updateParticles
 	}
 
-	protected def drawCube(aCube:TestVolume) {
+	protected def drawCube(aCube:TestVolume, i:Int) {
 		camera.pushpop {
 			val side = aCube.side
 			camera.translate(aCube.from.x+side/2, aCube.from.y+side/2, aCube.from.z+side/2)
 			textLayer.color(Rgba.White)
-			textLayer.string("cube", 0, 0, 0, camera)
+			textLayer.string("cube%d".format(i), 0, 0, 0, camera)
 			camera.scale(side, side, side)
 			camera.uniform(phongShad)
 			cube.lastva.draw(cube.drawAs)
