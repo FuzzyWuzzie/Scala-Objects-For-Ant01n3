@@ -48,11 +48,21 @@ class Rgba(
 	var green:Double,
 	var blue:Double,
 	var alpha:Double) {
+
+	/** Make a copy of `other` into this. */
+	def copy(other:Rgba) { 
+		red   = other.red
+		green = other.green
+		blue  = other.blue
+		alpha = other.alpha
+	}
 	
+	/** New instance containing the multiplication of each component by `factor`. */
 	def * (factor:Double):Rgba = {
 		new Rgba(red*factor, green*factor, blue*factor, alpha*factor)
 	}
 
+	/** Multiply in place each component by `factor`. */
 	def *= (factor:Double):Rgba = {
 		red   *= factor
 		green *= factor
@@ -61,10 +71,12 @@ class Rgba(
 		this
 	}
 
+	/** New instance containing the addition component-wise of this and `other`. */
 	def + (other:Rgba):Rgba = {
 		new Rgba(red + other.red, green + other.green, blue + other.blue, alpha + other.alpha)
 	}
 
+	/** Add component-wise each component of `other` to this. */
 	def += (other:Rgba):Rgba = {
 		red   += other.red
 		green += other.green
@@ -73,22 +85,26 @@ class Rgba(
 		this
 	}
 
-	/** Multiply red, green and blue components by alpha. */
+	/** Multiply in place red, green and blue components by alpha. */
 	def alphaPremultiply() {
 		red   *= alpha
 		green *= alpha
 		blue  *= alpha
 	}
 
-	/** New color same as this one, but with red, green and blue components multiplied by alpha. */
+	/** New copy of this with red, green and blue components multiplied by alpha. Alpha is unchanged. */
 	def alphaPremultiplied():Rgba = Rgba(red*alpha, green*alpha, blue*alpha, alpha)
 
+	/** A 3-tuple for the red, green and blue components. */
 	def rgb:(Double,Double,Double) = (red,green,blue)
 
+	/** Change the red, green and blue components using a 3-tuple. */
 	def rgb_=(rgb:(Double,Double,Double)) { red = rgb._1; green = rgb._2; blue = rgb._3 }
 
+	/** A 4-tuple for the red, green, blue and alpha components. */
 	def rgba:(Double,Double,Double,Double) = (red,green,blue,alpha)
 
+	/** Change the red, green, blue, alpha components using a 4-tuple. */
 	def rgba_=:(rgba:(Double,Double,Double,Double)) {  red = rgba._1; green = rgba._2; blue = rgba._3; alpha = rgba._4 }
 
 	/** Ensure each component is between 0 and 1 inclusive. */

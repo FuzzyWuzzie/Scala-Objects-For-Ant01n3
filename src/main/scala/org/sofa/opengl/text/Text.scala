@@ -9,7 +9,7 @@ import java.io.{File, IOException, InputStream, FileInputStream}
 
 import org.sofa.Timer
 import org.sofa.math.{Rgba,Matrix4}
-import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, TexParams, TexAlpha, TexMin, TexMag, TexWrap, TexMipMap}
+import org.sofa.opengl.{SGL, Texture, ShaderProgram, VertexArray, Camera, Space, TexParams, TexAlpha, TexMin, TexMag, TexWrap, TexMipMap}
 import org.sofa.opengl.backend.{TextureImageAwt}
 import org.sofa.opengl.mesh.{QuadsMesh, VertexAttribute}
 
@@ -79,7 +79,7 @@ object GLFont {
   * This code is derived and largely inspired by the implementation of Fractious:
   * http://fractiousg.blogspot.fr/2012/04/rendering-text-in-opengl-on-android.html
   */
-class GLFont(val gl:SGL, file:String, val size:Int, val isMipMapped:Boolean = false, rasterizeMipMaps:Boolean = true, optimizeFor3D:Boolean = false) {
+class GLFont(val gl:SGL, file:String, val size:Int, val shader:ShaderProgram, val isMipMapped:Boolean = false, rasterizeMipMaps:Boolean = true, optimizeFor3D:Boolean = false) {
 	/** Font height (actual, pixels). */
 	var height = 0f
 
@@ -149,6 +149,50 @@ class GLFont(val gl:SGL, file:String, val size:Int, val isMipMapped:Boolean = fa
 			charRgn(GLFont.CharNone)
 		}		
 	}
+
+	private[this] var ff:Int  = -1
+	private[this] var src:Int = -1
+	private[this] var dst:Int = -1
+
+	/** Push the GL state to draw strings using this font. */
+	def beginRender() {
+		ff  = gl.getInteger(gl.FRONT_FACE)
+		src = gl.getInteger(gl.BLEND_SRC) 
+		dst = gl.getInteger(gl.BLEND_DST)
+
+		if(isAlphaPremultiplied) {
+			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+	 	} else {
+	 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+	 	}
+
+		gl.frontFace(gl.CCW)
+
+		shader.use
+		texture.bindTo(gl.TEXTURE0)
+	    shader.uniform("texColor", 0)
+	}
+
+	/** Pop the GL state and restore attributes affected by `beginRender`. */
+	def endRender() {
+		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?				
+		gl.blendFunc(src, dst)
+		gl.frontFace(ff)		
+
+		src = -1
+		dst = -1
+		ff  = -1
+	}
+
+	/** Create a string with th given `text`. */
+	def newString(text:String):GLString = new GLString(gl, this, text)
+
+	/** Create an empty string, re-composable, with a given maximum length. */
+	def newString(maxLength:Int):GLString = new GLString(gl, this, maxLength)
+
+	/** Create a string with a given maximul length of character, initialized with `text`.
+	  * `text` length must be less or equal to `maxLength`. */
+	def newString(text:String, maxLength:Int):GLString = new GLString(gl, this, maxLength, text)
 }
 
 
@@ -424,6 +468,14 @@ class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
 // -- GLString ----------------------------------------------------------------------------------------------------------
 
 
+/** GLString companion object, allows easy string creation. */
+object GLString {
+	def apply(gl:SGL, font:GLFont, maxCharCnt:Int):GLString = new GLString(gl, font, maxCharCnt)
+	def apply(gl:SGL, font:GLFont, text:String):GLString = new GLString(gl, font, text)
+	def apply(gl:SGL, font:GLFont, maxCharCnt:Int, text:String):GLString = new GLString(gl, font, maxCharCnt, text)
+}
+
+
 /** A single string of text.
   * 
   * The string is stored as a vertex array of quads each one representing
@@ -432,42 +484,69 @@ class TextureRegion(val u1:Float, val v1:Float, val u2:Float, val v2:Float) {
   * TODO: Right-to-Left, Top-to-Bottom advance.
   * TODO: Multi-line string.
   */
-class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int, var shader:ShaderProgram) {
+class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	/** Mesh used to build the quads of the batch. */
-	protected val batchMesh = new QuadsMesh(maxCharCnt)
+	protected[this] val batchMesh = new QuadsMesh(maxCharCnt)
 
 	/** Rendering color. */
-	protected var color = Rgba.Black
+	protected[this] var color = Rgba.Black
 
 	/** Current quad. */
-	protected var q = 0
+	protected[this] var q = 0
 
 	/** Current point. */
-	protected var p = 0
+	protected[this] var p = 0
 
 	/** Current x. */
-	protected var x = 0f
+	protected[this] var x = 0f
 
 	/** Current y. */
-	protected var y = 0f
+	protected[this] var y = 0f
+
+	/** Length of string. */
+	protected[this] var l = 0
+
+	/** Build a GLString from a string. */
+	def this(gl:SGL, font:GLFont, text:String) {
+		this(gl, font, text.length)
+		build(text)
+	}
+
+	/** Build a GLString from a string, but allow to reserver more space in characters for future reuse. */
+	def this(gl:SGL, font:GLFont, maxLength:Int, text:String) {
+		this(gl, font, maxLength)
+		if(text.length < maxLength)
+			build(text)
+	}
 
 	init
 
 	protected def init() {
 		import VertexAttribute._
-		batchMesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
+		batchMesh.newVertexArray(gl, font.shader, Vertex -> "position", TexCoord -> "texCoords")
 Console.err.println("TODO URGENT ! create a TriangleStripMesh to replace TrianglesMesh (and QuadsMesh) in Text")
 	}
 
-	/** Size of the string in pixels. */
+	/** Release the resources of this string, the string is no more usable after this. */
+	def dispose() { batchMesh.dispose }
+
+	/** Length of the string in characters. */
+	def size:Int = l
+
+	/** Length of the string in characters. */
+	def length:Int = l
+
+	/** Maximum number of characters composable in the string. */
+	def maxLength:Int = maxCharCnt
+
+	/** Width of the string in pixels. */
 	def advance:Float = x
 
 	/** height of the string in pixels. */
 	def height:Float = y
 
-	def setColor(color:Rgba) {
-		this.color = color
-	}
+	/** Change the color of the string. */
+	def setColor(color:Rgba) { this.color = color }
 
 	/** Start the definition of a new string. This must be called before any call to char(Char).
 	  * When finished the end() method must be called. The string is always located at the
@@ -478,6 +557,7 @@ Console.err.println("TODO URGENT ! create a TriangleStripMesh to replace Triangl
 		q = 0
 		x = 0f
 		y = 0f
+		l = 0
 	}
 
 	/** Same as calling begin(), a code that uses char(), then end(), you
@@ -509,6 +589,7 @@ Console.err.println("TODO URGENT ! create a TriangleStripMesh to replace Triangl
 		addCharQuad(rgn, width)
 
 		x += width  	// Triangles may overlap.
+		l += 1
 	}
 
 	/** End the definition of the new string. This can only be called if begin() has been called before. */
@@ -516,60 +597,53 @@ Console.err.println("TODO URGENT ! create a TriangleStripMesh to replace Triangl
 		batchMesh.updateVertexArray(gl, updateVertices=true, updateTexCoords=true)
 	}
 
-	/** Draw the string with the baseline at (0,0). Use the translation of the camera. */
-	def draw(camera:Camera) {
-		val ff  = gl.getInteger(gl.FRONT_FACE)
-		val src = gl.getInteger(gl.BLEND_SRC) 
-		val dst = gl.getInteger(gl.BLEND_DST)
-		var clr = color
 
-		if(font.isAlphaPremultiplied) {
-			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-			 clr = color.alphaPremultiplied
-	 	} else {
-	 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-	 	}
+	def render(camera:Camera) {
+		var clr = if(font.isAlphaPremultiplied) color.alphaPremultiplied else color
 
-		gl.frontFace(gl.CCW)
-
-		shader.use
-		font.texture.bindTo(gl.TEXTURE0)
-	    shader.uniform("texColor", 0)
-	    shader.uniform("textColor", clr)
-	    camera.uniformMVP(shader)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs, q*6)
-		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?		
-		
-		gl.blendFunc(src, dst)
-		gl.frontFace(ff)
+	    font.shader.uniform("textColor", clr)
+	    camera.uniformMVP(font.shader)
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs, q*6)		
 	}
 
-	/** Draw the string with the baseline at (0,0). Use translation of the current MVP. */
-	def draw(mvp:Matrix4) {
-		val ff  = gl.getInteger(gl.FRONT_FACE)
-		val src = gl.getInteger(gl.BLEND_SRC) 
-		val dst = gl.getInteger(gl.BLEND_DST)
-		var clr = color
+	def render(mvp:Matrix4) {
+		var clr = if(font.isAlphaPremultiplied) color.alphaPremultiplied else color
 
-		if(font.isAlphaPremultiplied) {
-			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-			 clr = color.alphaPremultiplied
-	 	} else {
-	 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-	 	}
+	    font.shader.uniform("textColor", clr)
+		font.shader.uniformMatrix("MVP", mvp)
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs, q*6)	
+	}
 
-		gl.frontFace(gl.CCW)
+	def render(space:Space) {
+		var clr = if(font.isAlphaPremultiplied) color.alphaPremultiplied else color
 
-		shader.use
-		font.texture.bindTo(gl.TEXTURE0)
-	    shader.uniform("texColor", 0)
-	    shader.uniform("textColor", clr)
-	    shader.uniformMatrix("MVP", mvp)
+	    font.shader.uniform("textColor", clr)
+		space.uniformMVP(font.shader)
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs, q*6)
-		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?
+	}
 
-		gl.blendFunc(src, dst)
-		gl.frontFace(ff)
+	/** Draw the string with the baseline at (0,0). Use the current translation of the camera.
+	  * This in fact calls `GLFont.beginRender`, `render` and finally `GLFont.endRender`. */
+	def draw(camera:Camera) {
+		font.beginRender
+		render(camera)
+		font.endRender
+	}
+
+	/** Draw the string with the baseline at (0,0). Use current translation of the MVP.
+	  * This in fact calls `GLFont.beginRender`, `render` and finally `GLFont.endRender`. */
+	def draw(mvp:Matrix4) {
+		font.beginRender
+		render(mvp)
+		font.endRender
+	}
+
+	/** Draw the string with the baseline at (0, 0). Use current translation of the space.
+	  * This in fact calls `GLFont.beginRender`, `render` and finally `GLFont.endRender`. */
+	def draw(space:Space) {
+		font.beginRender
+		render(space)
+		font.endRender
 	}
 
 	/** Define a quad for a character at current `x` position.

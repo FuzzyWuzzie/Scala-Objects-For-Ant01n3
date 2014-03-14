@@ -102,6 +102,13 @@ trait Space {
         needRecomputeMVP = true
     }
 
+    def orthographicPixels(near:Double = 1, far:Double = -1) {
+    	projection.setIdentity
+    	maxDepth = far
+    	projection.orthographic(0, viewportPx.x, 0, viewportPx.y, near, far)
+    	needRecomputeMVP = true
+    }
+
     /** Reset the modelview to the identity. This must be called before each display
       * of the scene, before any transformation are made to the model view matrix. */
     def viewIdentity() {
@@ -124,6 +131,12 @@ trait Space {
     def pushProjection() { projection.push; inverseMVP = null }
 
     def popProjection() { projection.pop; needRecomputeMVP = true; inverseMVP = null }
+
+    def pushpopProjection(code: => Unit):Unit = {
+    	pushProjection
+    	code
+    	popProjection
+    }
 
     /** Push a copy of the current model-view matrix in the model-view matrix stack. */
     def push() { modelview.push; inverseMVP = null }

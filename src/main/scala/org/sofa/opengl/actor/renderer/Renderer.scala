@@ -96,7 +96,7 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 	    initSurface    = initRenderer
 	    frame          = render
 	    surfaceChanged = reshape
-	    close          = { surface ⇒ if(controler ne null) controler ! RendererControler.Exit }
+	    close          = onClose
 	    key            = onKey
 	    motion         = onMotion
 	    scroll         = onScroll
@@ -112,8 +112,6 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 	def destroy() {
 		switchToScreen(null)
 		screens.clear //foreach(removeScreen(_.1))
-		close
-		surface.destroy
 
 		initSurface    = null
 		frame          = null
@@ -122,14 +120,23 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 		key            = null
 		motion         = null
 		scroll         = null
-		surface        = null
 		screen         = null
 		gl             = null
 
+		surface.destroy
+
+		surface = null
 		inited = false
 	}
 
 // == Surface events ===========================
+
+	def onClose(surface:Surface) {
+		if(controler ne null)
+			controler ! RendererControler.Exit
+
+		destroy
+	}
 
 	def onScroll(surface:Surface, e:ScrollEvent)
 

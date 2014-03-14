@@ -137,10 +137,10 @@ class TestText2 extends SurfaceRenderer {
 
 //		fonts(0) = new GLFont(gl, "Ubuntu-R.ttf", 45)
 //		fonts(1) = new GLFont(gl, "Ubuntu-RI.ttf", 45)
-		fonts(2) = new GLFont(gl, "Ubuntu-L.ttf", 40)
+		fonts(2) = new GLFont(gl, "Ubuntu-L.ttf", 40, textShad)
 
 		for(i <- 0 until text.length) {
-			text(i) = new GLString(gl, fonts(2), TestText2.cyrano(i).length, textShad)
+			text(i) = new GLString(gl, fonts(2), TestText2.cyrano(i).length)
 			if(i < cyranoColors.size)
 			     text(i).setColor(cyranoColors(i))
 			else text(i).setColor(Rgba.Black)

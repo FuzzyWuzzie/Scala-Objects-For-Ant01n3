@@ -80,6 +80,12 @@ trait Mesh {
 	/** Last produced vertex array. */
 	protected var va:VertexArray = _
 
+	/** Release the resource of this mesh, the mesh is no more usable after this. */
+	def dispose() {
+		if(va ne null)
+			va.dispose
+	}
+
 	/** A vertex attribute by its name. */
 	def attribute(name:String):FloatBuffer
 

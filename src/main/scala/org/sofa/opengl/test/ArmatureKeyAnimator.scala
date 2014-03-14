@@ -162,10 +162,10 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	}
 
 	protected def initGLText() {
-		font = new GLFont(gl, "Ubuntu-R.ttf", 80, true)
+		font = new GLFont(gl, "Ubuntu-R.ttf", 80, textShader, true)
 
 		for(i <- 0 until text.size) {
-			text(i) = new GLString(gl, font, 256, textShader)
+			text(i) = new GLString(gl, font, 256)
 			text(i).setColor(Rgba(0,0,0,0.8))
 		}
 

@@ -121,9 +121,9 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIre
 
 class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 
-	color = Rgba.Magenta
+	color = Rgba.White
 
-	lineColor = Rgba.Yellow
+	lineColor = Rgba.Black
 
 	override def render() {
 		//println(s"* render ${self.name}")
