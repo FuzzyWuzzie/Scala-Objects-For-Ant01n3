@@ -43,6 +43,18 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 			throw new NoSuchResourceException("resource '%s' unknown, did you put it in the Library ? use Library.add()".format(name))
 		).value(gl)
 
+	/** Retrieve a resource if it already exists, else add it via a descript and return it. */
+	def getOrAdd(gl:SGL, name:String, newResource:ResourceDescriptor[T]):T = library.get(name) match {
+		case Some(res) => res.value(gl)
+		case None => {
+			add(newResource, true)
+			library.get(name) match {
+				case Some(res) => res.value(gl)
+				case None => throw new NoSuchResourceException("resource '%s' unknown, or cannot load it".format(name))
+			}
+		}
+	}
+
 	/** Remove an free a previously loaded resource. */
 	def forget(name:String) { library -= name }
 

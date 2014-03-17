@@ -126,8 +126,8 @@ object Shader {
         	}
         }
 
-        // println("** %s:".format(if(shaderType==gl.VERTEX_SHADER) "vertex shader" else "fragment shader"))
-        // buf.foreach {line => print("    %s".format(line))}
+//        println("** %s:".format(if(shaderType==gl.VERTEX_SHADER) "vertex shader" else "fragment shader"))
+//        buf.foreach {line => print("    %s".format(line))}
 
         buf.toArray
     }
@@ -220,10 +220,11 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
             	errMatch.findFirstIn(line) match {
             		case Some(osxMatch(col,line,msg))     => printError(col.toInt, line.toInt-1, msg)
             		case Some(androidMatch(col,line,msg)) => printError(col.toInt, line.toInt-1, msg)
-            		case None                             => Console.err.println("# %s".format(line))
+            		case Some(other)                      => Console.err;println("Error : %s (%s)".format(line, other))
+            		case None                             => Console.err.println("Error : %s".format(line))
             	}
             }
-        	//Console.err.println(log)
+//        	Console.err.println(log)
         	throw ShaderCompilationException("Cannot compile shader %s (see log above)".format(name))
         }
     }

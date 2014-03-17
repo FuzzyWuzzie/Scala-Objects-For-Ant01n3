@@ -7,6 +7,8 @@ import akka.actor.ActorSystem
 import org.sofa.opengl.{Shader}
 import org.sofa.opengl.actor.renderer.{AvatarName}
 import org.sofa.opengl.actor.renderer.backend.RendererNewt
+import org.sofa.opengl.text.GLFont
+
 
 class TestUI extends FlatSpec {
 
@@ -18,6 +20,8 @@ class TestUI extends FlatSpec {
 
 		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2"
 		Shader.path += "shaders"
+		GLFont.path += "/Users/antoine/Library/Fonts"
+		GLFont.path += "Fonts"
 
 		var counter = 0
 

@@ -4,11 +4,20 @@ import scala.math._
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 
 import org.sofa.opengl.{SGL, Space, ShaderProgram}
-import org.sofa.math.{Point3, Point4, Rgba}
+import org.sofa.math.{Point2, Point3, Point4, Rgba}
 
 
 /** A text renderer that memorize couples of points and strings in pixel space,
-  * and render them in one pass. */
+  * and render them in one pass.
+  *
+  * The way the text layer work is that at some point in your rendering process,
+  * you issue a string at a given position. This position can either be pixels,
+  * or your current space (in which case the position is projected in pixels).
+  * Then at the end of the current frame rendering, the [[render()]] method is
+  * called, and all strings are displayed at once in an optimized way. Then
+  * these memorized strings are cleared for the next rendering pass.
+  *
+  * There is a caching mechanism to reuse strings. */
 class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 
 	// TODO
@@ -16,21 +25,31 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	// - do not render items out of screen. We know the size and positions.
 	// - Allow some items to remain constant, when the user know it will reuse it.
 
-	val items = new ArrayBuffer[TextItem]()
-
 	/** Map of known fonts. */
-	val fonts = new HashMap[(String,Int), FontLayer]()
+	protected[this] val fonts = new HashMap[(String,Int), FontLayer]()
 
 	/** Current font. */
-	var font:FontLayer = null
+	protected[this] var font:FontLayer = null
 
 	/** Current color. */
-	var color = Rgba.Black
+	protected[this] var color = Rgba.Black
 
-	var lastAdvance = -1.0
+	/** Last advance of inserted string. */
+	protected[this] var la = -1.0
 
-	var lastHeight = -1.0
+	/** Last height of inserted string. */
+	protected[this] var lh = -1.0
 
+	/** Overall width in pixels of the last inserted string. */
+	def lastAdvance:Double = la
+
+	/** Overall height in pixels of the last inserted string. */
+	def lastHeight:Double = lh
+
+	/** Set the current font. All subsequently inserted strings will use it.
+	  *
+	  * Using a font for the first time is time-consuming since it muse load it.
+	  * Then a call to this method is in amortized O(1) time. */
 	def font(fontName:String, size:Int) {
 		font = fonts.get((fontName,size)).getOrElse {
 			val f = new FontLayer(gl, new GLFont(gl, fontName, size, textShader), this)
@@ -39,22 +58,34 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 		}
 	}
 
+	/** Set the current color. All subsequently inserted strings will use it. */
 	def color(newColor:Rgba) { color = newColor }
 
+	/** Set the current color. All subsequently inserted strings will use it. */
 	def color(r:Double, g:Double, b:Double, a:Double) { color = Rgba(r, g, b, a) }
 
+	/** Request that the string `text` be displayed at next call to [[render()]] at (`x`, `y`) in pixels. */
 	def stringpx(text:String, x:Double, y:Double) { stringpx(text, Point4(x, y, 0, 1)) }
 
-	def stringpx(text:String, x:Double, y:Double, depth:Double) { stringpx(text, Point4(x, y, depth, 1)) }
+	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in pixels. */
+	def stringpx(text:String, position:Point2) { stringpx(text, Point4(position.x, position.y, 0, 1)) }
 
-	def stringpx(text:String, position:Point3) { stringpx(text, Point4(position.x, position.y, position.z, 1)) }
+	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in pixels. */
+	def stringpx(text:String, position:Point3) { stringpx(text, Point4(position.x, position.y, 0, 1)) }
 
+	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in pixels. */
 	def stringpx(text:String, position:Point4) { font.addItem(text, position, Rgba(color)) }
 
+	/** Request that the string `text` be displayed at next call to [[render()]] at (`x`, `y`, `z`) in the current `space`.
+	  * This position is first "projected" in pixel coordinates using `space`. */
 	def string(text:String, x:Double, y:Double, z:Double, space:Space) { string(text, Point4(x, y, z, 1), space) }
 
+	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in the current `space`.
+	  * This position is first "projected" in pixel coordinates using `space`. */
 	def string(text:String, position:Point3, space:Space) { string(text, Point4(position.x, position.y, position.z, 1), space) }
 
+	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in the current `space`.
+	  * This position is first "projected" in pixel coordinates using `space`. */
 	def string(text:String, position:Point4, space:Space) {
 		var pos:Point4 = position
 
@@ -73,10 +104,11 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 
 		val item = font.addItem(text, pos, Rgba(color))
 
-		lastAdvance = item.advance
-		lastHeight  = item.height
+		la = item.advance
+		lh = item.height
 	}
 
+	/** Render all strings and flush them. */
 	def render(space:Space) {
 		space.pushpop {
 			space.pushpopProjection {
@@ -89,6 +121,12 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 
 	protected def renderText(space:Space) {
 		fonts.foreach { _._2.renderItems(space) }
+	}
+
+	/** Release all resources (OpenGL and fonts). */
+	def dispose() {
+		fonts.foreach { _._2.dispose }
+		font = null
 	}
 }
 
@@ -156,6 +194,14 @@ class FontLayer(val gl:SGL, val font:GLFont, val textlayer:TextLayer) {
 		items += item
 
 		item
+	}
+
+	/** Release all GL and font resources. */
+	def dispose() {
+		pool.foreach { _.dispose }
+		items.foreach { _.dispose }
+		pool.clear
+		items.clear
 	}
 }
 

@@ -5,9 +5,10 @@ import akka.actor.{ActorRef}
 
 import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3}
 import org.sofa.collection.{SpatialHash, SpatialObject, SpatialPoint}
-import org.sofa.opengl.{Space}
+import org.sofa.opengl.{Space, ShaderResource}
 import org.sofa.opengl.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{MotionEvent}
+import org.sofa.opengl.text.TextLayer
 
 
 /** A message sent to a screen. */
@@ -20,6 +21,11 @@ case class NoSuchScreenException(msg:String) extends Exception(msg)
 
 /** When a state does not exist in a screen. */
 case class NoSuchScreenStateException(state:ScreenState) extends Exception(state.toString)
+
+
+/** When the screen is used out of its rendering cycle (the screen is not current, its begin() method 
+  * has not yet been called, or its end() method has been called). */
+case class ScreenNotCurrentException(msg:String) extends Exception(msg)
 
 
 /** The description of the space (model-view and projection matrix stacks). */
@@ -60,6 +66,9 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Open Graphics Library. */
 	val gl = renderer.gl
 
+	/** Resources. */
+	val libraries = renderer.libraries
+
 	/** Frame buffer. */
 	val surface = renderer.surface
 
@@ -70,15 +79,34 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Set of avatars in the active selection. */
 	val selection = new AvatarSelection
 
+	/** Layer of text above the screen. */
+	protected[this] var text:TextLayer = null
+
 // Hiden variable fields
 
 	/** Set to true after begin() and reset to false after end(). */
-	protected var rendering = false
+	protected[this] var rendering = false
 
 // Modification
 
 	/** Something changed in the screen. */
 	def change(state:ScreenState) {}
+
+// Access
+
+	/** Access to the text layer, above all screen rendering.
+	  *
+	  * The text layer role is to memorize text items and render them at the end,
+	  * in an efficient way. */
+	def textLayer:TextLayer = {
+		if(!rendering) throw new ScreenNotCurrentException("cannot use the text layer if the screen is not current")
+
+		if(text eq null) {
+			libraries.shaders += ShaderResource("text-shader", "text.vert.glsl", "text.frag.glsl")
+			text = new TextLayer(gl, libraries.shaders.get(gl, "text-shader"))
+		}
+		text
+	}
 
 // Interaction Events
 
@@ -108,25 +136,35 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** By default renders all the child avatars using [[renderAvatars]].
 	  * If the screen is empty, a blue background is drawn. */
 	def render() {
-		if(hasSubs) {
-			renderAvatars 
-		} else {
-			gl.clearColor(Rgba.Blue)
-			gl.clear(gl.COLOR_BUFFER_BIT)
+		if(rendering) {
+			if(hasSubs) {
+				renderAvatars 
+
+				if(text ne null)
+					text.render(space)
+			} else {
+				gl.clearColor(Rgba.Blue)
+				gl.clear(gl.COLOR_BUFFER_BIT)
+			}
 		}
 	}
 
 	/** By default sets the size of the viewport to the size in pixels of the surface. */
-	def reshape() { gl.viewport(0, 0, surface.width, surface.height) }
+	def reshape() { if(rendering) gl.viewport(0, 0, surface.width, surface.height) }
 
 	/** By default animate each avatar using [[animateAvatars]]. */
-	def animate() { animateAvatars }
+	def animate() { if(rendering) animateAvatars }
 
 	/** By default send the end signal to all child avatars using [[endAvatars]], then
 	  * set the [[rendering]] flag to false. Release any resource you hold here. */
 	def end() {
 		endAvatars
 		rendering = false
+	
+		if(text ne null) {
+			text.dispose
+			text = null
+		}
 	}
 
 // Avatars.

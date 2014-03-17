@@ -127,10 +127,16 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 
 	override def render() {
 		//println(s"* render ${self.name}")
-		self.space.pushSubSpace
+		val space = self.space
+		val text  = screen.textLayer
+
+		space.pushSubSpace
 		fill
+		text.font("Ubuntu-L.ttf", 13)
+		text.color(Rgba.Black)
+		text.string("Hello", 10, 10, 0, screen.space)
 		self.renderSubs
-		self.space.popSubSpace		
+		space.popSubSpace		
 	}
 }
 
