@@ -59,9 +59,7 @@ trait Space {
     def viewport_=(values:(Double,Double)):Unit = { viewportPx.set(values._1, values._2) }
     
     /** Set the width and height of the output view-port in pixels. */
-    def viewportPx(width:Double, height:Double) {
-        viewportPx.set(width, height);
-    }
+    def viewportPx(width:Double, height:Double) { viewportPx.set(width, height) }
     
     /** Obtain the current view-port width / height ratio. */
     def viewportRatio:Double = viewportPx.x / viewportPx.y

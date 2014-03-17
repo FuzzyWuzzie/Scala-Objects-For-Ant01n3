@@ -134,7 +134,7 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 		fill
 		text.font("Ubuntu-L.ttf", 13)
 		text.color(Rgba.Black)
-		text.string("Hello", 10, 10, 0, screen.space)
+		text.string("Hello", 0.2, 0.1, 0, screen.space)
 		self.renderSubs
 		space.popSubSpace		
 	}

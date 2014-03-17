@@ -130,6 +130,7 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Set the [[rendering]] flag to true and send a begin signal to all child avatars using [[beginAvatars]]. */
 	def begin() {
 		rendering = true
+		reshape
 		beginAvatars
 	}	
 
@@ -150,7 +151,12 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	}
 
 	/** By default sets the size of the viewport to the size in pixels of the surface. */
-	def reshape() { if(rendering) gl.viewport(0, 0, surface.width, surface.height) }
+	def reshape() {
+		if(rendering) {
+			space.viewportPx(surface.width, surface.height)
+			gl.viewport(0, 0, surface.width, surface.height) 
+		}
+	}
 
 	/** By default animate each avatar using [[animateAvatars]]. */
 	def animate() { if(rendering) animateAvatars }
