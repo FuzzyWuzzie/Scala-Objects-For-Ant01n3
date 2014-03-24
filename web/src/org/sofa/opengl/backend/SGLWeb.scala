@@ -1,97 +1,97 @@
 package org.sofa.opengl.backend
 
+import scala.scalajs.js
+
 import java.nio.{Buffer,IntBuffer=>NioIntBuffer}
 import org.sofa.nio._
 import org.sofa.opengl._
 import org.sofa.math._
-import android.opengl.{GLES20, GLU}
-import android.util.Log
-import android.graphics.BitmapFactory
 
-class SGLAndroidES20(var ShaderVersion:String) extends SGL {
-    private[this] val ib1 = NioIntBuffer.allocate(1)
+
+class SGLWeb(val gl:WebGLRenderingContext, var ShaderVersion:String) extends SGL {
+    //private[this] val ib1 = NioIntBuffer.allocate(1)
 
 // Awful constants
 	
-	val DEPTH_TEST:Int = -1
-	val BLEND:Int = -1
-    val SRC_ALPHA:Int = -1
-    val BLEND_SRC:Int = -1
-    val BLEND_DST:Int = -1
-    val ONE:Int = -1
-    val ONE_MINUS_SRC_ALPHA:Int = -1
-    val CULL_FACE:Int = -1
-    val BACK:Int = -1
-    val CW:Int = -1
-    val CCW:Int = -1
+	val DEPTH_TEST:Int = gl.DEPTH_TEST.toInt
+	val BLEND:Int = gl.BLEND.toInt
+    val SRC_ALPHA:Int = gl.SRC_ALPHA.toInt
+    val BLEND_SRC:Int = gl.BLEND_SRC_RGB.toInt		// ???
+    val BLEND_DST:Int = gl.BLEND_DST_RGB.toInt		// ???
+    val ONE:Int = gl.ONE.toInt
+    val ONE_MINUS_SRC_ALPHA:Int = gl.ONE_MINUS_SRC_ALPHA.toInt
+    val CULL_FACE:Int = gl.CULL_FACE.toInt
+    val BACK:Int = gl.BACK.toInt
+    val CW:Int = gl.CW.toInt
+    val CCW:Int = gl.CCW.toInt
     
-    val COLOR_BUFFER_BIT:Int = -1
-    val DEPTH_BUFFER_BIT:Int = -1
-    val FRONT_AND_BACK:Int = -1
-    val FRONT_FACE:Int = -1
+    val COLOR_BUFFER_BIT:Int = gl.COLOR_BUFFER_BIT.toInt
+    val DEPTH_BUFFER_BIT:Int = gl.DEPTH_BUFFER_BIT.toInt
+    val FRONT_AND_BACK:Int = gl.FRONT_AND_BACK.toInt
+    val FRONT_FACE:Int = gl.FRONT_FACE.toInt
     val FILL:Int = -1
     val LINE:Int = -1
     val LINE_SMOOTH:Int = -1
-    val UNPACK_ALIGNMENT:Int = -1
+    val UNPACK_ALIGNMENT:Int = gl.UNPACK_ALIGNMENT.toInt
 
-	val NEVER:Int = -1
-	val LESS:Int = -1
-	val EQUAL:Int = -1
-	val LEQUAL:Int = -1
-	val GREATER:Int = -1
-	val NOTEQUAL:Int = -1
-	val GEQUAL:Int = -1
-	val ALWAYS:Int = -1
+	val NEVER:Int = gl.NEVER.toInt
+	val LESS:Int = gl.LESS.toInt
+	val EQUAL:Int = gl.EQUAL.toInt
+	val LEQUAL:Int = gl.LEQUAL.toInt
+	val GREATER:Int = gl.GREATER.toInt
+	val NOTEQUAL:Int = gl.NOTEQUAL.toInt
+	val GEQUAL:Int = gl.GEQUAL.toInt
+	val ALWAYS:Int = gl.ALWAYS.toInt
     
-    val TEXTURE_2D:Int = -1
-    val TEXTURE0:Int = -1
-    val TEXTURE1:Int = -1
-    val TEXTURE2:Int = -1
-    val TEXTURE_MIN_FILTER:Int = -1
-    val TEXTURE_MAG_FILTER:Int = -1
-    val TEXTURE_WRAP_S:Int = -1
-    val TEXTURE_WRAP_T:Int = -1
+    val TEXTURE_2D:Int = gl.TEXTURE_2D.toInt
+    val TEXTURE0:Int = gl.TEXTURE0.toInt
+    val TEXTURE1:Int = gl.TEXTURE1.toInt
+    val TEXTURE2:Int = gl.TEXTURE2.toInt
+    val TEXTURE_MIN_FILTER:Int = gl.TEXTURE_MIN_FILTER.toInt
+    val TEXTURE_MAG_FILTER:Int = gl.TEXTURE_MAG_FILTER.toInt
+    val TEXTURE_WRAP_S:Int = gl.TEXTURE_WRAP_S.toInt
+    val TEXTURE_WRAP_T:Int = gl.TEXTURE_WRAP_T.toInt
 //    val TEXTURE_BASE_LEVEL:Int = -1
 //    val TEXTURE_MAX_LEVEL:Int = -1
-    val LINEAR_MIPMAP_NEAREST:Int = -1
-    val NEAREST_MIPMAP_NEAREST:Int = -1
-    val LINEAR_MIPMAP_LINEAR:Int = -1
-    val NEAREST_MIPMAP_LINEAR:Int = -1
-    val LINEAR:Int = -1
-    val REPEAT:Int = -1
-    val CLAMP_TO_EDGE:Int = -1
-    val MIRRORED_REPEAT:Int = -1
-    val NEAREST:Int = -1
-    val DEPTH_COMPONENT:Int = -1
-    val FRAMEBUFFER:Int = -1
-    val DEPTH_ATTACHMENT:Int = -1
-    val COLOR_ATTACHMENT0:Int = -1
-    val FRAMEBUFFER_COMPLETE:Int = -1
-    val FRAMEBUFFER_INCOMPLETE_ATTACHMENT:Int = -1
-    val FRAMEBUFFER_INCOMPLETE_DIMENSIONS:Int = -1
-    val FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:Int = -1
-    val FRAMEBUFFER_UNSUPPORTED:Int = -1
+    val LINEAR_MIPMAP_NEAREST:Int = gl.LINEAR_MIPMAP_NEAREST.toInt
+    val NEAREST_MIPMAP_NEAREST:Int = gl.NEAREST_MIPMAP_NEAREST.toInt
+    val LINEAR_MIPMAP_LINEAR:Int = gl.LINEAR_MIPMAP_LINEAR.toInt
+    val NEAREST_MIPMAP_LINEAR:Int = gl.NEAREST_MIPMAP_LINEAR.toInt
+    val LINEAR:Int = gl.LINEAR.toInt
+    val REPEAT:Int = gl.REPEAT.toInt
+    val CLAMP_TO_EDGE:Int = gl.CLAMP_TO_EDGE.toInt
+    val MIRRORED_REPEAT:Int = gl.MIRRORED_REPEAT.toInt
+    val NEAREST:Int = gl.NEAREST.toInt
+    val DEPTH_COMPONENT:Int = gl.DEPTH_COMPONENT.toInt
+    val FRAMEBUFFER:Int = gl.FRAMEBUFFER.toInt
+    val DEPTH_ATTACHMENT:Int = gl.DEPTH_ATTACHMENT.toInt
+    val COLOR_ATTACHMENT0:Int = gl.COLOR_ATTACHMENT0.toInt
+    val FRAMEBUFFER_COMPLETE:Int = gl.FRAMEBUFFER_COMPLETE.toInt
+    val FRAMEBUFFER_INCOMPLETE_ATTACHMENT:Int = gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT.toInt
+    val FRAMEBUFFER_INCOMPLETE_DIMENSIONS:Int = gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS.toInt
+    val FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:Int = gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT.toInt
+    val FRAMEBUFFER_UNSUPPORTED:Int = gl.FRAMEBUFFER_UNSUPPORTED.toInt
 
-    val UNSIGNED_BYTE:Int = -1
-    val UNSIGNED_INT:Int = -1
-    val UNSIGNED_SHORT:Int = -1
-    val FLOAT:Int = -1
+    val UNSIGNED_BYTE:Int = gl.UNSIGNED_BYTE.toInt
+    val UNSIGNED_INT:Int = gl.UNSIGNED_INT.toInt
+    val UNSIGNED_SHORT:Int = gl.UNSIGNED_SHORT.toInt
+    val FLOAT:Int = gl.FLOAT.toInt
     val DOUBLE:Int = -1
-    val RGBA:Int = -1
-    val LUMINANCE:Int = -1
-    val LUMINANCE_ALPHA:Int = -1
-    val ALPHA:Int = -1
+    val RGBA:Int = gl.RGBA.toInt
+    val LUMINANCE:Int = gl.LUMINANCE.toInt
+    val LUMINANCE_ALPHA:Int = gl.LUMINANCE_ALPHA.toInt
+    val ALPHA:Int = gl.ALPHA.toInt
 
-    val ELEMENT_ARRAY_BUFFER:Int = -1
-    val ARRAY_BUFFER:Int = -1
-    val STATIC_DRAW:Int = -1
-    val DYNAMIC_DRAW:Int = -1
-    val PROGRAM_POINT_SIZE:Int = -1 //-1
+    val ELEMENT_ARRAY_BUFFER:Int = gl.ELEMENT_ARRAY_BUFFER.toInt
+    val ARRAY_BUFFER:Int = gl.ARRAY_BUFFER.toInt
+    val STATIC_DRAW:Int = gl.STATIC_DRAW.toInt
+    val DYNAMIC_DRAW:Int = gl.DYNAMIC_DRAW.toInt
+    val PROGRAM_POINT_SIZE:Int = -1
 
-    val VERTEX_SHADER:Int = -1
-    val FRAGMENT_SHADER:Int = -1
+    val VERTEX_SHADER:Int = gl.VERTEX_SHADER.toInt
+    val FRAGMENT_SHADER:Int = gl.FRAGMENT_SHADER.toInt
 
-    val TRIANGLES:Int = -1
+    val TRIANGLES:Int = gl.TRIANGLES.toInt
 
     val EXTENSIONS:Int = -1
 
@@ -114,12 +114,12 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	def bindVertexArray(id:Int) = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
 	
 	def enableVertexAttribArray(id:Int) = {}//GLES20.glEnableVertexAttribArray(id)
-	def disableVertexAttribArray(id:Int) =// GLES20.glDisableVertexAttribArray(id)
+	def disableVertexAttribArray(id:Int) = {}// GLES20.glDisableVertexAttribArray(id)
 	def vertexAttribPointer(number:Int, size:Int, typ:Int, b:Boolean, i:Int, j:Int) = {}//GLES20.glVertexAttribPointer(number, size, typ, b, i, j)
 	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = {}//GLES20.glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
     def drawArrays(mode:Int, i:Int, size:Int) = {}//GLES20.glDrawArrays(mode, i, size)
     def drawElements(mode:Int, count:Int, i:Int, offset:Int) = {}//GLES20.glDrawElements(mode, count, i, offset)
-    def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) = //throw new RuntimeException("no multi draw arrays in GL ES 2.0, too bad")
+    def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) = {} //throw new RuntimeException("no multi draw arrays in GL ES 2.0, too bad")
 
 	// Textures
     
@@ -132,7 +132,6 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	def deleteTexture(id:Int) {
 	    // ib1.put(0, id)
 	    // GLES20.glDeleteTextures(1, ib1)
-		-1
 	}
 	
 	def activeTexture(texture:Int) = {}//GLES20.glActiveTexture(texture)
@@ -166,7 +165,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	def genBuffer():Int = {
 	    // GLES20.glGenBuffers(1, ib1)
 	    // ib1.get(0)
-	    -1s
+	    -1
 	}
 	
 	def deleteBuffer(id:Int) {
@@ -212,19 +211,23 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	    // }
 	}
 
-	def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer) {
+	def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer, alsoPositionIndata:Boolean) {
 //		GLES20.glBufferSubData(target, offset*8, size*8, data.buffer)
 	}
 
-	def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer) {
+	def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer, alsoPositionIndata:Boolean) {
 //		GLES20.glBufferSubData(target, offset*4, size*4, data.buffer)
 	}
 
-	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer) {
+	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer, alsoPositionIndata:Boolean) {
+//		GLES20.glBufferSubData(target, offset, size, data.buffer)
+	}
+
+	def bufferSubData(target:Int, offset:Int, size:Int, data:ByteBuffer, alsoPositionIndata:Boolean) {
 //		GLES20.glBufferSubData(target, offset, size, data.buffer)
 	}
 	
-	def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer) {
+	def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer, alsoPositionIndata:Boolean) {
 	    // if(data.isByte) {
 	    //     bufferSubData(target, offset, size, data.asInstanceOf[ByteBuffer])
 	    // } else if(data.isInt) {
@@ -242,9 +245,9 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 
 // Shaders
 	
-	def createShader(shaderType:Int):Int = {}//GLES20.glCreateShader(shaderType)
+	def createShader(shaderType:Int):Int = { -1 }//GLES20.glCreateShader(shaderType)
 	
-	def createProgram():Int = {}//GLES20.glCreateProgram()
+	def createProgram():Int = { -1 }//GLES20.glCreateProgram()
 	
 	def getShaderCompileStatus(id:Int):Boolean = false//{ getShader(id, GLES20.GL_COMPILE_STATUS) == GLES20.GL_TRUE }
 	
@@ -256,7 +259,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	    -1
 	}
 	
-	def getShaderInfoLog(id:Int):String = {}//GLES20.glGetShaderInfoLog(id)
+	def getShaderInfoLog(id:Int):String = { "" }//GLES20.glGetShaderInfoLog(id)
 	
 	def shaderSource(id:Int, source:Array[String]) = {
 	 //    val buf = new StringBuffer
@@ -270,7 +273,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 		-1
 	}
 
-	def getProgramInfoLog(id:Int):String = {}//GLES20.glGetProgramInfoLog(id)
+	def getProgramInfoLog(id:Int):String = { "" }//GLES20.glGetProgramInfoLog(id)
 	
 	def shaderSource(id:Int, source:String) = {}//GLES20.glShaderSource(id, source)
 	def compileShader(id:Int) = {}//GLES20.glCompileShader(id)
@@ -280,7 +283,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     def useProgram(id:Int) = {}//GLES20.glUseProgram(id)
     def detachShader(id:Int, shaderId:Int) = {}//GLES20.glDetachShader(id, shaderId)
     def deleteProgram(id:Int) = {}//GLES20.glDeleteProgram(id)
-    def getUniformLocation(id:Int, variable:String):Int = {}//GLES20.glGetUniformLocation(id, variable)
+    def getUniformLocation(id:Int, variable:String):Int = -1//GLES20.glGetUniformLocation(id, variable)
     def uniform(loc:Int, i:Int) = {}//GLES20.glUniform1i(loc, i)
     def uniform(loc:Int, i:Int, j:Int) = {}//GLES20.glUniform2i(loc, i, j)
     def uniform(loc:Int, i:Int, j:Int, k:Int) = {}//GLES20.glUniform3i(loc, i, j, k)
@@ -330,15 +333,15 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
         //     case _ => throw new RuntimeException("uniform with more than 4 values?")
         // }
     }
-    def getAttribLocation(id:Int, attribute:String):Int = {}//GLES20.glGetAttribLocation(id, attribute)
+    def getAttribLocation(id:Int, attribute:String):Int = -1//GLES20.glGetAttribLocation(id, attribute)
 
 // Basic API
 	
     def getError:Int = -1//GLES20.glGetError
 	def getString(i:Int):String = ""//GLES20.glGetString(i)
-    def clear(mode:Int) = {}//GLES20.glClear(mode)
-	def clearColor(r:Float, g:Float, b:Float, a:Float) = {}//GLES20.glClearColor(r, g, b, a)
-	def clearColor(color:Rgba) = {}//GLES20.glClearColor(color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
+    def clear(mode:Int) = gl.clear(mode)
+	def clearColor(r:Float, g:Float, b:Float, a:Float) = gl.clearColor(r, g, b, a)
+	def clearColor(color:Rgba) = gl.clearColor(color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
 	def clearColor(color:java.awt.Color) = throw new RuntimeException("no awt colors in Android")
     def clearDepth(value:Float) = {}//GLES20.glClearDepthf(value)
     def viewport(x:Int, y:Int, width:Int, height:Int) = {}//GLES20.glViewport(x, y, width, height)
@@ -358,10 +361,10 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 // Utilities
     
     def printInfos() {
-	    println("OpenGL version  %s".format(getString(GLES20.GL_VERSION)))
-        println("       glsl     %s".format(getString(GLES20.GL_SHADING_LANGUAGE_VERSION)))
-        println("       renderer %s".format(getString(GLES20.GL_RENDERER)))
-        println("       vendor   %s".format(getString(GLES20.GL_VENDOR)))
+//	    println("OpenGL version  %s".format(getString(GLES20.GL_VERSION)))
+//      println("       glsl     %s".format(getString(GLES20.GL_SHADING_LANGUAGE_VERSION)))
+//      println("       renderer %s".format(getString(GLES20.GL_RENDERER)))
+//      println("       vendor   %s".format(getString(GLES20.GL_VENDOR)))
 	}
 	
 	def checkErrors() {

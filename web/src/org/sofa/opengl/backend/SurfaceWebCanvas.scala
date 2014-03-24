@@ -1,16 +1,12 @@
 package org.sofa.opengl.backend
 
-import scala.collection.mutable.SynchronizedQueue
-
 import org.sofa.opengl.{SGL, Camera}
 import org.sofa.opengl.surface._
 
-
-//object SurfaceWebCanvasBackend extends Enumeration {
-//	val GL2ES2 = Value
-//	val GL3 = Value
-//	type SurfaceWebCanvasBackend = Value
-//}
+import scala.scalajs.js
+import js.Dynamic.{global => g}
+import org.scalajs.dom
+import org.scalajs.dom.{HTMLElement, HTMLCanvasElement}
 
 
 class SurfaceWebCanvas(
@@ -21,76 +17,46 @@ class SurfaceWebCanvas(
 )
 extends Surface {
 
-	/** Synchronized queue for events coming from the EDT (event dispatching thread), as
-	  * with NEWT, events are handled in a distinct thread from rendering. */
-//	private[this] val eventQueue = new SynchronizedQueue[Event]
-
 	/** NEWT window. */
-    protected var cancas:js.Any = null
-    
-    /** Animator thread. */
-//    protected var anim:FPSAnimator = null
+    protected var canvas:HTMLCanvasElement = null
     
     /** OpenGL. */
     protected var sgl:SGL = null
+
+    /** Animator. */
+//    protected var anim:FPSAnimator = null
     
     build()
     
     protected def build() {
-    	val document = js.Dynamic.global.document
-		canvas = document.getElementById(canvasElement)
+		canvas = dom.document.getElementById(canvasElement).asInstanceOf[HTMLCanvasElement]
 
-  //       win  = GLWindow.create(caps)
-  //       anim = new FPSAnimator(win, fps)
-  //       sgl  = null
+		if(canvas ne null) {
+			val gl = canvas.getContext("webgl").asInstanceOf[WebGLRenderingContext]
+			//val gl = g.initWebGL(canvas).asInstanceOf[WebGLRenderingContext]//WebGLGlobalScope.initWebGL(canvas)//g.initWebGL(canvas)
 
-  //       win.setFullscreen(fullScreen)
-  //       win.setUndecorated(! decorated)
-	 //   	win.setVisible(true)	
-	   	
-	 //   	// XXX The jogl specs tell to create the window before setting the size in order to know the native
-	 //   	// XXX decoration insets. However it clearly does not work. Subsequent messages when the window is
-	 //   	// resized will send the correct size, leading to an incoherent behavior (the sizes given cannot
-	 //   	// to be trusted, when the window appear, the reshape receives the size with the insets, subsequent
-	 //   	// resets will receive a size without the insets ... how to tell when ?).
-		// // Is this only on Os X ?
+			if(gl eq null) {
+				throw new RuntimeException("cannot init GL")
+			} else {
+				sgl = new SGLWeb(gl, "TODO")
+				renderer.initSurface(sgl, this)
+			}
 
-	 //    win.setSize(w + win.getInsets.getTotalWidth, h + win.getInsets.getTotalHeight)
-	 //    win.setTitle(title)
+			// TODO animation
 
-	 //    win.addWindowListener(this)
-	 //    win.addMouseListener(this)
-	 //    win.addKeyListener(this)
-	 //    win.addGLEventListener(this)
-
-	 //    if(! caps.getGLProfile.isHardwareRasterizer) {
-	 //    	Console.err.println("### ATTENTION : using a software rasterizer !!! ###")
-	 //    	Console.err.println("%s".format(win.getContext.getGLVersion))
-	 //  	} else {
-	 //  		println("%s".format(win.getContext.getGLVersion))
-	 //  	} 
-
-  //       //printCaps
-
-	 //    anim.start
+			// TODO events
+		} else {
+			throw new RuntimeException("no canvas element named '%s'".format(canvasElement))
+		}
     }
     
-    def gl:SGL = {
-    	// if(sgl eq null) {
-    	// 	sgl = backend match {
-     //    		case SurfaceNewtGLBackend.GL2ES2 => new SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU, win.getContext.getGLSLVersionString)
-     //    		case SurfaceNewtGLBackend.GL3    => new SGLJogl3(win.getGL.getGL3, GLU.createGLU, win.getContext.getGLSLVersionString)
-    	// 	}
-    	// }
-    	// sgl
-    	null
-    }
+    def gl:SGL = sgl
 
     def swapBuffers():Unit = {} // Automatic, nothing to do.
     
-    def width = 1//w
+    def width = canvas.width.toInt
     
-    def height = 1//h
+    def height = canvas.height.toInt
     
     // def init(win:GLAutoDrawable) {}// if(renderer.initSurface ne null) renderer.initSurface(gl, this) }
     
@@ -127,9 +93,7 @@ extends Surface {
    	def fullscreen(on:Boolean) {}// win.setFullscreen(on) }
 
     def resize(newWidth:Int, newHeight:Int) {
-    	// win.setSize(newWidth, newHeight)
-    	// w = newWidth
-    	// h = newHeight
+    	// No-Op we cannot control the size of the canvas.
     }
 
     def destroy() {
