@@ -149,11 +149,11 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	def bindTexture(target:Int, id:Int) = glBindTexture(target, id)
 	def texParameter(target:Int, name:Int, param:Float) = glTexParameterf(target, name, param)
 	def texParameter(target:Int, name:Int, param:Int) = glTexParameteri(target, name, param)
-	def texParameter(target:Int, name:Int, params:FloatBuffer) = glTexParameterfv(target, name, params)
-	def texParameter(target:Int, name:Int, params:IntBuffer) = glTexParameteriv(target, name, params)
+	def texParameter(target:Int, name:Int, params:FloatBuffer) = glTexParameterfv(target, name, params.buffer.asInstanceOf[java.nio.FloatBuffer])
+	def texParameter(target:Int, name:Int, params:IntBuffer) = glTexParameteriv(target, name, params.buffer.asInstanceOf[java.nio.IntBuffer])
 	def texImage1D(target:Int, level:Int, internalFormat:Int, width:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = throw new RuntimeException("no texImage1D in GL ES 2.0 too bad")
-	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, data)
-    def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, data)
+	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, data.buffer.asInstanceOf[java.nio.ByteBuffer])
+    def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, data.asInstanceOf[java.nio.ByteBuffer])
     def generateMipmaps(target:Int) = glGenerateMipmap(target)
     
     def genFramebuffer:Int = {
@@ -183,27 +183,27 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	}
 
 	def bufferData(target:Int, data:DoubleBuffer, mode:Int) {
-	    gl.glBufferData(target, data.size*8, data.buffer, mode)
+	    gl.glBufferData(target, data.size*8, data.buffer.asInstanceOf[java.nio.DoubleBuffer], mode)
 	}
 	
 	def bufferData(target:Int, data:Array[Double], mode:Int) {
-	    bufferData(target, new DoubleBuffer(data), mode)
+	    bufferData(target, DoubleBuffer(data), mode)
 	}
 
 	def bufferData(target:Int, data:FloatBuffer, mode:Int) {
-	    gl.glBufferData(target, data.size*4, data.buffer, mode)
+	    gl.glBufferData(target, data.size*4, data.buffer.asInstanceOf[java.nio.FloatBuffer], mode)
 	}
 	
 	def bufferData(target:Int, data:Array[Float], mode:Int) {
-	    bufferData(target, new FloatBuffer(data), mode)
+	    bufferData(target, FloatBuffer(data), mode)
 	}
 
 	def bufferData(target:Int, data:IntBuffer, mode:Int) {
-	    gl.glBufferData(target, data.size*4, data.buffer, mode)
+	    gl.glBufferData(target, data.size*4, data.buffer.asInstanceOf[java.nio.IntBuffer], mode)
 	}
 	
 	def bufferData(target:Int, data:Array[Int], mode:Int) {
-	    bufferData(target, new IntBuffer(data), mode)
+	    bufferData(target, IntBuffer(data), mode)
 	}
 
 	def bufferData(target:Int, data:NioBuffer, mode:Int) {
@@ -219,28 +219,44 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	        throw new RuntimeException("Unknown Nio buffer data type")
 	    }
 	}
-	
-	def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer) {
-		gl.glBufferSubData(target, offset*8, size*8, data.buffer)
-	}
 
-	def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer) {
-		gl.glBufferSubData(target, offset*4, size*4, data.buffer)
-	}
-
-	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer) {
-		gl.glBufferSubData(target, offset*4, size*4, data.buffer)
+	def bufferSubData(target:Int, offset:Int, size:Int, data:ByteBuffer, alsoPositionInData:Boolean) {
+		val buffer = data.buffer.asInstanceOf[NioByteBuffer]
+		if(alsoPositionInData) { buffer.clear; buffer.position(offset) }
+		gl.glBufferSubData(target, offset*8, size*8, buffer)
+		if(alsoPositionInData) buffer.clear
 	}
 	
-	def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer) {
+	def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer, alsoPositionInData:Boolean) {
+		val buffer = data.buffer.asInstanceOf[NioDoubleBuffer]
+		if(alsoPositionInData) { buffer.clear; buffer.position(offset) }
+		gl.glBufferSubData(target, offset*8, size*8, buffer)
+		if(alsoPositionInData) buffer.clear
+	}
+
+	def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer, alsoPositionInData:Boolean) {
+		val buffer = data.buffer.asInstanceOf[NioFloatBuffer]
+		if(alsoPositionInData) { buffer.clear; buffer.position(offset) }
+		gl.glBufferSubData(target, offset*4, size*4, buffer)
+		if(alsoPositionInData) buffer.clear
+	}
+
+	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer, alsoPositionInData:Boolean) {
+		val buffer = data.buffer.asInstanceOf[NioIntBuffer]
+		if(alsoPositionInData) { buffer.clear; buffer.position(offset) }
+		gl.glBufferSubData(target, offset*4, size*4, buffer)
+		if(alsoPositionInData) buffer.clear
+	}
+	
+	def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer, alsoPositionInData:Boolean) {
 	    if(data.isByte) {
-	        bufferSubData(target, offset, size, data.asInstanceOf[ByteBuffer])
+	        bufferSubData(target, offset, size, data.asInstanceOf[ByteBuffer], alsoPositionInData)
 	    } else if(data.isInt) {
-	        bufferSubData(target, offset, size, data.asInstanceOf[IntBuffer])
+	        bufferSubData(target, offset, size, data.asInstanceOf[IntBuffer], alsoPositionInData)
 	    } else if(data.isFloat) {
-	        bufferSubData(target, offset, size, data.asInstanceOf[FloatBuffer])
+	        bufferSubData(target, offset, size, data.asInstanceOf[FloatBuffer], alsoPositionInData)
 	    } else if(data.isDouble) {
-	        bufferSubData(target, offset, size, data.asInstanceOf[DoubleBuffer])
+	        bufferSubData(target, offset, size, data.asInstanceOf[DoubleBuffer], alsoPositionInData)
 	    } else {
 	        throw new RuntimeException("Unknown Nio buffer data type")
 	    }
@@ -316,9 +332,9 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
     def uniform(loc:Int, i:Double, j:Double) = throw new RuntimeException("no double values in shaders for GL ES 2.0 too bad")
     def uniform(loc:Int, i:Double, j:Double, k:Double) = throw new RuntimeException("no double values in shaders for GL ES 2.0 too bad")
     def uniform(loc:Int, i:Double, j:Double, k:Double, l:Double) = throw new RuntimeException("no double values in shaders for GL ES 2.0 too bad")
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix3fv(loc, i, b, buffer.buffer)
+    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix3fv(loc, i, b, buffer.buffer.asInstanceOf[java.nio.FloatBuffer])
     def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL ES 2.0 too bad")
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix4fv(loc, i, b, buffer.buffer)
+    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix4fv(loc, i, b, buffer.buffer.asInstanceOf[java.nio.FloatBuffer])
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL ES 2.0 too bad")
     def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix3fv(loc, i, b, buffer, 0)
     def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix4fv(loc, i, b, buffer, 0)

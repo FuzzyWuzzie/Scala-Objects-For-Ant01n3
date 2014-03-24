@@ -16,7 +16,7 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
     init
     
     def this(gl:SGL, data:Array[Int]) {
-        this(gl, new IntBuffer(data))
+        this(gl, IntBuffer(data))
     }
     
     protected def init() {
@@ -26,7 +26,7 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
     
     protected def storeData(data:IntBuffer) {
         checkId
-        data.rewind
+//        data.rewind
         elementCount = data.size
         bind
         bufferData(gl.ELEMENT_ARRAY_BUFFER, data, gl.STATIC_DRAW)
@@ -42,28 +42,16 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
 
     def update(data:IntBuffer) {
     	bind
-    	data.rewind
+//    	data.rewind
     	bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, size, data)
     	checkErrors
     }
     
     def update(from:Int, to:Int, data:IntBuffer, alsoPositionInData:Boolean = true) {
-    	bind
-    	
-    	if(alsoPositionInData) {
-    		data.clear
-    		data.position(from)
-    	}
-    	
-    	bufferSubData(gl.ELEMENT_ARRAY_BUFFER, from, (to-from), data)
-    	
-    	if(alsoPositionInData) {
-    		data.clear
-    	}
-
+    	bind    	
+    	bufferSubData(gl.ELEMENT_ARRAY_BUFFER, from, (to-from), data, alsoPositionInData)    	
 //    	Console.err.println("updating %d values that is %d elements (start element=%d)".format((to-from),
 //    			(to-from),  from))
-
     	checkErrors
     }
     

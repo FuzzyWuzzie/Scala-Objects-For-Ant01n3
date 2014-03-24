@@ -123,7 +123,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     // -- Building ----------------------------------------------------------
     
     protected def allocateVertices:FloatBuffer = {
-        val buf = new FloatBuffer(nVertX * nVertZ * 3)
+        val buf = FloatBuffer(nVertX * nVertZ * 3)
         val nw  = width / (nVertX-1).toFloat
         val nd  = depth / (nVertZ-1).toFloat 
         var xx  = -width/2f
@@ -161,7 +161,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     
     protected def allocateTexCoords:FloatBuffer = {
         val n   = nVertX * nVertZ * 2 
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         var nw  = textureRepeatS / (nVertX-1).toFloat
         var nd  = textureRepeatT / (nVertZ-1).toFloat
         var xx  = 0f
@@ -184,7 +184,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 
     protected def allocateColors:FloatBuffer = {
         val n   = nVertX * nVertZ * 4
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         
         for(i <- 0 until n) {
         	buf(i) = 1f
@@ -195,7 +195,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 
     protected def allocateNormals:FloatBuffer = {
         val n   = nVertX * nVertZ * 3
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         
         if(isXY) {
             for(i <- 0 until n by 3) {
@@ -216,7 +216,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     
     protected def allocateTangents:FloatBuffer = {
         val n   = nVertX * nVertZ * 3
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         
         for(i <- 0 until n by 3) {
             buf(i+0) = 1f
@@ -229,7 +229,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 
     protected def allocateIndices:IntBuffer = {
         val n   = ((nVertX-1) * (nVertZ-1))	// n Squares
-        val buf = new IntBuffer(n*2*3)		// 2 triangles per square
+        val buf = IntBuffer(n*2*3)		// 2 triangles per square
         var i   = 0
         
         for(z <- 0 until nVertZ-1) {

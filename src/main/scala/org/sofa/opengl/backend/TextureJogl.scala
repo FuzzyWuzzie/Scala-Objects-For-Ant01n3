@@ -103,7 +103,7 @@ class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexPa
         val width  = image.getWidth
         val height = image.getHeight
         
-        val buf = new ByteBuffer(width * height * 4, true)
+        val buf = ByteBuffer(width * height * 4, true)
         
         // Very inefficient.
         
@@ -151,7 +151,7 @@ class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexPa
         val width  = image.getWidth
         val height = image.getHeight
         val pad    = (align - (width % align)) % align
-        val buf    = new ByteBuffer((width + pad) * height, true)   // Take care to pad data on 4 bytes.
+        val buf    = ByteBuffer((width + pad) * height, true)   // Take care to pad data on 4 bytes.
         
         // Very inefficient.
         

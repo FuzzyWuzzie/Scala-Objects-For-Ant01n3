@@ -1,6 +1,6 @@
 package org.sofa.opengl.backend
 
-import java.nio.{Buffer,IntBuffer=>NioIntBuffer}
+import java.nio.{Buffer,IntBuffer=>NioIntBuffer,FloatBuffer=>NioFloatBuffer,DoubleBuffer=>NioDoubleBuffer,ByteBuffer=>NioByteBuffer}
 import org.sofa.nio._
 import org.sofa.opengl._
 import org.sofa.math._
@@ -207,27 +207,43 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	    }
 	}
 
-	def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer) {
-		GLES20.glBufferSubData(target, offset*8, size*8, data.buffer)
+	def bufferSubData(target:Int, offset:Int, size:Int, data:ByteBuffer, alsoPositionInData:Boolean) {
+		val buffer = data.buffer.asInstanceOf[NioByteBuffer]
+		if(alsoPositionInData) { buffer.clear; buffer.position(offset) }
+		GLES20.glBufferSubData(target, offset*8, size*8, buffer)
+		if(alsoPositionInData) buffer.clear
 	}
 
-	def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer) {
-		GLES20.glBufferSubData(target, offset*4, size*4, data.buffer)
+	def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer, alsoPositionInData:Boolean) {
+		val buffer = data.buffer.asInstanceOf[NioDoubleBuffer]
+		if(alsoPositionInData) { buffer.clear; buffer.position(offset) }
+		GLES20.glBufferSubData(target, offset*8, size*8, buffer)
+		if(alsoPositionInData) buffer.clear
 	}
 
-	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer) {
-		GLES20.glBufferSubData(target, offset, size, data.buffer)
+	def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer, alsoPositionInData:Boolean) {
+		val buffer = data.buffer.asInstanceOf[NioFloatBuffer]
+		if(alsoPositionInData) { buffer.clear; buffer.position(offset) }
+		GLES20.glBufferSubData(target, offset*4, size*4, buffer)
+		if(alsoPositionInData) buffer.clear
+	}
+
+	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer, alsoPositionInData:Boolean) {
+		val buffer = data.buffer.asInstanceOf[NioIntBuffer]
+		if(alsoPositionInData) { buffer.clear; buffer.position(offset) }
+		GLES20.glBufferSubData(target, offset, size, buffer)
+		if(alsoPositionInData) buffer.clear
 	}
 	
-	def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer) {
+	def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer, alsoPositionInData:Boolean) {
 	    if(data.isByte) {
-	        bufferSubData(target, offset, size, data.asInstanceOf[ByteBuffer])
+	        bufferSubData(target, offset, size, data.asInstanceOf[ByteBuffer], alsoPositionInData)
 	    } else if(data.isInt) {
-	        bufferSubData(target, offset, size, data.asInstanceOf[IntBuffer])
+	        bufferSubData(target, offset, size, data.asInstanceOf[IntBuffer], alsoPositionInData)
 	    } else if(data.isFloat) {
-	        bufferSubData(target, offset, size, data.asInstanceOf[FloatBuffer])
+	        bufferSubData(target, offset, size, data.asInstanceOf[FloatBuffer], alsoPositionInData)
 	    } else if(data.isDouble) {
-	        bufferSubData(target, offset, size, data.asInstanceOf[DoubleBuffer])
+	        bufferSubData(target, offset, size, data.asInstanceOf[DoubleBuffer], alsoPositionInData)
 	    } else {
 	        throw new RuntimeException("Unknown Nio buffer data type")
 	    }

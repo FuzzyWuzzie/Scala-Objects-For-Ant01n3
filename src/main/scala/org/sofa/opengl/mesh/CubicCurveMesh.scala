@@ -47,11 +47,11 @@ import org.sofa.math.CubicCurve._
 // }
 
 class CubicCurveMesh(countCurves:Int, val segments:Int) extends Mesh {
-    protected val V:FloatBuffer = new FloatBuffer((segments+1)*count*3)
+    protected val V:FloatBuffer = FloatBuffer((segments+1)*count*3)
     
-    protected val F:IntBuffer = new IntBuffer(count)
+    protected val F:IntBuffer = IntBuffer(count)
     
-    protected val C:IntBuffer = new IntBuffer(count)
+    protected val C:IntBuffer = IntBuffer(count)
     
     init()
     

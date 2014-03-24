@@ -31,11 +31,11 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
     init
     
     def this(gl:SGL, valuesPerElement:Int, data:Array[Float], drawMode:Int) {
-        this(gl, valuesPerElement, new FloatBuffer(data), drawMode)
+        this(gl, valuesPerElement, FloatBuffer(data), drawMode)
     }
     
     def this(gl:SGL, valuesPerElement:Int, data:Array[Int], drawMode:Int) {
-        this(gl, valuesPerElement, new IntBuffer(data), drawMode)
+        this(gl, valuesPerElement, IntBuffer(data), drawMode)
     }
     
     protected def init() {
@@ -45,7 +45,7 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
     
     protected def storeData(data:NioBuffer) {
         checkId
-        data.rewind
+        //data.rewind
         componentCount = data.size
         bindBuffer(gl.ARRAY_BUFFER, oid)
         storeType(data)
@@ -103,19 +103,8 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
       * The `to` and `from` values are expressed in elements (series of valuesPerElement
       * items). */
     def update(from:Int, to:Int, data:FloatBuffer, alsoPositionInData:Boolean = true) {
-    	bind
-    	
-    	if(alsoPositionInData) {
-    		data.clear
-    		data.position(from*valuesPerElement)
-    	}
-    	
-    	bufferSubData(gl.ARRAY_BUFFER, from*valuesPerElement, (to-from)*valuesPerElement, data)
-
-    	if(alsoPositionInData) {
-			data.clear
-		}
-
+    	bind    	
+    	bufferSubData(gl.ARRAY_BUFFER, from*valuesPerElement, (to-from)*valuesPerElement, data, alsoPositionInData)
     	checkErrors
     	
 //    	Console.err.println("updating %d values that is %d elements (start value=%d or element=%d)".format((to-from)*valuesPerElement,

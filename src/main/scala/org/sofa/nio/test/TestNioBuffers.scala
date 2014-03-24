@@ -21,7 +21,7 @@ class TestNioBufers {
 
 	final val Size = 100000
 
-	final val NTests = 100
+	final val NTests = 1000
 
 	def test1() {
 		// set test

@@ -76,7 +76,7 @@ class BoneMesh extends Mesh {
 
 	protected def allocateVertices:FloatBuffer = {
 	    val n = 6 * 3
-	    val buf = new FloatBuffer(n)
+	    val buf = FloatBuffer(n)
 	    
 	    // Four middle points 0 1 2 3
 	    // Right 0
@@ -114,7 +114,7 @@ class BoneMesh extends Mesh {
 	
 	protected def allocateColors:FloatBuffer = {
 	    val n = 6 * 4
-	    val buf = new FloatBuffer(n)
+	    val buf = FloatBuffer(n)
 	    
 	    for(i <- 0 until n) {
 	        buf(i) = 1
@@ -125,7 +125,7 @@ class BoneMesh extends Mesh {
 	
 	protected def allocateIndices:IntBuffer = {
 	    val n = 8 * 3
-	    val buf = new IntBuffer(n)
+	    val buf = IntBuffer(n)
 	    
 	    var t=0
 	    
@@ -151,7 +151,7 @@ class BoneLineMesh extends BoneMesh {
 		
 	override protected def allocateIndices:IntBuffer = {
 	    val n = 6 * 4
-	    val buf = new IntBuffer(n)
+	    val buf = IntBuffer(n)
 	    
 	    var t=0
 	    

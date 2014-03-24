@@ -1,28 +1,20 @@
 package org.sofa.opengl.test
 
-import org.sofa.opengl.VertexArray
-import org.sofa.opengl.SGL
-import org.sofa.opengl.mesh.PlaneMesh
-import org.sofa.opengl.mesh.EditableMesh
-import org.sofa.opengl.ShaderProgram
-import org.sofa.math.Matrix4
-import org.sofa.opengl.MatrixStack
 import javax.media.opengl.GLAutoDrawable
 import javax.media.opengl.GLProfile
 import javax.media.opengl.GLCapabilities
+import javax.media.opengl.GLEventListener
+
 import com.jogamp.newt.opengl.GLWindow
 import com.jogamp.opengl.util.FPSAnimator
 import com.jogamp.newt.event.WindowAdapter
-import javax.media.opengl.GLEventListener
-import org.sofa.opengl.surface.Surface
-import org.sofa.opengl.surface.BasicCameraController
-import org.sofa.opengl.Camera
-import org.sofa.math.Rgba
-import org.sofa.opengl.surface.SurfaceRenderer
-import org.sofa.math.Vector4
-import org.sofa.opengl.Shader
-import org.sofa.math.Vector3
-import org.sofa.opengl.mesh.UnindexedTrianglesMesh
+
+import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Shader, Camera}
+import org.sofa.opengl.mesh.{PlaneMesh, EditableMesh}
+import org.sofa.opengl.surface.{Surface, BasicCameraController, SurfaceRenderer}
+import org.sofa.math.{Vector3, Vector4, Rgba, Matrix4}
+import org.sofa.opengl.mesh.{VertexAttribute, UnindexedTrianglesMesh}
+
 
 object TestDynTriangleMesh {
 	def main(args:Array[String]):Unit = { (new TestDynTriangleMesh).test }
@@ -78,7 +70,7 @@ class TestDynTriangleMesh extends SurfaceRenderer {
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.path += "src-scala/org/sofa/opengl/shaders"
+		Shader.path += "src/main/scala/org/sofa/opengl/shaders/"
 			
 		initGL(sgl)
 		initShaders
@@ -111,19 +103,13 @@ class TestDynTriangleMesh extends SurfaceRenderer {
 	}
 	
 	def initGeometry() {
-		var v = planeShad.getAttribLocation("position")
-		var c = planeShad.getAttribLocation("color")
-		var n = planeShad.getAttribLocation("normal")
+		import VertexAttribute._
 		
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		plane = planeMesh.newVertexArray(gl, planeShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 		
 		initThing
-
-		v = thingShad.getAttribLocation("position")
-		c = thingShad.getAttribLocation("color")
-		n = thingShad.getAttribLocation("normal")
 		
-		thing = thingMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
+		thing = thingMesh.newVertexArray(gl, thingShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 	}
 	
 	def initThing() {

@@ -13,10 +13,10 @@ import GL3._
 class PointsMesh(val size:Int) extends Mesh {
 	
 	/** The mutable set of coordinates. */
-	protected lazy val V:FloatBuffer = new FloatBuffer(size*3)
+	protected lazy val V:FloatBuffer = FloatBuffer(size*3)
 	
 	/** The mutable set of colors. */
-    protected lazy val C:FloatBuffer = new FloatBuffer(size*4)
+    protected lazy val C:FloatBuffer = FloatBuffer(size*4)
     
     /** Start position of the last modification inside the coordinates array. */
     protected var vbeg = 0

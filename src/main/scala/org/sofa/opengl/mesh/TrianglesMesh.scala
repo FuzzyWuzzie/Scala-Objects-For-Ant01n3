@@ -16,19 +16,19 @@ import GL3._
 class TrianglesMesh(val size:Int) extends Mesh {
 	
 	/** The mutable set of coordinates. */
-	protected lazy val V:FloatBuffer = new FloatBuffer(size*3*3)
+	protected lazy val V:FloatBuffer = FloatBuffer(size*3*3)
 	
 	/** The mutable set of colors. */
-	protected lazy val C:FloatBuffer = new FloatBuffer(size*4*3)
+	protected lazy val C:FloatBuffer = FloatBuffer(size*4*3)
 	
 	/** The mutable set of normals, changes with the triangles. */
-	protected lazy val N:FloatBuffer = new FloatBuffer(size*3*3)
+	protected lazy val N:FloatBuffer = FloatBuffer(size*3*3)
 
 	/** The mutable set of texture coordinates, changes with the triangles. */
-	protected lazy val T:FloatBuffer = new FloatBuffer(size*2*3)
+	protected lazy val T:FloatBuffer = FloatBuffer(size*2*3)
 	
 	/** The mutable set of elements to draw. */
-	protected lazy val I:IntBuffer = new IntBuffer(size*3)
+	protected lazy val I:IntBuffer = IntBuffer(size*3)
 	
 	/** Start position of the last modification inside the index array. */
 	protected var ibeg = size
@@ -242,13 +242,13 @@ class TrianglesMesh(val size:Int) extends Mesh {
 class UnindexedTrianglesMesh(val size:Int) extends Mesh {
 
 	/** The mutable set of coordinates. */
-	protected lazy val V:FloatBuffer = new FloatBuffer(size*3*3)
+	protected lazy val V:FloatBuffer = FloatBuffer(size*3*3)
 
 	/** The mutable set of colors. */
-	protected lazy val C:FloatBuffer = new FloatBuffer(size*4*3)
+	protected lazy val C:FloatBuffer = FloatBuffer(size*4*3)
 
 	/** The mutable set of normals, changes with the triangles. */
-	protected lazy val N:FloatBuffer = new FloatBuffer(size*3*3)
+	protected lazy val N:FloatBuffer = FloatBuffer(size*3*3)
 
     /** Start position of the last modification inside the coordinates array. */
     protected var vbeg = 0

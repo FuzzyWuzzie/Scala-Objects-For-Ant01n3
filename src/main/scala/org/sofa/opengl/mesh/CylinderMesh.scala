@@ -214,7 +214,7 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
         // the array, in this order. Disk 1 is at the bottom.
 
         val n      = ((3+sections) * segments + 2) * 3 // (4 disks + (sections-1)) = (3 + sections)
-        val buf    = new FloatBuffer(n)
+        val buf    = FloatBuffer(n)
         val hstep  = height / sections
         val pstep  = (2*Pi) / segments
         var angle  = 0.0
@@ -249,7 +249,7 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
     
     protected def allocateTexCoords:FloatBuffer = {
         val n   = ((3+sections) * segments + 2) * 2
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         val nx  = textureRepeatS.toFloat / segments
         var xx  = 0.0f
         
@@ -279,7 +279,7 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
 
     protected def allocateColors:FloatBuffer = {
         val n   = ((3 + sections) * segments + 2) * 4
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         
         for(i <- 0 until n) {
         	buf(i) = 1f
@@ -290,7 +290,7 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
 
     protected def allocateNormals:FloatBuffer = {
         val n   = ((3+sections) * segments + 2) * 3 // (4 disks + (sections-1)) = (3 + sections)
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         
         for(s <- 0 until segments) {
         	val i = s * 3
@@ -336,7 +336,7 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
 
     protected def allocateTangents:FloatBuffer = {
         val n   = ((3+sections) * segments + 2) * 3 // (4 disks + (sections-1)) = (3 + sections)
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         
         for(s <- 0 until segments) {
         	val i = s * 3

@@ -126,7 +126,7 @@ trait NumberGrid extends IndexedSeq[Double] {
       * If the sequence is not backed by a NIO buffer of doubles, a conversion occurs.
       */
     def toDoubleBuffer:DoubleBuffer = {
-        val buf = new DoubleBuffer(data)
+        val buf = DoubleBuffer(data)
         buf
     }
     
@@ -139,7 +139,7 @@ trait NumberGrid extends IndexedSeq[Double] {
         var i   = 0
 
         if((tmpFltBuf eq null) || tmpFltBuf.size < n)
-        	tmpFltBuf = new FloatBuffer(n)
+        	tmpFltBuf = FloatBuffer(n)
 
         while(i < n) {
             tmpFltBuf(i) = data(i).toFloat

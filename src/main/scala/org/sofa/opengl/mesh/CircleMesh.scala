@@ -60,7 +60,7 @@ class CircleMesh(radius:Double, sides:Int) extends Mesh {
 
     protected def allocateVertices():FloatBuffer = {
 	    var size = (sides) * 3
-	    val buf = new FloatBuffer(size)
+	    val buf = FloatBuffer(size)
 	    val kstep = (2*Pi) / sides
 	    var k = 0.0
 	    

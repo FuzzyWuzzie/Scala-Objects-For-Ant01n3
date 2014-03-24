@@ -1,7 +1,7 @@
 package org.sofa.opengl.test
 
 import org.sofa.opengl.{SGL, VertexArray, ShaderProgram, MatrixStack, Camera, Shader, Texture, TexParams, TexMipMap}
-import org.sofa.opengl.mesh.{Mesh, PlaneMesh, EditableMesh, LinesMesh}
+import org.sofa.opengl.mesh.{Mesh, PlaneMesh, EditableMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.surface.{Surface, BasicCameraController, SurfaceRenderer}
 import org.sofa.math.{Matrix4, Rgba, Vector4, Vector3, Point3}
 import javax.media.opengl.{GLProfile, GLAutoDrawable, GLCapabilities, GLEventListener}
@@ -116,25 +116,13 @@ class TestEditableMesh2 extends SurfaceRenderer {
 	}
 	
 	protected def initGeometry() {
+		import VertexAttribute._
+
 		initThing
 	
-		var v = thingShad.getAttribLocation("position")
-	    var n = thingShad.getAttribLocation("normal")
-	    var t = thingShad.getAttribLocation("tangent")
-	    var u = thingShad.getAttribLocation("texCoords")
-
-		thing = thingMesh.newVertexArray(gl, ("vertices", v), ("normals", n), ("tangents", t), ("texCoords", u))
-	
-		v     = planeShad.getAttribLocation("position")
-		var c = planeShad.getAttribLocation("color")
-		n     = planeShad.getAttribLocation("normal")
-
-		plane = planeMesh.newVertexArray(gl, ("vertices", v), ("colors", c), ("normals", n))
-
-		v = normalsShad.getAttribLocation("position")
-		c = normalsShad.getAttribLocation("color")
-
-		normals = normalsMesh.newVertexArray(gl, ("vertices", v), ("colors", c))
+		thing = thingMesh.newVertexArray(gl, thingShad, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")// ("vertices", v), ("normals", n), ("tangents", t), ("texCoords", u))
+		plane = planeMesh.newVertexArray(gl, planeShad, Vertex -> "position", Color -> "color")
+		normals = normalsMesh.newVertexArray(gl, normalsShad, Vertex -> "position", Color -> "color")
 	}
 	
 	protected def initThing() {

@@ -153,11 +153,17 @@ abstract class SGL {
 	def bufferData(target:Int, data:IntBuffer, mode:Int)
 	def bufferData(target:Int, data:Array[Int], mode:Int)
     def bufferData(target:Int, data:NioBuffer, mode:Int)
+
+    def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer) { bufferSubData(target, offset, size, data, true) }
+    def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer) { bufferSubData(target, offset, size, data, true) }
+    def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer) { bufferSubData(target, offset, size, data, true) }
+    def bufferSubData(target:Int, offset:Int, size:Int, data:ByteBuffer) { bufferSubData(target, offset, size, data, true) }
     
-    def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer)
-    def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer)
-    def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer)
-    def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer)
+    def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer, alsoPositionInData:Boolean)
+    def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer, alsoPositionInData:Boolean)
+    def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer, alsoPositionInData:Boolean)
+    def bufferSubData(target:Int, offset:Int, size:Int, data:ByteBuffer, alsoPositionInData:Boolean)
+//    def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer, alsoPositionInData:Boolean=true)
 	
     def bindBuffer(mode:Int, id:Int)
 

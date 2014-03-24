@@ -108,12 +108,12 @@ trait NumberSeq extends IndexedSeq[Double] {
     def toDoubleBuffer:DoubleBuffer = {
         val n   = data.length
         var i   = 0
-        val buf = new DoubleBuffer(n)
+        val buf = DoubleBuffer(n)
         while(i < n) {
             buf(i) = data(i).toDouble
             i += 1
         }
-        buf.rewind
+//        buf.rewind
         buf
     }
     
@@ -121,12 +121,12 @@ trait NumberSeq extends IndexedSeq[Double] {
     def toFloatBuffer:FloatBuffer = {
         val n   = data.length
         var i   = 0
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         while(i < n) {
             buf(i) = data(i).toFloat
             i += 1
         }
-        buf.rewind
+//        buf.rewind
         buf
     }
     

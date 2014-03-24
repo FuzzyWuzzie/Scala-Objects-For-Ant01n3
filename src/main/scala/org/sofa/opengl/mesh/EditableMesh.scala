@@ -440,7 +440,7 @@ class EditableMesh extends Mesh {
     override def indices:IntBuffer = {
 		if(indexBuffer ne null) {
 			if(indexNioCache eq null)
-				indexNioCache = new IntBuffer(indexBuffer)
+				indexNioCache = IntBuffer(indexBuffer)
 			indexNioCache 
 		} else {
 			throw new RuntimeException("no indices for this mesh") 
@@ -533,7 +533,7 @@ protected class MeshBuffer(val name:String, val components:Int, other:MeshBuffer
 	  * of this buffer. */
 	def nioBuffer():FloatBuffer = {
 		if(cachedNioBuffer eq null)
-			cachedNioBuffer = new FloatBuffer(buffer)			
+			cachedNioBuffer = FloatBuffer(buffer)			
 
 		cachedNioBuffer
 	}

@@ -44,19 +44,19 @@ class QuadsMesh(quadCount:Int) extends TrianglesMesh(quadCount * 2) {
 class RealQuadsMesh(val size:Int) extends Mesh {
 	
 	/** The mutable set of coordinates. */
-	protected lazy val V:FloatBuffer = new FloatBuffer(size*3*4)
+	protected lazy val V:FloatBuffer = FloatBuffer(size*3*4)
 	
 	/** The mutable set of colors. */
-	protected lazy val C:FloatBuffer = new FloatBuffer(size*4*4)
+	protected lazy val C:FloatBuffer = FloatBuffer(size*4*4)
 	
 	/** The mutable set of normals, changes with the quads. */
-	protected lazy val N:FloatBuffer = new FloatBuffer(size*3*4)
+	protected lazy val N:FloatBuffer = FloatBuffer(size*3*4)
 
 	/** The mutable set of texture coordinates, changes with the quads. */
-	protected lazy val T:FloatBuffer = new FloatBuffer(size*2*4)
+	protected lazy val T:FloatBuffer = FloatBuffer(size*2*4)
 	
 	/** The mutable set of elements to draw. */
-	protected lazy val I:IntBuffer = new IntBuffer(size*4)
+	protected lazy val I:IntBuffer = IntBuffer(size*4)
 	
 	/** Start position of the last modification inside the index array. */
 	protected var ibeg = size

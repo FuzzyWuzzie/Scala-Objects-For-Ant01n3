@@ -173,7 +173,7 @@ class CubeMesh(val side:Float) extends Mesh {
 
     protected def allocateColors:FloatBuffer = {
         val n   = 6 * 4 * 4
-        val buf = new FloatBuffer(n)
+        val buf = FloatBuffer(n)
         
         for(i <- 0 until n) {
         	buf(i) = 1f
