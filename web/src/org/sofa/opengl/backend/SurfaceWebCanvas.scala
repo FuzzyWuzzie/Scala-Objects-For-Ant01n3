@@ -6,14 +6,14 @@ import org.sofa.opengl.surface._
 import scala.scalajs.js
 import js.Dynamic.{global => g}
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLElement, HTMLCanvasElement}
+import org.scalajs.dom.{HTMLElement, HTMLCanvasElement, KeyboardEvent}
 
 
 class SurfaceWebCanvas(
     val renderer:SurfaceRenderer,
     val canvasElement:String,
     val title:String,
-    var fps:Int
+    private[this] var fps:Int
 )
 extends Surface {
 
@@ -22,6 +22,8 @@ extends Surface {
     
     /** OpenGL. */
     protected var sgl:SGL = null
+
+    protected[this] var intervalHandle:js.Number = null
 
     /** Animator. */
 //    protected var anim:FPSAnimator = null
@@ -42,13 +44,17 @@ extends Surface {
 				renderer.initSurface(sgl, this)
 			}
 
-			// TODO animation
-
 			// TODO events
+			dom.document.onkeypress = onKey _
+			dom.document.onkeydown = onKeyDown _
+
+			intervalHandle = dom.setInterval(animate _, 1000.0/fps)
 		} else {
 			throw new RuntimeException("no canvas element named '%s'".format(canvasElement))
 		}
     }
+
+    protected def animate() { if(renderer ne null) renderer.frame(this) }
     
     def gl:SGL = sgl
 
@@ -58,81 +64,73 @@ extends Surface {
     
     def height = canvas.height.toInt
     
-    // def init(win:GLAutoDrawable) {}// if(renderer.initSurface ne null) renderer.initSurface(gl, this) }
-    
-    // def reshape(win:GLAutoDrawable, x:Int, y:Int, width:Int, height:Int) {}// w = width; h = height; if(renderer.surfaceChanged ne null) renderer.surfaceChanged(this) }
-    
-    // def display(win:GLAutoDrawable) {}// processEvents; if(renderer.frame ne null) renderer.frame(this) }
-    
-    // def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
-    
     def invoke(code:(Surface)=>Boolean) {
-    	// val me = this
-
-    	// if(invokeThread eq Thread.currentThread) {
-    	// 	code(me)	
-    	// } else {
-    	// 	win.invoke(false,
-    	// 		new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { if(invokeThread eq null) invokeThread = Thread.currentThread; code(me) } }
-    	// 	)
-    	// }
+    	throw new RuntimeException("invoke not implemented in SurfaceWebCanvas")
     }
 
     def invoke(runnable:Runnable) {
-    	// val me = this
-
-    	// if(invokeThread eq Thread.currentThread) {
-	    // 	runnable.run
-    	// } else {
-    	// 	win.invoke(false,
-	    // 		new GLRunnable() { override def run(win:GLAutoDrawable) = { if(invokeThread eq null) invokeThread = Thread.currentThread; runnable.run; true } }
-    	// 	)
-    	// }
+    	throw new RuntimeException("invoke not implemented in SurfaceWebCanvas")
    	}
 
    	def fullscreen(on:Boolean) {}// win.setFullscreen(on) }
 
     def resize(newWidth:Int, newHeight:Int) {
-    	// No-Op we cannot control the size of the canvas.
+    	canvas.width = newWidth
+    	canvas.height = newHeight
     }
 
     def destroy() {
-    	// anim.stop
-    	// win.destroy
+    	if(intervalHandle ne null) {
+    		dom.clearInterval(intervalHandle)
+    		intervalHandle = null
+    	}
+    }
+
+    protected def onKey(event:KeyboardEvent) {
+    	// Called by JS only for characters.
+     	if(renderer ne null) renderer.key(this, new KeyEventWeb(event, true))
+    }
+
+    protected def onKeyDown(event:KeyboardEvent) {
+    	// Called by JS for each character, we use it only for action chars.
+    	if((renderer ne null) && event.keyCode >= 37 && event.keyCode <= 40) {
+    		renderer.key(this, new KeyEventWeb(event, false))
+    	}
     }
 }
-
 
 // -- Web events -------------------------------------------------------------------------------------------
 
 
-// class KeyEventWeb(val source:JoglKeyEvent) extends KeyEvent {
+class KeyEventWeb(val source:KeyboardEvent, val isPrintable:Boolean) extends KeyEvent {
     
-//     def unicodeChar:Char = source.getKeyChar
+    def unicodeChar:Char = if(isPrintable) source.keyCode.toChar else 0    
     
-//     def actionChar:ActionChar.Value = {
-//         import JoglKeyEvent._
-//         import ActionChar._
-//         source.getKeyCode match {
-//             case VK_PAGE_UP   => PageUp
-//             case VK_PAGE_DOWN => PageDown
-//             case VK_UP        => Up
-//             case VK_DOWN      => Down
-//             case VK_RIGHT     => Right
-//             case VK_LEFT      => Left
-//             case VK_ESCAPE    => Escape
-//             case VK_SPACE     => Space
-//             case _            => Unknown
-//         }
-//     }
+    def actionChar:ActionChar.Value = {
+        import ActionChar._
+
+	   	if(source.keyCode == (37: js.Number)) Left
+   		else if(source.keyCode == (38 :js.Number)) Up
+   		else if(source.keyCode == (39 :js.Number)) Right
+   		else if(source.keyCode == (40 :js.Number)) Down
+   		else if(source.keyCode == (27 :js.Number)) Escape
+   		else if(source.keyCode == (33 :js.Number)) PageUp
+   		else if(source.keyCode == (34 :js.Number)) PageDown
+   		else Unknown
+
+        // source.keyCode match {
+        // //     case VK_SPACE     => Space
+        // //     case _            => Unknown
+        // }
+    }
     
-//     def isPrintable:Boolean = !source.isActionKey
-//     def isControlDown:Boolean = source.isControlDown
-//     def isAltDown:Boolean = source.isAltDown
-//     def isAltGrDown:Boolean = source.isAltGraphDown
-//     def isShiftDown:Boolean = source.isShiftDown
-//     def isMetaDown:Boolean = source.isMetaDown
-// }
+//    def isPrintable:Boolean = !(source.keyCode >= 37 && source.keyCode <= 40) && !(source.keyCode >= 33 && source.keyCode <= 34)
+    def isControlDown:Boolean = source.getModifierState("Control")
+    def isAltDown:Boolean = source.getModifierState("Alt")
+    def isAltGrDown:Boolean = source.getModifierState("AltGraph")
+    def isShiftDown:Boolean = source.getModifierState("Shift")
+    def isMetaDown:Boolean = source.getModifierState("Meta")
+}
 
 // class ScrollEventWeb(source:JoglMouseEvent) extends ScrollEvent {
 //     def amount:Int = source.getRotation()(0).toInt//source.getWheelRotation.toInt
