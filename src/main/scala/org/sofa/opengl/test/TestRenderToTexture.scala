@@ -158,7 +158,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 		useLights(phongTexShad)
 		camera.uniform(phongTexShad)
 		plane.draw(planeMesh.drawAs)
-		gl.bindTexture(gl.TEXTURE_2D, 0)
+		gl.bindTexture(gl.TEXTURE_2D, null)
 		
 		// Axis
 		

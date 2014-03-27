@@ -232,7 +232,7 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     init
     
     protected def init() {
-        super.init(genTexture)
+        super.init(createTexture)
         bindTexture(mode, oid)
         checkErrors
     }

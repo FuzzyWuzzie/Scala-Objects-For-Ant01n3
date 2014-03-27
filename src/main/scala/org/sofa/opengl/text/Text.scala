@@ -181,7 +181,7 @@ class GLFont(val gl:SGL, file:String, val size:Int, val shader:ShaderProgram, va
 
 	/** Pop the GL state and restore attributes affected by `beginRender`. */
 	def endRender() {
-		gl.bindTexture(gl.TEXTURE_2D, 0)	// Paranoia ?				
+		gl.bindTexture(gl.TEXTURE_2D, null)	// Paranoia ?				
 		gl.blendFunc(src, dst)
 		gl.frontFace(ff)		
 

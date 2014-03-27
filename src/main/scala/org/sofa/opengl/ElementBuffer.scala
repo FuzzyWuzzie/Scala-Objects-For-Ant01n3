@@ -20,7 +20,7 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
     }
     
     protected def init() {
-        super.init(genBuffer)
+        super.init(createBuffer)
         storeData(data)
     }
     
@@ -57,7 +57,7 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
     
     override def dispose() {
         checkId
-        bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+        bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
         deleteBuffer(oid)
         super.dispose
     }    

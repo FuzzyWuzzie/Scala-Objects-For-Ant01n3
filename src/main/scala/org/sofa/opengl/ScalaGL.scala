@@ -107,12 +107,12 @@ abstract class SGL {
     
 // Vertex arrays
 	
-	def genVertexArray():Int
-	def deleteVertexArray(id:Int)
+	def createVertexArray():AnyRef
+	def deleteVertexArray(id:AnyRef)
 	
-	def bindVertexArray(id:Int)
-	def enableVertexAttribArray(id:Int)
-	def disableVertexAttribArray(id:Int)
+	def bindVertexArray(id:AnyRef)
+	def enableVertexAttribArray(index:Int)
+	def disableVertexAttribArray(index:Int)
 	def vertexAttribPointer(number:Int, size:Int, typ:Int, b:Boolean, i:Int, j:Int)
 	//def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer)
     def drawArrays(mode:Int, i:Int, size:Int)
@@ -121,11 +121,11 @@ abstract class SGL {
 
 // Textures
     
-    def genTexture:Int
-	def deleteTexture(id:Int)
+    def createTexture:AnyRef
+	def bindTexture(target:Int, id:AnyRef)
+	def deleteTexture(id:AnyRef)
 
 	def activeTexture(texture:Int)
-	def bindTexture(target:Int, id:Int)
 	def texParameter(target:Int, name:Int, param:Float)
 	def texParameter(target:Int, name:Int, param:Int)
 	def texParameter(target:Int, name:Int, params:FloatBuffer)
@@ -135,16 +135,17 @@ abstract class SGL {
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer)
     def generateMipmaps(target:Int)
 
-    def genFramebuffer:Int
-    def deleteFramebuffer(id:Int)
-    def bindFramebuffer(target:Int, id:Int)
-    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, texture:Int, level:Int)
+    def createFramebuffer:AnyRef
+    def deleteFramebuffer(id:AnyRef)
+    def bindFramebuffer(target:Int, id:AnyRef)
+    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, textureId:AnyRef, level:Int)
     def checkFramebufferStatus(target:Int):Int
     
 // Buffers
-	
-	def genBuffer():Int
-	def deleteBuffer(id:Int)
+
+	def createBuffer():AnyRef
+    def bindBuffer(mode:Int, id:AnyRef)
+	def deleteBuffer(id:AnyRef)
 
 	def bufferData(target:Int, data:DoubleBuffer, mode:Int)
 	def bufferData(target:Int, data:Array[Double], mode:Int)
@@ -163,31 +164,31 @@ abstract class SGL {
     def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer, alsoPositionInData:Boolean)
     def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer, alsoPositionInData:Boolean)
     def bufferSubData(target:Int, offset:Int, size:Int, data:ByteBuffer, alsoPositionInData:Boolean)
-//    def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer, alsoPositionInData:Boolean=true)
-	
-    def bindBuffer(mode:Int, id:Int)
 
 // Shaders
 	
-	def getShaderCompileStatus(id:Int):Boolean
-	def getShader(id:Int, status:Int):Int
-	def getShaderInfoLog(id:Int):String 
-	def getProgram(id:Int, status:Int):Int
-	def getProgramLinkStatus(id:Int):Boolean
-	def getProgramInfoLog(id:Int):String
-	
-	def createShader(shaderType:Int):Int
-	def createProgram():Int
-	def shaderSource(id:Int, source:Array[String])
-    def shaderSource(id:Int, source:String)
-	def compileShader(id:Int)
-	def deleteShader(id:Int)
-    def attachShader(id:Int, shaderId:Int)
-    def linkProgram(id:Int)
-    def useProgram(id:Int)
-    def detachShader(id:Int, shaderId:Int)
-    def deleteProgram(id:Int)
-    def getUniformLocation(id:Int, variable:String):Int
+	def createShader(shaderType:Int):AnyRef
+	def getShaderCompileStatus(id:AnyRef):Boolean
+	def getShader(id:AnyRef, status:Int):Int
+	def getShaderInfoLog(id:AnyRef):String 
+	def shaderSource(id:AnyRef, source:Array[String])
+    def shaderSource(id:AnyRef, source:String)
+	def compileShader(id:AnyRef)
+	def deleteShader(id:AnyRef)
+
+	def createProgram():AnyRef
+	def getProgram(id:AnyRef, status:Int):Int
+	def getProgramLinkStatus(id:AnyRef):Boolean
+	def getProgramInfoLog(id:AnyRef):String
+    def attachShader(id:AnyRef, shaderId:AnyRef)
+    def detachShader(id:AnyRef, shaderId:AnyRef)
+    def linkProgram(id:AnyRef)
+    def useProgram(id:AnyRef)
+    def deleteProgram(id:AnyRef)	
+
+    def getAttribLocation(id:AnyRef, attribute:String):Int
+    def getUniformLocation(id:AnyRef, variable:String):Int
+
     def uniform(loc:Int, i:Int)
     def uniform(loc:Int, i:Int, j:Int)
     def uniform(loc:Int, i:Int, j:Int, k:Int)
@@ -211,7 +212,6 @@ abstract class SGL {
     def uniform(loc:Int, v:Array[Double])
     def uniform(loc:Int, v:FloatBuffer)
     def uniform(loc:Int, v:DoubleBuffer)
-    def getAttribLocation(id:Int, attribute:String):Int
 
 // Basic API
 	

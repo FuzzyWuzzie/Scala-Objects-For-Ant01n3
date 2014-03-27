@@ -108,12 +108,12 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 
  // Vertex arrays
 	
-	def genVertexArray():Int = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
-	def deleteVertexArray(id:Int) = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
-	def bindVertexArray(id:Int) = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
+	def createVertexArray():AnyRef = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
+	def deleteVertexArray(id:AnyRef) = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
+	def bindVertexArray(id:AnyRef) = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
 	
-	def enableVertexAttribArray(id:Int) = GLES20.glEnableVertexAttribArray(id)
-	def disableVertexAttribArray(id:Int) = GLES20.glDisableVertexAttribArray(id)
+	def enableVertexAttribArray(index:Int) = GLES20.glEnableVertexAttribArray(index)
+	def disableVertexAttribArray(index:Int) = GLES20.glDisableVertexAttribArray(index)
 	def vertexAttribPointer(number:Int, size:Int, typ:Int, b:Boolean, i:Int, j:Int) = GLES20.glVertexAttribPointer(number, size, typ, b, i, j)
 	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = GLES20.glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
     def drawArrays(mode:Int, i:Int, size:Int) = GLES20.glDrawArrays(mode, i, size)
@@ -122,18 +122,17 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 
 	// Textures
     
-    def genTexture:Int = {
+    def createTexture:AnyRef = {
 	    GLES20.glGenTextures(1, ib1)
-	    ib1.get(0)
+	    ib1.get(0).asInstanceOf[Integer]
 	}
-	
-	def deleteTexture(id:Int) {
-	    ib1.put(0, id)
+	def bindTexture(target:Int, id:AnyRef) = GLES20.glBindTexture(target, if(id eq null) 0 else id.asInstanceOf[Integer].toInt)	
+	def deleteTexture(id:AnyRef) {
+	    ib1.put(0, id.asInstanceOf[Integer].toInt)
 	    GLES20.glDeleteTextures(1, ib1)
 	}
 	
 	def activeTexture(texture:Int) = GLES20.glActiveTexture(texture)
-	def bindTexture(target:Int, id:Int) = GLES20.glBindTexture(target, id)
 	def texParameter(target:Int, name:Int, param:Float) = GLES20.glTexParameterf(target, name, param)
 	def texParameter(target:Int, name:Int, param:Int) = GLES20.glTexParameteri(target, name, param)
 	def texParameter(target:Int, name:Int, params:FloatBuffer) = GLES20.glTexParameterfv(target, name, params)
@@ -143,29 +142,31 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = throw new RuntimeException("no texImage3D in GL ES 2.0, too bad")
     def generateMipmaps(target:Int) = GLES20.glGenerateMipmap(target)
 
-    def genFramebuffer:Int = {
+    def createFramebuffer:AnyRef = {
     	GLES20.glGenFramebuffers(1, ib1)
-    	ib1.get(0)
+    	ib1.get(0).asInstanceOf[Integer]
     }
 
-    def deleteFramebuffer(id:Int) {
-    	ib1.put(0, id)
+    def deleteFramebuffer(id:AnyRef) {
+    	ib1.put(0, id.asInstanceOf[Integer].toInt)
     	GLES20.glDeleteFramebuffers(1, ib1)
     }
 
-    def bindFramebuffer(target:Int, id:Int) = GLES20.glBindFramebuffer(target, id)
-    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, texture:Int, level:Int) = GLES20.glFramebufferTexture2D(target,attachment,textarget,texture,level)
+    def bindFramebuffer(target:Int, id:AnyRef) = GLES20.glBindFramebuffer(target, if(id eq null) 0 else id.asInstanceOf[Integer].toInt)
+    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, textureId:AnyRef, level:Int) = GLES20.glFramebufferTexture2D(target,attachment,textarget,textureId.asInstanceOf[Integer].toInt,level)
     def checkFramebufferStatus(target:Int):Int = GLES20.glCheckFramebufferStatus(target)
 
  // Buffers
 	
-	def genBuffer():Int = {
+	def createBuffer():AnyRef = {
 	    GLES20.glGenBuffers(1, ib1)
-	    ib1.get(0)
+	    ib1.get(0).asInstanceOf[Integer]
 	}
+
+	def bindBuffer(target:Int, id:AnyRef) = GLES20.glBindBuffer(target, if(id eq null) 0 else id.asInstanceOf[Integer].toInt)
 	
-	def deleteBuffer(id:Int) {
-	    ib1.put(0, id)
+	def deleteBuffer(id:AnyRef) {
+	    ib1.put(0, id.asInstanceOf[Integer].toInt)
 	    GLES20.glDeleteBuffers(1, ib1)
 	}
 
@@ -249,47 +250,40 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	    }
 	}
 
-	def bindBuffer(target:Int, id:Int) = GLES20.glBindBuffer(target, id)
-
 // Shaders
 	
-	def createShader(shaderType:Int):Int = GLES20.glCreateShader(shaderType)
-	
-	def createProgram():Int = GLES20.glCreateProgram()
-	
-	def getShaderCompileStatus(id:Int):Boolean = { getShader(id, GLES20.GL_COMPILE_STATUS) == GLES20.GL_TRUE }
-	
-	def getProgramLinkStatus(id:Int):Boolean = { getProgram(id, GLES20.GL_LINK_STATUS) == GLES20.GL_TRUE }
-
-	def getShader(id:Int, status:Int):Int = {
-	    GLES20.glGetShaderiv(id, status, ib1)
+	def createShader(shaderType:Int):AnyRef = GLES20.glCreateShader(shaderType).asInstanceOf[Integer]
+	def getShaderCompileStatus(id:AnyRef):Boolean = { getShader(id, GLES20.GL_COMPILE_STATUS) == GLES20.GL_TRUE }
+	def getShader(id:AnyRef, status:Int):Int = {
+	    GLES20.glGetShaderiv(id.asInstanceOf[Integer].toInt, status, ib1)
 	    ib1.get(0)
 	}
-	
-	def getShaderInfoLog(id:Int):String = GLES20.glGetShaderInfoLog(id)
-	
-	def shaderSource(id:Int, source:Array[String]) = {
+	def getShaderInfoLog(id:AnyRef):String = GLES20.glGetShaderInfoLog(id.asInstanceOf[Integer].toInt)
+	def shaderSource(id:AnyRef, source:Array[String]) = {
 	    val buf = new StringBuffer
 	    source.foreach { line => buf.append(line) }
-		GLES20.glShaderSource(id, buf.toString)   
+		GLES20.glShaderSource(id.asInstanceOf[Integer].toInt, buf.toString)   
 	}
+	def shaderSource(id:AnyRef, source:String) = GLES20.glShaderSource(id.asInstanceOf[Integer].toInt, source)
+	def compileShader(id:AnyRef) = GLES20.glCompileShader(id.asInstanceOf[Integer].toInt)
+	def deleteShader(id:AnyRef) = GLES20.glDeleteShader(id.asInstanceOf[Integer].toInt)
 	
-	def getProgram(id:Int, status:Int):Int = {
-		GLES20.glGetProgramiv(id, status, ib1)
+	def createProgram():AnyRef = GLES20.glCreateProgram().asInstanceOf[Integer]
+	def getProgram(id:AnyRef, status:Int):Int = {
+		GLES20.glGetProgramiv(id.asInstanceOf[Integer].toInt, status, ib1)
 		ib1.get(0)
 	}
+	def getProgramLinkStatus(id:AnyRef):Boolean = { getProgram(id, GLES20.GL_LINK_STATUS) == GLES20.GL_TRUE }
+	def getProgramInfoLog(id:AnyRef):String = GLES20.glGetProgramInfoLog(id.asInstanceOf[Integer].toInt)
+    def attachShader(id:AnyRef, shaderId:AnyRef) = GLES20.glAttachShader(id.asInstanceOf[Integer].toInt, shaderId.asInstanceOf[Integer].toInt)
+    def detachShader(id:AnyRef, shaderId:AnyRef) = GLES20.glDetachShader(id.asInstanceOf[Integer].toInt, shaderId.asInstanceOf[Integer].toInt)
+	def linkProgram(id:AnyRef) = GLES20.glLinkProgram(id.asInstanceOf[Integer].toInt)
+    def useProgram(id:AnyRef) = GLES20.glUseProgram(if(id eq null) 0 else id.asInstanceOf[Integer].toInt)
+    def deleteProgram(id:AnyRef) = GLES20.glDeleteProgram(id.asInstanceOf[Integer].toInt)
+    
+    def getAttribLocation(id:Int, attribute:String):Int = GLES20.glGetAttribLocation(id.asInstanceOf[Integer].toInt, attribute)
+    def getUniformLocation(id:Int, variable:String):Int = GLES20.glGetUniformLocation(id.asInstanceOf[Integer].toInt, variable)
 
-	def getProgramInfoLog(id:Int):String = GLES20.glGetProgramInfoLog(id)
-	
-	def shaderSource(id:Int, source:String) = GLES20.glShaderSource(id, source)
-	def compileShader(id:Int) = GLES20.glCompileShader(id)
-	def deleteShader(id:Int) = GLES20.glDeleteShader(id)
-    def attachShader(id:Int, shaderId:Int) = GLES20.glAttachShader(id, shaderId)
-    def linkProgram(id:Int) = GLES20.glLinkProgram(id)
-    def useProgram(id:Int) = GLES20.glUseProgram(id)
-    def detachShader(id:Int, shaderId:Int) = GLES20.glDetachShader(id, shaderId)
-    def deleteProgram(id:Int) = GLES20.glDeleteProgram(id)
-    def getUniformLocation(id:Int, variable:String):Int = GLES20.glGetUniformLocation(id, variable)
     def uniform(loc:Int, i:Int) = GLES20.glUniform1i(loc, i)
     def uniform(loc:Int, i:Int, j:Int) = GLES20.glUniform2i(loc, i, j)
     def uniform(loc:Int, i:Int, j:Int, k:Int) = GLES20.glUniform3i(loc, i, j, k)
@@ -339,7 +333,6 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
             case _ => throw new RuntimeException("uniform with more than 4 values?")
         }
     }
-    def getAttribLocation(id:Int, attribute:String):Int = GLES20.glGetAttribLocation(id, attribute)
 
 // Basic API
 	

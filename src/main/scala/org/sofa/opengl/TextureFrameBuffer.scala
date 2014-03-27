@@ -8,20 +8,20 @@ import scala.collection.mutable.{ArrayBuffer=>ScalaArrayBuffer}
 class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val minFilter:Int, val magFilter:Int) extends OpenGLObject(gl) {
     import gl._
 
-    protected var colorid:Int = -1 
+    protected var colorid:AnyRef = null
 
-    protected var depthid:Int = -1
+    protected var depthid:AnyRef = null
 
     init
 
     def this(gl:SGL, width:Int, height:Int) { this(gl, width, height, gl.NEAREST, gl.NEAREST) }
 
     protected def init() {
-        super.init(genFramebuffer)
+        super.init(createFramebuffer)
         
         // Generate a texture to hold the colour buffer.
 
-        colorid = genTexture
+        colorid = createTexture
         val buffer = ByteBuffer(width*height*4, true)   // TODO not sure we have to create this.
 
         gl.bindTexture(gl.TEXTURE_2D, colorid)
@@ -32,13 +32,13 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val minFilter:In
         texParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magFilter)
         texParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minFilter)
 
-        bindTexture(gl.TEXTURE_2D, 0)
+        bindTexture(gl.TEXTURE_2D, null)
 
         checkErrors
 
         // Create a texture to hold the depth buffer.
     
-        depthid = genTexture
+        depthid = createTexture
         
         gl.bindTexture(gl.TEXTURE_2D, depthid)
         texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, width, height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, buffer)
@@ -48,7 +48,7 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val minFilter:In
         texParameter(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magFilter)
         texParameter(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minFilter)
 
-        bindTexture(gl.TEXTURE_2D, 0)
+        bindTexture(gl.TEXTURE_2D, null)
 
         checkErrors
     }
@@ -107,7 +107,7 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val minFilter:In
     def display(code: => Unit) {
         bindFrameBuffer
         code
-        bindFramebuffer(gl.FRAMEBUFFER, 0)
+        bindFramebuffer(gl.FRAMEBUFFER, null)
     }
 
     override def dispose() {

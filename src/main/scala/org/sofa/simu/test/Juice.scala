@@ -719,7 +719,7 @@ var angle = 0.0
 			camera.translate(0,4,-10)
 			camera.uniform(spyceShad)
 			ledWall.draw(ledWallMesh.drawAs)
-			gl.bindTexture(gl.TEXTURE_2D, 0)
+			gl.bindTexture(gl.TEXTURE_2D, null)
 		}
 
 		gl.disable(gl.DEPTH_TEST)

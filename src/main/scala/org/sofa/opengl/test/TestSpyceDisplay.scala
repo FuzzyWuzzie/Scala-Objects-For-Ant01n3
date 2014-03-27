@@ -286,7 +286,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 			camera.translate(0,0.5,0)
 			camera.uniform(spyceShad)
 			wall(BackWall).draw(wallMesh(BackWall).drawAs)
-			gl.bindTexture(gl.TEXTURE_2D, 0)
+			gl.bindTexture(gl.TEXTURE_2D, null)
 		}
 
 		surface.swapBuffers

@@ -316,7 +316,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     
     override def dispose() {
         checkId
-        useProgram(0)
+        useProgram(null)
         shaders.foreach { shader =>
             detachShader(oid, shader.id)
             shader.dispose

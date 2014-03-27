@@ -162,16 +162,11 @@ class SGLWeb(val gl:WebGLRenderingContext, var ShaderVersion:String) extends SGL
 
  // Buffers
 	
-	def genBuffer():Int = {
-	    // GLES20.glGenBuffers(1, ib1)
-	    // ib1.get(0)
-	    -1
-	}
+	def genBuffer():AnyRef = gl.createBuffer
+
+	def bindBuffer(target:Int, id:AnyRef) = gl.bindBuffer(target, id.asInstanceOf[js.Any])
 	
-	def deleteBuffer(id:Int) {
-	    // ib1.put(0, id)
-	    // GLES20.glDeleteBuffers(1, ib1)
-	}
+	def deleteBuffer(id:AnyRef) = gl.deleteBuffer(id.asInstanceOf[js.Any])
 
 	def bufferData(target:Int, data:DoubleBuffer, mode:Int) {
 //	    GLES20.glBufferData(target, data.size*8, data.buffer, mode)
@@ -240,8 +235,6 @@ class SGLWeb(val gl:WebGLRenderingContext, var ShaderVersion:String) extends SGL
 	    //     throw new RuntimeException("Unknown Nio buffer data type")
 	    // }
 	}
-
-	def bindBuffer(target:Int, id:Int) = {}//GLES20.glBindBuffer(target, id)
 
 // Shaders
 	
@@ -337,40 +330,48 @@ class SGLWeb(val gl:WebGLRenderingContext, var ShaderVersion:String) extends SGL
 
 // Basic API
 	
-    def getError:Int = -1//GLES20.glGetError
-	def getString(i:Int):String = ""//GLES20.glGetString(i)
+    def getError:Int = gl.getError().toInt
+	def getString(i:Int):String = gl.getParameter(i).asInstanceOf[js.String]
     def clear(mode:Int) = gl.clear(mode)
 	def clearColor(r:Float, g:Float, b:Float, a:Float) = gl.clearColor(r, g, b, a)
 	def clearColor(color:Rgba) = gl.clearColor(color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
 	def clearColor(color:java.awt.Color) = throw new RuntimeException("no awt colors in Android")
-    def clearDepth(value:Float) = {}//GLES20.glClearDepthf(value)
-    def viewport(x:Int, y:Int, width:Int, height:Int) = {}//GLES20.glViewport(x, y, width, height)
-    def enable(i:Int) = {}//GLES20.glEnable(i)
-    def disable(i:Int) = {}//GLES20.glDisable(i)
-    def cullFace(i:Int) = {}//GLES20.glCullFace(i)
-    def frontFace(i:Int) = {}//GLES20.glFrontFace(i)
-    def lineWidth(width:Float) = {}//GLES20.glLineWidth(width)
-    def lineWidth(width:Double) = {}//GLES20.glLineWidth(width.toFloat)
-    def blendEquation(mode:Int) = {}//GLES20.glBlendEquation(mode)
-    def blendFunc(src:Int, dst:Int) = {}//GLES20.glBlendFunc(src, dst)
-    def depthFunc(op:Int) = {}//GLES20.glDepthFunc(op)
+    def clearDepth(value:Float) = gl.clearDepth(value)
+    def viewport(x:Int, y:Int, width:Int, height:Int) = gl.viewport(x, y, width, height)
+    def enable(i:Int) = gl.enable(i)
+    def disable(i:Int) = gl.disable(i)
+    def cullFace(i:Int) = gl.cullFace(i)
+    def frontFace(i:Int) = gl.frontFace(i)
+    def lineWidth(width:Float) = gl.lineWidth(width)
+    def lineWidth(width:Double) = gl.lineWidth(width.toFloat)
+    def blendEquation(mode:Int) = gl.blendEquation(mode)
+    def blendFunc(src:Int, dst:Int) = gl.blendFunc(src, dst)
+    def depthFunc(op:Int) = gl.depthFunc(op)
     def polygonMode(face:Int, mode:Int) = throw new RuntimeException("no polygonMode in GL ES 20, too bad")
 
-    def pixelStore(param:Int, value:Int) = {}//GLES20.glPixelStorei(param, value)
+    def pixelStore(param:Int, value:Int) = gl.pixelStorei(param, value)
     
 // Utilities
     
     def printInfos() {
-//	    println("OpenGL version  %s".format(getString(GLES20.GL_VERSION)))
-//      println("       glsl     %s".format(getString(GLES20.GL_SHADING_LANGUAGE_VERSION)))
-//      println("       renderer %s".format(getString(GLES20.GL_RENDERER)))
-//      println("       vendor   %s".format(getString(GLES20.GL_VENDOR)))
+	    println("OpenGL version  %s".format(getString(gl.VERSION.toInt)))
+		println("       glsl     %s".format(getString(gl.SHADING_LANGUAGE_VERSION.toInt)))
+		println("       renderer %s".format(getString(gl.RENDERER.toInt)))
+		println("       vendor   %s".format(getString(gl.VENDOR.toInt)))
 	}
 	
 	def checkErrors() {
-//	    val err = GLES20.glGetError
-//	    if(err != GLES20.GL_NO_ERROR) {
-//	        throw new RuntimeException("OpenGL error : %s".format(GLU.gluErrorString(err)))
-//	    }
+		val err = gl.getError
+		if(err != gl.NO_ERROR) {
+			var msg = err match {
+				case gl.INVALID_ENUM => "invalid enum"
+				case gl.INVALID_VALUE => "invalid value"
+				case gl.INVALID_OPERATION => "invalid operation"
+				case gl.INVALID_FRAMEBUFFER_OPERATION => "invalid framebuffer operation"
+				case gl.OUT_OF_MEMORY => "out of memory"
+				case _ => "unknown error"
+			}
+	        throw new RuntimeException("OpenGL error : %s".format(msg))
+	    }
 	}
 }

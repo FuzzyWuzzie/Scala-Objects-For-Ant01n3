@@ -154,7 +154,7 @@ class TestText extends SurfaceRenderer {
 	    	textShad.uniform("texColor", 0)	// Texture Unit 0
 			camera.uniformMVP(textShad)
 			plane.draw(planeMesh.drawAs)
-			gl.bindTexture(gl.TEXTURE_2D, 0)
+			gl.bindTexture(gl.TEXTURE_2D, null)
 		}
 
 		// GLString

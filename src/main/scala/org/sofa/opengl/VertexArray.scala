@@ -33,7 +33,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     init
     
     /** Initialize the vertex array. */
-    protected def init() { super.init(if(gl.isES) 0 else genVertexArray) }
+    protected def init() { super.init(if(gl.isES) this else createVertexArray) }
     
     /** Store the indices and array buffers. Indices may be null. */
     protected def storeData(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(String,Int,Int,NioBuffer)*) {
@@ -51,7 +51,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
             // The creation binds the buffer.
         	elements = ElementBuffer(gl, indices)
         }
-        if(!gl.isES) bindVertexArray(0)
+        if(!gl.isES) bindVertexArray(null)
     }
     
     /** Store the indices and array buffers. Indices may be null. */
@@ -71,7 +71,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     	if(indices ne null) {
     		elements = indices
     	}
-    	if(!gl.isES) bindVertexArray(0)
+    	if(!gl.isES) bindVertexArray(null)
     }
     
     /** Create a vertex array without indices, only made of vertices, colors, normals, etc.
@@ -149,7 +149,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
         buffers.foreach { _._2.dispose }
         
         if(! gl.isES) {
-        	bindVertexArray(0)
+        	bindVertexArray(null)
         	deleteVertexArray(oid)
         }
 

@@ -422,6 +422,37 @@ trait WebGLRenderingContext extends js.Object {
     val drawingBufferWidth:js.Number = ???
     val drawingBufferHeight:js.Number = ???
 
+// Buffers
+
+	def createBuffer():js.Any = ???
+	def bindBuffer(target:js.Number, id:js.Any) = ???
+	def deleteBuffer(buffer:js.Any) = ???
+
+	// void bufferData(GLenum target, GLsizeiptr size, GLenum usage) (OpenGL ES 2.0 §2.9, man page)
+	// void bufferData(GLenum target, ArrayBufferView data, GLenum usage)
+	// void bufferData(GLenum target, ArrayBuffer? data, GLenum usage) (OpenGL ES 2.0 §2.9, man page)
+
+	// void bufferSubData(GLenum target, GLintptr offset, ArrayBufferView data)
+	// void bufferSubData(GLenum target, GLintptr offset, ArrayBuffer? data) (OpenGL ES 2.0 §2.9, man page)
+
+//[WebGLHandlesContextLoss] GLboolean isBuffer(WebGLBuffer? buffer) 
+
+// General
+
+    def getError():js.Number = ???
     def clear(mask:js.Number) = ???
     def clearColor(red:js.Number, green:js.Number, blue:js.Number, alpha:js.Number) = ???
+    def clearDepth(value:js.Number) = ???
+    def getParameter(i:js.Number):js.Any = ???
+    def viewport(x:js.Number, y:js.Number, width:js.Number, height:js.Number) = ???
+    def enable(i:js.Number) = ???
+    def disable(i:js.Number) = ???
+    def cullFace(i:js.Number) = ???
+    def frontFace(i:js.Number) = ???
+    def lineWidth(width:js.Number) = ???
+    def blendEquation(mode:js.Number) = ???
+    def blendFunc(src:js.Number, dst:js.Number) = ???
+    def depthFunc(op:js.Number) = ???
+    def polygonMode(face:js.Number, mode:js.Number) = throw new RuntimeException("no polygonMode in GL ES 20, too bad")
+    def pixelStorei(param:js.Number, value:js.Number) = ???
 }

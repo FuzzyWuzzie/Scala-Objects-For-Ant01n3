@@ -121,12 +121,12 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 
 // Vertex arrays
 	
-	def genVertexArray():Int = throw new RuntimeException("no vertex arrays in GL ES 2.0 too bad")
-	def deleteVertexArray(id:Int) = throw new RuntimeException("no vertex arrays in GL ES 2.0 too bad")
-	def bindVertexArray(id:Int) = throw new RuntimeException("no vertex arrays in GL ES 2.0 too bad")
+	def createVertexArray():AnyRef = throw new RuntimeException("no vertex arrays in GL ES 2.0 too bad")
+	def deleteVertexArray(id:AnyRef) = throw new RuntimeException("no vertex arrays in GL ES 2.0 too bad")
+	def bindVertexArray(id:AnyRef) = throw new RuntimeException("no vertex arrays in GL ES 2.0 too bad")
 
-	def enableVertexAttribArray(id:Int) = glEnableVertexAttribArray(id)
-	def disableVertexAttribArray(id:Int) = glDisableVertexAttribArray(id)
+	def enableVertexAttribArray(index:Int) = glEnableVertexAttribArray(index)
+	def disableVertexAttribArray(index:Int) = glDisableVertexAttribArray(index)
 	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, j:Int) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, j)
 	//def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
     def drawArrays(mode:Int, i:Int, size:Int) = glDrawArrays(mode, i, size)
@@ -135,18 +135,17 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 
 // Textures
     
-    def genTexture:Int = {
+    def createTexture:AnyRef = {
 	    glGenTextures(1, ib1)
-	    ib1.get(0)
+	    ib1.get(0).asInstanceOf[Integer]
 	}
-	
-	def deleteTexture(id:Int) {
-	    ib1.put(0, id)
+	def bindTexture(target:Int, id:AnyRef) = glBindTexture(target, if(id eq null) 0 else id.asInstanceOf[Integer].toInt)
+	def deleteTexture(id:AnyRef) {
+	    ib1.put(0, id.asInstanceOf[Integer].toInt)
 	    glDeleteTextures(1, ib1)
 	}
 
 	def activeTexture(texture:Int) = glActiveTexture(texture)
-	def bindTexture(target:Int, id:Int) = glBindTexture(target, id)
 	def texParameter(target:Int, name:Int, param:Float) = glTexParameterf(target, name, param)
 	def texParameter(target:Int, name:Int, param:Int) = glTexParameteri(target, name, param)
 	def texParameter(target:Int, name:Int, params:FloatBuffer) = glTexParameterfv(target, name, params.buffer.asInstanceOf[java.nio.FloatBuffer])
@@ -156,29 +155,31 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, data.asInstanceOf[java.nio.ByteBuffer])
     def generateMipmaps(target:Int) = glGenerateMipmap(target)
     
-    def genFramebuffer:Int = {
+    def createFramebuffer:AnyRef = {
     	glGenFramebuffers(1, ib1)
-    	ib1.get(0)
+    	ib1.get(0).asInstanceOf[Integer]
     }
 
-    def deleteFramebuffer(id:Int) {
-    	ib1.put(0, id)
+    def deleteFramebuffer(id:AnyRef) {
+    	ib1.put(0, id.asInstanceOf[Integer].toInt)
     	glDeleteFramebuffers(1, ib1)
     }
 
-    def bindFramebuffer(target:Int, id:Int) = glBindFramebuffer(target, id)
-    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, texture:Int, level:Int) = glFramebufferTexture2D(target,attachment,textarget,texture,level)
+    def bindFramebuffer(target:Int, id:AnyRef) = glBindFramebuffer(target, if(id eq null) 0 else id.asInstanceOf[Integer].toInt)
+    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, textureId:AnyRef, level:Int) = glFramebufferTexture2D(target,attachment,textarget,textureId.asInstanceOf[Integer].toInt,level)
     def checkFramebufferStatus(target:Int):Int = glCheckFramebufferStatus(target)
 
 // Buffers
 	
-	def genBuffer():Int = {
+	def createBuffer():AnyRef = {
 	    glGenBuffers(1, ib1)
-	    ib1.get(0)
+	    ib1.get(0).asInstanceOf[Integer]
 	}
 	
-	def deleteBuffer(id:Int) {
-	    ib1.put(0, id)
+	def bindBuffer(mode:Int, id:AnyRef) = glBindBuffer(mode, if(id eq null) 0 else id.asInstanceOf[Integer].toInt)
+
+	def deleteBuffer(id:AnyRef) {
+	    ib1.put(0, id.asInstanceOf[Integer].toInt)
 	    glDeleteBuffers(1, ib1)
 	}
 
@@ -262,63 +263,57 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	    }
 	}
 
-	def bindBuffer(mode:Int, id:Int) = glBindBuffer(mode, id)
-
 // Shaders
 	
-	def createShader(shaderType:Int):Int = glCreateShader(shaderType)
-	
-	def createProgram():Int = glCreateProgram()
-	
-	def getShaderCompileStatus(id:Int):Boolean = { getShader(id, GL_COMPILE_STATUS) == GL_TRUE }
-	
-	def getProgramLinkStatus(id:Int):Boolean = { getProgram(id, GL_LINK_STATUS) == GL_TRUE }
-	
-	def getShader(id:Int, status:Int):Int = {
-	    glGetShaderiv(id, status, ib1)
+	def createShader(shaderType:Int):AnyRef = glCreateShader(shaderType).asInstanceOf[Integer]
+	def getShaderCompileStatus(id:AnyRef):Boolean = { getShader(id, GL_COMPILE_STATUS) == GL_TRUE }
+	def getShader(id:AnyRef, status:Int):Int = {
+	    glGetShaderiv(id.asInstanceOf[Integer].toInt, status, ib1)
 	    ib1.get(0)
 	}
-	
-	def getShaderInfoLog(id:Int):String = {
+	def getShaderInfoLog(id:AnyRef):String = {
 		val len = getShader(id, GL_INFO_LOG_LENGTH)
 		val data = NioByteBuffer.allocate(len)
-	    gl.glGetShaderInfoLog(id, len, ib1, data)
+	    gl.glGetShaderInfoLog(id.asInstanceOf[Integer].toInt, len, ib1, data)
 	    new String(data.array)
 	}
-	
-	def getProgram(id:Int, status:Int):Int = {
-		glGetProgramiv(id, status, ib1)
-		ib1.get(0)
-	}
-	
-	def getProgramInfoLog(id:Int):String = {
-	    val len = getProgram(id, GL_INFO_LOG_LENGTH)
-	    val data = NioByteBuffer.allocate(len)
-	    gl.glGetProgramInfoLog(id, len, ib1, data)
-	    new String(data.array)
-	}
-	
-	def shaderSource(id:Int, source:Array[String]) = {
+	def shaderSource(id:AnyRef, source:Array[String]) = {
 		val lengths = NioIntBuffer.allocate(source.size)
 		for(i <- 0 until source.size) {
 			lengths.put(i, source(i).length)
 		}
 		lengths.rewind
-		glShaderSource(id, source.size, source, lengths)
+		glShaderSource(id.asInstanceOf[Integer].toInt, source.size, source, lengths)
 	}
-	def shaderSource(id:Int, source:String) = {
+	def shaderSource(id:AnyRef, source:String) = {
 		ib1.put(0, source.length)
 		ib1.rewind
-		glShaderSource(id, 1, Array[String](source), ib1)
+		glShaderSource(id.asInstanceOf[Integer].toInt, 1, Array[String](source), ib1)
 	}
-	def compileShader(id:Int) = glCompileShader(id)
-	def deleteShader(id:Int) = glDeleteShader(id)
-    def attachShader(id:Int, shaderId:Int) = glAttachShader(id, shaderId)
-    def linkProgram(id:Int) = glLinkProgram(id)
-    def useProgram(id:Int) = glUseProgram(id)
-    def detachShader(id:Int, shaderId:Int) = glDetachShader(id, shaderId)
-    def deleteProgram(id:Int) = glDeleteProgram(id)
-    def getUniformLocation(id:Int, variable:String):Int = glGetUniformLocation(id, variable)
+	def compileShader(id:AnyRef) = glCompileShader(id.asInstanceOf[Integer].toInt)
+	def deleteShader(id:AnyRef) = glDeleteShader(id.asInstanceOf[Integer].toInt)
+	
+	def createProgram():AnyRef = glCreateProgram().asInstanceOf[Integer]
+	def getProgram(id:AnyRef, status:Int):Int = {
+		glGetProgramiv(id.asInstanceOf[Integer].toInt, status, ib1)
+		ib1.get(0)
+	}
+	def getProgramLinkStatus(id:AnyRef):Boolean = { getProgram(id, GL_LINK_STATUS) == GL_TRUE }
+	def getProgramInfoLog(id:AnyRef):String = {
+	    val len = getProgram(id, GL_INFO_LOG_LENGTH)
+	    val data = NioByteBuffer.allocate(len)
+	    gl.glGetProgramInfoLog(id.asInstanceOf[Integer].toInt, len, ib1, data)
+	    new String(data.array)
+	}	
+    def attachShader(id:AnyRef, shaderId:AnyRef) = glAttachShader(id.asInstanceOf[Integer].toInt, shaderId.asInstanceOf[Integer].toInt)
+    def detachShader(id:AnyRef, shaderId:AnyRef) = glDetachShader(id.asInstanceOf[Integer].toInt, shaderId.asInstanceOf[Integer].toInt)
+    def linkProgram(id:AnyRef) = glLinkProgram(id.asInstanceOf[Integer].toInt)
+    def useProgram(id:AnyRef) = glUseProgram(if(id eq null) 0 else id.asInstanceOf[Integer].toInt)
+    def deleteProgram(id:AnyRef) = glDeleteProgram(id.asInstanceOf[Integer].toInt)
+
+    def getAttribLocation(id:AnyRef, attribute:String):Int = glGetAttribLocation(id.asInstanceOf[Integer].toInt, attribute)
+    def getUniformLocation(id:AnyRef, variable:String):Int = glGetUniformLocation(id.asInstanceOf[Integer].toInt, variable)
+
     def uniform(loc:Int, i:Int) = glUniform1i(loc, i)
     def uniform(loc:Int, i:Int, j:Int) = glUniform2i(loc, i, j)
     def uniform(loc:Int, i:Int, j:Int, k:Int) = glUniform3i(loc, i, j, k)
@@ -368,7 +363,6 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
             case _ => throw new RuntimeException("uniform with more than 4 values?")
         }
     }
-    def getAttribLocation(id:Int, attribute:String):Int = glGetAttribLocation(id, attribute)
 
 // Basic API
 	

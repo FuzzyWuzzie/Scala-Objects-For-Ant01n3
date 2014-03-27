@@ -39,7 +39,7 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
     }
     
     protected def init() {
-        super.init(genBuffer)
+        super.init(createBuffer)
         storeData(data)
     }
     
@@ -50,7 +50,7 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
         bindBuffer(gl.ARRAY_BUFFER, oid)
         storeType(data)
         bufferData(gl.ARRAY_BUFFER, data, drawMode)
-        bindBuffer(gl.ARRAY_BUFFER, 0)
+        bindBuffer(gl.ARRAY_BUFFER, null)
         checkErrors
     }
     
@@ -84,7 +84,7 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
     }
     
     def unbind() {
-        bindBuffer(gl.ARRAY_BUFFER, 0)
+        bindBuffer(gl.ARRAY_BUFFER, null)
     }
     
     /** Update the whole buffer with the data given (that must be the same size). */
@@ -113,7 +113,7 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
     
     override def dispose() {
         checkId
-        bindBuffer(gl.ARRAY_BUFFER, 0)
+        bindBuffer(gl.ARRAY_BUFFER, null)
         deleteBuffer(oid)
         super.dispose
     }

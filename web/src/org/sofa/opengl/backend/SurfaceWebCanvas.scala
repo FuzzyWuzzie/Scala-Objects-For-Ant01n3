@@ -6,7 +6,7 @@ import org.sofa.opengl.surface._
 import scala.scalajs.js
 import js.Dynamic.{global => g}
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLElement, HTMLCanvasElement, KeyboardEvent, MouseEvent}
+import org.scalajs.dom.{HTMLElement, HTMLCanvasElement, KeyboardEvent, MouseEvent, WheelEvent}
 
 
 /** A [[Surface]] that can be compiled by Scala.js using a DOM canvas with WebGL.
@@ -44,6 +44,8 @@ extends Surface {
 				sgl = new SGLWeb(gl, "TODO")
 				renderer.initSurface(sgl, this)
 			}
+
+			sgl.printInfos
 
 			dom.document.onkeypress   = onKey _
 			dom.document.onkeydown    = onKeyDown _
