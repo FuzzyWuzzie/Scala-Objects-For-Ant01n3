@@ -70,7 +70,7 @@ trait SurfaceRenderer {
 	/** Code to call when a key was type and the rendering surface was active. */
 	type Key = (Surface, KeyEvent)=>Unit
 	
-	/** Code to call when the surface has been clicked (touch-click on touchable devices, left-click on desktops). */
+	/** Code to call when the surface has been clicked (ktouch-click on touchable devices, left-click on desktops). */
 	
 	type Action = (Surface, ActionEvent)=>Unit
 	
@@ -108,6 +108,14 @@ trait SurfaceRenderer {
 	
 	var close:Close = null
 }
+
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//
+// Events are completely to rethink, in light of the use of both Android, JavaScript/Web and Desktop.
+//
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!s
+
 
 /** Generic event. */
 trait Event {}

@@ -6,28 +6,30 @@ import org.sofa.opengl.surface._
 import scala.scalajs.js
 import js.Dynamic.{global => g}
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLElement, HTMLCanvasElement, KeyboardEvent}
+import org.scalajs.dom.{HTMLElement, HTMLCanvasElement, KeyboardEvent, MouseEvent}
 
 
+/** A [[Surface]] that can be compiled by Scala.js using a DOM canvas with WebGL.
+  *
+  * @param renderer Surface events receiver.
+  * @param canvasElement id of the canvas in the document.
+  * @param fps The desired number of frames per second. */
 class SurfaceWebCanvas(
     val renderer:SurfaceRenderer,
     val canvasElement:String,
-    val title:String,
     private[this] var fps:Int
 )
 extends Surface {
 
 	/** NEWT window. */
-    protected var canvas:HTMLCanvasElement = null
+    protected[this] var canvas:HTMLCanvasElement = null
     
     /** OpenGL. */
-    protected var sgl:SGL = null
+    protected[this] var sgl:SGL = null
 
+    /** Handle on the animator. */
     protected[this] var intervalHandle:js.Number = null
 
-    /** Animator. */
-//    protected var anim:FPSAnimator = null
-    
     build()
     
     protected def build() {
@@ -35,7 +37,6 @@ extends Surface {
 
 		if(canvas ne null) {
 			val gl = canvas.getContext("webgl").asInstanceOf[WebGLRenderingContext]
-			//val gl = g.initWebGL(canvas).asInstanceOf[WebGLRenderingContext]//WebGLGlobalScope.initWebGL(canvas)//g.initWebGL(canvas)
 
 			if(gl eq null) {
 				throw new RuntimeException("cannot init GL")
@@ -44,9 +45,12 @@ extends Surface {
 				renderer.initSurface(sgl, this)
 			}
 
-			// TODO events
-			dom.document.onkeypress = onKey _
-			dom.document.onkeydown = onKeyDown _
+			dom.document.onkeypress   = onKey _
+			dom.document.onkeydown    = onKeyDown _
+			canvas.onmousedown        = onMouseDown _
+			canvas.onmouseup          = onMouseUp _
+			canvas.onmousemove        = onMouseMove _
+			dom.document.onmousewheel = onMouseWheel _
 
 			intervalHandle = dom.setInterval(animate _, 1000.0/fps)
 		} else {
@@ -97,6 +101,34 @@ extends Surface {
     		renderer.key(this, new KeyEventWeb(event, false))
     	}
     }
+
+    protected[this] var mousedrag = false
+
+    protected def onMouseDown(event:MouseEvent) {
+    	if(renderer ne null) {
+    		renderer.motion(this, new MotionEventWeb(event, true, false))
+    		mousedrag = true
+    	}
+    }
+
+    protected def onMouseMove(event:MouseEvent) {
+    	if((renderer ne null) && mousedrag) {
+    		renderer.motion(this, new MotionEventWeb(event, false, false))	
+    	}
+    }
+
+    protected def onMouseUp(event:MouseEvent) {
+    	if(renderer ne null) {
+    		mousedrag = false
+    		renderer.motion(this, new MotionEventWeb(event, false, true))
+    	}
+    }
+
+    protected def onMouseWheel(event:WheelEvent) {
+    	if(renderer ne null) {
+    		renderer.scroll(this, new ScrollEventWeb(event))
+    	}
+    }
 }
 
 // -- Web events -------------------------------------------------------------------------------------------
@@ -120,7 +152,6 @@ class KeyEventWeb(val source:KeyboardEvent, val isPrintable:Boolean) extends Key
 
         // source.keyCode match {
         // //     case VK_SPACE     => Space
-        // //     case _            => Unknown
         // }
     }
     
@@ -132,21 +163,23 @@ class KeyEventWeb(val source:KeyboardEvent, val isPrintable:Boolean) extends Key
     def isMetaDown:Boolean = source.getModifierState("Meta")
 }
 
-// class ScrollEventWeb(source:JoglMouseEvent) extends ScrollEvent {
-//     def amount:Int = source.getRotation()(0).toInt//source.getWheelRotation.toInt
-// }
 
-// class MotionEventWeb(source:JoglMouseEvent, pressed:Boolean, released:Boolean) extends MotionEvent {
-//     def deviceType:DeviceType.Value = DeviceType.Mouse
-//     def isStart:Boolean = pressed
-//     def isEnd:Boolean = released
-//     def x:Double = source.getX
-//     def y:Double = source.getY
-//     def pressure:Double = source.getPressure(true)
-//     def x(pointer:Int):Double = source.getX(pointer)
-//     def y(pointer:Int):Double = source.getY(pointer)
-//     def pressure(pointer:Int):Double = source.getPressure(pointer, true)
-//     def pointerCount:Int = source.getPointerCount
-//     def sourceEvent:AnyRef = source
-//     override def toString():String = "motion[%s%.1f, %.1f (%d)]".format(if(isStart) ">" else if(isEnd) "<" else "", x, y, pointerCount)
-// }
+class ScrollEventWeb(val source:WheelEvent) extends ScrollEvent {
+     def amount:Int = source.deltaX.toInt
+}
+
+
+class MotionEventWeb(val source:MouseEvent, val pressed:Boolean, val released:Boolean) extends MotionEvent {
+    def deviceType:DeviceType.Value = DeviceType.Mouse
+    def isStart:Boolean = pressed
+    def isEnd:Boolean = released
+    def x:Double = source.clientX
+	def y:Double = source.clientY
+    def pressure:Double = 1.0
+    def x(pointer:Int):Double = source.clientX
+	def y(pointer:Int):Double = source.clientY
+	def pressure(pointer:Int):Double = pressure
+	def pointerCount:Int = 1
+	def sourceEvent:AnyRef = source
+	override def toString():String = "motion[%s%.1f, %.1f (%d)]".format(if(isStart) ">" else if(isEnd) "<" else "", x, y, pointerCount)
+}
