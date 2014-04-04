@@ -2,6 +2,7 @@ package org.sofa.opengl.backend
 
 import scala.scalajs.js
 
+import org.sofa.nio.backend.{ArrayBuffer, ArrayBufferView, Float32Array}
 import java.nio.{Buffer,IntBuffer=>NioIntBuffer}
 import org.sofa.nio._
 import org.sofa.opengl._
@@ -9,7 +10,6 @@ import org.sofa.math._
 
 
 class SGLWeb(val gl:WebGLRenderingContext, var ShaderVersion:String) extends SGL {
-    //private[this] val ib1 = NioIntBuffer.allocate(1)
 
 // Awful constants
 	
@@ -92,6 +92,8 @@ class SGLWeb(val gl:WebGLRenderingContext, var ShaderVersion:String) extends SGL
     val FRAGMENT_SHADER:Int = gl.FRAGMENT_SHADER.toInt
 
     val TRIANGLES:Int = gl.TRIANGLES.toInt
+    val TRIANGLE_STRIP:Int = gl.TRIANGLE_STRIP.toInt
+    val TRIANGLE_FAN:Int = gl.TRIANGLE_FAN.toInt
 
     val EXTENSIONS:Int = -1
 
@@ -105,228 +107,183 @@ class SGLWeb(val gl:WebGLRenderingContext, var ShaderVersion:String) extends SGL
     	-1
     }
 
-    def isEnabled(param:Int):Boolean = false//GLES20.glIsEnabled(param)
+    def isEnabled(param:Int):Boolean = gl.isEnabled(param)
 
- // Vertex arrays
+// Vertex arrays
 	
-	def genVertexArray():Int = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
-	def deleteVertexArray(id:Int) = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
-	def bindVertexArray(id:Int) = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
+	def createVertexArray():AnyRef = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
+	def deleteVertexArray(id:AnyRef) = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
+	def bindVertexArray(id:AnyRef) = throw new RuntimeException("no vertex arrays in GL ES 2.0, too bad")
 	
-	def enableVertexAttribArray(id:Int) = {}//GLES20.glEnableVertexAttribArray(id)
-	def disableVertexAttribArray(id:Int) = {}// GLES20.glDisableVertexAttribArray(id)
-	def vertexAttribPointer(number:Int, size:Int, typ:Int, b:Boolean, i:Int, j:Int) = {}//GLES20.glVertexAttribPointer(number, size, typ, b, i, j)
-	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = {}//GLES20.glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
-    def drawArrays(mode:Int, i:Int, size:Int) = {}//GLES20.glDrawArrays(mode, i, size)
-    def drawElements(mode:Int, count:Int, i:Int, offset:Int) = {}//GLES20.glDrawElements(mode, count, i, offset)
-    def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) = {} //throw new RuntimeException("no multi draw arrays in GL ES 2.0, too bad")
+	def enableVertexAttribArray(index:Int) = gl.enableVertexAttribArray(index)
+	def disableVertexAttribArray(index:Int) = gl.disableVertexAttribArray(index)
+	def vertexAttribPointer(number:Int, size:Int, typ:Int, b:Boolean, i:Int, j:Int) = gl.vertexAttribPointer(number, size, typ, b, i, j)
+	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = throw new RuntimeException("no vertexAttribPointer with data buffer in WebGL")//gl.vertexAttribPointer(number, attributeSize, attributeType, b, size, data)
+    def drawArrays(mode:Int, i:Int, size:Int) = gl.drawArrays(mode, i, size)
+    def drawElements(mode:Int, count:Int, i:Int, offset:Int) = gl.drawElements(mode, count, i, offset)
+    def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) = throw new RuntimeException("no multi draw arrays in GL ES 2.0, too bad")
 
 	// Textures
     
-    def genTexture:Int = {
-	    // GLES20.glGenTextures(1, ib1)
-	    // ib1.get(0)
-	    -1
-	}
+    def createTexture:AnyRef = gl.createTexture
 	
-	def deleteTexture(id:Int) {
-	    // ib1.put(0, id)
-	    // GLES20.glDeleteTextures(1, ib1)
-	}
+	def deleteTexture(id:AnyRef) { gl.deleteTexture(id.asInstanceOf[js.Any]) }
 	
-	def activeTexture(texture:Int) = {}//GLES20.glActiveTexture(texture)
-	def bindTexture(target:Int, id:Int) = {}//GLES20.glBindTexture(target, id)
-	def texParameter(target:Int, name:Int, param:Float) = {}//GLES20.glTexParameterf(target, name, param)
-	def texParameter(target:Int, name:Int, param:Int) = {}//GLES20.glTexParameteri(target, name, param)
-	def texParameter(target:Int, name:Int, params:FloatBuffer) = {}//GLES20.glTexParameterfv(target, name, params)
-	def texParameter(target:Int, name:Int, params:IntBuffer) = {}//GLES20.glTexParameteriv(target, name, params)
+	def activeTexture(texture:Int) = gl.activeTexture(texture)
+	def bindTexture(target:Int, id:AnyRef) = gl.bindTexture(target, id.asInstanceOf[js.Any])
+	def texParameter(target:Int, name:Int, param:Float) = gl.texParameterf(target, name, param)
+	def texParameter(target:Int, name:Int, param:Int) = gl.texParameteri(target, name, param)
+	def texParameter(target:Int, name:Int, params:FloatBuffer) = throw new RuntimeException("texParameterfv not supported in WebGL")//gl.texParameterfv(target, name, params)
+	def texParameter(target:Int, name:Int, params:IntBuffer) = throw new RuntimeException("texParameterfv not supported in WebGL")//gl.texParameteriv(target, name, params)
 	def texImage1D(target:Int, level:Int, internalFormat:Int, width:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = throw new RuntimeException("no texImage1D in GL ES 2.0, too bad")
-	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = {}//GLES20.glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, data)
+	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = gl.texImage2D(target, level ,internalFormat, width, height, border, format, theType, data.buffer.asInstanceOf[ArrayBufferView])
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = throw new RuntimeException("no texImage3D in GL ES 2.0, too bad")
-    def generateMipmaps(target:Int) = {}//GLES20.glGenerateMipmap(target)
+    def generateMipmaps(target:Int) = gl.generateMipmap(target)
 
-    def genFramebuffer:Int = {
-    	// GLES20.glGenFramebuffers(1, ib1)
-    	// ib1.get(0)
-    	-1
-    }
+    def createFramebuffer:AnyRef = gl.createFramebuffer
 
-    def deleteFramebuffer(id:Int) {
-    	// ib1.put(0, id)
-    	// GLES20.glDeleteFramebuffers(1, ib1)
-    }
+    def deleteFramebuffer(id:AnyRef) { gl.deleteFramebuffer(id.asInstanceOf[js.Any]) }
 
-    def bindFramebuffer(target:Int, id:Int) = {}//GLES20.glBindFramebuffer(target, id)
-    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, texture:Int, level:Int) = {}//GLES20.glFramebufferTexture2D(target,attachment,textarget,texture,level)
-    def checkFramebufferStatus(target:Int):Int = -1//GLES20.glCheckFramebufferStatus(target)
+    def bindFramebuffer(target:Int, id:AnyRef) = gl.bindFramebuffer(target, id.asInstanceOf[js.Any])
+    def framebufferTexture2D(target:Int,attachment:Int, textarget:Int, texture:AnyRef, level:Int) = gl.framebufferTexture2D(target,attachment,textarget,texture.asInstanceOf[js.Any],level)
+    def checkFramebufferStatus(target:Int):Int = gl.checkFramebufferStatus(target).toInt
 
  // Buffers
 	
-	def genBuffer():AnyRef = gl.createBuffer
+	def createBuffer():AnyRef = gl.createBuffer
 
 	def bindBuffer(target:Int, id:AnyRef) = gl.bindBuffer(target, id.asInstanceOf[js.Any])
 	
 	def deleteBuffer(id:AnyRef) = gl.deleteBuffer(id.asInstanceOf[js.Any])
 
-	def bufferData(target:Int, data:DoubleBuffer, mode:Int) {
-//	    GLES20.glBufferData(target, data.size*8, data.buffer, mode)
-	}
-	
-	def bufferData(target:Int, data:Array[Double], mode:Int) {
-//	    bufferData(target, new DoubleBuffer(data), mode)
-	}
-
-	def bufferData(target:Int, data:FloatBuffer, mode:Int) {
-//	    GLES20.glBufferData(target, data.size*4, data.buffer, mode)
-	}
-	
-	def bufferData(target:Int, data:Array[Float], mode:Int) {
-//	    bufferData(target, new FloatBuffer(data), mode)
-	}
-
-	def bufferData(target:Int, data:IntBuffer, mode:Int) {
-//	    GLES20.glBufferData(target, data.size*4, data.buffer, mode)
-	}
-	
-	def bufferData(target:Int, data:Array[Int], mode:Int) {
-//	    bufferData(target, new IntBuffer(data), mode)
-	}
-
+	def bufferData(target:Int, data:DoubleBuffer, mode:Int) { gl.bufferData(target, /*data.size*8,*/ data.buffer.asInstanceOf[ArrayBufferView], mode) }
+	def bufferData(target:Int, data:Array[Double], mode:Int) { bufferData(target, DoubleBuffer(data), mode) }
+	def bufferData(target:Int, data:FloatBuffer, mode:Int) { gl.bufferData(target, /*data.size*4,*/ data.buffer.asInstanceOf[ArrayBufferView], mode) }
+	def bufferData(target:Int, data:Array[Float], mode:Int) { bufferData(target, FloatBuffer(data), mode) }
+	def bufferData(target:Int, data:IntBuffer, mode:Int) { gl.bufferData(target, /*data.size*4,*/ data.buffer.asInstanceOf[ArrayBufferView], mode) }
+	def bufferData(target:Int, data:Array[Int], mode:Int) { bufferData(target, IntBuffer(data), mode) }
 	def bufferData(target:Int, data:NioBuffer, mode:Int) {
-	    // if(data.isByte) {
-	    //     bufferData(target, data.asInstanceOf[ByteBuffer], mode)
-	    // } else if(data.isInt) {
-	    //     bufferData(target, data.asInstanceOf[IntBuffer], mode)
-	    // } else if(data.isFloat) {
-	    //     bufferData(target, data.asInstanceOf[FloatBuffer], mode)
-	    // } else if(data.isDouble) {
-	    //     bufferData(target, data.asInstanceOf[DoubleBuffer], mode)
-	    // } else {
-	    //     throw new RuntimeException("Unknown Nio buffer data type")
-	    // }
+	    if(data.isByte) {
+	        bufferData(target, data.asInstanceOf[ByteBuffer], mode)
+	    } else if(data.isInt) {
+	        bufferData(target, data.asInstanceOf[IntBuffer], mode)
+	    } else if(data.isFloat) {
+	        bufferData(target, data.asInstanceOf[FloatBuffer], mode)
+	    } else if(data.isDouble) {
+	        bufferData(target, data.asInstanceOf[DoubleBuffer], mode)
+	    } else {
+	        throw new RuntimeException("Unknown Nio buffer data type")
+	    }
 	}
 
-	def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer, alsoPositionIndata:Boolean) {
-//		GLES20.glBufferSubData(target, offset*8, size*8, data.buffer)
-	}
-
-	def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer, alsoPositionIndata:Boolean) {
-//		GLES20.glBufferSubData(target, offset*4, size*4, data.buffer)
-	}
-
-	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer, alsoPositionIndata:Boolean) {
-//		GLES20.glBufferSubData(target, offset, size, data.buffer)
-	}
-
-	def bufferSubData(target:Int, offset:Int, size:Int, data:ByteBuffer, alsoPositionIndata:Boolean) {
-//		GLES20.glBufferSubData(target, offset, size, data.buffer)
-	}
-	
+	def bufferSubData(target:Int, offset:Int, size:Int, data:DoubleBuffer, alsoPositionIndata:Boolean) { gl.bufferSubData(target, offset*8, /*size*8,*/ data.buffer.asInstanceOf[ArrayBufferView]) }
+	def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer, alsoPositionIndata:Boolean) { gl.bufferSubData(target, offset*4, /*size*4,*/ data.buffer.asInstanceOf[ArrayBufferView]) }
+	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer, alsoPositionIndata:Boolean) { gl.bufferSubData(target, offset*4, /*size,*/ data.buffer.asInstanceOf[ArrayBufferView]) }
+	def bufferSubData(target:Int, offset:Int, size:Int, data:ByteBuffer, alsoPositionIndata:Boolean) { gl.bufferSubData(target, offset, /*size,*/ data.buffer.asInstanceOf[ArrayBufferView]) }
 	def bufferSubData(target:Int, offset:Int, size:Int, data:NioBuffer, alsoPositionIndata:Boolean) {
-	    // if(data.isByte) {
-	    //     bufferSubData(target, offset, size, data.asInstanceOf[ByteBuffer])
-	    // } else if(data.isInt) {
-	    //     bufferSubData(target, offset, size, data.asInstanceOf[IntBuffer])
-	    // } else if(data.isFloat) {
-	    //     bufferSubData(target, offset, size, data.asInstanceOf[FloatBuffer])
-	    // } else if(data.isDouble) {
-	    //     bufferSubData(target, offset, size, data.asInstanceOf[DoubleBuffer])
-	    // } else {
-	    //     throw new RuntimeException("Unknown Nio buffer data type")
-	    // }
+	    if(data.isByte) {
+	        bufferSubData(target, offset, size, data.asInstanceOf[ByteBuffer])
+	    } else if(data.isInt) {
+	        bufferSubData(target, offset, size, data.asInstanceOf[IntBuffer])
+	    } else if(data.isFloat) {
+	        bufferSubData(target, offset, size, data.asInstanceOf[FloatBuffer])
+	    } else if(data.isDouble) {
+	        bufferSubData(target, offset, size, data.asInstanceOf[DoubleBuffer])
+	    } else {
+	        throw new RuntimeException("Unknown Nio buffer data type")
+	    }
 	}
 
 // Shaders
 	
-	def createShader(shaderType:Int):Int = { -1 }//GLES20.glCreateShader(shaderType)
+	def createShader(shaderType:Int):AnyRef = gl.createShader(shaderType)
 	
-	def createProgram():Int = { -1 }//GLES20.glCreateProgram()
+	def createProgram():AnyRef = gl.createProgram
 	
-	def getShaderCompileStatus(id:Int):Boolean = false//{ getShader(id, GLES20.GL_COMPILE_STATUS) == GLES20.GL_TRUE }
+	def getShaderCompileStatus(id:AnyRef):Boolean = gl.getShaderParameter(id.asInstanceOf[js.Any], gl.COMPILE_STATUS).asInstanceOf[js.Boolean]
 	
-	def getProgramLinkStatus(id:Int):Boolean = false//{ getProgram(id, GLES20.GL_LINK_STATUS) == GLES20.GL_TRUE }
+	def getProgramLinkStatus(id:AnyRef):Boolean = gl.getProgramParameter(id.asInstanceOf[js.Any], gl.LINK_STATUS).asInstanceOf[js.Boolean]
 
-	def getShader(id:Int, status:Int):Int = {
-	    // GLES20.glGetShaderiv(id, status, ib1)
-	    // ib1.get(0)
-	    -1
+	def getShader(id:AnyRef, status:Int):Int = gl.getShaderParameter(id.asInstanceOf[js.Any], status).asInstanceOf[js.Number].toInt
+	
+	def getShaderInfoLog(id:AnyRef):String = gl.getShaderInfoLog(id.asInstanceOf[js.Any])
+	
+	def shaderSource(id:AnyRef, source:Array[String]) = {
+	    val buf = new StringBuffer
+	    source.foreach { line => buf.append(line) }
+		gl.shaderSource(id.asInstanceOf[js.Any], buf.toString)
 	}
 	
-	def getShaderInfoLog(id:Int):String = { "" }//GLES20.glGetShaderInfoLog(id)
-	
-	def shaderSource(id:Int, source:Array[String]) = {
-	 //    val buf = new StringBuffer
-	 //    source.foreach { line => buf.append(line) }
-		// GLES20.glShaderSource(id, buf.toString)   
-	}
-	
-	def getProgram(id:Int, status:Int):Int = {
-		// GLES20.glGetProgramiv(id, status, ib1)
-		// ib1.get(0)
-		-1
-	}
+	def getProgram(id:AnyRef, status:Int):Int = gl.getProgramParameter(id.asInstanceOf[js.Any], status).asInstanceOf[js.Number].toInt
 
-	def getProgramInfoLog(id:Int):String = { "" }//GLES20.glGetProgramInfoLog(id)
+	def getProgramInfoLog(id:AnyRef):String = gl.getProgramInfoLog(id.asInstanceOf[js.Any])
 	
-	def shaderSource(id:Int, source:String) = {}//GLES20.glShaderSource(id, source)
-	def compileShader(id:Int) = {}//GLES20.glCompileShader(id)
-	def deleteShader(id:Int) = {}//GLES20.glDeleteShader(id)
-    def attachShader(id:Int, shaderId:Int) = {}//GLES20.glAttachShader(id, shaderId)
-    def linkProgram(id:Int) = {}//GLES20.glLinkProgram(id)
-    def useProgram(id:Int) = {}//GLES20.glUseProgram(id)
-    def detachShader(id:Int, shaderId:Int) = {}//GLES20.glDetachShader(id, shaderId)
-    def deleteProgram(id:Int) = {}//GLES20.glDeleteProgram(id)
-    def getUniformLocation(id:Int, variable:String):Int = -1//GLES20.glGetUniformLocation(id, variable)
-    def uniform(loc:Int, i:Int) = {}//GLES20.glUniform1i(loc, i)
-    def uniform(loc:Int, i:Int, j:Int) = {}//GLES20.glUniform2i(loc, i, j)
-    def uniform(loc:Int, i:Int, j:Int, k:Int) = {}//GLES20.glUniform3i(loc, i, j, k)
-    def uniform(loc:Int, i:Int, j:Int, k:Int, l:Int) = {}//GLES20.glUniform4i(loc, i, j, k, l)
-    def uniform(loc:Int, i:Float) = {}//GLES20.glUniform1f(loc, i)
-    def uniform(loc:Int, i:Float, j:Float) = {}//GLES20.glUniform2f(loc, i, j)
-    def uniform(loc:Int, i:Float, j:Float, k:Float) = {}//GLES20.glUniform3f(loc, i, j, k)
-    def uniform(loc:Int, i:Float, j:Float, k:Float, l:Float) = {}//GLES20.glUniform4f(loc, i, j, k, l)
-    def uniform(loc:Int, color:Rgba) = {}//GLES20.glUniform4f(loc, color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
-    def uniform(loc:Int, i:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
-    def uniform(loc:Int, i:Double, j:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
-    def uniform(loc:Int, i:Double, j:Double, k:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
-    def uniform(loc:Int, i:Double, j:Double, k:Double, l:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = {}//GLES20.glUniformMatrix3fv(loc, i, b, buffer.buffer)
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = {}//GLES20.glUniformMatrix4fv(loc, i, b, buffer.buffer)
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = {}//GLES20.glUniformMatrix3fv(loc, i, b, buffer, 0)
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = {}//GLES20.glUniformMatrix4fv(loc, i, b, buffer, 0)
-    def uniform(loc:Int, v:Array[Float]) {
-        // if(     v.size==1) uniform(loc, v(0))
-        // else if(v.size==2) uniform(loc, v(0), v(1))
-        // else if(v.size==3) uniform(loc, v(0), v(1), v(2))
-        // else if(v.size==4) uniform(loc, v(0), v(1), v(2), v(3))
+	def shaderSource(id:AnyRef, source:String) = gl.shaderSource(id.asInstanceOf[js.Any], source)
+	def compileShader(id:AnyRef) = gl.compileShader(id.asInstanceOf[js.Any])
+	def deleteShader(id:AnyRef) = gl.deleteShader(id.asInstanceOf[js.Any])
+    def attachShader(id:AnyRef, shaderId:AnyRef) = gl.attachShader(id.asInstanceOf[js.Any], shaderId.asInstanceOf[js.Any])
+    def linkProgram(id:AnyRef) = gl.linkProgram(id.asInstanceOf[js.Any])
+    def useProgram(id:AnyRef) = gl.useProgram(id.asInstanceOf[js.Any])
+    def detachShader(id:AnyRef, shaderId:AnyRef) = gl.detachShader(id.asInstanceOf[js.Any], shaderId.asInstanceOf[js.Any])
+    def deleteProgram(id:AnyRef) = gl.deleteProgram(id.asInstanceOf[js.Any])
+    
+    /** To avoid re-allocating a FloatBuffer at each uniformMatrix4 call with an array. */
+    protected[this] val tmpM4 = FloatBuffer(16)
+    
+    /** To avoid re-allocating a FloatBuffer at each uniformMatrix3 call with an array. */
+    protected[this] val tmpM3 = FloatBuffer(9)
+
+    def getUniformLocation(id:AnyRef, variable:String):AnyRef = gl.getUniformLocation(id.asInstanceOf[js.Any], variable)
+    def uniform(loc:AnyRef, i:Int) = gl.uniform1i(loc.asInstanceOf[js.Any], i)
+    def uniform(loc:AnyRef, i:Int, j:Int) = gl.uniform2i(loc.asInstanceOf[js.Any], i, j)
+    def uniform(loc:AnyRef, i:Int, j:Int, k:Int) = gl.uniform3i(loc.asInstanceOf[js.Any], i, j, k)
+    def uniform(loc:AnyRef, i:Int, j:Int, k:Int, l:Int) = gl.uniform4i(loc.asInstanceOf[js.Any], i, j, k, l)
+    def uniform(loc:AnyRef, i:Float) = gl.uniform1f(loc.asInstanceOf[js.Any], i)
+    def uniform(loc:AnyRef, i:Float, j:Float) = gl.uniform2f(loc.asInstanceOf[js.Any], i, j)
+    def uniform(loc:AnyRef, i:Float, j:Float, k:Float) = gl.uniform3f(loc.asInstanceOf[js.Any], i, j, k)
+    def uniform(loc:AnyRef, i:Float, j:Float, k:Float, l:Float) = gl.uniform4f(loc.asInstanceOf[js.Any], i, j, k, l)
+    def uniform(loc:AnyRef, color:Rgba) = gl.uniform4f(loc.asInstanceOf[js.Any], color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
+    def uniform(loc:AnyRef, i:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
+    def uniform(loc:AnyRef, i:Double, j:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
+    def uniform(loc:AnyRef, i:Double, j:Double, k:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
+    def uniform(loc:AnyRef, i:Double, j:Double, k:Double, l:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer) = gl.uniformMatrix3fv(loc.asInstanceOf[js.Any], b, buffer.buffer.asInstanceOf[Float32Array])
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer) = gl.uniformMatrix4fv(loc.asInstanceOf[js.Any], b, buffer.buffer.asInstanceOf[Float32Array])
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:Array[Float]) = { tmpM3.copy(buffer); uniformMatrix3(loc, i, b, tmpM3) }
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:Array[Float]) = { tmpM4.copy(buffer); uniformMatrix4(loc, i, b, tmpM4) }
+    def uniform(loc:AnyRef, v:Array[Float]) {
+        if(     v.size==1) uniform(loc, v(0))
+        else if(v.size==2) uniform(loc, v(0), v(1))
+        else if(v.size==3) uniform(loc, v(0), v(1), v(2))
+        else if(v.size==4) uniform(loc, v(0), v(1), v(2), v(3))
     }
-    def uniform(loc:Int, v:Array[Double]) {
-        // if(     v.size==1) uniform(loc, v(0).toFloat)
-        // else if(v.size==2) uniform(loc, v(0).toFloat, v(1).toFloat)
-        // else if(v.size==3) uniform(loc, v(0).toFloat, v(1).toFloat, v(2).toFloat)
-        // else if(v.size==4) uniform(loc, v(0).toFloat, v(1).toFloat, v(2).toFloat, v(3).toFloat)
+    def uniform(loc:AnyRef, v:Array[Double]) {
+        if(     v.size==1) uniform(loc, v(0).toFloat)
+        else if(v.size==2) uniform(loc, v(0).toFloat, v(1).toFloat)
+        else if(v.size==3) uniform(loc, v(0).toFloat, v(1).toFloat, v(2).toFloat)
+        else if(v.size==4) uniform(loc, v(0).toFloat, v(1).toFloat, v(2).toFloat, v(3).toFloat)
     }
-    def uniform(loc:Int, v:FloatBuffer) {
-        // v.size match {
-        //     case 1 => uniform(loc, v(0))
-        //     case 2 => uniform(loc, v(0), v(1))
-        //     case 3 => uniform(loc, v(0), v(1), v(2))
-        //     case 4 => uniform(loc, v(0), v(1), v(2), v(3))
-        //     case _ => throw new RuntimeException("uniform with more than 4 values?")
-        // }
+    def uniform(loc:AnyRef, v:FloatBuffer) {
+        v.size match {
+            case 1 => uniform(loc, v(0))
+            case 2 => uniform(loc, v(0), v(1))
+            case 3 => uniform(loc, v(0), v(1), v(2))
+            case 4 => uniform(loc, v(0), v(1), v(2), v(3))
+            case _ => throw new RuntimeException("uniform with more than 4 values?")
+        }
     }
-    def uniform(loc:Int, v:DoubleBuffer) {
-        // v.size match {
-        //     case 1 => uniform(loc, v(0))
-        //     case 2 => uniform(loc, v(0), v(1))
-        //     case 3 => uniform(loc, v(0), v(1), v(2))
-        //     case 4 => uniform(loc, v(0), v(1), v(2), v(3))
-        //     case _ => throw new RuntimeException("uniform with more than 4 values?")
-        // }
+    def uniform(loc:AnyRef, v:DoubleBuffer) {
+        v.size match {
+            case 1 => uniform(loc, v(0))
+            case 2 => uniform(loc, v(0), v(1))
+            case 3 => uniform(loc, v(0), v(1), v(2))
+            case 4 => uniform(loc, v(0), v(1), v(2), v(3))
+            case _ => throw new RuntimeException("uniform with more than 4 values?")
+        }
     }
-    def getAttribLocation(id:Int, attribute:String):Int = -1//GLES20.glGetAttribLocation(id, attribute)
+    def getAttribLocation(id:AnyRef, attribute:String):Int = gl.getAttribLocation(id.asInstanceOf[js.Any], attribute).asInstanceOf[js.Number].toInt
 
 // Basic API
 	

@@ -102,6 +102,8 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
     val FRAGMENT_SHADER:Int = GL2ES2.GL_FRAGMENT_SHADER
 
     val TRIANGLES:Int = GL.GL_TRIANGLES
+    val TRIANGLE_STRIP:Int = GL.GL_TRIANGLE_STRIP
+    val TRIANGLE_FAN:Int = GL.GL_TRIANGLE_FAN
 
     val EXTENSIONS:Int = GL.GL_EXTENSIONS
 
@@ -311,40 +313,43 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
     def deleteProgram(id:AnyRef) = glDeleteProgram(id.asInstanceOf[Integer].toInt)
 
     def getAttribLocation(id:AnyRef, attribute:String):Int = glGetAttribLocation(id.asInstanceOf[Integer].toInt, attribute)
-    def getUniformLocation(id:AnyRef, variable:String):Int = glGetUniformLocation(id.asInstanceOf[Integer].toInt, variable)
+    def getUniformLocation(id:AnyRef, variable:String):AnyRef = {
+    	val l = glGetUniformLocation(id.asInstanceOf[Integer].toInt, variable).asInstanceOf[Integer]
+    	if(l < 0) null else l
+    }
 
-    def uniform(loc:Int, i:Int) = glUniform1i(loc, i)
-    def uniform(loc:Int, i:Int, j:Int) = glUniform2i(loc, i, j)
-    def uniform(loc:Int, i:Int, j:Int, k:Int) = glUniform3i(loc, i, j, k)
-    def uniform(loc:Int, i:Int, j:Int, k:Int, l:Int) = glUniform4i(loc, i, j, k, l)
-    def uniform(loc:Int, i:Float) = glUniform1f(loc, i)
-    def uniform(loc:Int, i:Float, j:Float) = glUniform2f(loc, i, j)
-    def uniform(loc:Int, i:Float, j:Float, k:Float) = glUniform3f(loc, i, j, k)
-    def uniform(loc:Int, i:Float, j:Float, k:Float, l:Float) = glUniform4f(loc, i, j, k, l)
-    def uniform(loc:Int, color:Rgba) = glUniform4f(loc, color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
-    def uniform(loc:Int, i:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform1d(loc, i)
-    def uniform(loc:Int, i:Double, j:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform2d(loc, i, j)
-    def uniform(loc:Int, i:Double, j:Double, k:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform3d(loc, i, j, k)
-    def uniform(loc:Int, i:Double, j:Double, k:Double, l:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform4d(loc, i, j, k, l)
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix3fv(loc, i, b, buffer.buffer.asInstanceOf[java.nio.FloatBuffer])
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniformMatrix3dv(loc, i, b, buffer.buffer)
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix4fv(loc, i, b, buffer.buffer.asInstanceOf[java.nio.FloatBuffer])
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniformMatrix4dv(loc, i, b, buffer.buffer)
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix3fv(loc, i, b, buffer, 0)
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix4fv(loc, i, b, buffer, 0)
-    def uniform(loc:Int, v:Array[Float]) {
+    def uniform(loc:AnyRef, i:Int) = glUniform1i(loc.asInstanceOf[Integer].toInt, i)
+    def uniform(loc:AnyRef, i:Int, j:Int) = glUniform2i(loc.asInstanceOf[Integer].toInt, i, j)
+    def uniform(loc:AnyRef, i:Int, j:Int, k:Int) = glUniform3i(loc.asInstanceOf[Integer].toInt, i, j, k)
+    def uniform(loc:AnyRef, i:Int, j:Int, k:Int, l:Int) = glUniform4i(loc.asInstanceOf[Integer].toInt, i, j, k, l)
+    def uniform(loc:AnyRef, i:Float) = glUniform1f(loc.asInstanceOf[Integer].toInt, i)
+    def uniform(loc:AnyRef, i:Float, j:Float) = glUniform2f(loc.asInstanceOf[Integer].toInt, i, j)
+    def uniform(loc:AnyRef, i:Float, j:Float, k:Float) = glUniform3f(loc.asInstanceOf[Integer].toInt, i, j, k)
+    def uniform(loc:AnyRef, i:Float, j:Float, k:Float, l:Float) = glUniform4f(loc.asInstanceOf[Integer].toInt, i, j, k, l)
+    def uniform(loc:AnyRef, color:Rgba) = glUniform4f(loc.asInstanceOf[Integer].toInt, color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
+    def uniform(loc:AnyRef, i:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform1d(loc.asInstanceOf[Integer].toInt, i)
+    def uniform(loc:AnyRef, i:Double, j:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform2d(loc.asInstanceOf[Integer].toInt, i, j)
+    def uniform(loc:AnyRef, i:Double, j:Double, k:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform3d(loc.asInstanceOf[Integer].toInt, i, j, k)
+    def uniform(loc:AnyRef, i:Double, j:Double, k:Double, l:Double) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniform4d(loc.asInstanceOf[Integer].toInt, i, j, k, l)
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix3fv(loc.asInstanceOf[Integer].toInt, i, b, buffer.buffer.asInstanceOf[java.nio.FloatBuffer])
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniformMatrix3dv(loc.asInstanceOf[Integer].toInt, i, b, buffer.buffer)
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer) = glUniformMatrix4fv(loc.asInstanceOf[Integer].toInt, i, b, buffer.buffer.asInstanceOf[java.nio.FloatBuffer])
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("no double values in shaders for GL 3 too bad")//glUniformMatrix4dv(loc.asInstanceOf[Integer].toInt, i, b, buffer.buffer)
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix3fv(loc.asInstanceOf[Integer].toInt, i, b, buffer, 0)
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:Array[Float]) = glUniformMatrix4fv(loc.asInstanceOf[Integer].toInt, i, b, buffer, 0)
+    def uniform(loc:AnyRef, v:Array[Float]) {
         if(     v.size==1) uniform(loc, v(0))
         else if(v.size==2) uniform(loc, v(0), v(1))
         else if(v.size==3) uniform(loc, v(0), v(1), v(2))
         else if(v.size==4) uniform(loc, v(0), v(1), v(2), v(3))
     }
-    def uniform(loc:Int, v:Array[Double]) {
+    def uniform(loc:AnyRef, v:Array[Double]) {
         if(     v.size==1) uniform(loc, v(0).toFloat)
         else if(v.size==2) uniform(loc, v(0).toFloat, v(1).toFloat)
         else if(v.size==3) uniform(loc, v(0).toFloat, v(1).toFloat, v(2).toFloat)
         else if(v.size==4) uniform(loc, v(0).toFloat, v(1).toFloat, v(2).toFloat, v(3).toFloat)
     }
-    def uniform(loc:Int, v:FloatBuffer) {
+    def uniform(loc:AnyRef, v:FloatBuffer) {
         v.size match {
             case 1 => uniform(loc, v(0))
             case 2 => uniform(loc, v(0), v(1))
@@ -353,7 +358,7 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
             case _ => throw new RuntimeException("uniform with more than 4 values?")
         }
     }
-    def uniform(loc:Int, v:DoubleBuffer) {
+    def uniform(loc:AnyRef, v:DoubleBuffer) {
         v.size match {
             case 1 => uniform(loc, v(0))
             case 2 => uniform(loc, v(0), v(1))

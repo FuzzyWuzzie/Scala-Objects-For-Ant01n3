@@ -287,7 +287,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     protected val shaders = shdrs.toArray
     
     /** Locations of each uniform variable in the shader. */
-    protected val uniformLocations = new HashMap[String, Int]
+    protected val uniformLocations = new HashMap[String, AnyRef]
     
     /** Location of each vertex attribute variable in the shader. */
     protected val attributeLocations = new HashMap[String, Int]
@@ -450,13 +450,13 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
         loc
     }
     
-    def getUniformLocation(variable:String):Int = {
+    def getUniformLocation(variable:String):AnyRef = {
         val loc = uniformLocations.get(variable).getOrElse {
         	checkId
         	useProgram(oid)
             var l = gl.getUniformLocation(oid, variable)
             checkErrors
-            if(l >= 0) {
+            if(l ne null) {
             	uniformLocations.put(variable, l)
             } else {
             	throw ShaderAttributeException("Cannot find uniform %s in program %s".format(variable, name))

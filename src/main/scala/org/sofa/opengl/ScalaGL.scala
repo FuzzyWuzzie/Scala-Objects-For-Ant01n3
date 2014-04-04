@@ -86,6 +86,8 @@ abstract class SGL {
     val FRAGMENT_SHADER:Int
     
     val TRIANGLES:Int
+    val TRIANGLE_STRIP:Int
+    val TRIANGLE_FAN:Int
     
     val EXTENSIONS:Int
     
@@ -187,31 +189,31 @@ abstract class SGL {
     def deleteProgram(id:AnyRef)	
 
     def getAttribLocation(id:AnyRef, attribute:String):Int
-    def getUniformLocation(id:AnyRef, variable:String):Int
+    def getUniformLocation(id:AnyRef, variable:String):AnyRef
 
-    def uniform(loc:Int, i:Int)
-    def uniform(loc:Int, i:Int, j:Int)
-    def uniform(loc:Int, i:Int, j:Int, k:Int)
-    def uniform(loc:Int, i:Int, j:Int, k:Int, l:Int)
-    def uniform(loc:Int, i:Float)
-    def uniform(loc:Int, i:Float, j:Float)
-    def uniform(loc:Int, i:Float, j:Float, k:Float)
-    def uniform(loc:Int, i:Float, j:Float, k:Float, l:Float)
-    def uniform(loc:Int, color:Rgba)
-    def uniform(loc:Int, i:Double)
-    def uniform(loc:Int, i:Double, j:Double)
-    def uniform(loc:Int, i:Double, j:Double, k:Double)
-    def uniform(loc:Int, i:Double, j:Double, k:Double, l:Double)
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer)
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer)
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:FloatBuffer)
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:DoubleBuffer)
-    def uniformMatrix3(loc:Int, i:Int, b:Boolean, buffer:Array[Float])
-    def uniformMatrix4(loc:Int, i:Int, b:Boolean, buffer:Array[Float])
-    def uniform(loc:Int, v:Array[Float])
-    def uniform(loc:Int, v:Array[Double])
-    def uniform(loc:Int, v:FloatBuffer)
-    def uniform(loc:Int, v:DoubleBuffer)
+    def uniform(loc:AnyRef, i:Int)
+    def uniform(loc:AnyRef, i:Int, j:Int)
+    def uniform(loc:AnyRef, i:Int, j:Int, k:Int)
+    def uniform(loc:AnyRef, i:Int, j:Int, k:Int, l:Int)
+    def uniform(loc:AnyRef, i:Float)
+    def uniform(loc:AnyRef, i:Float, j:Float)
+    def uniform(loc:AnyRef, i:Float, j:Float, k:Float)
+    def uniform(loc:AnyRef, i:Float, j:Float, k:Float, l:Float)
+    def uniform(loc:AnyRef, color:Rgba)
+    def uniform(loc:AnyRef, i:Double)
+    def uniform(loc:AnyRef, i:Double, j:Double)
+    def uniform(loc:AnyRef, i:Double, j:Double, k:Double)
+    def uniform(loc:AnyRef, i:Double, j:Double, k:Double, l:Double)
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer)
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:DoubleBuffer)
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer)
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:DoubleBuffer)
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:Array[Float])
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:Array[Float])
+    def uniform(loc:AnyRef, v:Array[Float])
+    def uniform(loc:AnyRef, v:Array[Double])
+    def uniform(loc:AnyRef, v:FloatBuffer)
+    def uniform(loc:AnyRef, v:DoubleBuffer)
 
 // Basic API
 	

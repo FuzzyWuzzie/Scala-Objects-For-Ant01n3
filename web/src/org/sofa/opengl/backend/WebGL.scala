@@ -2,6 +2,8 @@ package org.sofa.opengl.backend
 
 import scala.scalajs.js
 import org.scalajs.dom.{HTMLElement, HTMLCanvasElement}
+import org.sofa.nio._
+import org.sofa.nio.backend._
 
 
 trait WebGLRenderingContext extends js.Object {
@@ -422,37 +424,236 @@ trait WebGLRenderingContext extends js.Object {
     val drawingBufferWidth:js.Number = ???
     val drawingBufferHeight:js.Number = ???
 
+
+
+
+
 // Buffers
 
-	def createBuffer():js.Any = ???
-	def bindBuffer(target:js.Number, id:js.Any) = ???
-	def deleteBuffer(buffer:js.Any) = ???
+// 	def createBuffer():js.Any = ???
+// 	def bindBuffer(target:js.Number, id:js.Any) = ???
+// 	def deleteBuffer(buffer:js.Any) = ???
 
-	// void bufferData(GLenum target, GLsizeiptr size, GLenum usage) (OpenGL ES 2.0 §2.9, man page)
-	// void bufferData(GLenum target, ArrayBufferView data, GLenum usage)
-	// void bufferData(GLenum target, ArrayBuffer? data, GLenum usage) (OpenGL ES 2.0 §2.9, man page)
+// 	def bufferData(target:js.Number, size:js.Number, usage:js.Number) = ???
+// 	def bufferData(target:js.Number, data:ArrayBufferView, usage:js.Number) = ???
+// 	def bufferData(target:js.Number, data:ArrayBuffer, usage:js.Number) = ???
 
-	// void bufferSubData(GLenum target, GLintptr offset, ArrayBufferView data)
-	// void bufferSubData(GLenum target, GLintptr offset, ArrayBuffer? data) (OpenGL ES 2.0 §2.9, man page)
+// 	def bufferSubData(target:js.Number, offset:js.Number, data:ArrayBufferView)
+// 	def bufferSubData(target:js.Number, offset:js.Number, data:ArrayBuffer)
 
-//[WebGLHandlesContextLoss] GLboolean isBuffer(WebGLBuffer? buffer) 
+// //[WebGLHandlesContextLoss] GLboolean isBuffer(buffer:js.Any) 
 
-// General
+// // General
 
-    def getError():js.Number = ???
+//     def getError():js.Number = ???
+//     def clear(mask:js.Number) = ???
+//     def clearColor(red:js.Number, green:js.Number, blue:js.Number, alpha:js.Number) = ???
+//     def clearDepth(value:js.Number) = ???
+//     def getParameter(i:js.Number):js.Any = ???
+//     def viewport(x:js.Number, y:js.Number, width:js.Number, height:js.Number) = ???
+//     def enable(i:js.Number) = ???
+//     def disable(i:js.Number) = ???
+//     def cullFace(i:js.Number) = ???
+//     def frontFace(i:js.Number) = ???
+//     def lineWidth(width:js.Number) = ???
+//     def blendEquation(mode:js.Number) = ???
+//     def blendFunc(src:js.Number, dst:js.Number) = ???
+//     def depthFunc(op:js.Number) = ???
+//     def polygonMode(face:js.Number, mode:js.Number) = throw new RuntimeException("no polygonMode in GL ES 20, too bad")
+//     def pixelStorei(param:js.Number, value:js.Number) = ???
+
+//
+
+	def activeTexture(texture:js.Number) = ???
+    def attachShader(program:js.Any, shader:js.Any) = ???
+    def bindAttribLocation(program:js.Any, index:js.Number, name:js.String) = ???
+    def bindBuffer(target:js.Number, buffer:js.Any) = ???
+    def bindFramebuffer(target:js.Number, framebuffer:js.Any) = ???
+    def bindRenderbuffer(target:js.Number, renderbuffer:js.Any) = ???
+    def bindTexture(target:js.Number, texture:js.Any) = ???
+    def blendColor(red:js.Number, green:js.Number, blue:js.Number, alpha:js.Number) = ???
+    def blendEquation(mode:js.Number) = ???
+    def blendEquationSeparate(modeRGB:js.Number, modeAlpha:js.Number) = ???
+    def blendFunc(sfactor:js.Number, dfactor:js.Number) = ???
+    def blendFuncSeparate(srcRGB:js.Number, dstRGB:js.Number, srcAlpha:js.Number, dstAlpha:js.Number) = ???
+
+    def bufferData(target:js.Number, size:js.Number, usage:js.Number) = ???
+    def bufferData(target:js.Number, data:ArrayBufferView, usage:js.Number) = ???
+    def bufferData(target:js.Number, data:ArrayBuffer, usage:js.Number) = ???
+    def bufferSubData(target:js.Number, offset:js.Number, data:ArrayBufferView) = ???
+    def bufferSubData(target:js.Number, offset:js.Number, data:ArrayBuffer) = ???
+
+    def checkFramebufferStatus(target:js.Number):js.Number = ???
     def clear(mask:js.Number) = ???
     def clearColor(red:js.Number, green:js.Number, blue:js.Number, alpha:js.Number) = ???
-    def clearDepth(value:js.Number) = ???
-    def getParameter(i:js.Number):js.Any = ???
-    def viewport(x:js.Number, y:js.Number, width:js.Number, height:js.Number) = ???
-    def enable(i:js.Number) = ???
-    def disable(i:js.Number) = ???
-    def cullFace(i:js.Number) = ???
-    def frontFace(i:js.Number) = ???
+    def clearDepth(depth:js.Number) = ???
+    def clearStencil(s:js.Number) = ???
+    def colorMask(red:js.Boolean, green:js.Boolean, blue:js.Boolean, alpha:js.Boolean) = ???
+    def compileShader(shader:js.Any) = ???
+
+    def compressedTexImage2D(target:js.Number, level:js.Number, internalformat:js.Number, width:js.Number, height:js.Number, border:js.Number, data:ArrayBufferView) = ???
+    def compressedTexSubImage2D(target:js.Number, level:js.Number, xoffset:js.Number, yoffset:js.Number, width:js.Number, height:js.Number, format:js.Number, data:ArrayBufferView) = ???
+
+    def copyTexImage2D(target:js.Number, level:js.Number, internalformat:js.Number, x:js.Number, y:js.Number, width:js.Number, height:js.Number, border:js.Number) = ???
+    def copyTexSubImage2D(target:js.Number, level:js.Number, xoffset:js.Number, yoffset:js.Number, x:js.Number, y:js.Number, width:js.Number, height:js.Number) = ???
+
+    def createBuffer():js.Any = ???
+    def createFramebuffer():js.Any = ???
+    def createProgram():js.Any = ???
+    def createRenderbuffer():js.Any = ???
+    def createShader(atype:js.Number):js.Any = ???
+    def createTexture():js.Any = ???
+
+    def cullFace(mode:js.Number) = ???
+
+    def deleteBuffer(buffer:js.Any) = ???
+    def deleteFramebuffer(framebuffer:js.Any) = ???
+    def deleteProgram(program:js.Any) = ???
+    def deleteRenderbuffer(renderbuffer:js.Any) = ???
+    def deleteShader(shader:js.Any) = ???
+    def deleteTexture(texture:js.Any) = ???
+
+    def depthFunc(func:js.Number) = ???
+    def depthMask(flag:js.Boolean) = ???
+    def depthRange(zNear:js.Number, zFar:js.Number) = ???
+    def detachShader(program:js.Any, shader:js.Any) = ???
+    def disable(cap:js.Number) = ???
+    def disableVertexAttribArray(index:js.Number) = ???
+    def drawArrays(mode:js.Number, first:js.Number, count:js.Number) = ???
+    def drawElements(mode:js.Number, count:js.Number, atype:js.Number, offset:js.Number) = ???
+
+    def enable(cap:js.Number) = ???
+    def enableVertexAttribArray(index:js.Number) = ???
+    def finish() = ???
+    def flush() = ???
+    def framebufferRenderbuffer(target:js.Number, attachment:js.Number, renderbuffertarget:js.Number, renderbuffer:js.Any) = ???
+    def framebufferTexture2D(target:js.Number, attachment:js.Number, textarget:js.Number, texture:js.Any, level:js.Number) = ???
+    def frontFace(mode:js.Number) = ???
+
+    def generateMipmap(target:js.Number) = ???
+
+    def getActiveAttrib(program:js.Any, index:js.Number):js.Any = ???
+    def getActiveUniform(program:js.Any, index:js.Number):js.Any = ???
+//    def sequence<WebGLShader>? getAttachedShaders(program:js.Any) = ???
+
+    def getAttribLocation(program:js.Any, name:js.String):js.Number = ???
+
+    def getBufferParameter(target:js.Number, pname:js.Number):js.Any = ???
+    def getParameter(pname:js.Number):js.Any = ???
+
+    def getError():js.Number = ???
+
+   	def getFramebufferAttachmentParameter(target:js.Number, attachment:js.Number, pname:js.Number):js.Any = ???
+    def getProgramParameter(program:js.Any, pname:js.Number):js.Any = ???
+    def getProgramInfoLog(program:js.Any):js.String = ???
+    def getRenderbufferParameter(target:js.Number, pname:js.Number):js.Any = ???
+    def getShaderParameter(shader:js.Any, pname:js.Number):js.Any = ???
+    def getShaderPrecisionFormat(shadertype:js.Number, precisiontype:js.Number):js.Any = ???
+    def getShaderInfoLog(shader:js.Any):js.String = ???
+
+    def getShaderSource(shader:js.Any):js.String = ???
+
+    def getTexParameter(target:js.Number, pname:js.Number):js.Any = ???
+
+    def getUniform(program:js.Any, location:js.Any) = ???
+
+    def getUniformLocation(program:js.Any, name:js.String):js.Any = ???
+
+    def getVertexAttrib(index:js.Number, pname:js.Number):js.Any = ???
+
+    def getVertexAttribOffset(index:js.Number, pname:js.Number):js.Number = ???
+
+    def hint(target:js.Number, mode:js.Number) = ???
+    def isBuffer(buffer:js.Any):js.Boolean = ???
+    def isEnabled(cap:js.Number):js.Boolean = ???
+    def isFramebuffer(framebuffer:js.Any):js.Boolean = ???
+    def isProgram(program:js.Any):js.Boolean = ???
+    def isRenderbuffer(renderbuffer:js.Any):js.Boolean = ???
+    def isShader(shader:js.Any):js.Boolean = ???
+    def isTexture(texture:js.Any):js.Boolean = ???
     def lineWidth(width:js.Number) = ???
-    def blendEquation(mode:js.Number) = ???
-    def blendFunc(src:js.Number, dst:js.Number) = ???
-    def depthFunc(op:js.Number) = ???
-    def polygonMode(face:js.Number, mode:js.Number) = throw new RuntimeException("no polygonMode in GL ES 20, too bad")
-    def pixelStorei(param:js.Number, value:js.Number) = ???
+    def linkProgram(program:js.Any) = ???
+    def pixelStorei(pname:js.Number, param:js.Number) = ???
+    def polygonOffset(factor:js.Number, units:js.Number) = ???
+
+    def readPixels(x:js.Number, y:js.Number, width:js.Number, height:js.Number, format:js.Number, atype:js.Number, pixels:ArrayBufferView) = ???
+
+    def renderbufferStorage(target:js.Number, internalformat:js.Number, width:js.Number, height:js.Number) = ???
+    def sampleCoverage(value:js.Number, invert:js.Boolean) = ???
+    def scissor(x:js.Number, y:js.Number, width:js.Number, height:js.Number) = ???
+
+    def shaderSource(shader:js.Any, source:js.String) = ???
+
+    def stencilFunc(func:js.Number, ref:js.Number, mask:js.Number) = ???
+    def stencilFuncSeparate(face:js.Number, func:js.Number, ref:js.Number, mask:js.Number) = ???
+    def stencilMask(mask:js.Number) = ???
+    def stencilMaskSeparate(face:js.Number, mask:js.Number) = ???
+    def stencilOp(fail:js.Number, zfail:js.Number, zpass:js.Number) = ???
+    def stencilOpSeparate(face:js.Number, fail:js.Number, zfail:js.Number, zpass:js.Number) = ???
+
+    def texImage2D(target:js.Number, level:js.Number, internalformat:js.Number, width:js.Number, height:js.Number, border:js.Number, format:js.Number, atype:js.Number, pixels:ArrayBufferView) = ???
+//    def texImage2D(target:js.Number, level:js.Number, internalformat:js.Number, format:js.Number, atype:js.Number, pixels:ImageData) = ???
+//    def texImage2D(target:js.Number, level:js.Number, internalformat:js.Number, format:js.Number, atype:js.Number, image:HTMLImageElement) = ??? // May throw DOMException
+//    def texImage2D(target:js.Number, level:js.Number, internalformat:js.Number, format:js.Number, atype:js.Number, canvas:HTMLCanvasElement) = ??? // May throw DOMException
+//    def texImage2D(target:js.Number, level:js.Number, internalformat:js.Number, format:js.Number, atype:js.Number, video:HTMLVideoElement) = ??? // May throw DOMException
+
+    def texParameterf(target:js.Number, pname:js.Number, param:js.Number) = ???
+    def texParameteri(target:js.Number, pname:js.Number, param:js.Number) = ???
+
+    def texSubImage2D(target:js.Number, level:js.Number, xoffset:js.Number, yoffset:js.Number, width:js.Number, height:js.Number, format:js.Number, atype:js.Number, pixels:ArrayBufferView) = ???
+//    def texSubImage2D(target:js.Number, level:js.Number, xoffset:js.Number, yoffset:js.Number, format:js.Number, atype:js.Number, pixels:ImageData) = ???
+//    def texSubImage2D(target:js.Number, level:js.Number, xoffset:js.Number, yoffset:js.Number, format:js.Number, atype:js.Number, image:HTMLImageElement) = ??? // May throw DOMException
+//    def texSubImage2D(target:js.Number, level:js.Number, xoffset:js.Number, yoffset:js.Number, format:js.Number, atype:js.Number, canvas:HTMLCanvasElement) = ??? // May throw DOMException
+//    def texSubImage2D(target:js.Number, level:js.Number, xoffset:js.Number, yoffset:js.Number, format:js.Number, atype:js.Number, video:HTMLVideoElement) = ??? // May throw DOMException
+
+    def uniform1f(location:js.Any, x:js.Number) = ???
+    def uniform1fv(location:js.Any, v:Float32Array) = ???
+//    def uniform1fv(location:js.Any, sequence<GLfloat> v) = ???
+    def uniform1i(location:js.Any, x:js.Number) = ???
+    def uniform1iv(location:js.Any, v:Int32Array) = ???
+//    def uniform1iv(location:js.Any, sequence<long> v) = ???
+    def uniform2f(location:js.Any, x:js.Number, y:js.Number) = ???
+    def uniform2fv(location:js.Any, v:Float32Array) = ???
+//    def uniform2fv(location:js.Any, sequence<GLfloat> v) = ???
+    def uniform2i(location:js.Any, x:js.Number, y:js.Number) = ???
+    def uniform2iv(location:js.Any, v:Int32Array) = ???
+//    def uniform2iv(location:js.Any, sequence<long> v) = ???
+    def uniform3f(location:js.Any, x:js.Number, y:js.Number, z:js.Number) = ???
+    def uniform3fv(location:js.Any, v:Float32Array) = ???
+//    def uniform3fv(location:js.Any, sequence<GLfloat> v) = ???
+    def uniform3i(location:js.Any, x:js.Number, y:js.Number, z:js.Number) = ???
+    def uniform3iv(location:js.Any, v:Int32Array) = ???
+//    def uniform3iv(location:js.Any, sequence<long> v) = ???
+    def uniform4f(location:js.Any, x:js.Number, y:js.Number, z:js.Number, w:js.Number) = ???
+    def uniform4fv(location:js.Any, v:Float32Array) = ???
+//    def uniform4fv(location:js.Any, sequence<GLfloat> v) = ???
+    def uniform4i(location:js.Any, x:js.Number, y:js.Number, z:js.Number, w:js.Number) = ???
+    def uniform4iv(location:js.Any, v:Int32Array) = ???
+//    def uniform4iv(location:js.Any, sequence<long> v) = ???
+
+    def uniformMatrix2fv(location:js.Any, transpose:js.Boolean, value:Float32Array) = ???
+//    def uniformMatrix2fv(location:js.Any, transpose:js.Boolean, sequence<GLfloat> value) = ???
+    def uniformMatrix3fv(location:js.Any, transpose:js.Boolean, value:Float32Array) = ???
+//    def uniformMatrix3fv(location:js.Any, transpose:js.Boolean, sequence<GLfloat> value) = ???
+    def uniformMatrix4fv(location:js.Any, transpose:js.Boolean, value:Float32Array) = ???
+//    def uniformMatrix4fv(location:js.Any, transpose:js.Boolean, sequence<GLfloat> value) = ???
+
+    def useProgram(program:js.Any) = ???
+    def validateProgram(program:js.Any) = ???
+
+    def vertexAttrib1f(indx:js.Number, x:js.Number) = ???
+    def vertexAttrib1fv(indx:js.Number, values:Float32Array) = ???
+//    def vertexAttrib1fv(indx:js.Number, sequence<GLfloat> values) = ???
+    def vertexAttrib2f(indx:js.Number, x:js.Number, y:js.Number) = ???
+    def vertexAttrib2fv(indx:js.Number, values:Float32Array) = ???
+//    def vertexAttrib2fv(indx:js.Number, sequence<GLfloat> values) = ???
+    def vertexAttrib3f(indx:js.Number, x:js.Number, y:js.Number, z:js.Number) = ???
+    def vertexAttrib3fv(indx:js.Number, values:Float32Array) = ???
+//    def vertexAttrib3fv(indx:js.Number, sequence<GLfloat> values) = ???
+    def vertexAttrib4f(indx:js.Number, x:js.Number, y:js.Number, z:js.Number, w:js.Number) = ???
+    def vertexAttrib4fv(indx:js.Number, values:Float32Array) = ???
+//    def vertexAttrib4fv(indx:js.Number, sequence<GLfloat> values) = ???
+    def vertexAttribPointer(indx:js.Number, size:js.Number, atype:js.Number, normalized:js.Boolean, stride:js.Number, offset:js.Number) = ???
+
+    def viewport(x:js.Number, y:js.Number, width:js.Number, height:js.Number) = ???
 }
