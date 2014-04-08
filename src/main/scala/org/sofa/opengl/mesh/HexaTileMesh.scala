@@ -1,14 +1,9 @@
 package org.sofa.opengl.mesh
 
 
-import javax.media.opengl._
 import org.sofa.nio._
 import org.sofa.opengl._
 import org.sofa.math.{Point3, Rgba, Vector3}
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._
 import scala.math._
 
 
@@ -91,7 +86,7 @@ class HexaTileMesh(
     	}    	
     }
 
-	def drawAs():Int = GL_TRIANGLE_STRIP
+	def drawAs(gl:SGL):Int = gl.TRIANGLE_STRIP
 
     // -- Mesh creation ------------------------------------------------
 

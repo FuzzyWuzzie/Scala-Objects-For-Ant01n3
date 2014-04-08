@@ -141,13 +141,13 @@ class TestEditableMesh extends SurfaceRenderer {
 		camera.lookAt
 		useLights(planeShad)
 		camera.uniform(planeShad)
-		plane.draw(planeMesh.drawAs)
+		plane.draw(planeMesh.drawAs(gl))
 		
 		// TODO Thing
 		thingShad.use
 		useLights(thingShad)
 		camera.uniform(thingShad)
-		thing.draw(thingMesh.drawAs)
+		thing.draw(thingMesh.drawAs(gl))
 		
 		surface.swapBuffers
 		gl.checkErrors

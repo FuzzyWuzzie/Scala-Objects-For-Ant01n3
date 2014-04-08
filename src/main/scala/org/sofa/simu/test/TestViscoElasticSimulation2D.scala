@@ -405,7 +405,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		phongShad.use
 		useLights(phongShad)
 		camera.uniform(phongShad)
-		plane.draw(planeMesh.drawAs)
+		plane.draw(planeMesh.drawAs(gl))
 	}
 
 	protected def drawBiroute() {
@@ -418,7 +418,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 			camera.translate(0, -birouteSize, 0)
 			camera.rotate(-angle, 0, 0, 1)
 			camera.uniform(phongShad)
-			biroute.draw(birouteMesh.drawAs)
+			biroute.draw(birouteMesh.drawAs(gl))
 		}
 	}
 	
@@ -427,7 +427,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		phongShad.use
 		useLights(phongShad)
 		camera.uniform(phongShad)
-		obstacles.draw(obstaclesMesh.drawAs)
+		obstacles.draw(obstaclesMesh.drawAs(gl))
 		gl.enable(gl.CULL_FACE)
 	}
 	
@@ -435,7 +435,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
+		axis.draw(axisMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 	}
 	
@@ -448,7 +448,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 //	    	particlesShad.uniform("texColor", 0)	// Texture Unit 0
 			camera.uniformMVP(particlesShad)
 			particlesShad.uniform("pointSize", particleSizePx)
-			particles.draw(particlesMesh.drawAs, simu.size)
+			particles.draw(particlesMesh.drawAs(gl), simu.size)
 			gl.disable(gl.BLEND)
 		}
 	}
@@ -469,7 +469,7 @@ timer.measure("draw quads") {
 				camera.translate(particle.x.x, particle.x.y, particle.x.z)
 // 				camera.rotate(math.Pi/2, 1, 0, 0)
 				camera.uniformMVP(particlesQuadShad)
-				quad.draw(quadMesh.drawAs)
+				quad.draw(quadMesh.drawAs(gl))
 				camera.pop
 				I += 1
 			}
@@ -486,7 +486,7 @@ timer.measure("draw quads") {
 			gl.lineWidth(2)
 			plainShad.use
 			camera.uniformMVP(plainShad)
-			springs.draw(springsMesh.drawAs, simu.springs.size*2)
+			springs.draw(springsMesh.drawAs(gl), simu.springs.size*2)
 			gl.lineWidth(1)
 			gl.disable(gl.BLEND)
 			gl.enable(gl.DEPTH_TEST)
@@ -505,7 +505,7 @@ timer.measure("draw quads") {
 					val p = bucket._2.position
 					camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.uniformMVP(plainShad)
-					wcube.draw(wcubeMesh.drawAs)
+					wcube.draw(wcubeMesh.drawAs(gl))
 				}
 				//}
 			}
@@ -524,7 +524,7 @@ timer.measure("draw quads") {
 					val p = cube.pos
 					camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.uniformMVP(plainShad)
-					wcube2.draw(wcubeMesh.drawAs)
+					wcube2.draw(wcubeMesh.drawAs(gl))
 				}
 			}
 			gl.disable(gl.BLEND)
@@ -543,7 +543,7 @@ timer.measure("draw quads") {
 					val p = square.pos
 					camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.uniformMVP(plainShad)
-					wcube3.draw(wcubeMesh.drawAs)
+					wcube3.draw(wcubeMesh.drawAs(gl))
 				}
 			}
 			gl.disable(gl.BLEND)
@@ -557,7 +557,7 @@ timer.measure("draw quads") {
 				phongShad.use
 				useLights(phongShad)
 				camera.uniform(phongShad)
-				isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
+				isoSurface.draw(isoSurfaceMesh.drawAs(gl), isoSurfaceComp.triangleCount*3)
 				gl.disable(gl.BLEND)
 			}
 		}
@@ -571,7 +571,7 @@ timer.measure("draw quads") {
 			useLights(phongShad)
 			camera.uniform(phongShad)
 //			isoPlane.draw(isoPlaneMesh.drawAs, isoContourComp.triangleCount*3)
-			isoPlane.draw(isoPlaneMesh.drawAs, triangleCount*3)
+			isoPlane.draw(isoPlaneMesh.drawAs(gl), triangleCount*3)
 //			gl.disable(gl.BLEND)
 		}
 	}
@@ -582,7 +582,7 @@ timer.measure("draw quads") {
 			plainShad.use
 			camera.uniformMVP(plainShad)
 			//springs.draw(springsMesh.drawAs, simu.springs.size*2)
-			isoContour.draw(isoContourMesh.drawAs, isoContourComp.segmentCount*2)
+			isoContour.draw(isoContourMesh.drawAs(gl), isoContourComp.segmentCount*2)
 			gl.disable(gl.BLEND)
 		}
 	}

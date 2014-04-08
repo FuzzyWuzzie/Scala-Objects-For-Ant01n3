@@ -215,7 +215,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 				cameraTex.scale(40, 40, 1)
 				cameraTex.rotate(angle, 0, 0, 1)
 				cameraTex.uniformMVP(plainShad)
-				triangles.draw(trianglesMesh.drawAs, 8*3)
+				triangles.draw(trianglesMesh.drawAs(gl), 8*3)
 
 				angle += 0.01
 				if(angle > 2*Pi) angle = 0
@@ -264,7 +264,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
+		axis.draw(axisMesh.drawAs(gl))
 
 		// Planes
 		
@@ -274,7 +274,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 			useLights(phongShad)
 			camera.translate(0,0,0.5f)
 			camera.uniform(phongShad)
-			wall(Ground).draw(wallMesh(Ground).drawAs)
+			wall(Ground).draw(wallMesh(Ground).drawAs(gl))
 		}
 		
 		gl.frontFace(gl.CCW)
@@ -285,7 +285,7 @@ class TestSpyceDisplay extends SurfaceRenderer {
 			useLights(spyceShad)
 			camera.translate(0,0.5,0)
 			camera.uniform(spyceShad)
-			wall(BackWall).draw(wallMesh(BackWall).drawAs)
+			wall(BackWall).draw(wallMesh(BackWall).drawAs(gl))
 			gl.bindTexture(gl.TEXTURE_2D, null)
 		}
 

@@ -36,6 +36,9 @@ trait NioBuffer {
 
     /** The maximum capacity of the buffer, synonym of `capacity()`. */
 	def length:Int = capacity
+
+	/** Number of bits of each element. */
+	def bitSize:Int
 }
 
 
@@ -185,6 +188,7 @@ class ByteBufferJava(var capacity:Int, direct:Boolean, data:Array[Byte]) extends
 	nativeOrder
 	def this(data:Array[Byte], direct:Boolean) { this(data.size, direct, data) }
     def this(capacity:Int, direct:Boolean) { this(capacity, direct, null) }
+	def bitSize:Int = 8
 	def update(i:Int, value:Byte):Unit = buf.put(i, value)
 	def copy(other:TypedNioBuffer[Byte]) = other match {
 		case bbj:ByteBufferJava => {
@@ -233,6 +237,7 @@ class IntBufferJava(var capacity:Int, direct:Boolean=true) extends IntBuffer {
 			}
 		}
 	}
+	def bitSize:Int = 32
 	def update(i:Int, value:Int):Unit = buf.put(i, value)
 	def copy(other:TypedNioBuffer[Int]) = other match {
 		case ibj:IntBufferJava => {
@@ -278,6 +283,7 @@ class FloatBufferJava(var capacity:Int, direct:Boolean=true) extends FloatBuffer
 			}
 		}
 	}
+	def bitSize:Int = 32
 	def update(i:Int, value:Float):Unit = buf.put(i, value)
 	def copy(other:TypedNioBuffer[Float]) = other match {
 		case fbj:FloatBufferJava => {
@@ -323,6 +329,7 @@ class DoubleBufferJava(var capacity:Int, direct:Boolean=true) extends DoubleBuff
 			}
 		}
 	}
+	def bitSize:Int = 64
 	def update(i:Int, value:Double):Unit = buf.put(i, value)
 	def copy(other:TypedNioBuffer[Double]) = other match {
 		case dbj:DoubleBufferJava => {

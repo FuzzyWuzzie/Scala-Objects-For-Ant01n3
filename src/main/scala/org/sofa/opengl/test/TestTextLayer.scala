@@ -215,7 +215,7 @@ class TestTextLayer extends SurfaceRenderer {
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		axis.lastva.draw(axis.drawAs)
+		axis.lastva.draw(axis.drawAs(gl))
 		
 		// Space hash
 		
@@ -226,7 +226,7 @@ class TestTextLayer extends SurfaceRenderer {
 				val p = bucket._2.position
 				camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 				camera.uniformMVP(plainShad)
-				wcube.lastva.draw(wcube.drawAs)
+				wcube.lastva.draw(wcube.drawAs(gl))
 			}
 		}
 		gl.disable(gl.BLEND)
@@ -236,7 +236,7 @@ class TestTextLayer extends SurfaceRenderer {
 		particlesShad.use
 		camera.uniformMVP(particlesShad)
 		particlesShad.uniform("pointSize", 30f)
-		particles.lastva.draw(particles.drawAs)
+		particles.lastva.draw(particles.drawAs(gl))
 		
 		// Cubes
 		
@@ -273,7 +273,7 @@ class TestTextLayer extends SurfaceRenderer {
 			textLayer.string("cube%d".format(i), 0, 0, 0, camera)
 			camera.scale(side, side, side)
 			camera.uniform(phongShad)
-			cube.lastva.draw(cube.drawAs)
+			cube.lastva.draw(cube.drawAs(gl))
 		}
 	}
 	

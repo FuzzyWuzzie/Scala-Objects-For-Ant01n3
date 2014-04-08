@@ -152,7 +152,7 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         modelview.rotate(cubeD, 0, 1, 0)
         cubeShad.uniformMatrix("modelview", modelview.top)
         cubeShad.uniformMatrix("nmodelview", modelview.top.top3x3)
-        cube.draw(cubeMesh.drawAs)
+        cube.draw(cubeMesh.drawAs(gl))
         modelview.pop
         
         modelview.push
@@ -160,14 +160,14 @@ class PixelFlow5 extends WindowAdapter with GLEventListener {
         modelview.rotate(Pi, 0, 1, 0)
         cubeShad.uniformMatrix("modelview", modelview.top)
         cubeShad.uniformMatrix("nmodelview", modelview.top.top3x3)
-        cube.draw(cubeMesh.drawAs)
+        cube.draw(cubeMesh.drawAs(gl))
         modelview.pop
         
         modelview.push
         modelview.translate(0, -1.5, 0)
         cubeShad.uniformMatrix("modelview", modelview.top)
         cubeShad.uniformMatrix("nmodelview", modelview.top.top3x3)
-        plane.draw(planeMesh.drawAs)
+        plane.draw(planeMesh.drawAs(gl))
         modelview.pop
         
         win.swapBuffers

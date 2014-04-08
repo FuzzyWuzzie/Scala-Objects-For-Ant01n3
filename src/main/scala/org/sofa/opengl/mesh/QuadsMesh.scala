@@ -3,12 +3,7 @@ package org.sofa.opengl.mesh
 import org.sofa.opengl.{SGL, VertexArray, ShaderProgram}
 import org.sofa.math.{Rgba, Point3, Vector3, NumberSeq2, NumberSeq3, Triangle}
 import org.sofa.nio.{IntBuffer, FloatBuffer}
-import javax.media.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL2GL3._
-import GL3._
+
 
 /** A dynamic set of quads, that can be updated and tries to send only changed informations to the GL. 
   *
@@ -133,7 +128,7 @@ class RealQuadsMesh(val size:Int) extends Mesh {
 
     override def hasIndices():Boolean = true
 
-	def drawAs():Int = GL_QUADS
+	def drawAs(gl:SGL):Int = throw new RuntimeException("no more gl.QUADS !!!")//gl.QUADS
 
 	// -- Constructive interface ---------------------------------------------------
 	

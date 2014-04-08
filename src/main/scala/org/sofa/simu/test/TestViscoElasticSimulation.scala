@@ -336,7 +336,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		phongShad.use
 		useLights(phongShad)
 		camera.uniform(phongShad)
-		plane.draw(planeMesh.drawAs)
+		plane.draw(planeMesh.drawAs(gl))
 	}
 	
 	protected def drawObstacles() {
@@ -344,7 +344,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		phongShad.use
 		useLights(phongShad)
 		camera.uniform(phongShad)
-		obstacles.draw(obstaclesMesh.drawAs)
+		obstacles.draw(obstaclesMesh.drawAs(gl))
 		gl.enable(gl.CULL_FACE)
 	}
 	
@@ -352,7 +352,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
+		axis.draw(axisMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 	}
 	
@@ -362,7 +362,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			particlesShad.use
 			camera.uniformMVP(particlesShad)
 			particlesShad.uniform("pointSize", particleSizePx)
-			particles.draw(particlesMesh.drawAs, simu.size)
+			particles.draw(particlesMesh.drawAs(gl), simu.size)
 			gl.disable(gl.BLEND)
 		}
 	}
@@ -372,7 +372,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			gl.enable(gl.BLEND)
 			plainShad.use
 			camera.uniformMVP(plainShad)
-			springs.draw(springsMesh.drawAs, simu.springs.size*2)
+			springs.draw(springsMesh.drawAs(gl), simu.springs.size*2)
 			gl.disable(gl.BLEND)
 		}
 	}
@@ -389,7 +389,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 					val p = bucket._2.position
 					camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.uniformMVP(plainShad)
-					wcube.draw(wcubeMesh.drawAs)
+					wcube.draw(wcubeMesh.drawAs(gl))
 				}
 				//}
 			}
@@ -409,7 +409,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 					camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.uniformMVP(plainShad)
 					if(!cube.isEmpty)
-						wcube2.draw(wcubeMesh.drawAs)
+						wcube2.draw(wcubeMesh.drawAs(gl))
 				}
 			}
 			gl.disable(gl.BLEND)
@@ -421,7 +421,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 			phongShad.use
 			useLights(phongShad)
 			camera.uniform(phongShad)
-			isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
+			isoSurface.draw(isoSurfaceMesh.drawAs(gl), isoSurfaceComp.triangleCount*3)
 		}
 	}
 	

@@ -202,14 +202,14 @@ class TestSpatialHash extends SurfaceRenderer {
 //		phongShad.use
 //		useLights(phongShad)
 //		camera.uniform(phongShad)
-//		plane.draw(planeMesh.drawAs)
+//		plane.draw(planeMesh.drawAs(gl))
 		
 		// Axis
 		
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
+		axis.draw(axisMesh.drawAs(gl))
 		
 		// Space hash
 		
@@ -220,7 +220,7 @@ class TestSpatialHash extends SurfaceRenderer {
 				val p = bucket._2.position
 				camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 				camera.uniformMVP(plainShad)
-				wcube.draw(wcubeMesh.drawAs)
+				wcube.draw(wcubeMesh.drawAs(gl))
 			}
 		}
 		gl.disable(gl.BLEND)
@@ -230,7 +230,7 @@ class TestSpatialHash extends SurfaceRenderer {
 		particlesShad.use
 		camera.uniformMVP(particlesShad)
 		particlesShad.uniform("pointSize", 30f)
-		particles.draw(particlesMesh.drawAs)
+		particles.draw(particlesMesh.drawAs(gl))
 		
 		// Cube
 		
@@ -250,7 +250,7 @@ class TestSpatialHash extends SurfaceRenderer {
 			camera.translate(simuCube.from.x+side/2, simuCube.from.y+side/2, simuCube.from.z+side/2)
 			camera.scale(side, side, side)
 			camera.uniform(phongShad)
-			cube.draw(cubeMesh.drawAs)
+			cube.draw(cubeMesh.drawAs(gl))
 		}
 	}
 	

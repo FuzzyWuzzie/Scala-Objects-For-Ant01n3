@@ -72,6 +72,7 @@ class SGLWeb(val gl:WebGLRenderingContext, var ShaderVersion:String) extends SGL
     val FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:Int = gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT.toInt
     val FRAMEBUFFER_UNSUPPORTED:Int = gl.FRAMEBUFFER_UNSUPPORTED.toInt
 
+    val INT:Int = gl.INT.toInt
     val UNSIGNED_BYTE:Int = gl.UNSIGNED_BYTE.toInt
     val UNSIGNED_INT:Int = gl.UNSIGNED_INT.toInt
     val UNSIGNED_SHORT:Int = gl.UNSIGNED_SHORT.toInt
@@ -91,6 +92,10 @@ class SGLWeb(val gl:WebGLRenderingContext, var ShaderVersion:String) extends SGL
     val VERTEX_SHADER:Int = gl.VERTEX_SHADER.toInt
     val FRAGMENT_SHADER:Int = gl.FRAGMENT_SHADER.toInt
 
+    val POINTS:Int = gl.POINTS.toInt
+    val LINE_STRIP:Int = gl.LINE_STRIP.toInt
+    val LINES:Int = gl.LINES.toInt
+    val LINE_LOOP:Int = gl.LINE_LOOP.toInt
     val TRIANGLES:Int = gl.TRIANGLES.toInt
     val TRIANGLE_STRIP:Int = gl.TRIANGLE_STRIP.toInt
     val TRIANGLE_FAN:Int = gl.TRIANGLE_FAN.toInt

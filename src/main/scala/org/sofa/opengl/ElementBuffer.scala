@@ -25,15 +25,21 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
     }
     
     protected def storeData(data:IntBuffer) {
-        checkId
-//        data.rewind
-        elementCount = data.size
         bind
+        elementCount = data.size
         bufferData(gl.ELEMENT_ARRAY_BUFFER, data, gl.STATIC_DRAW)
         checkErrors
     }
     
     def size:Int = elementCount
+
+    /** Either gl.BYTE, gl.SHORT, gl.INT, gl.UNSIGNED_BYTE, gl.UNSIGNED_SHORT or gl.UNSIGNED_INT. */
+    def intType:Int = data.bitSize match {
+    	case 8  => gl.UNSIGNED_BYTE
+    	case 16 => gl.UNSIGNED_SHORT
+    	case 32 => gl.UNSIGNED_INT
+    	case _  => throw new RuntimeException("unknown bitSize %d".format(data.bitSize))
+    }
     
     def bind() {
         checkId
@@ -42,7 +48,6 @@ class ElementBuffer(gl:SGL, data:IntBuffer) extends OpenGLObject(gl) {
 
     def update(data:IntBuffer) {
     	bind
-//    	data.rewind
     	bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, size, data)
     	checkErrors
     }

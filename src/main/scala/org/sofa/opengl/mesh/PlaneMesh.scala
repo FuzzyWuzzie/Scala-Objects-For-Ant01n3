@@ -3,11 +3,6 @@ package org.sofa.opengl.mesh
 import org.sofa.nio._
 import org.sofa.opengl._
 import org.sofa.math.Rgba
-import javax.media.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._
 
 /** A single plane of several quads (themselves made of two triangles) in the XZ plane, centered
   * around the (0, 0, 0) point.
@@ -118,7 +113,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     
     override def indices:IntBuffer = I
     
-    def drawAs():Int = GL_TRIANGLES
+    def drawAs(gl:SGL):Int = gl.TRIANGLES
 
     // -- Building ----------------------------------------------------------
     

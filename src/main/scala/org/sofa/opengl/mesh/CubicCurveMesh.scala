@@ -1,13 +1,8 @@
 package org.sofa.opengl.mesh
 
-import javax.media.opengl._
 import org.sofa.nio._
-import org.sofa.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._
 import scala.math._
+import org.sofa.opengl.SGL
 import org.sofa.math._
 import org.sofa.math.CubicCurve._
 
@@ -112,5 +107,5 @@ class CubicCurveMesh(countCurves:Int, val segments:Int) extends Mesh {
     
     def count:Int = countCurves
     
-    def drawAs():Int = GL_LINE_STRIP
+    def drawAs(gl:SGL):Int = gl.LINE_STRIP
 }

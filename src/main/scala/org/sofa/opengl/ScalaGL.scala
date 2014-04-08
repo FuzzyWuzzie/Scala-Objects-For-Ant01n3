@@ -69,6 +69,7 @@ abstract class SGL {
 	val GEQUAL:Int 
 	val ALWAYS:Int 
 
+	val INT:Int
     val UNSIGNED_BYTE:Int
     val UNSIGNED_INT:Int
     val UNSIGNED_SHORT:Int
@@ -78,13 +79,17 @@ abstract class SGL {
     val LUMINANCE:Int
     val LUMINANCE_ALPHA:Int
     val ALPHA:Int
-    
+
     val ELEMENT_ARRAY_BUFFER:Int
     val ARRAY_BUFFER:Int
 
     val VERTEX_SHADER:Int
     val FRAGMENT_SHADER:Int
     
+    val POINTS:Int
+    val LINE_STRIP:Int
+    val LINES:Int
+    val LINE_LOOP:Int
     val TRIANGLES:Int
     val TRIANGLE_STRIP:Int
     val TRIANGLE_FAN:Int

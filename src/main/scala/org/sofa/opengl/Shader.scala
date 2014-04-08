@@ -175,12 +175,20 @@ class DefaultShaderLoader extends ShaderLoader {
 }
 
 
+/** ShaderProgram companion object. */
 object ShaderProgram {
-    /** Create a new shader program from a vertex shader and a fragment shader. */
+    /** Create a new shader program from a vertex shader file and a fragment shader file. */
     def apply(gl:SGL, name:String, vertexShaderFileName:String, fragmentShaderFileName:String):ShaderProgram = {
     	new ShaderProgram(gl, name,
                 new VertexShader(gl, name, vertexShaderFileName),
     			new FragmentShader(gl, name, fragmentShaderFileName))
+    }
+
+    /** Create a new shader program from a vertex shader source, and a fragment shader source. */
+    def apply(gl:SGL, name:String, vertexShaderStrings:Array[String], fragmentShaderStrings:Array[String]):ShaderProgram = {
+    	new ShaderProgram(gl, name,
+    			new VertexShader(gl, name, vertexShaderStrings),
+    			new FragmentShader(gl, name, fragmentShaderStrings))
     }
 }
 

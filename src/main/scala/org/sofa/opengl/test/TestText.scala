@@ -140,7 +140,7 @@ class TestText extends SurfaceRenderer {
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
+		axis.draw(axisMesh.drawAs(gl))
 
 		// Plane
 		
@@ -153,7 +153,7 @@ class TestText extends SurfaceRenderer {
 			textShad.uniform("textColor", Rgba.Red)
 	    	textShad.uniform("texColor", 0)	// Texture Unit 0
 			camera.uniformMVP(textShad)
-			plane.draw(planeMesh.drawAs)
+			plane.draw(planeMesh.drawAs(gl))
 			gl.bindTexture(gl.TEXTURE_2D, null)
 		}
 

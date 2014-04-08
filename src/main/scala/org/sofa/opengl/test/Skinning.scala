@@ -180,7 +180,7 @@ class Skinning extends SurfaceRenderer {
 	    useTextures(nmapShader)
 	    camera.uniform(nmapShader)
 	    gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
-	    plane.draw(planeMesh.drawAs)
+	    plane.draw(planeMesh.drawAs(gl))
 	    
 	    gl.polygonMode(gl.FRONT_AND_BACK, gl.LINE)
 	    plainShader.use
@@ -194,13 +194,13 @@ class Skinning extends SurfaceRenderer {
 	    	setBonesColor(1)
 	        skeleton.uniform(boneShader)
 	        camera.uniform(boneShader)
-	        tube.draw(tubeMesh.drawAs)
+	        tube.draw(tubeMesh.drawAs(gl))
 	    	gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	    	setBonesColor(0.5f)
 	    	gl.enable(gl.BLEND)
 	        skeleton.uniform(boneShader)
 	        camera.uniform(boneShader)
-	        tube.draw(tubeMesh.drawAs)
+	        tube.draw(tubeMesh.drawAs(gl))
 	    	gl.disable(gl.BLEND)
 	    }
 	    

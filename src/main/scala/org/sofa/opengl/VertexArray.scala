@@ -166,7 +166,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
         bind
         
         if(elements ne null)
-             drawElements(kind, elements.size, gl.UNSIGNED_INT, 0)
+             drawElements(kind, elements.size, elements.intType, 0)
         else drawArrays(kind, 0, buffers(0)._2.size)
 
         checkErrors
@@ -183,7 +183,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     		bind
 
     		if(elements ne null)
-    			drawElements(kind, countElement, gl.UNSIGNED_INT, 0)
+    			 drawElements(kind, countElement, elements.intType, 0)
     		else drawArrays(kind, 0, countElement)
 
     		checkErrors
@@ -196,7 +196,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     		bind
 
     		if(elements ne null)
-    		     drawElements(kind, countElement, gl.UNSIGNED_INT, offset)
+    		     drawElements(kind, countElement, elements.intType, offset)
     		else drawArrays(kind, offset, countElement)
 
     		checkErrors

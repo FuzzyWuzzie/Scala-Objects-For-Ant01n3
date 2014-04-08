@@ -3,11 +3,6 @@ package org.sofa.opengl.mesh
 import org.sofa.nio._
 import org.sofa.opengl._
 import scala.math._
-import javax.media.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._
 import org.sofa.math.{Vector2, Vector3, Rgba}
 
 /** Representation of a cylinder.
@@ -197,7 +192,7 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
     
     override def hasIndices = true
 
-    def drawAs():Int = GL_TRIANGLES
+    def drawAs(gl:SGL):Int = gl.TRIANGLES
 
     // -- Mesh building --------------------------------------------------
    

@@ -76,6 +76,45 @@ class Int32Array(len:js.Number) extends ArrayBufferView {
 }
 
 
+
+class Uint16Array(len:js.Number) extends ArrayBufferView {
+    val BYTES_PER_ELEMENT:js.Number = ???
+
+    val length:js.Number = ???
+
+    def this(array:Uint16Array) = {this(0)} //??? Cannot use "???", to keep the compiler happy, we have to use "this". 
+    def this(array:js.Array[js.Number]) = {this(0)} // ???
+    def this(buffer:ArrayBuffer, byteOffset:js.Number, length:js.Number) = {this(0)} // ??? 
+
+    @scalajs.js.annotation.JSBracketAccess
+    def get(index:js.Number):js.Number = ???
+    @scalajs.js.annotation.JSBracketAccess
+    def set(index:js.Number, value:js.Number) = ???
+    def set(array:Uint16Array, offset:js.Number) = ???
+    def set(array:js.Array[js.Number], offset:js.Number) = ???
+    def subarray(begin:js.Number, end:js.Number):Uint16Array = ???
+}
+
+
+class Uint32Array(len:js.Number) extends ArrayBufferView {
+    val BYTES_PER_ELEMENT:js.Number = ???
+
+    val length:js.Number = ???
+
+    def this(array:Uint32Array) = {this(0)} //??? Cannot use "???", to keep the compiler happy, we have to use "this". 
+    def this(array:js.Array[js.Number]) = {this(0)} // ???
+    def this(buffer:ArrayBuffer, byteOffset:js.Number, length:js.Number) = {this(0)} // ??? 
+
+    @scalajs.js.annotation.JSBracketAccess
+    def get(index:js.Number):js.Number = ???
+    @scalajs.js.annotation.JSBracketAccess
+    def set(index:js.Number, value:js.Number) = ???
+    def set(array:Uint32Array, offset:js.Number) = ???
+    def set(array:js.Array[js.Number], offset:js.Number) = ???
+    def subarray(begin:js.Number, end:js.Number):Uint32Array = ???
+}
+
+
 class Float32Array(len:js.Number) extends ArrayBufferView {
     val BYTES_PER_ELEMENT:js.Number = ???
 
@@ -100,8 +139,8 @@ class NioBufferFactoryWeb extends NioBufferFactory {
 	def newByteBuffer(capacity:Int, direct:Boolean) = new ByteBufferWeb(capacity)
 	def newByteBuffer(capacity:Int, direct:Boolean, data:Array[Byte]) = new ByteBufferWeb(capacity, data)
 	
-	def newIntBuffer(capacity:Int, direct:Boolean) = throw new RuntimeException("TODO")//new IntBufferWeb(capacity, direct)
-	def newIntBuffer(from:ByteBuffer):IntBuffer = throw new RuntimeException("TODO")//new IntBufferWeb(from)
+	def newIntBuffer(capacity:Int, direct:Boolean) = new IntBufferWeb(capacity)
+	def newIntBuffer(from:ByteBuffer):IntBuffer = new IntBufferWeb(from)
 	
 	def newFloatBuffer(capacity:Int, direct:Boolean) = new FloatBufferWeb(capacity)
 	def newFloatBuffer(from:ByteBuffer):FloatBuffer = new FloatBufferWeb(from)
@@ -122,6 +161,7 @@ class ByteBufferWeb(var capacity:Int, data:Array[Byte]) extends ByteBuffer {
 //	nativeOrder
 	def this(data:Array[Byte]) { this(data.size, data) }
     def this(capacity:Int) { this(capacity, null) }
+	def bitSize:Int = 8
 	def update(i:Int, value:Byte):Unit = buf.set(i, value)
 	def copy(other:TypedNioBuffer[Byte]) = other match {
 		case bbj:ByteBufferWeb => { buf.set(bbj.buf, 0) }
@@ -150,10 +190,10 @@ class ByteBufferWeb(var capacity:Int, data:Array[Byte]) extends ByteBuffer {
 }
 
 
-/** Equivalent of A Int32Array. */
+/** Equivalent of A Uint16Array (elements in GL ES should be short not int). */
 class IntBufferWeb(var capacity:Int) extends IntBuffer {
 	var buf = if(capacity>0) {
-		new Int32Array(new ArrayBuffer(capacity*4), 0, capacity)
+		new Uint16Array(new ArrayBuffer(capacity*2), 0, capacity)
     } else {
     	null
     }
@@ -161,14 +201,15 @@ class IntBufferWeb(var capacity:Int) extends IntBuffer {
 		this(0)
 		from match {
 			case bbf:ByteBufferWeb => {
-				buf = new Int32Array(bbf.buf.buffer, 0, bbf.capacity/4)
-				capacity = bbf.capacity / 4
+				buf = new Uint16Array(bbf.buf.buffer, 0, bbf.capacity/2)
+				capacity = bbf.capacity / 2
 			}
 			case _ => {
 				throw new RuntimeException("non compatible buffer %s expecting ByteBufferWeb".format(from.getClass.getName))
 			}
 		}
 	}
+	def bitSize:Int = 16
 	def update(i:Int, value:Int):Unit = buf.set(i, value)
 	def copy(other:TypedNioBuffer[Int]) = other match {
 		case ibj:IntBufferWeb => { buf.set(ibj.buf, 0) }
@@ -216,6 +257,7 @@ class FloatBufferWeb(var capacity:Int) extends FloatBuffer {
 			}
 		}
 	}
+	def bitSize:Int = 32
 	def update(i:Int, value:Float):Unit = buf.set(i, value)
 	def copy(other:TypedNioBuffer[Float]) = other match {
 		case fbj:FloatBufferWeb => { buf.set(fbj.buf, 0) }

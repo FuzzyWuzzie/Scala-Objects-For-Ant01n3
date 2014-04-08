@@ -3,11 +3,6 @@ package org.sofa.opengl.mesh
 import org.sofa.nio._
 import org.sofa.opengl._
 import org.sofa.math.Rgba
-import javax.media.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._
 
 /** Draw the X, Y and Z axis as lines with colors.
   *
@@ -46,7 +41,7 @@ class AxisMesh(val side:Float) extends Mesh {
     	}    	    	
     }
 
-    def drawAs:Int = GL_LINES    
+    def drawAs(gl:SGL):Int = gl.LINES    
 
     // -- Mesh parameters ---------------------------------------------------
     

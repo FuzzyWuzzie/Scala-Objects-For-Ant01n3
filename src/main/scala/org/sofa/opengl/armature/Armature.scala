@@ -374,7 +374,7 @@ class Joint(val name:String,
 					transform.transform(camera)
 
 				displaySub(gl, subUnder, armature, camera, shader)
-				displaySelf(armature, camera, shader)
+				displaySelf(gl, armature, camera, shader)
 				displaySub(gl, subAbove, armature, camera, shader)
 			}
 		}
@@ -388,12 +388,12 @@ class Joint(val name:String,
 	}
 
 	/** Display this joint. */
-	protected def displaySelf(armature:Armature, camera:Camera, shader:ShaderProgram) {
+	protected def displaySelf(gl:SGL, armature:Armature, camera:Camera, shader:ShaderProgram) {
 		if(selected)
 		     shader.uniform("highlight", 1.0f)
 		else shader.uniform("highlight", 0.0f)
 		camera.uniformMVP(armature.shader)
-		armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs, triangle*3, 2*3)		
+		armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs(gl), triangle*3, 2*3)		
 	}
 
 	/** Return a multiline string where sub joints are indented. */

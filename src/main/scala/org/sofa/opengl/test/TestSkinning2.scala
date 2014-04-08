@@ -208,7 +208,7 @@ class TestSkinning2 extends SurfaceRenderer {
 	    useTextures(nmapShader)
 	    camera.uniform(nmapShader)
 	    //gl.polygonMode(gl.FRONT_AND_BACK, gl.FILL)
-	    ground.draw(groundMesh.drawAs)
+	    ground.draw(groundMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 
 		// Thing just phong textured.
@@ -238,7 +238,7 @@ class TestSkinning2 extends SurfaceRenderer {
 	    camera.pushpop {
 			skeleton.uniform(boneShader)
 			camera.uniformMVP(boneShader)
-			thing.draw(thingMesh.drawAs)
+			thing.draw(thingMesh.drawAs(gl))
 	    }
 		gl.disable(gl.BLEND)
 		gl.frontFace(gl.CW)

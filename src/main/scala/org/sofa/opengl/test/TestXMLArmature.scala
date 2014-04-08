@@ -175,7 +175,7 @@ class TestXMLArmature extends SurfaceRenderer {
 	protected def displayGrid() {
 		gridShader.use
 		camera.uniformMVP(gridShader)
-		grid.lastVertexArray.draw(grid.drawAs)
+		grid.lastVertexArray.draw(grid.drawAs(gl))
 	}
 	
 	case class JointAnim(var from:Double, var to:Double, var step:Double) {

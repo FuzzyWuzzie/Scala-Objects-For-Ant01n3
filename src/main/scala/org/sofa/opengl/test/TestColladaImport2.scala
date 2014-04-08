@@ -163,7 +163,7 @@ class TestColladaImport2 extends SurfaceRenderer {
 		phongShad.use
 		useLights(phongShad)
 		camera.uniform(phongShad)
-		plane.draw(planeMesh.drawAs)
+		plane.draw(planeMesh.drawAs(gl))
 		
 		// Thing
 
@@ -184,7 +184,7 @@ class TestColladaImport2 extends SurfaceRenderer {
 			//camera.scaleModel(0.01, 0.01, 0.01)
 			camera.translate(0, 1, 0)
 			camera.uniform(nMapShad)
-			thing.draw(thingMesh.drawAs)
+			thing.draw(thingMesh.drawAs(gl))
 			gl.enable(gl.CULL_FACE)
 		}
 	

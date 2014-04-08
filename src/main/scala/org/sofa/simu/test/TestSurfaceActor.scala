@@ -232,7 +232,7 @@ class TestSurfaceActor extends SurfaceRenderer {
 	    light1.uniform(groundShader, camera)
 	    groundShader.uniform("color", Rgba.White)
 	    camera.uniform(groundShader)
-	    ground.draw(groundMesh.drawAs)
+	    ground.draw(groundMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 
 		gl.frontFace(gl.CCW)
@@ -240,7 +240,7 @@ class TestSurfaceActor extends SurfaceRenderer {
 	    thingShader.uniform("color", Rgba(0.375,0.441,0.5,1))
 	   	light1.uniform(thingShader, camera)
 	    camera.uniform(thingShader)
-	    thing.draw(thingMesh.drawAs)
+	    thing.draw(thingMesh.drawAs(gl))
 		gl.frontFace(gl.CW)
 
 	    // Ok

@@ -237,7 +237,7 @@ class Bone(val id:Int) {
 	        camera.pushpop {
 		       	camera.scale(1, length, 1)
 		        camera.uniformMVP(shader)
-		        Bone.bone.draw(Bone.boneMesh.drawAs)
+		        Bone.bone.draw(Bone.boneMesh.drawAs(gl))
 	        }
 	        
 	        children.foreach { child =>

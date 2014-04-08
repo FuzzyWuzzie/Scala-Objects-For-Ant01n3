@@ -76,9 +76,9 @@ trait UIrenderUtils {
 			shader.uniform("uniformColor", color)
 			space.scale(subSpace.size(0), subSpace.size(1), 1)
 			space.uniformMVP(shader)
-			mesh.lastva.draw(mesh.drawAs)
+			mesh.lastva.draw(mesh.drawAs(gl))
 			shader.uniform("uniformColor", lineColor)
-			lines.lastva.draw(lines.drawAs)
+			lines.lastva.draw(lines.drawAs(gl))
 		}
 	}
 }

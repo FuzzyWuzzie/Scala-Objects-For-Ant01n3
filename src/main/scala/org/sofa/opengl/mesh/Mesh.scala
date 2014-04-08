@@ -7,11 +7,11 @@ import org.sofa.nio._
 import org.sofa.opengl._
 import org.sofa.opengl.io.collada.ColladaFile
 
-import javax.media.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._ 
+// import javax.media.opengl._
+// import GL._
+// import GL2._
+// import GL2ES2._
+// import GL3._ 
 import scala.collection.mutable.HashMap
 
 
@@ -118,7 +118,7 @@ trait Mesh {
 
     /** How to draw the mesh (as lines, lines loops, triangles, quads, etc.).
       * This depends on the way the data is defined. */
-    def drawAs:Int
+    def drawAs(gl:SGL):Int
     
     override def toString():String = {
     	val attrs = attributes.map { item => (item, components(item)) }

@@ -141,7 +141,7 @@ class NormalMap extends SurfaceRenderer {
 	    setupTextures
 	    
 	    camera.uniform(nmapShader)
-	    plane.draw(planeMesh.drawAs)
+	    plane.draw(planeMesh.drawAs(gl))
 /*	    tube.draw(tubeMesh.drawAs)
 
 	    camera.pushpop {
@@ -153,11 +153,11 @@ class NormalMap extends SurfaceRenderer {
 	    camera.pushpop {
 		    camera.translate(-1, 0, -1)
 		    camera.uniform(nmapShader)
-		    tube.draw(tubeMesh.drawAs)
+		    tube.draw(tubeMesh.drawAs(gl))
 		    
 		    camera.translate(0, 1.1, 0)
 		    camera.uniform(nmapShader)
-		    tube.draw(tubeMesh.drawAs)
+		    tube.draw(tubeMesh.drawAs(gl))
 	    }
 	    
 	    surface.swapBuffers

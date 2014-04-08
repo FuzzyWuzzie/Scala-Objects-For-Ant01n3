@@ -4,11 +4,6 @@ import org.sofa.nio.FloatBuffer
 import org.sofa.opengl.{SGL,VertexArray,ShaderProgram}
 import org.sofa.math.{Rgba, Point3}
 
-import javax.media.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._
 
 class PointsMesh(val size:Int) extends Mesh {
 	
@@ -60,7 +55,7 @@ class PointsMesh(val size:Int) extends Mesh {
 		}
 	}
 	
-	def drawAs():Int = GL_POINTS
+	def drawAs(gl:SGL):Int = gl.POINTS
 	
 	// -- Edition interface ------------------------------------
 

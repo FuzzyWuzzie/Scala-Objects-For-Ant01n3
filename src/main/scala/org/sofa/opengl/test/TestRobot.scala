@@ -273,7 +273,7 @@ class TestRobot extends SurfaceRenderer {
 	protected def displayGrid() {
 		gridShader.use
 		camera.uniformMVP(gridShader)
-		grid.lastVertexArray.draw(grid.drawAs)
+		grid.lastVertexArray.draw(grid.drawAs(gl))
 	}
 
 	def animate() {

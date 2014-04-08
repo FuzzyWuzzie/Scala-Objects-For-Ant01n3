@@ -3,9 +3,7 @@ package org.sofa.opengl.mesh
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import org.sofa.nio.{FloatBuffer, IntBuffer}
 import org.sofa.math.{Rgba, NumberSeq4, NumberSeq3, NumberSeq2, Point3, Vector3, Point2}
-
-import javax.media.opengl.GL._
-import javax.media.opengl.GL2._
+import org.sofa.opengl.SGL
 
 case class BadlyNestedBeginEnd(msg:String) extends Throwable(msg) {
 	def this() { this("Badly nested begin()/end()") }
@@ -45,7 +43,7 @@ class EditableMesh extends Mesh {
 	// --------------------------------------------------------------
 	// Access
 	
-	override def drawAs():Int = GL_TRIANGLES
+	override def drawAs(gl:SGL):Int = gl.TRIANGLES
 	
 	// --------------------------------------------------------------
 	// Command, mesh building

@@ -205,7 +205,7 @@ class TestShaders extends SurfaceRenderer {
 	    groundShader.use
 	    //useTextures(groundShader, groundColor, groundNMap)
 	    camera.uniformMVP(groundShader)
-	    ground.draw(groundMesh.drawAs)
+	    ground.draw(groundMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 
 		gl.frontFace(gl.CCW)
@@ -229,7 +229,7 @@ class TestShaders extends SurfaceRenderer {
 						camera.translate(x, y, z)
 						camera.scale(0.45, 0.45, 0.45)
 						camera.uniform(shader(i))
-						uvsphere.draw(uvsphereMesh.drawAs)
+						uvsphere.draw(uvsphereMesh.drawAs(gl))
 					}
 
 					i += 1

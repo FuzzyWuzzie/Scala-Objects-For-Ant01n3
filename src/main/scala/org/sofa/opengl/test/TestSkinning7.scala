@@ -196,7 +196,7 @@ class TestSkinning7 extends SurfaceRenderer {
 	    light1.uniform(groundShader, camera)
 	    groundShader.uniform("color", Rgba.White)
 	    camera.uniform(groundShader)
-	    ground.draw(groundMesh.drawAs)
+	    ground.draw(groundMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 
 		animate
@@ -207,7 +207,7 @@ class TestSkinning7 extends SurfaceRenderer {
 	   	light1.uniform(thingShader, camera)
 	   	skeleton.uniform(thingShader)
 	    camera.uniform(thingShader)
-	    thing.draw(thingMesh.drawAs)
+	    thing.draw(thingMesh.drawAs(gl))
 		gl.frontFace(gl.CW)
 
  		// Skeleton

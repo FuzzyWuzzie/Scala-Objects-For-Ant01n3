@@ -174,14 +174,14 @@ class TestIndexedDynTriangleMesh extends SurfaceRenderer {
 		camera.lookAt
 		useLights(planeShad)
 		camera.uniform(planeShad)
-		plane.draw(planeMesh.drawAs)
+		plane.draw(planeMesh.drawAs(gl))
 		
 		// TODO Thing
 		thingShad.use
 //		thingShad.uniform("color", Rgba.red)
 		useLights(thingShad)
 		camera.uniform(thingShad)
-		thing.draw(thingMesh.drawAs, maxTriangles*3)
+		thing.draw(thingMesh.drawAs(gl), maxTriangles*3)
 		
 		surface.swapBuffers
 		gl.checkErrors

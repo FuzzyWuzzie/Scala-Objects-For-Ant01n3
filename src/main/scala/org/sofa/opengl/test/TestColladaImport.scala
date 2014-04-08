@@ -125,7 +125,7 @@ class TestColladaImport extends SurfaceRenderer {
 		thingShad.uniform("color", planeColor)
 		hemiLight.uniform(thingShad, camera)
 		camera.uniform(thingShad)
-		plane.draw(planeMesh.drawAs)
+		plane.draw(planeMesh.drawAs(gl))
 
 		// Thing
 		
@@ -137,7 +137,7 @@ class TestColladaImport extends SurfaceRenderer {
 			//camera.scale(0.01, 0.01, 0.01)
 			camera.translate(0, 1, 0)
 			camera.uniform(thingShad)
-			thing.draw(thingMesh.drawAs)
+			thing.draw(thingMesh.drawAs(gl))
 		}
 		gl.frontFace(gl.CW)
 		

@@ -136,7 +136,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 			phongShad.use
 			useLights2(phongShad)
 			camera2.uniform(phongShad)
-			cube.draw(cubeMesh.drawAs)
+			cube.draw(cubeMesh.drawAs(gl))
 
 			gl.checkErrors
 			gl.enable(gl.DEPTH_TEST)
@@ -157,7 +157,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 	    phongTexShad.uniform("texColor", 0)	// Texture Unit 0
 		useLights(phongTexShad)
 		camera.uniform(phongTexShad)
-		plane.draw(planeMesh.drawAs)
+		plane.draw(planeMesh.drawAs(gl))
 		gl.bindTexture(gl.TEXTURE_2D, null)
 		
 		// Axis
@@ -165,7 +165,7 @@ class TestRenderToTexture extends SurfaceRenderer {
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
+		axis.draw(axisMesh.drawAs(gl))
 		
 			// phongShad.use
 			// useLights(phongShad)

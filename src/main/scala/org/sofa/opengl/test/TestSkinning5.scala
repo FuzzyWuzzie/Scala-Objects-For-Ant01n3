@@ -196,7 +196,7 @@ class TestSkinning5 extends SurfaceRenderer {
 	    light1.uniform(nmapShader, camera)
 	    useTextures(nmapShader, groundColor, groundNMap)
 	    camera.uniform(nmapShader)
-	    ground.draw(groundMesh.drawAs)
+	    ground.draw(groundMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 
 		animate
@@ -207,7 +207,7 @@ class TestSkinning5 extends SurfaceRenderer {
 	    useTextures(boneShader, thingColor, thingNMap)
 	    skeleton.uniform(boneShader)
 	    camera.uniform(boneShader)
-	    thing.draw(thingMesh.drawAs)
+	    thing.draw(thingMesh.drawAs(gl))
 		gl.frontFace(gl.CW)
 
  		// Skeleton

@@ -1,12 +1,7 @@
 package org.sofa.opengl.mesh
 
-import javax.media.opengl._
+import org.sofa.opengl.SGL
 import org.sofa.nio._
-import org.sofa.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._ 
 
 import scala.math._
 
@@ -54,7 +49,7 @@ class CircleMesh(radius:Double, sides:Int) extends Mesh {
 		}
 	}
     
-    override def drawAs:Int = GL_LINE_LOOP
+    override def drawAs(gl:SGL):Int = gl.LINE_LOOP
     
     // -- Building -------------------------------------
 

@@ -257,7 +257,7 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
+		axis.draw(axisMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 	}
 	
@@ -271,7 +271,7 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 					val p = bucket._2.position
 					camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.uniformMVP(plainShad)
-					wcube.draw(wcubeMesh.drawAs)
+					wcube.draw(wcubeMesh.drawAs(gl))
 				}
 			}
 			gl.disable(gl.BLEND)
@@ -288,7 +288,7 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 					val p = cube.pos
 					camera.translate((p.x*cs)+cs2, (p.y*cs)+cs2, (p.z*cs)+cs2)
 					camera.uniformMVP(plainShad)
-					if(!cube.isEmpty) { wcubeIso1.draw(wcubeIsoMesh.drawAs) }
+					if(!cube.isEmpty) { wcubeIso1.draw(wcubeIsoMesh.drawAs(gl)) }
 //				    else { wcubeIso2.draw(wcubeIsoMesh.drawAs) }
 				}
 			}
@@ -302,7 +302,7 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 			phongShad.use
 			useLights(phongShad)
 			camera.uniform(phongShad)
-			isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
+			isoSurface.draw(isoSurfaceMesh.drawAs(gl), isoSurfaceComp.triangleCount*3)
 		}
 	}
 
@@ -312,7 +312,7 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 			particlesShad.use
 			camera.uniformMVP(particlesShad)
 			particlesShad.uniform("pointSize", pointSize)
-			particles.draw(particlesMesh.drawAs)
+			particles.draw(particlesMesh.drawAs(gl))
 			gl.enable(gl.DEPTH_TEST)
 		}
 	}

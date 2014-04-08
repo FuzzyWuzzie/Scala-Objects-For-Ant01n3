@@ -562,7 +562,7 @@ var angle = 0.0
 				cameraTex.scale(40, 40, 1)
 				cameraTex.rotate(angle, 0, 0, 1)
 				cameraTex.uniformMVP(plainShad)
-				triangles.draw(trianglesMesh.drawAs, 8*3)
+				triangles.draw(trianglesMesh.drawAs(gl), 8*3)
 
 				angle += 0.01
 				if(angle > 2*Pi) angle = 0
@@ -683,7 +683,7 @@ var angle = 0.0
 	    nmapShad.uniform("specularPow", 128f)
 
 		camera.uniform(nmapShad)
-		ground.draw(groundMesh.drawAs)
+		ground.draw(groundMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 	}
 
@@ -700,14 +700,14 @@ var angle = 0.0
 			camera.scale(10,10,10)
 			camera.rotate(math.Pi/2, 0, 1, 0)
 			camera.uniform(phongTexShad)
-			wall.draw(wallMesh.drawAs)
+			wall.draw(wallMesh.drawAs(gl))
 		}
 		camera.pushpop {
 			camera.translate(15, 4, 0)
 			camera.scale(10,10,10)
 			camera.rotate(math.Pi/2, 0, 1, 0)
 			camera.uniform(phongTexShad)
-			wall.draw(wallMesh.drawAs)
+			wall.draw(wallMesh.drawAs(gl))
 		}
 		gl.frontFace(gl.CW)
 
@@ -718,7 +718,7 @@ var angle = 0.0
 			useLights(spyceShad, 1000f, 100f)
 			camera.translate(0,4,-10)
 			camera.uniform(spyceShad)
-			ledWall.draw(ledWallMesh.drawAs)
+			ledWall.draw(ledWallMesh.drawAs(gl))
 			gl.bindTexture(gl.TEXTURE_2D, null)
 		}
 
@@ -771,7 +771,7 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 			camera.rotate(angle, 0, 0, 1)
 //			camera.uniform(phongNoClrShad)
 			camera.uniform(nmapShad)
-			biroute.draw(birouteMesh.drawAs)
+			biroute.draw(birouteMesh.drawAs(gl))
 		}
 	}
 	
@@ -780,7 +780,7 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 		phongShad.use
 		useLights(phongShad)
 		camera.uniform(phongShad)
-		obstacles.draw(obstaclesMesh.drawAs)
+		obstacles.draw(obstaclesMesh.drawAs(gl))
 		gl.enable(gl.CULL_FACE)
 	}
 	
@@ -788,7 +788,7 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 		gl.enable(gl.BLEND)
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		axis.draw(axisMesh.drawAs)
+		axis.draw(axisMesh.drawAs(gl))
 		gl.disable(gl.BLEND)
 	}
 	
@@ -801,7 +801,7 @@ val birouteColor = Rgba(209.0/255.0, 189.0/255.0, 168.0/255.0)
 //	    	particlesShad.uniform("texColor", 0)	// Texture Unit 0
 			camera.uniformMVP(particlesShad)
 			particlesShad.uniform("pointSize", particleSizePx)
-			particles.draw(particlesMesh.drawAs, simu.size)
+			particles.draw(particlesMesh.drawAs(gl), simu.size)
 			gl.disable(gl.BLEND)
 		}
 	}
@@ -831,7 +831,7 @@ timer.measure("draw quads") {
  				camera.rotate(angle, 0, 0, 1)
 				camera.scale(1+l, 1-l, 1)
 				camera.uniformMVP(particlesQuadShad)
-				quad.draw(quadMesh.drawAs)
+				quad.draw(quadMesh.drawAs(gl))
 				camera.pop
 				I += 1
 			}
@@ -848,7 +848,7 @@ timer.measure("draw quads") {
 			gl.lineWidth(2)
 			plainShad.use
 			camera.uniformMVP(plainShad)
-			springs.draw(springsMesh.drawAs, simu.springs.size*2)
+			springs.draw(springsMesh.drawAs(gl), simu.springs.size*2)
 			gl.lineWidth(1)
 			gl.disable(gl.BLEND)
 			gl.enable(gl.DEPTH_TEST)
@@ -862,7 +862,7 @@ timer.measure("draw quads") {
 				phongShad.use
 				useLights(phongShad)
 				camera.uniform(phongShad)
-				isoSurface.draw(isoSurfaceMesh.drawAs, isoSurfaceComp.triangleCount*3)
+				isoSurface.draw(isoSurfaceMesh.drawAs(gl), isoSurfaceComp.triangleCount*3)
 				gl.disable(gl.BLEND)
 			}
 		}
@@ -876,7 +876,7 @@ timer.measure("draw quads") {
 			useLights(phongShad)
 			camera.uniform(phongShad)
 //			isoPlane.draw(isoPlaneMesh.drawAs, isoContourComp.triangleCount*3)
-			isoPlane.draw(isoPlaneMesh.drawAs, triangleCount*3)
+			isoPlane.draw(isoPlaneMesh.drawAs(gl), triangleCount*3)
 //			gl.disable(gl.BLEND)
 		}
 	}
@@ -887,7 +887,7 @@ timer.measure("draw quads") {
 			plainShad.use
 			camera.uniformMVP(plainShad)
 			//springs.draw(springsMesh.drawAs, simu.springs.size*2)
-			isoContour.draw(isoContourMesh.drawAs, isoContourComp.segmentCount*2)
+			isoContour.draw(isoContourMesh.drawAs(gl), isoContourComp.segmentCount*2)
 			gl.disable(gl.BLEND)
 		}
 	}

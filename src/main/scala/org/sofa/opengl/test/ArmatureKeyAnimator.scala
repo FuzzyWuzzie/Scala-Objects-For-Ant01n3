@@ -235,7 +235,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	protected def displayGrid() {
 		gridShader.use
 		camera.uniformMVP(gridShader)
-		grid.lastVertexArray.draw(grid.drawAs)
+		grid.lastVertexArray.draw(grid.drawAs(gl))
 	}
 
 	protected def displayInfo() {

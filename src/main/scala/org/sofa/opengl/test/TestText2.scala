@@ -181,11 +181,11 @@ class TestText2 extends SurfaceRenderer {
 
 		plainShad.use
 		camera.uniformMVP(plainShad)
-		lines.draw(linesMesh.drawAs)		
+		lines.draw(linesMesh.drawAs(gl))		
 
 		// Background
 
-		quads.draw(quadsMesh.drawAs, 2*4)
+		quads.draw(quadsMesh.drawAs(gl), 2*4)
 
 		// GLString
 

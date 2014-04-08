@@ -3,11 +3,6 @@ package org.sofa.opengl.mesh
 import org.sofa.nio._
 import org.sofa.opengl._
 import scala.math._
-import javax.media.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._
 import org.sofa.math.Vector3
 import org.sofa.math.Vector2
 import java.awt.Color
@@ -70,7 +65,7 @@ class BoneMesh extends Mesh {
 		}
 	}	
 
-	def drawAs():Int = GL_TRIANGLES
+	def drawAs(gl:SGL):Int = gl.TRIANGLES
 	
 	// -- Building ------------------------------------------
 
@@ -147,7 +142,7 @@ class BoneMesh extends Mesh {
 
 class BoneLineMesh extends BoneMesh {
 
-	override def drawAs():Int = GL_LINES
+	override def drawAs(gl:SGL):Int = gl.LINES
 		
 	override protected def allocateIndices:IntBuffer = {
 	    val n = 6 * 4
