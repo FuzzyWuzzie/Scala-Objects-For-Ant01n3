@@ -72,7 +72,7 @@ trait TextureLoader extends FileLoader {
 }
 
 /** Default texture loader that uses files in the local file system
-  * and [[TextureImageAwt]]. */
+  * and [[backend.TextureImageAwt]]. */
 class DefaultTextureLoader extends TextureLoader {
 	def open(resource:String, params:TexParams):TextureImage = {
 		import TexMipMap._

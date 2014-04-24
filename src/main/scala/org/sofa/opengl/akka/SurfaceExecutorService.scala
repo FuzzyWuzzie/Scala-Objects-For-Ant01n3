@@ -9,9 +9,9 @@ import java.util.Collections
 import scala.collection.JavaConversions._
 
 
-/** Wraps a [[Surface.invoke()]] as an Akka ExecutorService. This service can then be
-  * used in a [[ExecutorServiceConfigurator]], specifically here 
-  * [[SurfaceExecutorConfigurator]], that is created from the application.conf.
+/** Wraps a `Surface.invoke()` as an Akka ExecutorService. This service can then be
+  * used in a `ExecutorServiceConfigurator`, specifically here 
+  * SurfaceExecutorConfigurator`, that is created from the application.conf.
   * 
   * Code derived from Viktor Klang: https://gist.github.com/viktorklang/2422443 */
 object SurfaceExecutorService extends AbstractExecutorService { 

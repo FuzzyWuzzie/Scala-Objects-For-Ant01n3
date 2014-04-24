@@ -48,7 +48,7 @@ trait MeshLoader extends FileLoader {
   * the Collada format, to read the geometry of the object.
   * This loader tries to open the given resource directly, then if not
   * found, tries to find it in each of the pathes provided by the include
-  * path of [[ColladaFile]]. If not found it throws an IOException. */
+  * path of [[org.sofa.opengl.io.collada.ColladaFile]]. If not found it throws an IOException. */
 class ColladaMeshLoader extends MeshLoader {
     def open(resource:String, geometry:String):Mesh = {
     	val file = new ColladaFile(resource)
@@ -56,6 +56,10 @@ class ColladaMeshLoader extends MeshLoader {
     	file.library.geometry(geometry).get.mesh.toMesh 
     }
 }
+
+
+/** Thrown when the mesh should have a vertex array but have not. */
+class NoVertexArrayException(msg:String) extends Exception(msg)
 
 
 object Mesh {
@@ -70,7 +74,7 @@ object Mesh {
   * attributes to tell how to draw the data.
   *
   * The mesh is not usable as is in an OpenGL program, you must transform it into a
-  * [[VertexArray]]. The mesh acts as a factory to produce vertex arrays. You can create
+  * [[org.sofa.opengl.VertexArray]]. The mesh acts as a factory to produce vertex arrays. You can create
   * as many vertex arrays as you need with one mesh. However dynamic meshes, that is
   * meshes that are able to update their attribute data in time, always remember the
   * last produced vertex array to allow to update it. */
@@ -81,10 +85,7 @@ trait Mesh {
 	protected var va:VertexArray = _
 
 	/** Release the resource of this mesh, the mesh is no more usable after this. */
-	def dispose() {
-		if(va ne null)
-			va.dispose
-	}
+	def dispose() { if(va ne null) va.dispose }
 
 	/** A vertex attribute by its name. */
 	def attribute(name:String):FloatBuffer
@@ -119,6 +120,14 @@ trait Mesh {
     /** How to draw the mesh (as lines, lines loops, triangles, quads, etc.).
       * This depends on the way the data is defined. */
     def drawAs(gl:SGL):Int
+
+    /** Draw the last vertex array created. If no vertex array has been created 
+      * a NoVertexArrayException is thrown. */
+    def draw(gl:SGL) {
+    	if(va ne null)
+    		va.draw(drawAs(gl)) 
+    	else throw new NoVertexArrayException("Mesh : create a vertex array first")
+    }
     
     override def toString():String = {
     	val attrs = attributes.map { item => (item, components(item)) }
@@ -137,10 +146,10 @@ trait Mesh {
       * mesh. Such meshes are dynamic. */
     def lastVertexArray():VertexArray = va
 
-    /** The last created vertex array. Synonym of [[lastVertexArray]]. */
+    /** The last created vertex array. Synonym of `lastVertexArray`. */
     def lastva():VertexArray = va
 
-    /** True if at least one vertex array was created. You can access it using [[lastva()]]. */
+    /** True if at least one vertex array was created. You can access it using `lastva()`. */
     def hasva:Boolean = (va ne null)
 
     /** Always called before creating a new vertex array. Hook for descendants. */
@@ -152,7 +161,7 @@ trait Mesh {
     /** Create a vertex array for the mesh. This method will create the vertex array with
       * all the vertex attributes present in the mesh. Each one will have a location starting
       * from 0. The order follows the one given by the list of attributes given by the
-      * [[attributes()]] method.
+      * `attributes()` method.
       * 
       * This is useful only for shaders having the possibility to associate locations
       * with a vertex attribute (having the 'layout' qualifier (e.g. layout(location=1)),

@@ -37,7 +37,7 @@ class EditableState(initialTransitions:Pair[AnyRef,State]*) extends State {
 // }
 
 /** An automaton is a current state. You can change its state using the
-  * [[transition(String)]] method. */
+  * transition(String)` method. */
 class Automaton(var state:State) {
 	/** Transition this automaton from the current state to another (potentially the same) by a given object
 	  * as transition. Throw a NoSuchTransitionException if the transition is undefined. */

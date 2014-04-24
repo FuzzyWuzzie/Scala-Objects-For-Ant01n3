@@ -126,8 +126,8 @@ object Shader {
         	}
         }
 
-//        println("** %s:".format(if(shaderType==gl.VERTEX_SHADER) "vertex shader" else "fragment shader"))
-//        buf.foreach {line => print("    %s".format(line))}
+        // Console.err.println("** %s:".format(if(shaderType==gl.VERTEX_SHADER) "vertex shader" else "fragment shader"))
+        // buf.foreach {line => Console.err.print("    %s".format(line))}
 
         buf.toArray
     }

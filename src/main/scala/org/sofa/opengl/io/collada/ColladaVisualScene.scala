@@ -6,6 +6,7 @@ import org.sofa.math.Matrix4
 import org.sofa.opengl.mesh.skeleton.Bone
 import scala.math._
 
+
 abstract class Transform(val sid:String) {
 	/** Apply the transform to the given matrix. */
 	def applyTo(m:Matrix4) { applyTo(m, false) }
@@ -16,6 +17,7 @@ abstract class Transform(val sid:String) {
 
 	def applyTo(b:Bone, blenderToOpenGLCoos:Boolean)
 }
+
 
 class Rotate(sid:String, text:String) extends Transform(sid) {
 	var axis = new Array[Float](3)
@@ -53,6 +55,7 @@ System.err.println("boneapply %s".format(toString))
 	override def toString():String = "rotate(angle %f, axis [%s])".format(angle, axis.mkString(", "))
 }
 
+
 class Scale(sid:String, text:String) extends Transform(sid) {
 	var data:Array[Float] = null
 	
@@ -83,6 +86,7 @@ System.err.println("boneapply %s".format(toString))
 	override def toString():String = "scale(%s)".format(data.mkString(", "))
 }
 
+
 class Translate(sid:String, text:String) extends Transform(sid) {
 	var data:Array[Float] = null
 	
@@ -112,6 +116,7 @@ System.err.println("boneapply %s".format(toString))
 
 	override def toString():String = "translate(%s)".format(data.mkString(", "))
 }
+
 
 class Matrix(sid:String, text:String) extends Transform(sid) {
 	var matrix:Matrix4 = null
@@ -153,12 +158,14 @@ System.err.println("boneapply %s".format(toString))
 	override def toString():String = "matrix(%s)".format(matrix.toCompactString)
 }
 
+
 object SceneNodeType extends Enumeration {
 	val NodeType = Value
 	val JointType = Value
 
 	type SceneNodeType = SceneNodeType.Value 
 }
+
 
 /** An element of a Collada visual scene. */
 class SceneNode(node:Node) {
@@ -213,9 +220,11 @@ class SceneNode(node:Node) {
 	override def toString():String = "node(%s, %s, instance %s, transform(%s), child { %s })".format(name, nodeType, instance, transforms.mkString(", "), child.mkString(", "))
 }
 
+
 object VisualScene {
 	def apply(node:Node):VisualScene = new VisualScene(node)
 }
+
 
 /** A scene in the Collada library of visual scenes. */
 class VisualScene(node:Node) extends ColladaFeature {
@@ -238,10 +247,10 @@ class VisualScene(node:Node) extends ColladaFeature {
 
 	/** Try to swap axis considering the source uses Blender axis and pass them to OpenGL axis.
 	  * This means that the x becomes y, the y becomes z and the z becomes x. This setting is applyed
-	  * when the mesh is transformed to a SOFA [[Mesh]] when calling [[toMesh()]]. */
+	  * when the mesh is transformed to a SOFA [[org.sofa.opengl.mesh.Mesh]] when calling toMesh()`. */
 	def blenderToOpenGL(on:Boolean) { blenderToOpenGLCoos = on }
 
-	/** Convert the given node and sub-nodes to a SOFA [[Bone]] hierarchy.
+	/** Convert the given node and sub-nodes to a SOFA [[org.sofa.opengl.mesh.skeleton.Bone]] hierarchy.
 	  * The given node `id` must identify the node in the visual scene that
 	  * contains the armature under the form of child nodes of type `JointType`.
 	  * The given `controller` is used to check the bones names and indices. */

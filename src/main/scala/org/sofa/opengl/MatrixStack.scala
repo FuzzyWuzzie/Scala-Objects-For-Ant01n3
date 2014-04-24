@@ -4,11 +4,13 @@ import org.sofa.math._
 import org.sofa.math.Axis._
 import scala.language.implicitConversions
 
+
 object MatrixStack {
 	implicit def toMatrix4(stack:MatrixStack[Matrix4]):Matrix4 = stack.top
 
     def apply(initialMatrix:Matrix4):MatrixStack[Matrix4] = new MatrixStack[Matrix4](initialMatrix)
 }
+
 
 /** A stack of 4x4 matrices.
   * 
@@ -66,8 +68,8 @@ class MatrixStack[M<:Matrix4](initialMatrix:M) {
     }
     
     /** Make a copy of the top matrix, execute the given code using the copy, then
-      * reinstall the original top matrix. Equivalent to using [[push()]] then
-      * [[pop()]]. */
+      * reinstall the original top matrix. Equivalent to using `push()` then
+      * `pop()`. */
     def pushpop(code: =>Unit):Unit = {
         push
         code

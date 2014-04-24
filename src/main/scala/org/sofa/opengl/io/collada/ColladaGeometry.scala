@@ -228,7 +228,7 @@ abstract class Faces(node:Node, val mesh:ColladaMesh) {
 		data = (node \ "p").text.trim.split("\\s+").map(_.toInt)
 	}
 	
-	/** Transform this into a SOFA [[Mesh]], usable to draw in an OpenGL scene.
+	/** Transform this into a SOFA [[org.sofa.opengl.mesh.Mesh]], usable to draw in an OpenGL scene.
 	  * Some transformations may be applyed to the original data accoding to the settings in
 	  * The Collada Mesh. */
 	def toMesh():Mesh
@@ -551,12 +551,12 @@ class ColladaMesh(val id:String, node:Node) {
 	parse(node)
 	
 	/** Try to merge vertices with exactly the same values (for position, but also color, normals, etc.)
-	  * This setting is applyed when the mesh is transformed to a SOFA [[Mesh]], when calling [[toMesh()]]. */	
+	  * This setting is applyed when the mesh is transformed to a SOFA [[org.sofa.opengl.mesh.Mesh]], when calling `toMesh()`. */	
 	def mergeVertices(on:Boolean) { mergeVerticesMesh = on }
 
 	/** Try to swap axis considering the source uses Blender axis and pass them to OpenGL axis.
 	  * This means that the x becomes y, the y becomes z and the z becomes x. This setting is applyed
-	  * when the mesh is transformed to a SOFA [[Mesh]] when calling [[toMesh()]]. */
+	  * when the mesh is transformed to a SOFA [[org.sofa.opengl.mesh.Mesh]] when calling `toMesh()`. */
 	def blenderToOpenGL(on:Boolean) { blenderToOpenGLCoos = on }
 	
 	/** Set the optionnal controller on this geometry. */
@@ -631,7 +631,7 @@ class ColladaMesh(val id:String, node:Node) {
 	}
 
 	/** Transform the Collada data to a SOFA Mesh object.
-	  * See [[mergeVertices(Boolean)]] and [[blenderToOpenGL(Boolean)]]. */
+	  * See `mergeVertices(Boolean)` and `blenderToOpenGL(Boolean). */
 	def toMesh():Mesh = faces.toMesh
 	
 	override def toString():String = "mesh(%s(%s), %s)".format(sources(vertices).name, sources.values.mkString(","), faces)

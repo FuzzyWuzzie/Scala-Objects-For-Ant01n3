@@ -30,6 +30,9 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 	/** Set of loaded resources. */
 	protected val library = new HashMap[String,ResourceDescriptor[T]]
 
+	/** True if the library contains a resource by the given `name`. */
+	def contains(name:String):Boolean = library.contains(name)
+
 	/** Add a new resource to the library. If `load` is true, the resource is 
 	  * loaded when added, else it is loaded lazily at first access to its value. */
 	def add(newResource:ResourceDescriptor[T], load:Boolean = false) { library += (newResource.name -> newResource); if(load) newResource.value(gl) }
@@ -44,13 +47,27 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 		).value(gl)
 
 	/** Retrieve a resource if it already exists, else add it via a descript and return it. */
-	def getOrAdd(gl:SGL, name:String, newResource:ResourceDescriptor[T]):T = library.get(name) match {
+	def addAndGet(gl:SGL, name:String, newResource:ResourceDescriptor[T]):T = library.get(name) match {
 		case Some(res) => res.value(gl)
 		case None => {
 			add(newResource, true)
 			library.get(name) match {
 				case Some(res) => res.value(gl)
 				case None => throw new NoSuchResourceException("resource '%s' unknown, or cannot load it".format(name))
+			}
+		}
+	}
+
+	/** Retrieve a resource if it already exists, else add it by calling `resCreator` to create
+	  * the resource descriptor, then return it. */
+	def getOrAdd(gl:SGL, name:String)(resCreator:(SGL,String)=>ResourceDescriptor[T]):T = library.get(name) match {
+		case Some(res) => res.value(gl)
+		case None => {
+			val resource = resCreator(gl, name)
+			add(resource)
+			library.get(name) match {
+				case Some(res) => res.value(gl)
+				case None => throw new NoSuchResourceException("resource '%s' unknown, or cannot load it.".format(name))
 			}
 		}
 	}
@@ -70,12 +87,13 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 
 
 object Libraries {
-	final val PositionExpression    = """\s*\(\s*(\s*[-+]?\d+\.?\d*\s*)\s*,\s*(\s*[-+]?\d+\.?\d*\s*)\s*\)\s*""".r
-	final val DoubleExpression      = """([+-]?\d+(\.?\d*))""".r
-	final val PositiveIntExpression = """\s*(\+?\d)\s*""".r
+	protected final val PositionExpression    = """\s*\(\s*(\s*[-+]?\d+\.?\d*\s*)\s*,\s*(\s*[-+]?\d+\.?\d*\s*)\s*\)\s*""".r
+	protected final val DoubleExpression      = """([+-]?\d+(\.?\d*))""".r
+	protected final val PositiveIntExpression = """\s*(\+?\d)\s*""".r
 
-	def apply(gl:SGL):Libraries = { new Libraries(gl) } 
+	def apply(gl:SGL):Libraries = new Libraries(gl)
 }
+
 
 /** The set of libraries for shaders, textures and models. */
 class Libraries(gl:SGL) {
@@ -387,11 +405,11 @@ object ModelResource {
 }
 
 class ModelResource(name:String, mesh:Mesh, aFileName:String = "", aGeometry:String = "") extends ResourceDescriptor[Mesh](name) {
-	private var data:Mesh = mesh
+	private[this] var data:Mesh = mesh
 
-	private var fileName = aFileName
+	private[this] var fileName = aFileName
 
-	private var geometry = aGeometry
+	private[this] var geometry = aGeometry
 
 	def this(name:String, fileName:String, geometry:String) {
 		this(name, null, fileName, geometry)
@@ -421,7 +439,7 @@ class ModelLibrary(gl:SGL) extends Library[Mesh](gl)
 object FontResource { def apply(name:String,fontName:String,size:Int):FontResource = new FontResource(name,fontName,size) }
 
 class FontResource(name:String, val fontName:String, val size:Int) extends ResourceDescriptor[GLFont](name) {
-	private var data:GLFont = null
+	private[this] var data:GLFont = null
 
 	def value(gl:SGL):GLFont = {
 		throw NoSuchResourceException("TODO")

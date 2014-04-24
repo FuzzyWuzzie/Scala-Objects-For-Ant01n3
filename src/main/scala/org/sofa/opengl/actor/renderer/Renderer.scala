@@ -35,7 +35,7 @@ object Renderer {
   * screen and their set of avatars and animate them. This starts the rendering
   * process and controls the whole rendering system.
   *
-  * This renderer is maintained by a [[RendererActor]]. However, it
+  * This renderer is maintained by a `RendererActor`. However, it
   * can be used without it.
   *
   * The `controler` is an actor that will receive events from the renderer and
@@ -47,8 +47,22 @@ object Renderer {
   *
   * This renderer class is abstract, since it depends on a kind of surface. The
   * only methods to implement are `newSurface()` which will create a surface depending
-  * on the type of underlying system, and [[Surface]] event callbacks `onKey()`,
-  * `onMotion()` and `onScroll()`.
+  * on the type of underlying system, and [[org.sofa.opengl.surface.Surface]] event
+  * callbacks `onKey()`, `onMotion()` and `onScroll()`.
+  *
+  * Be very careful. Excepted the creation phase and the `start()` method, the renderer
+  * is made to run in the same thread as its surface. Methods are not synchronized for
+  * efficiency reasons, but you should call them only from the surface thread
+  * (see the [[Surface]] `invoke()` methods). Most of the time you must use the
+  * Controler actor to run the renderer, this actor using a scheduler that uses the
+  * surface thread. However you can also pass code to the `start()` method that will be
+  * run by the renderer just after its initialization, this is the `runAtInit` parameter:
+  *
+  *   renderer.start("title", 640, 480, runAtInit = { () =>
+  *       // your code here.
+  *       // run after init of the renderer.
+  *       // inside the surface thread.
+  *   })
   */
 abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null) extends SurfaceRenderer {
 // General
@@ -60,15 +74,19 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
     var surface:Surface = null
 
 	/** Set of screens. */
-	protected val screens = new HashMap[String,Screen]()
+	protected[this] val screens = new HashMap[String,Screen]()
 
 	/** Current screen. */
-	protected var screen:Screen = null
+	protected[this] var screen:Screen = null
+
+	/** Code to run upon initialization. */
+	protected[this] var runAtInit: () => Unit = null
+
+	/** True as soon as initialized. */
+	protected[this] var inited:Boolean = false
 
 	if(factory eq null)
 		factory = new DefaultAvatarFactory()
-
-	protected var inited:Boolean = false
    
 // == Resources ==============================
 
@@ -82,7 +100,7 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
       * internal animation loop will try to draw as much frames per second. This internal loop
       * is responsible for running the avatars and screens animate methods and redrawing the screen.
       *
-      * This method is called when building the renderer actor, see [[RendererActor.apply()]].
+      * This method is called when building the renderer actor, see `RendererActor.apply()`.
       *
       * @param title The title of the window if windowed.
       * @param initialWidth The requested width in pixels of the surface.
@@ -92,7 +110,8 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
       * @param fullscreen If in a windowed system, try to open a full screen surface.
       * @param overSample Defaults to 4, if set to 1 or less, oversampling is disabled. */
     def start(title:String, initialWidth:Int, initialHeight:Int, fps:Int,
-              decorated:Boolean=false, fullscreen:Boolean=false, overSample:Int = 4) {
+              decorated:Boolean=false, fullscreen:Boolean=false, overSample:Int = 4, runAtInit: () => Unit = null) {
+	    this.runAtInit = runAtInit
 	    initSurface    = initRenderer
 	    frame          = render
 	    surfaceChanged = reshape
@@ -146,7 +165,16 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 
 // == Rendering ================================
     
-	def initRenderer(gl:SGL, surface:Surface) { this.gl = gl; libraries = Libraries(gl); inited = true }
+	def initRenderer(gl:SGL, surface:Surface) {
+		this.gl   = gl
+		libraries = Libraries(gl)
+		inited    = true
+
+		if(runAtInit ne null)
+			runAtInit()
+
+		runAtInit = null
+	}
 	
 	def reshape(surface:Surface) { if(screen ne null) { screen.reshape } }
 	

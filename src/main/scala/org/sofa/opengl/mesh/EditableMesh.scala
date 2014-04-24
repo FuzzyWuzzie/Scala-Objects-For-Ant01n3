@@ -162,8 +162,8 @@ class EditableMesh extends Mesh {
 		endIndices
 	}
 	
-	/** Specify the index of a vertex while building a triangle, [[beginIndices()]] must have been
-	  * called, or this must be invoked in a code block passed to [[buildIndices(MeshDrawMode.Value)]]. */
+	/** Specify the index of a vertex while building a triangle, `beginIndices()` must have been
+	  * called, or this must be invoked in a code block passed to `buildIndices(MeshDrawMode.Value). */
 	def index(i:Int) {
 		if(!beganIndex) throw new BadlyNestedBeginEnd
 		indexBuffer += i
@@ -407,12 +407,12 @@ class EditableMesh extends Mesh {
 
 	/** Shortcut to get the internal storage for the vertex tangent attributes (as many as vertices). It may be null.
 	  * You can compute them automatically from the texture coordinates and normals, see
-	  * [[autoComputeTangents()]]. */
+	  * autoComputeTangents()`. */
 	def getTangentMeshBuffer():MeshBuffer = buffers.get(Tangent).getOrElse(null)
 
 	/** Shortcut to get the internal storage for the vertex bitangent attributes (as many as vertices). It may be null.
 	  * You can compute them automatically from the texture coordinates and normals, see
-	  * [[autoComputeTangents()]]. */
+	  * `autoComputeTangents()`. */
 	def getBitangentMeshBuffer():MeshBuffer = buffers.get(Bitangent).getOrElse(null)
 
 	/** Shortcut to get the internal storage for the vertex color attributes (as many as vertices). It may be null. */

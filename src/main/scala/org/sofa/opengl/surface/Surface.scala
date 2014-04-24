@@ -197,5 +197,5 @@ abstract class MotionEvent extends Event {
 /** Event for all sorts of scrolling. */
 abstract class ScrollEvent extends Event {
     /** Amount of scrolling, positive if the "real" movement goes down, right or clock-wise. */
-    def amount:Int
+    def amount:Double
 }

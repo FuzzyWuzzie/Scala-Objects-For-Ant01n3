@@ -167,7 +167,7 @@ class KeyEventWeb(val source:KeyboardEvent, val isPrintable:Boolean) extends Key
 
 
 class ScrollEventWeb(val source:WheelEvent) extends ScrollEvent {
-     def amount:Int = source.deltaX.toInt
+     def amount:Double = source.deltaX.toInt
 }
 
 

@@ -57,7 +57,7 @@ abstract class ArmatureBehavior(val name:String) {
 	def animate(t:Long)
 	
 	/** True if the behavior is finished. In this case, you can use
-	  * [[start(Long)]] to restart it. */
+	  * start(Long)` to restart it. */
 	def finished(t:Long):Boolean
 
 	override def toString():String = "%s".format(name)
@@ -284,7 +284,7 @@ abstract class JointBehavior(name:String, val joint:Joint) extends ArmatureBehav
   * rotation and scale.
   *
   * The interpolation is time based, this means that knowing the start of the behavior and its
-  * duration, when [[animate()]] is called, the interpolated value depends on the time. */
+  * duration, when `animate() is called, the interpolated value depends on the time. */
 abstract class LerpBehavior(name:String, joint:Joint, val duration:Long) extends JointBehavior(name, joint) {
 	var from = 0L
 

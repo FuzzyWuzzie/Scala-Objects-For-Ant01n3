@@ -13,7 +13,7 @@ import org.sofa.math.{Point2, Point3, Point4, Rgba}
   * The way the text layer work is that at some point in your rendering process,
   * you issue a string at a given position. This position can either be pixels,
   * or your current space (in which case the position is projected in pixels).
-  * Then at the end of the current frame rendering, the [[render()]] method is
+  * Then at the end of the current frame rendering, the `render()` method is
   * called, and all strings are displayed at once in an optimized way. Then
   * these memorized strings are cleared for the next rendering pass.
   *
@@ -64,27 +64,27 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	/** Set the current color. All subsequently inserted strings will use it. */
 	def color(r:Double, g:Double, b:Double, a:Double) { color = Rgba(r, g, b, a) }
 
-	/** Request that the string `text` be displayed at next call to [[render()]] at (`x`, `y`) in pixels. */
+	/** Request that the string `text` be displayed at next call to `render()` at (`x`, `y`) in pixels. */
 	def stringpx(text:String, x:Double, y:Double) { stringpx(text, Point4(x, y, 0, 1)) }
 
-	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in pixels. */
+	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels. */
 	def stringpx(text:String, position:Point2) { stringpx(text, Point4(position.x, position.y, 0, 1)) }
 
-	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in pixels. */
+	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels. */
 	def stringpx(text:String, position:Point3) { stringpx(text, Point4(position.x, position.y, 0, 1)) }
 
-	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in pixels. */
+	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels. */
 	def stringpx(text:String, position:Point4) { font.addItem(text, position, Rgba(color)) }
 
-	/** Request that the string `text` be displayed at next call to [[render()]] at (`x`, `y`, `z`) in the current `space`.
+	/** Request that the string `text` be displayed at next call to `render()` at (`x`, `y`, `z`) in the current `space`.
 	  * This position is first "projected" in pixel coordinates using `space`. */
 	def string(text:String, x:Double, y:Double, z:Double, space:Space) { string(text, Point4(x, y, z, 1), space) }
 
-	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in the current `space`.
+	/** Request that the string `text` be displayed at next call to `render()` at `position` in the current `space`.
 	  * This position is first "projected" in pixel coordinates using `space`. */
 	def string(text:String, position:Point3, space:Space) { string(text, Point4(position.x, position.y, position.z, 1), space) }
 
-	/** Request that the string `text` be displayed at next call to [[render()]] at `position` in the current `space`.
+	/** Request that the string `text` be displayed at next call to `render()` at `position` in the current `space`.
 	  * This position is first "projected" in pixel coordinates using `space`. */
 	def string(text:String, position:Point4, space:Space) {
 		var pos:Point4 = position
@@ -138,10 +138,10 @@ object FontLayer {
 
 /** A layer of text items with an unique font.
   *
-  * This allows to render strings with the same font in grousp, to avoid
+  * This allows to render strings with the same font in groups, to avoid
   * texture and GL attribute switches. 
   *
-  * The font layer uses the following strategy to avoid create new strings
+  * The font layer uses the following strategy to avoid creating new strings
   * at each render pass :
   *   - There is a pool of already used strings.
   *   - There is a set of strings to render.
@@ -209,8 +209,8 @@ class FontLayer(val gl:SGL, val font:GLFont, val textlayer:TextLayer) {
 /** A single text item.
   *
   * A text item contains and maintain a single [[GLString]], its position, font, and 
-  * color. The string has by default a capacity of [[FontLayer.MaxChars]] characters.
-  * It can grow if one uses a text string larger and will never shrink. 
+  * color. The string has by default a capacity of [[FontLayer#MaxChars]] characters.
+  * It can grow if one uses a text string larger and will never shrink.
   */
 class TextItem(var text:String, val font:FontLayer, val position:Point4, val color:Rgba) {
 	

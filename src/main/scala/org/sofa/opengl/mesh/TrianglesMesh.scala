@@ -183,7 +183,7 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	}
 	
 	/** The i-th triangle in the index array. The returned tuple contains the three indices of
-	  * points in the position vertex array. See [[getPoint(Int)]]. */
+	  * points in the position vertex array. See getPoint(Int)`. */
 	def getTriangle(i:Int):(Int,Int,Int) = {
 		val p = i*3
 		(I(p), I(p+1), I(p+2))

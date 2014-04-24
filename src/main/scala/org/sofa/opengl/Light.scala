@@ -20,7 +20,7 @@ object WhiteLight {
 /** A simple, non colored, light modelisation.
   *
   * This light class is able to setup a shader uniform variables with its
-  * [[uniform()]] methods, provided
+  * `uniform()` methods, provided
   * the shader uses either one light which is a structure of the form:
   *     struct WhiteLight {
   *	        vec3 pos;
@@ -129,7 +129,7 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
 
 /** A simple hemisphere ligh modelisation.
   *
-  * To use the [[uniform()]] methods, your shader must have a `HemisphereLight` structure
+  * To use the `uniform()` methods, your shader must have a `HemisphereLight` structure
   * like this:
   *     struct HemisphereLight {
   *         vec3 pos;

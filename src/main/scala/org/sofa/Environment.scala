@@ -5,6 +5,7 @@ import java.io.{File, FileNotFoundException, InputStream, FileInputStream, IOExc
 import scala.collection.mutable.{HashMap, ArrayBuffer}
 import scala.io.Source
 
+
 /** Representation of a set of parameters that can be read from the command line
   * or configuration files and automatically stored in objects.
   * 

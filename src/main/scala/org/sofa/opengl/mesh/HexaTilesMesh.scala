@@ -24,7 +24,7 @@ object HexaTilesMesh {
   *
   * A mesh of independant hexagonal tiles representing a tesselation, arranged as
   * a 2D grid. The grid is axonometric and isometric. Each point not on the border
-  * of the tile grid divides in three edges. Each of these edge is 30° (Pi/6 radians)
+  * of the tile grid divides in three edges. Each of these edge is 120°
   * of each other.
   *
   * By default the tile edges are all of length 1 unit. This means that
@@ -32,17 +32,18 @@ object HexaTilesMesh {
   *
   * Althought the tiles are not aligned vertically, we map the grid
   * on a 2D square grid for indicing. The above-at-right cell of a cell is
-  * considered above vertically. 
+  * considered above vertically in the square grid. 
   *
-  * The first cell is at (0,0) and each cell is indexed in 2D as usual.
+  * The first cell is at (0,0) and each cell is indexed in 2D grid as usual.
   * The center of this first cell is also at (0,0) in the user space. This
   * allows to easily find cells centers.
   *
   * Some ratios allow to change the tiles while preserving their isometric
-  * properties. The ratio parameter allows to grow the the tiles.
+  * properties. The ratio parameter allows to grow the tiles.
   *
   * To give an illusion of perspective one can squeeze the
   * height of the vertical segments of tiles. This is the perspective ratio.
+  * Only the vertical segments are changed, to preserve the angles.
   *
   * Each tile owns its points, tiles do not share points. This means that they
   * have independant vertex attributes, like texture, etc.
@@ -283,10 +284,9 @@ class HexaTilesMesh(
 
     // -- Edition -----------------------------------------------------
 
-    /** Change the color of all the points of a cell given by its X and Y coordinates.
+    /** Change the texture of a given tile.
       *
-      * Be careful that changing a cell points colors will affect neightbor cells since
-      * points are shared.
+      * The tile and the texture are indicated by their coordinates in the 2D grid.
       */
 	def setTileTexture(x:Int, y:Int, tx:Int, ty:Int) { 
 		throw new RuntimeException("TODO setTileTexture")

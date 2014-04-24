@@ -110,3 +110,27 @@ class Box3PosCentered extends Box3 {
 		to.set(pos.x + width/2, to.y + height/2, to.z + depth/2)
 	}	
 }
+
+
+/** A basic implementation of [[Box3]] that computes its `from` and `to`
+  * points from its position and size. */
+class Box3Sized extends Box3 {
+	val pos = Point3(0, 0, 0)
+
+	val size = Vector3(1, 1, 1)
+
+	def from = Point3(pos.x-size(0)/2, pos.y-size(1)/2, pos.z-size(2)/2)
+	
+	def to = Point3(pos.x+size(0)/2, pos.y+size(1)/2, pos.z+size(2)/2)
+
+	def setPosition(x:Double, y:Double, z:Double) = pos.set(x, y, z)
+
+	def setBox(fromx:Double, fromy:Double, fromz:Double, tox:Double, toy:Double, toz:Double) {
+		size.set(tox-fromx, toy-fromy, toz-fromz)
+		pos.set(fromx+size(0)/2, from.y+size(1)/2, from.z+size(2)/2)
+	}
+
+	def setSize(width:Double, height:Double, depth:Double) {
+		size.set(width, height, depth)
+	}	
+}

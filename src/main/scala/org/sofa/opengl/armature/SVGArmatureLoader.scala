@@ -151,7 +151,7 @@ class SVGArmatureLoader {
 	/** The armature hierarchy declaration. */
 	protected var armatureDecl:String = null
 
-	/** The set of [[Armature]] [[Joints]] built fromt the armature declaration. */
+	/** The set of [[Armature]] [[Joint]]s built fromt the armature declaration. */
 	protected val joints = new HashMap[String,Joint]
 
 	/** Load an [[Armature]] from a SVG file.

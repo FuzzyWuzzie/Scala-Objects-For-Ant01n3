@@ -9,7 +9,7 @@ import com.jogamp.newt.opengl._
 
 import org.sofa.math.Point3
 import org.sofa.opengl.actor.renderer.{Renderer, AvatarFactory}
-import org.sofa.opengl.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarMotionEvent, AvatarKeyEvent}
+import org.sofa.opengl.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarMotionEvent, AvatarKeyEvent, AvatarZoomEvent}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, MotionEvent, KeyEvent, ScrollEvent}
 
 import akka.actor.{ActorRef}
@@ -44,14 +44,13 @@ class RendererNewt(controller:ActorRef, factory:AvatarFactory=null) extends Rend
 
 	def onScroll(surface:Surface, e:ScrollEvent) {
 		if(screen ne null) {
-			// Simulate a motion event
-			println("@@ scroll event")
+			screen.propagateEvent(NewtAvatarZoomEvent(e))
 		}
 	}
 
 	def onKey(surface:Surface, e:KeyEvent) {
 		if(screen ne null) {
-			println("@@ key event")
+			println("@@ TODO key event")
 		}
 	}
 
@@ -74,24 +73,24 @@ class RendererNewt(controller:ActorRef, factory:AvatarFactory=null) extends Rend
 						val deltaTime = System.currentTimeMillis - prevMotionEventTime
 						if(deltaTime >= 1000) {
 							// Long click.
-							println("@@ long click")
+							//println("@@ long click")
 							screen.propagateEvent(NewtAvatarLongClickEvent(e))
 						} else {
 							// Click
-							println("@@ click")
+							//println("@@ click")
 							screen.propagateEvent(NewtAvatarClickEvent(e))
 						}
 					} else {
 						// Send end motion
 						screen.propagateEvent(NewtAvatarMotionEvent(e))
-						println("@@ motion end")
+						//println("@@ motion end")
 
 					}
 					prevMotionEvent = null
 				} else {
 					prevMotionEvent = e
 					// Send motion
-					println("@@ motion")
+					//println("@@ motion")
 					screen.propagateEvent(NewtAvatarMotionEvent(e))
 				}
 			}
@@ -128,4 +127,10 @@ class NewtAvatarMotionEvent(val source:MotionEvent) extends AvatarMotionEvent {
 
 	def pressure(i:Int):Double = source.pressure(i)
 
+}
+
+object NewtAvatarZoomEvent { def apply(source:ScrollEvent) = new NewtAvatarZoomEvent(source) }
+class NewtAvatarZoomEvent(val source:ScrollEvent) extends AvatarZoomEvent {
+	// TODO probably add a factor...
+	def amount:Double = source.amount
 }

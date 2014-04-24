@@ -154,7 +154,7 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
 
 class ScrollEventAndroid(val source:android.view.MotionEvent) extends org.sofa.opengl.surface.ScrollEvent {
     // Not supported in > 10 (> android 2.3)
-    def amount:Int = 0//source.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL).toInt
+    def amount:Double = 0//source.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL).toInt
 }
 
 class MotionEventAndroid(val source:android.view.MotionEvent) extends org.sofa.opengl.surface.MotionEvent {

@@ -35,7 +35,7 @@ trait PointOfView {
     var focus = Vector3(0, 0, 0)
 
     /** Distance between the two eyes divided by two. This value is used
-      * by [[lookAtLeftEye]] and [[lookAtRightEye]]. */
+      * by `lookAtLeftEye` and `lookAtRightEye`. */
     var eyeAngle = Pi / 64.0
 
 	/** Distance from the eye to the focus. */    
@@ -57,7 +57,7 @@ trait PointOfView {
     def phi:Double = sphericalEye.y
 
     /** Set the coordinates of the camera "eye" in spherical coordinates. This will be used
-      * to define the "view" part of the model-view matrix when using [[setupView()]].
+      * to define the "view" part of the model-view matrix when using `setupView()`.
       * The coordinates (0,0,x) (with x > 0) are just above the world, aligned with the
       * y axis. Positive values for theta angle go CCW and positive values for phi go CW.
       * Angles are in radians. */
@@ -67,7 +67,7 @@ trait PointOfView {
     }
     
     /** Set the coordinates of the camera "eye" in Cartesian coordinates. This will be used
-      * to define the "view" part of the model-view matrix when using [[setupView()]]. */
+      * to define the "view" part of the model-view matrix when using `setupView()`. */
     def eyeCartesian(x:Double, y:Double, z:Double) {
         cartesianEye.set(x, y, z)
         sphericalFromCartesian

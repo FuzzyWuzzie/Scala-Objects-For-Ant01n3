@@ -1,6 +1,7 @@
 package org.sofa.opengl.actor.renderer.avatar.ui
 
 import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
+import org.sofa.opengl.{ShaderResource}
 import org.sofa.opengl.actor.renderer.{Screen}
 import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState}
 import org.sofa.opengl.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarMotionEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarKeyEvent}
@@ -46,7 +47,7 @@ trait UIrenderUtils {
 		val gl     = screen.gl
 
 		if(shader eq null) {
-			shader = ShaderProgram(gl, "uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl")
+			shader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		}
 
 		if(mesh eq null) {

@@ -20,7 +20,7 @@ class QuadsMesh(quadCount:Int) extends TrianglesMesh(quadCount * 2) {
 	}
 	
 	/** The i-th triangle in the index array. The returned tuple contains the three indices of
-	  * points in the position vertex array. See [[getPoint(Int)]]. */
+	  * points in the position vertex array. See getPoint(Int)`. */
 	def getQuad(i:Int):(Int,Int,Int,Int) = {
 		val q  = i * 2
 		val t1 = getTriangle(q)
@@ -208,7 +208,7 @@ class RealQuadsMesh(val size:Int) extends Mesh {
 	def getPointTexCoord(i:Int):(Float,Float) = (T(i*2), T(i*2+1))
 
 	/** The i-th triangle in the index array. The returned tuple contains the three indices of
-	  * points in the position vertex array. See [[getPoint(Int)]]. */
+	  * points in the position vertex array. See `getPoint(Int)`. */
 	def getQuad(i:Int):(Int,Int,Int,Int) = {
 		val p = i*4
 		(I(p), I(p+1), I(p+2), I(p+3))

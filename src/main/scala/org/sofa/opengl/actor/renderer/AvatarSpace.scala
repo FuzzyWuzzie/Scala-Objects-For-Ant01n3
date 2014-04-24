@@ -17,13 +17,17 @@ trait AvatarSpaceState extends AvatarState {}
   * space but as seen by sub-avatars and by the [[AvatarRender]] of this avatar.
   *
   * In this case we call it sub-space. It defines
-  * a transformation that push the new space onto graphic state (`pushSubSpace()`,
+  * a transformation that pushes the new space onto graphic state (`pushSubSpace()`,
   * and `popSubSpace()`). It then allows to pop it back to restore the avatar space.
   *
   * The accessors `thisSpace` and `subSpace` define bounding boxes that define the
   * overall size of the avatar and its origin. Note that the origin need not be
   * inside the bouding box. Also the two bounding box, if seen from the same space,
   * are free to be distinct.
+  *
+  * The initial root space of the screen is the one of OpenGL. It is [-1, 1] on the
+  * X axis, with positive X toward the right, [-1, 1] on Y axis with positive Y
+  * upward and Z positive axis out of the scren (right handed system).
   */
 trait AvatarSpace {
 	/** The avatar. */

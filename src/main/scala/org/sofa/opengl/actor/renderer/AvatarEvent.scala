@@ -24,7 +24,8 @@ trait AvatarEvent {
 }
 
 
-/** An interaction event occured at a given position in the screen space. */
+/** An interaction event occured at a given position in the screen space.
+  * Root of all spatialized avatar events. */
 trait  AvatarSpatialEvent extends AvatarEvent {
 	/** Position of the only pointer or average of position of all cursors. */
 	def position:Point3
@@ -62,6 +63,13 @@ trait AvatarMotionEvent extends AvatarSpatialEvent {
 
 	/** Pressure of each individual pointer. */
 	def pressure(i:Int):Double
+}
+
+
+/** A trait for zoom events (pinch on touch devices or scroll wheel on mouses for example). */
+trait AvatarZoomEvent extends AvatarEvent {
+	/** Positive or negative amount of zoom. */
+	def amount:Double
 }
 
 

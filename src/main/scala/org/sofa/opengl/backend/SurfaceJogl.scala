@@ -366,13 +366,37 @@ class SurfaceNewt(
             case _ => {}
         }
     }
+
+    private[this] var inMotion = false
+
     def mouseEntered(e:JoglMouseEvent) {}
-    def mouseExited(e:JoglMouseEvent) {}
+    def mouseExited(e:JoglMouseEvent) { 
+    	// Ensure we receive a motion end when the mouse leave the window.
+    	// (Two case, when the mouse is released out of the window or when coming back in it).
+    	if(inMotion) {
+    		eventQueue.enqueue(new MotionEventJogl(e, false, true))
+    		inMotion = false 
+    	}
+    }
     def mouseMoved(e:JoglMouseEvent) {}
-    def mousePressed(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, true, false)) }
-    def mouseDragged(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, false, false)) }
-    def mouseReleased(e:JoglMouseEvent) { eventQueue.enqueue(new MotionEventJogl(e, false, true)) }
-    def mouseWheelMoved(e:JoglMouseEvent) { eventQueue.enqueue(new ScrollEventJogl(e)) }
+    def mousePressed(e:JoglMouseEvent) {
+    	inMotion = true;
+    	eventQueue.enqueue(new MotionEventJogl(e, true, false)) 
+   	}
+    def mouseDragged(e:JoglMouseEvent) { 
+    	if(inMotion) {
+    		eventQueue.enqueue(new MotionEventJogl(e, false, false)) 
+    	}
+   	}
+    def mouseReleased(e:JoglMouseEvent) {
+    	if(inMotion) {
+    		inMotion = false
+    		eventQueue.enqueue(new MotionEventJogl(e, false, true)) 
+    	}
+    }
+    def mouseWheelMoved(e:JoglMouseEvent) {
+    	eventQueue.enqueue(new ScrollEventJogl(e)) 
+    }
 
     def printCaps() {
     	val prof = caps.getGLProfile
@@ -384,7 +408,6 @@ class SurfaceNewt(
     	println("version %s".format(ctx.getGLVersion))
     }
 }
-
 
 // -- NEWT events -------------------------------------------------------------------------------------------
 
@@ -418,7 +441,7 @@ class KeyEventJogl(val source:JoglKeyEvent) extends KeyEvent {
 }
 
 class ScrollEventJogl(source:JoglMouseEvent) extends ScrollEvent {
-    def amount:Int = source.getRotation()(0).toInt//source.getWheelRotation.toInt
+    def amount:Double = source.getRotation()(1)
 }
 
 class MotionEventJogl(source:JoglMouseEvent, pressed:Boolean, released:Boolean) extends MotionEvent {

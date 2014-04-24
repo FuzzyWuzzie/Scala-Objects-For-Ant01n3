@@ -63,18 +63,20 @@ abstract class Avatar(
 	val screen:Screen) extends Renderable with AvatarContainer {
 
 	/** The avatar parent, if any, set automatically when added into another avatar. */
-	protected var above:Avatar = null
+	protected[this] var above:Avatar = null
 
-	/** True after begin and before end. */
-	protected var rendering = false
+	/** True after a call to [begin] and before [end]. */
+	protected[this] var rendering = false
 
 // Access to components
 
-	/** The component of the avatar that handles position */
+	/** The component of the avatar that handles position. */
 	def space:AvatarSpace
 
+	/** The component of the avatar that handles rendering. */
 	def renderer:AvatarRender
 
+	/** The component of the avatar that handles interactions. */
 	def events:AvatarInteraction
 
 // Interaction
@@ -117,7 +119,7 @@ abstract class Avatar(
 	/** True if this avatar has a parent. */
 	def hasParent:Boolean = (above ne null)
 
-	/** Parent avatar read-only. */
+	/** Parent avatar (read-only). */
 	def parent:Avatar = above
 
 // Renderable
@@ -140,9 +142,11 @@ abstract class Avatar(
 	/** Animate the sub-avatars. */
 	def animateSubs()
 
+	/** Apply the given `code` to each sub-avatar. */
 	def foreachSub(code:(Avatar)=>Unit)
 
-	def findSub(code:(Avatar)=>Boolean):Option[Avatar]
+	/** Find the first sub-avatar that matches the given `predicate`. */
+	def findSub(predicate:(Avatar)=>Boolean):Option[Avatar]
 
 // Utility
 
@@ -166,7 +170,10 @@ abstract class DefaultAvatar(
 }
 
 
-/** A default base avatar that mixes [[AvatarSpace]] and [[AvatarRender]]. */
+/** A default base avatar that mixes [[AvatarSpace]] and [[AvatarRender]].
+  * 
+  * This means that avatars inheriting this class cannot dynamically change their
+  * space transformation and renderer. */
 abstract class DefaultAvatarMixed(name:AvatarName, screen:Screen) extends DefaultAvatar(name, screen) with AvatarSpace with AvatarRender {
 
 	def space:AvatarSpace = this
