@@ -3,7 +3,7 @@ package org.sofa.opengl.actor.renderer.avatar.game
 import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default, Box3Sized}
 import org.sofa.opengl.{Texture, ShaderResource, ModelResource, TextureResource, TexParams}
 import org.sofa.opengl.actor.renderer.{Screen}
-import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarRenderState}
+import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarRenderState, AvatarBaseStates}
 import org.sofa.opengl.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarMotionEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarKeyEvent, AvatarZoomEvent}
 import org.sofa.opengl.actor.renderer.{NoSuchAvatarException}
 
@@ -15,7 +15,7 @@ import org.sofa.opengl.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh, He
 
 
 /** Number of cells in width and height of the hexa tile mesh. */
-case class IsoCellGridSize(width:Int, height:Int) extends AvatarRenderState {}
+case class IsoCellGridSize(size:Vector3) extends AvatarRenderState {}
 
 
 class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils {
@@ -36,9 +36,9 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 		val gl = self.screen.gl
 
 		state match {
-			case IsoCellGridSize(width,height) => {
+			case IsoCellGridSize(size) => {
 				if(hexaTile ne null) hexaTile.dispose
-				hexaTile = new HexaTilesMesh(width, height, 1f, 1f, 1, 1)
+				hexaTile = new HexaTilesMesh(size.width.toInt, size.height.toInt, 1f, 1f, 1, 1)
 				imageShader = screen.libraries.shaders.addAndGet(gl, "image-shader", ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
 				hexaTile.newVertexArray(gl, imageShader, Vertex -> "position", TexCoord -> "texCoords")
 				hexaTex = screen.libraries.textures.addAndGet(gl, "one-hexa-tile", TextureResource("one-hexa-tile", "OneTile.png", TexParams()))
@@ -63,7 +63,7 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 		} else {
 			screen.space.pushpop {
 				gl.enable(gl.BLEND)
-				screen.space.scale(space.subSpace.size(0), space.subSpace.size(1), 1)
+				//screen.space.scale(space.subSpace.size(0), space.subSpace.size(1), 1)
 				imageShader.use
 				hexaTex.bindUniform(gl.TEXTURE0, imageShader, "texColor")
 				screen.space.uniformMVP(imageShader)
@@ -81,7 +81,8 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 
 
 /** Space for a cell.
-  * The cell does not resizes the space, it only translates to its position.
+  * The cell does not resizes the space, it only translates to its position, therefore
+  * super and sub spaces are the same.
   * The while game works in the world coordinates. */
 class IsoCellGridSpace(avatar:Avatar) extends IsoSpace(avatar) {
 	var scale1cm = 1.0
@@ -91,30 +92,37 @@ class IsoCellGridSpace(avatar:Avatar) extends IsoSpace(avatar) {
 		size.set(1, 1, 1)
 	}
 
-	var toSpace = new Box3Sized {
-		pos.set(0, 0, 0)
-		size.set(1, 1, 1)
-	}
+	var toSpace = fromSpace
 
 	def thisSpace = fromSpace
 
 	def subSpace = toSpace
 
-	override def animateSpace() {
+	override def changeSpace(newState:AvatarSpaceState) {
+		newState match {
+			case AvatarBaseStates.Move(offset) => {
+				fromSpace.pos.x += offset.x * scala.math.sqrt(3)
+				fromSpace.pos.y += offset.y * 2 * (3.0/4.0)
+			}
+			case AvatarBaseStates.Resize(size) => {
+				self.renderer.changeRender(IsoCellGridSize(size))
+				fromSpace.size.copy(size)
+			}
+			case _ => super.changeSpace(newState)
+		}
 	}
 
+	override def animateSpace() {}
+
 	def pushSubSpace() {
- 		scale1cm = self.parent.space.scale1cm
-		
+ 		scale1cm  = self.parent.space.scale1cm		
 		val space = self.screen.space
 
  		space.push
  		space.translate(fromSpace.pos.x, fromSpace.pos.y, 0)
 	}
 
-	def popSubSpace() {
-		self.screen.space.pop
-	}
+	def popSubSpace() { self.screen.space.pop }
 }
 
 

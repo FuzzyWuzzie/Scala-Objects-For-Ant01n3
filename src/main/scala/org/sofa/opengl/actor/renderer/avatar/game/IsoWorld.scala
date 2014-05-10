@@ -3,7 +3,7 @@ package org.sofa.opengl.actor.renderer.avatar.game
 import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default, Box3Sized}
 import org.sofa.opengl.{Texture, ShaderResource, ModelResource, TextureResource, TexParams}
 import org.sofa.opengl.actor.renderer.{Screen}
-import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarRenderState}
+import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarRenderState, AvatarBaseStates}
 import org.sofa.opengl.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarMotionEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarKeyEvent, AvatarZoomEvent}
 import org.sofa.opengl.actor.renderer.{NoSuchAvatarException}
 
@@ -55,10 +55,10 @@ class IsoWorldSpace(avatar:Avatar) extends IsoSpace(avatar) {
 
 	override def changeSpace(newState:AvatarSpaceState) {
 		newState match {
-			case IsoWorldMove(direction) => {
-				direction /= (MoveFactor/zoom)
-				//toSpace.pos.set(toSpace.pos.x + direction.x, toSpace.pos.y - direction.y, toSpace.pos.z)
-				toSpace.pos += direction
+			case AvatarBaseStates.Move(offset) => {
+				offset /= (MoveFactor/zoom)
+				//toSpace.pos.set(toSpace.pos.x + offset.x, toSpace.pos.y - offset.y, toSpace.pos.z)
+				toSpace.pos += offset
 			}
 			case IsoWorldZoom(amount) => {
 				zoom += amount / MoveFactor
@@ -102,9 +102,6 @@ class IsoWorldSpace(avatar:Avatar) extends IsoSpace(avatar) {
 // == Avatars ====================================================================
 
 
-case class IsoWorldMove(direction:Vector3) extends AvatarSpaceState {}
-
-
 case class IsoWorldZoom(amount:Double) extends AvatarSpaceState {}
 
 
@@ -126,7 +123,7 @@ class IsoWorld(name:AvatarName, screen:Screen)
 					prevMotionEvent = null
 				} else {
 					if(prevMotionEvent ne null) {
-						space.changeSpace(IsoWorldMove(prevMotionEvent.position --> e.position))
+						space.changeSpace(AvatarBaseStates.Move(prevMotionEvent.position --> e.position))
 					}
 					prevMotionEvent = e
 				}

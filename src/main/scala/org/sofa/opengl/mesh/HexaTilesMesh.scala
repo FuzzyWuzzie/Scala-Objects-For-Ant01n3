@@ -97,6 +97,14 @@ class HexaTilesMesh(
     /** End position of the last modification inside the color array. */
     protected var tend = 0
 
+    def tileHeight = 2.0
+
+    def tileWidth = scala.math.sqrt(3)
+
+    def tileOffsetX = tileWidth
+
+    def tileOffsetY = 2.0 * (3.0/4.0)
+
     // -- Mesh creation ------------------------------------------------
 
     protected def setPoint(p:Int, x:Float, y:Float, data:FloatBuffer=V) {

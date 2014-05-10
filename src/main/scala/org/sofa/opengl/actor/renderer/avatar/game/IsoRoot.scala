@@ -17,6 +17,7 @@ class IsoWorldAvatarFactory extends DefaultAvatarFactory {
 			case "iso-root"      => new IsoRoot(name, screen)
 			case "iso-world"     => new IsoWorld(name, screen)
 			case "iso-cell-grid" => new IsoCellGrid(name, screen)
+			case "iso-cell"      => new IsoCell(name, screen)
 			case "iso-entity"    => new IsoEntity(name, screen)
 			case _               => throw new NoSuchAvatarException("avatar kind %s does not exist in avatar factory 'Iso'".format(kind))
 		}
@@ -100,8 +101,8 @@ class IsoRootRender(avatar:Avatar) extends IsoRender(avatar) {
 	override def render() {
 		val gl = screen.gl
 
-		gl.clearColor(Rgba.White)
-		gl.clear(gl.COLOR_BUFFER_BIT)
+		gl.clearColor(Rgba.Grey50)
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		gl.lineWidth(1f)
 		gl.disable(gl.DEPTH_TEST)
