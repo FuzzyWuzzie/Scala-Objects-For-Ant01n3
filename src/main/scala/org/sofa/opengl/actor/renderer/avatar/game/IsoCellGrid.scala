@@ -14,8 +14,43 @@ import org.sofa.opengl.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh, He
 // == Renders ====================================================================
 
 
-/** Number of cells in width and height of the hexa tile mesh. */
-case class IsoCellGridSize(size:Vector3) extends AvatarRenderState {}
+case class IsoCellConfig(relief:Float, ground:Int = 0, underground:Int = 0) {}
+
+
+case class IsoCellGridRelief(relief:Array[Array[Float]]) extends AvatarRenderState {}
+
+
+case class IsoCellGridConfig(config:Array[Array[IsoCellConfig]]) extends AvatarRenderState {}
+
+
+object IsoCellGrid {
+	/** Shortcut to the value of sqrt(3). */
+	final val Sqrt3  = math.sqrt(3)
+	/** Number of cells along X. */
+	final val Width  = 10
+	/** Number of cells along Z. */
+	final val Height = 10
+
+	/** Bottom-left U texture coordinate of the four underground patterns. */
+	final val UGTexU = Array[Float](0.027f, 0.027f, 0.514f, 0.514f)
+	/** Bottom-left V texture coordinate of the four underground patterns. */
+	final val UGTexV = Array[Float](0.015f, 0.453f, 0.015f, 0.453f)
+
+	/** Bottom-left U texture coordinate of the six ground patterns. */
+	final val GTexU = Array[Float](0.027f, 0.027f, 0.027f, 0.514f, 0.514f, 0.514f)
+	/** Bottom-left V texture coordinate of the six ground patterns. */
+	final val GTexV = Array[Float](0.046f, 0.359f, 0.671f, 0.046f, 0.359f, 0.671f)
+
+	/** Width (U) in texture coordinate of an underground pattern. */
+	final val UGU = 0.433f
+	/** Height (V) in texture coordinate of an underground pattern. */
+	final val UGV = 0.468f
+
+	/** Width (U) in texture coordinate of an ground pattern. */
+	final val GU = 0.433f
+	/** Height (V) in texture coordinate of an ground pattern. */
+	final val GV = 0.281f
+}
 
 
 class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils {
@@ -24,28 +59,211 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 
 	lineColor = Rgba.Black
 
-	protected[this] var hexaTile:HexaTilesMesh = null
+	protected[this] var ground:TrianglesMesh = null
 
-	protected[this] var hexaTex:Texture = null
+	protected[this] var underground:TrianglesMesh = null
 
-	protected[this] var imageShader:ShaderProgram = null
+	protected[this] var groundMask:Texture = null
+
+	protected[this] var undergroundMask:Texture = null
+
+	protected[this] var groundColor:Texture = null
+
+	protected[this] var undergroundColor:Texture = null
+
+	protected[this] var isoShader:ShaderProgram = null
 
 	override def changeRender(state:AvatarRenderState) {
+		import IsoCellGrid._
+	 	state match {
+	 		case IsoCellGridConfig(config) => if(config.length >= Height && config(0).length >= Width) {
+	 			init(config)
+	 		} else {
+	 			Console.err.println(s"bad config size for IsoCellGridRender, expected at least (${Width}x${Height}) got (${config.length}x${config(0).length})")
+	 		}
+	 		case IsoCellGridRelief(relief) => if(relief.length >= Height && relief(0).length >= Width) {
+	 			changeRelief(relief)
+	 		} else {
+	 			Console.err.println(s"bad relief size for IsoCellGridRender, expected at least (${Width}x${Height}) got (${relief.length}x${relief(0).length})")
+	 		}
+	 		case _ => super.changeRender(state)
+	 	}
+	}
+
+	protected def init(config:Array[Array[IsoCellConfig]]) {
 		import VertexAttribute._
+		import IsoCellGrid._
 
 		val gl = self.screen.gl
 
-		state match {
-			case IsoCellGridSize(size) => {
-				if(hexaTile ne null) hexaTile.dispose
-				hexaTile = new HexaTilesMesh(size.width.toInt, size.height.toInt, 1f, 1f, 1, 1)
-				imageShader = screen.libraries.shaders.addAndGet(gl, "image-shader", ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
-				hexaTile.newVertexArray(gl, imageShader, Vertex -> "position", TexCoord -> "texCoords")
-				hexaTex = screen.libraries.textures.addAndGet(gl, "one-hexa-tile", TextureResource("one-hexa-tile", "OneTile.png", TexParams()))
+		if(ground      ne null) ground.dispose
+		if(underground ne null) underground.dispose
+		
+		ground      = new TrianglesMesh(2 * Width * Height)
+		underground = new TrianglesMesh(2 * Width * Height)
+		
+		isoShader = screen.libraries.shaders.addAndGet(gl, "iso-shader", ShaderResource("iso-shader", "iso.vert.glsl", "iso.frag.glsl"))
+		
+		groundColor      = screen.libraries.textures.addAndGet(gl, "ground-color-1",      TextureResource("ground-color-1",      "IsoTemplate_1024_Ground.png",           TexParams()))
+		undergroundColor = screen.libraries.textures.addAndGet(gl, "underground-color-1", TextureResource("underground-color-1", "IsoTemplate_1024_Underground.png",      TexParams()))
+		groundMask       = screen.libraries.textures.addAndGet(gl, "ground-mask-1",       TextureResource("ground-mask-1",       "IsoTemplate_1024_Ground-Mask.png",      TexParams()))
+		undergroundMask  = screen.libraries.textures.addAndGet(gl, "underground-mask-1",  TextureResource("underground-mask-1",  "IsoTemplate_1024_Underground-Mask.png", TexParams()))
+
+		// Underground:
+		//     Width:  4*sqrt(3)
+		//     Height: 8
+		// Ground:
+		//     Width:  4*sqrt(3)
+		//     Height: 4.5
+		// Offset tiles:
+		//     Width:  2*sqrt(3)
+		//     Height: 2
+		// Offset Underground:
+		//     Width: 0
+		//     Height: -0.5
+
+		// 2+    5+----+4
+		//  |\     \   |
+		//  | \     \ B|
+		//  | A\     \ |
+		//  |   \     \|
+		// 0+----+1    +3
+
+		var x  = 0
+		var y  = 0
+		var p  = 0
+		var t  = 0
+		
+		val w2 = (2 * Sqrt3).toFloat
+		var h2 = 2f
+
+
+		val u0 = 0.027f
+		val v0 = 0.0
+		val uu = 0.433f
+		val vv = 0.468f
+
+		while(y < Height) {
+			x = 0
+			while(x < Width) {
+				h2 = 2f
+
+				val re = if(savedRelief ne null) savedRelief(y)(x) else config(y)(x).relief 			// Relief (offset y)
+				val xx = (if(y % 2 == 0) (x * 4 * Sqrt3) else (x * 4 * Sqrt3 + 2 * Sqrt3)).toFloat		// x center of cell
+				val yy = y * 2f																			// y center of cell
+				val zz = y * 0.1f																		// depth
+				var gu = GTexU(config(y)(x).ground)														// left-bottom U of tex
+				var gv = GTexV(config(y)(x).ground)														// left-bottom V of tex
+
+				ground.setPoint(p+0, xx-w2, (yy-(h2+0.5f))+re, zz); ground.setPointTexCoord(p+0, gu,      gv)
+				ground.setPoint(p+1, xx+w2, (yy-(h2+0.5f))+re, zz); ground.setPointTexCoord(p+1, gu + GU, gv)
+				ground.setPoint(p+2, xx-w2, (yy+h2       )+re, zz); ground.setPointTexCoord(p+2, gu,      gv + GV)
+				ground.setPoint(p+3, xx+w2, (yy-(h2+0.5f))+re, zz); ground.setPointTexCoord(p+3, gu + GU, gv)
+				ground.setPoint(p+4, xx+w2, (yy+h2       )+re, zz); ground.setPointTexCoord(p+4, gu + GU, gv + GV)
+				ground.setPoint(p+5, xx-w2, (yy+h2       )+re, zz); ground.setPointTexCoord(p+5, gu,      gv + GV)
+				
+				ground.setTriangle(t+0, p+0, p+1, p+2)
+				ground.setTriangle(t+1, p+3, p+4, p+5)
+
+				h2 = 8f
+				gu = UGTexU(config(y)(x).underground)
+				gv = UGTexV(config(y)(x).underground)
+
+				underground.setPoint(p+0, xx-w2, yy-(h2+0.5f), zz); underground.setPointTexCoord(p+0, gu,       gv)
+				underground.setPoint(p+1, xx+w2, yy-(h2+0.5f), zz); underground.setPointTexCoord(p+1, gu + UGU, gv)
+				underground.setPoint(p+2, xx-w2, yy-(   0.5f), zz); underground.setPointTexCoord(p+2, gu,       gv + UGV)
+				underground.setPoint(p+3, xx+w2, yy-(h2+0.5f), zz); underground.setPointTexCoord(p+3, gu + UGU, gv)
+				underground.setPoint(p+4, xx+w2, yy-(   0.5f), zz); underground.setPointTexCoord(p+4, gu + UGU, gv + UGV)
+				underground.setPoint(p+5, xx-w2, yy-(   0.5f), zz); underground.setPointTexCoord(p+5, gu,       gv + UGV)
+
+				underground.setTriangle(t+0, p+0, p+1, p+2)
+				underground.setTriangle(t+1, p+3, p+4, p+5)
+
+				p += 6
+				t += 2
+				x += 1
 			}
-			case _ => super.changeRender(state)
+
+			y += 1
 		}
 
+		ground.newVertexArray(gl, isoShader, Vertex -> "position", TexCoord -> "texCoords")
+		underground.newVertexArray(gl, isoShader, Vertex -> "position", TexCoord -> "texCoords")				
+		changedRelief = false
+		savedRelief = null
+	}
+
+	protected[this] var changedRelief = false
+	protected[this] val lightDir = Vector3(1, 1.5, 0)
+	protected[this] var dir = 0.01
+
+	protected def changeRelief(relief:Array[Array[Float]]) {
+		import IsoCellGrid._
+
+		if(ground ne null) {
+			var x = 0
+			var y = 0
+
+			while(y < Height) {
+				x = 0
+				while(x < Width) {
+					if(relief(y)(x) != 0)
+						changeReliefAt(x, y, relief(y)(x))
+
+					x += 1
+				}
+
+				y += 1
+			}
+
+		} else {
+			savedRelief = relief
+		}
+	}
+
+	protected[this] var savedRelief:Array[Array[Float]] = null
+
+	protected def changeReliefAt(x:Int, y:Int, delta:Float) {
+		if(ground ne null) {
+			import IsoCellGrid._
+
+			val xx = (if(y % 2 == 0) (x * 4 * Sqrt3) else (x * 4 * Sqrt3 + 2 * Sqrt3)).toFloat
+			val yy = y * 2f
+			val zz = y * 0.1f
+			val p  = (y * Width + x) * 6
+			val t  = (y * Width + x) * 2
+
+			val w2 = (2 * Sqrt3).toFloat
+			var h2 = 2f
+
+			ground.setPoint(p+0, xx-w2, (yy-(h2+0.5f))+delta, zz)
+			ground.setPoint(p+1, xx+w2, (yy-(h2+0.5f))+delta, zz)
+			ground.setPoint(p+2, xx-w2, (yy+ h2      )+delta, zz)
+			ground.setPoint(p+3, xx+w2, (yy-(h2+0.5f))+delta, zz)
+			ground.setPoint(p+4, xx+w2, (yy- h2      )+delta, zz)
+			ground.setPoint(p+5, xx-w2, (yy- h2      )+delta, zz)
+
+			h2 = 8f
+
+			underground.setPoint(p+0, xx-w2, (yy-(h2+0.5f))+delta, zz); underground.setPointTexCoord(p+0, 0.027f, 0.015f)
+			underground.setPoint(p+1, xx+w2, (yy-(h2+0.5f))+delta, zz); underground.setPointTexCoord(p+1, 0.460f, 0.015f)
+			underground.setPoint(p+2, xx-w2, (yy-(   0.5f))+delta, zz); underground.setPointTexCoord(p+2, 0.027f, 0.484f)
+			underground.setPoint(p+3, xx+w2, (yy-(h2+0.5f))+delta, zz); underground.setPointTexCoord(p+3, 0.460f, 0.015f)
+			underground.setPoint(p+4, xx+w2, (yy-(   0.5f))+delta, zz); underground.setPointTexCoord(p+4, 0.460f, 0.484f)
+			underground.setPoint(p+5, xx-w2, (yy-(   0.5f))+delta, zz); underground.setPointTexCoord(p+5, 0.027f, 0.484f)
+
+			changedRelief = true
+		}
+	}
+
+	protected def updateRelief() {
+		if(changedRelief) {
+			val gl = self.screen.gl
+			
+			ground.updateVertexArray(gl, updateVertices=true)
+			underground.updateVertexArray(gl, updateVertices=true)
+			changedRelief = false
+		}
 	}
 
 	override def render() {
@@ -53,25 +271,40 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 		val space = self.space
 		val text  = screen.textLayer
 
+		lightDir.x = lightDir.x + dir
+		lightDir.z = lightDir.z - dir
+
+		if(lightDir.x > 1) { lightDir.x = 1; dir = -dir }
+		else if(lightDir.x < 0) { lightDir.x = 0; dir = -dir }
+		if(lightDir.z > 1) { lightDir.z = 1 }
+		else if(lightDir.z < 0) { lightDir.z = 0 }
 
 		space.pushSubSpace
-		if(hexaTile eq null) {
-			fillAvatarBox
-			text.font("Ubuntu-L.ttf", 13)
-			text.color(Rgba.Black)
-			text.string("Hello", 0.2, 0.1, 0, screen.space)
-		} else {
-			screen.space.pushpop {
-				gl.enable(gl.BLEND)
-				//screen.space.scale(space.subSpace.size(0), space.subSpace.size(1), 1)
-				imageShader.use
-				hexaTex.bindUniform(gl.TEXTURE0, imageShader, "texColor")
-				screen.space.uniformMVP(imageShader)
-				hexaTile.draw(gl)
-		        gl.disable(gl.BLEND)
-			}
-		}
-		self.renderSubs
+		
+			if(ground ne null) {
+				if(changedRelief) updateRelief
+
+				screen.space.pushpop {
+					gl.enable(gl.BLEND)
+					gl.enable(gl.DEPTH_TEST)
+					isoShader.use
+					undergroundColor.bindUniform(gl.TEXTURE0, isoShader, "texColor")
+					undergroundMask.bindUniform(gl.TEXTURE1, isoShader, "texMask")
+					isoShader.uniform("lightDir", lightDir)
+					screen.space.uniformMVP(isoShader)
+					underground.draw(gl)
+					screen.space.translate(0,0,-0.1)
+					screen.space.uniformMVP(isoShader)
+					groundColor.bindUniform(gl.TEXTURE0, isoShader, "texColor")
+					groundMask.bindUniform(gl.TEXTURE1, isoShader, "texMask")
+					ground.draw(gl)
+					gl.disable(gl.DEPTH_TEST)
+		       	 gl.disable(gl.BLEND)
+		    	}
+		    }
+
+			self.renderSubs
+		
 		space.popSubSpace		
 	}
 }
@@ -99,14 +332,19 @@ class IsoCellGridSpace(avatar:Avatar) extends IsoSpace(avatar) {
 	def subSpace = toSpace
 
 	override def changeSpace(newState:AvatarSpaceState) {
+		import IsoCellGrid._
+
 		newState match {
 			case AvatarBaseStates.Move(offset) => {
-				fromSpace.pos.x += offset.x * scala.math.sqrt(3)
-				fromSpace.pos.y += offset.y * 2 * (3.0/4.0)
+				println("Cannot move an iso cell, use MoveAt")
+			}
+			case AvatarBaseStates.MoveAt(position:Point3) => {
+					fromSpace.pos.x = position.x * 4 * Sqrt3 * Width
+					fromSpace.pos.y = position.y * 2 * Height
+					fromSpace.pos.z = position.y
 			}
 			case AvatarBaseStates.Resize(size) => {
-				self.renderer.changeRender(IsoCellGridSize(size))
-				fromSpace.size.copy(size)
+				println("Cannot resize an iso cell")
 			}
 			case _ => super.changeSpace(newState)
 		}
@@ -119,7 +357,7 @@ class IsoCellGridSpace(avatar:Avatar) extends IsoSpace(avatar) {
 		val space = self.screen.space
 
  		space.push
- 		space.translate(fromSpace.pos.x, fromSpace.pos.y, 0)
+ 		space.translate(fromSpace.pos.x, fromSpace.pos.y, fromSpace.pos.z)
 	}
 
 	def popSubSpace() { self.screen.space.pop }

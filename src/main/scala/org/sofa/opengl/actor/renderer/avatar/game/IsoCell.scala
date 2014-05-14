@@ -37,13 +37,10 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 
 	protected[this] var undergroundColor:Texture = null
 
-	protected[this] var imageShader:ShaderProgram = null
+	protected[this] var isoShader:ShaderProgram = null
 
 	// override def changeRender(state:AvatarRenderState) {
-	// 	state match {
-	// 		case _ => super.changeRender(state)
-	// 	}
-
+	// 	state match { case _ => super.changeRender(state) }
 	// }
 
 	protected def init() {
@@ -58,7 +55,7 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 		ground = new TrianglesMesh(2)
 		underground = new TrianglesMesh(2)
 		
-		imageShader = screen.libraries.shaders.addAndGet(gl, "iso-shader", ShaderResource("iso-shader", "iso.vert.glsl", "iso.frag.glsl"))
+		isoShader = screen.libraries.shaders.addAndGet(gl, "iso-shader", ShaderResource("iso-shader", "iso.vert.glsl", "iso.frag.glsl"))
 		
 		groundColor      = screen.libraries.textures.addAndGet(gl, "ground-color-1",      TextureResource("ground-color-1",      "IsoTemplate_1024_Ground.png",           TexParams()))
 		undergroundColor = screen.libraries.textures.addAndGet(gl, "underground-color-1", TextureResource("underground-color-1", "IsoTemplate_1024_Underground.png",      TexParams()))
@@ -110,11 +107,11 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 		underground.setTriangle(0, 0, 1, 2)
 		underground.setTriangle(1, 3, 4, 5)
 
-		ground.newVertexArray(gl, imageShader, Vertex -> "position", TexCoord -> "texCoords")
-		underground.newVertexArray(gl, imageShader, Vertex -> "position", TexCoord -> "texCoords")				
+		ground.newVertexArray(gl, isoShader, Vertex -> "position", TexCoord -> "texCoords")
+		underground.newVertexArray(gl, isoShader, Vertex -> "position", TexCoord -> "texCoords")				
 	}
 
-	protected[this] val lightDir = Vector3(1, 1.5, 0.5)
+	protected[this] val lightDir = Vector3(1, 1.5, 0)
 	protected[this] var dir = 0.01
 
 	override def render() {
@@ -123,9 +120,12 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 		val text  = screen.textLayer
 
 		lightDir.x = lightDir.x + dir
+		lightDir.z = lightDir.z - dir
 
 		if(lightDir.x > 1) { lightDir.x = 1; dir = -dir }
 		else if(lightDir.x < 0) { lightDir.x = 0; dir = -dir }
+		if(lightDir.z > 1) { lightDir.z = 1 }
+		else if(lightDir.z < 0) { lightDir.z = 0 }
 
 		space.pushSubSpace
 		
@@ -136,17 +136,16 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 				//fillAvatarBox
 				gl.enable(gl.BLEND)
 				gl.enable(gl.DEPTH_TEST)
-				//screen.space.scale(space.subSpace.size(0), space.subSpace.size(1), 1)
-				imageShader.use
-				undergroundColor.bindUniform(gl.TEXTURE0, imageShader, "texColor")
-				undergroundMask.bindUniform(gl.TEXTURE1, imageShader, "texMask")
-				imageShader.uniform("lightDir", lightDir)
-				screen.space.uniformMVP(imageShader)
+				isoShader.use
+				undergroundColor.bindUniform(gl.TEXTURE0, isoShader, "texColor")
+				undergroundMask.bindUniform(gl.TEXTURE1, isoShader, "texMask")
+				isoShader.uniform("lightDir", lightDir)
+				screen.space.uniformMVP(isoShader)
 				underground.draw(gl)
 				screen.space.translate(0,0,-0.1)
-				screen.space.uniformMVP(imageShader)
-				groundColor.bindUniform(gl.TEXTURE0, imageShader, "texColor")
-				groundMask.bindUniform(gl.TEXTURE1, imageShader, "texMask")
+				screen.space.uniformMVP(isoShader)
+				groundColor.bindUniform(gl.TEXTURE0, isoShader, "texColor")
+				groundMask.bindUniform(gl.TEXTURE1, isoShader, "texMask")
 				ground.draw(gl)
 				gl.disable(gl.DEPTH_TEST)
 		        gl.disable(gl.BLEND)

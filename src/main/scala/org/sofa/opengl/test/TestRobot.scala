@@ -224,7 +224,7 @@ class TestRobot extends SurfaceRenderer {
 
 		armature = libraries.armatures.get(gl, "armature-test")
 
-		armature.init(gl, libraries)
+		//armature.init(gl, libraries)
 
 		(armature \\ "bipbip2").visible = false
 		(armature \\ "mouthoh").visible = false

@@ -3,7 +3,7 @@ package org.sofa.opengl.armature
 import scala.collection.mutable.HashMap
 
 import org.sofa.FileLoader
-import org.sofa.opengl.{SGL, Camera}
+import org.sofa.opengl.{SGL, Space}
 import org.sofa.math.{Point3, Point2, Vector2}
 import org.sofa.opengl.{Texture, ShaderProgram, Libraries}
 import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
@@ -50,7 +50,15 @@ object Armature {
 }
 
 
-/** A hierachical set of joints, and a way to render them. */
+/** A hierachical set of joints, and a way to render them. 
+  *
+  * An armature encapsulate a hierarchy of [[Joint]]s, and specify a scale, a global name, a shader,
+  * an a texture that maps to the joints. Knowing all these elements, the armature provides a way
+  * to render the joint hierarchy. It also contains a way to quicklu retrieve joints and configure
+  * them (rotation, scaling, etc.) to animate the hierachy. 
+  *
+  * To easily animate an armature, consider using an [[ArmatureBehavior]].
+  */
 class Armature(val name:String,
                val scale:Double,
                val area:Point2,
@@ -66,7 +74,7 @@ class Armature(val name:String,
 	/** The shader to use to display each joint. */
 	var shader:ShaderProgram = null
 
-	/** Set of triangles, two for each joint. TODO, use a quad mesh. */
+	/** Set of triangles, two for each joint. */
 	var triangles:TrianglesMesh = null
 
 	/** Number of pair of triangles (each joint uses one pair of triangles). */
@@ -81,6 +89,9 @@ class Armature(val name:String,
 	def init(gl:SGL, libraries:Libraries) {
 		import VertexAttribute._
 
+		// Joints are created by an armature loader. The entire hierarchy is first built, and then
+		// the root is passed to the armature by the loader.
+
 		if(triangles eq null) { 
 			texture   = libraries.textures.get(gl, texResource)
 			shader    = libraries.shaders.get(gl, shaderResource)
@@ -94,10 +105,10 @@ class Armature(val name:String,
 	}
 
 	/** Display the whole armature, starting at root, but only joints that are visible. */
-	def display(gl:SGL, camera:Camera) = camera.pushpop {
+	def display(gl:SGL, space:Space) = space.pushpop {
 		shader.use
 		texture.bindUniform(gl.TEXTURE0, shader, "texColor")
-		root.display(gl, this, camera, shader)
+		root.display(gl, this, space, shader)
 	}
 
 	/** Obtain the joint corresponding to the given name or throw a [[NoSuchJointException]] exception. */
@@ -134,16 +145,16 @@ class JointTransform {
 	/** Current scale (before or after translation ??? or the twos ?) */
 	var scale = Vector2(1, 1)
 
-	/** Apply the transform to the given `camera`. */
-	def transform(camera:Camera) {
+	/** Apply the transform to the given `space`. */
+	def transform(space:Space) {
 		if(translation.x != 0 || translation.y != 0)
-			camera.translate(translation.x, translation.y, 0)
+			space.translate(translation.x, translation.y, 0)
 
 		if(scale.x != 0 || scale.y != 0)
-			camera.scale(scale.x, scale.y, 1)
+			space.scale(scale.x, scale.y, 1)
 		
 		if(angle != 0)
-			camera.rotate(angle, 0, 0, 1)
+			space.rotate(angle, 0, 0, 1)
 	}
 
 	override def toString():String =
@@ -205,7 +216,7 @@ object Joint {
   * and the parent pivot point respectivelly.
   *
   * @param name     Name of the joint.
-  * @param z        The position above or under other joints, allow to give a drawing order.
+  * @param z        The position above or under other joints, allow to give a drawing order. Not used actually.
   * @param fromUV   Give absolute pixels, and it will then contain the position of the left-bottom corner of the joint rectangle in the texture.
   * @param sizeUV   Give pixels, and it will then contain the size of the joint rectangle in the texture (the aspect ratio is not conserved).
   * @param pivotGU  Give absolute pixels, and it will then contain the position of the pivot point relative to (0,0).
@@ -281,7 +292,7 @@ class Joint(val name:String,
 	}
 
 	/** Change the absolute pixel coordinates to relative coordinates either in UV (texture) or
-	  * game (scaled) coordinates and setup the parent joint. */
+	  * game (scaled) coordinates and setup the parent joint. Init recursively sub-joints. */
 	def init(parent:Joint, armature:Armature):Int = {
 		this.parent = parent
 		armature.jointMap += (name -> this)
@@ -365,34 +376,34 @@ class Joint(val name:String,
 		if(subAbove ne null) subAbove.foreach { _.build(armature) }
 	}
 
-	def display(gl:SGL, armature:Armature, camera:Camera, shader:ShaderProgram) {
+	def display(gl:SGL, armature:Armature, space:Space, shader:ShaderProgram) {
 		if(visible) {
-			camera.pushpop {
-				camera.translate(anchorGU.x, anchorGU.y, 0)
+			space.pushpop {
+				space.translate(anchorGU.x, anchorGU.y, 0)
 
 				if(transform ne null)
-					transform.transform(camera)
+					transform.transform(space)
 
-				displaySub(gl, subUnder, armature, camera, shader)
-				displaySelf(gl, armature, camera, shader)
-				displaySub(gl, subAbove, armature, camera, shader)
+				displaySub(gl, subUnder, armature, space, shader)
+				displaySelf(gl, armature, space, shader)
+				displaySub(gl, subAbove, armature, space, shader)
 			}
 		}
 	}
 
 	/** Display the given sub array of joints. */
-	protected def displaySub(gl:SGL, sub:Array[Joint], armature:Armature, camera:Camera, shader:ShaderProgram) {
+	protected def displaySub(gl:SGL, sub:Array[Joint], armature:Armature, space:Space, shader:ShaderProgram) {
 		if((sub ne null) && sub.size > 0) {
-			sub foreach { _.display(gl, armature, camera, shader) }
+			sub foreach { _.display(gl, armature, space, shader) }
 		}
 	}
 
 	/** Display this joint. */
-	protected def displaySelf(gl:SGL, armature:Armature, camera:Camera, shader:ShaderProgram) {
+	protected def displaySelf(gl:SGL, armature:Armature, space:Space, shader:ShaderProgram) {
 		if(selected)
 		     shader.uniform("highlight", 1.0f)
 		else shader.uniform("highlight", 0.0f)
-		camera.uniformMVP(armature.shader)
+		space.uniformMVP(armature.shader)
 		armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs(gl), triangle*3, 2*3)		
 	}
 

@@ -85,6 +85,9 @@ class Box3From extends Box3 {
 }
 
 
+// TODO Box3PosCentered should be named Box3Sized and the reverse !!!
+
+
 /** A basic implementation of [[Box3]] that resizes according to its `pos` field.
   * This implementation defines three fields, `from`, `to`, and `pos` fields. The
   * position can be outside of the bounding box. Size is deduced from the `from`
@@ -113,7 +116,7 @@ class Box3PosCentered extends Box3 {
 
 
 /** A basic implementation of [[Box3]] that computes its `from` and `to`
-  * points from its position and size. */
+  * points from its position and size. The position is at the center of the box. */
 class Box3Sized extends Box3 {
 	val pos = Point3(0, 0, 0)
 

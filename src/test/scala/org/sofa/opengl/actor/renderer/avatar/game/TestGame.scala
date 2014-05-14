@@ -11,6 +11,8 @@ import org.sofa.opengl.actor.renderer.{AvatarName, AvatarBaseStates}
 import org.sofa.opengl.actor.renderer.backend.RendererNewt
 import org.sofa.opengl.text.GLFont
 
+//import org.sofa.opengl.actor.renderer.avatar.game.IsoCellGridRelief
+
 
 class TestGame extends FlatSpec {
 
@@ -42,71 +44,36 @@ class TestGame extends FlatSpec {
 
 			screen.addAvatar(AvatarName("root.world"), "iso-world")
 
-			val cell0 = AvatarName("root.world.cell0")
-			val cell1 = AvatarName("root.world.cell1")
-			val cell2 = AvatarName("root.world.cell2")
-			val cell3 = AvatarName("root.world.cell3")
-			
-			val cell4 = AvatarName("root.world.cell4")
-			val cell5 = AvatarName("root.world.cell5")
-			val cell6 = AvatarName("root.world.cell6")
-			val cell7 = AvatarName("root.world.cell7")
+			val cellgrid0 = AvatarName("root.world.cellgrid0")
+			val cellgrid1 = AvatarName("root.world.cellgrid1")
+			val cellgrid2 = AvatarName("root.world.cellgrid2")
+			val cellgrid3 = AvatarName("root.world.cellgrid3")
 
-			val cell8 = AvatarName("root.world.cell8")
-			val cell9 = AvatarName("root.world.cell9")
-			val cell10 = AvatarName("root.world.cell10")
-			val cell11 = AvatarName("root.world.cell11")
+			screen.addAvatar(cellgrid0, "iso-cell-grid")
+			screen.addAvatar(cellgrid1, "iso-cell-grid")
+			screen.addAvatar(cellgrid2, "iso-cell-grid")
+			screen.addAvatar(cellgrid3, "iso-cell-grid")
 
-			val cell12 = AvatarName("root.world.cell12")
-			val cell13 = AvatarName("root.world.cell13")
-			val cell14 = AvatarName("root.world.cell14")
-			val cell15 = AvatarName("root.world.cell15")
+			screen.changeAvatar(cellgrid1, AvatarBaseStates.MoveAt(Point3(0,-1,0)) )
+			screen.changeAvatar(cellgrid2, AvatarBaseStates.MoveAt(Point3(-1,0,0)) )
+			screen.changeAvatar(cellgrid3, AvatarBaseStates.MoveAt(Point3(-1,-1,0)) )
 
-			screen.addAvatar(cell0, "iso-cell")
-			screen.addAvatar(cell1, "iso-cell")
-			screen.addAvatar(cell2, "iso-cell")
-			screen.addAvatar(cell3, "iso-cell")
-			
-			screen.addAvatar(cell4, "iso-cell")
-			screen.addAvatar(cell5, "iso-cell")
-			screen.addAvatar(cell6, "iso-cell")
-			screen.addAvatar(cell7, "iso-cell")
+			//val config = Array.ofDim[IsoCellConfig](10,10)
+			val config = Array.fill[IsoCellConfig](10,10) { IsoCellConfig(0, 1, 1) }
 
-			screen.addAvatar(cell8, "iso-cell")
-			screen.addAvatar(cell9, "iso-cell")
-			screen.addAvatar(cell10, "iso-cell")
-			screen.addAvatar(cell11, "iso-cell")
+			//     y  x
+			config(2)(2) = IsoCellConfig(-1f, 2, 0)
+			config(2)(3) = IsoCellConfig(-2f, 3, 0)
+			config(2)(4) = IsoCellConfig(-1f, 4, 0)
 
-			screen.addAvatar(cell12, "iso-cell")
-			screen.addAvatar(cell13, "iso-cell")
-			screen.addAvatar(cell14, "iso-cell")
-			screen.addAvatar(cell15, "iso-cell")
+			config(3)(2) = IsoCellConfig(0, 4, 0)
+			config(3)(3) = IsoCellConfig(0, 5, 0)
+			config(3)(4) = IsoCellConfig(0, 0, 0)
 
-			screen.changeAvatar(cell0, AvatarBaseStates.MoveAt(Point3(0,0,0)))
-			screen.changeAvatar(cell1, AvatarBaseStates.MoveAt(Point3(-1,0,-2)))
-			screen.changeAvatar(cell2, AvatarBaseStates.MoveAt(Point3(1,0,-3)))
-			screen.changeAvatar(cell3, AvatarBaseStates.MoveAt(Point3(2,0,0)))
-
-			screen.changeAvatar(cell4, AvatarBaseStates.MoveAt(Point3(0,-1,0)))
-			screen.changeAvatar(cell5, AvatarBaseStates.MoveAt(Point3(-1,-1,0)))
-			screen.changeAvatar(cell6, AvatarBaseStates.MoveAt(Point3(1,-1,0)))
-			screen.changeAvatar(cell7, AvatarBaseStates.MoveAt(Point3(-2,-1,0)))
-
-			screen.changeAvatar(cell8, AvatarBaseStates.MoveAt(Point3(0,1,0)))
-			screen.changeAvatar(cell9, AvatarBaseStates.MoveAt(Point3(-1,1,0)))
-			screen.changeAvatar(cell10, AvatarBaseStates.MoveAt(Point3(1,1,0)))
-			screen.changeAvatar(cell11, AvatarBaseStates.MoveAt(Point3(-2,1,0)))
-
-			screen.changeAvatar(cell12, AvatarBaseStates.MoveAt(Point3(0,-2,0)))
-			screen.changeAvatar(cell13, AvatarBaseStates.MoveAt(Point3(-1,-2,-1)))
-			screen.changeAvatar(cell14, AvatarBaseStates.MoveAt(Point3(1,-2,-2)))
-			screen.changeAvatar(cell15, AvatarBaseStates.MoveAt(Point3(2,-2,0)))
-
-			//val e0 = AvatarName("root.world.e0")
-
-			//screen.addAvatar(e0, "iso-entity")
-
-			//screen.changeAvatar(e0, AvatarBaseStates.Move(1, 0, 0))
+			screen.changeAvatar(cellgrid0, IsoCellGridConfig(config))
+			screen.changeAvatar(cellgrid1, IsoCellGridConfig(config))
+			screen.changeAvatar(cellgrid2, IsoCellGridConfig(config))
+			screen.changeAvatar(cellgrid3, IsoCellGridConfig(config))
 		})
 	}
 

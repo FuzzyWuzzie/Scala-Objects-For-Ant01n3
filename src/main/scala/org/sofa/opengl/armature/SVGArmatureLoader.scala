@@ -21,10 +21,13 @@ import org.sofa.math.{Rgba, Point2, Point3, Matrix3}
 
 // -- Exceptions ----------------------------------------------------------------------------------------------
 
+
 /** Thrown during parsing of the SVG file when loading the armature. */
 case class ArmatureParseException(message:String) extends Exception(message) 
 
+
 // -- Utility classes -----------------------------------------------------------------------------------------
+
 
 /** Represents an area in the SVG picture, as well as its pivot point, and eventually anchors for other areas. */
 case class Area(val name:String, val x:Double, val y:Double, val w:Double, val h:Double, val pivot:Pivot, val anchors:Array[Anchor]) {
@@ -40,17 +43,21 @@ case class Area(val name:String, val x:Double, val y:Double, val w:Double, val h
 	}
 }
 
+
 /** Represents a pivot point. */
 case class Pivot(xInit:Double, yInit:Double) extends Point2(xInit, yInit) {
 	override def toString() = "Pivot(%.2f | %.2f)".format(x,y)
 }
+
 
 /** Represents an anchor point. */
 case class Anchor(xInit:Double, yInit:Double, val id:Int) extends Point2(xInit, yInit) {
 	override def toString() = "Anchor(%.2f | %.2f | [%d])".format(x,y,id)
 }
 
+
 // -- Utility transforms --------------------------------------------------------------------------------------
+
 
 trait Transform {
 	def transform(x:Double,y:Double):(Double,Double)
@@ -58,11 +65,13 @@ trait Transform {
 	def transform(p:Point3):Point3
 }
 
+
 case class TranslateTransform(tx:Double,ty:Double) extends Transform {
 	def transform(x:Double,y:Double) = (x+tx, y+ty)
 	def transform(p:Point2) = new Point2(p.x+tx, p.y+ty)
 	def transform(p:Point3) = new Point3(p.x+tx, p.y+ty, p.z)
 }
+
 
 case class MatrixTransform(a:Double,b:Double,c:Double,d:Double,e:Double,f:Double) extends Transform {
 	val matrix = Matrix3((a,c,e), (b,d,f), (0,0,1))
@@ -78,7 +87,9 @@ case class MatrixTransform(a:Double,b:Double,c:Double,d:Double,e:Double,f:Double
 	def transform(p:Point3) = { matrix * p }
 }
 
+
 // -- Loader class --------------------------------------------------------------------------------------------
+
 
 object SVGArmatureLoader {
 	final val Sodipodi  = "http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -95,6 +106,7 @@ object SVGArmatureLoader {
 
 	final val SVGMatrixExp = """matrix\((-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*),(-?\d+\.?\d*e?-?\d*)\)""".r
 }
+
 
 /** Load an Armature from a prepared SVG file. 
   *
@@ -135,6 +147,10 @@ object SVGArmatureLoader {
   *  - 'd' is represented by part4
   *
   * There must always be a joint named 'root' that will be at the root of the armature hierarchy.
+  *
+  * Only the armature is extracted, the SVG does not need to contain the image of the texture that
+  * will be used by the joints. The texture can be done with another software than Inkscape. We use
+  * The Inkscape format since it uses layers, not plain SVG.
   */
 class SVGArmatureLoader {
 	import SVGArmatureLoader._
