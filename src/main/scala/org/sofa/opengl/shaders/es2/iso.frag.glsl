@@ -13,11 +13,11 @@ void main(void) {
 
 	dif = min(dif * 1.2, 1.0);
 
-	if(col.a <= 0.1) {
-		discard;
-	} else {
-		if(dif >= 0) 
+	// if(col.a <= 0.0) {
+	// 	discard;
+	// } else {
+		//if(dif >= 0) 
 		     gl_FragColor = vec4(col.r * dif, col.g * dif, col.b * dif, col.a);
-		else gl_FragColor = vec4(0, 0, 0, col.a);
-	}
+		//else discard;
+	// }
 }

@@ -111,7 +111,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	    Armature.path += "/Users/antoine/Documents/Art/Images/Bruce_Art"
 	    Armature.path += "svg"
 	    GLFont.path   += "/Users/antoine/Library/Fonts"
-	    ArmatureBehavior.path += "/Users/antoine/Desktop"
+	    ArmatureBehavior.path += "/Users/antoine/Downloads/Bordel/"
 
 	    initGL(gl)
         initShaders
@@ -174,7 +174,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	}
 
 	protected def initArmatures(armatureFileName:String) {
-		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, libraries)
+		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, "Armature", libraries)
 	}
 	
 	protected def initGeometry() {

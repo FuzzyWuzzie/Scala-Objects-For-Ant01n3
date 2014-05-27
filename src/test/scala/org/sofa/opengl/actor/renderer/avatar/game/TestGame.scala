@@ -21,14 +21,6 @@ class TestGame extends FlatSpec {
 
 	"A game" should "allow adding a root" in {
 
-		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2"
-		Shader.path += "shaders"
-		GLFont.path += "/Users/antoine/Library/Fonts"
-		GLFont.path += "Fonts"
-		Texture.path += "/Users/antoine/Documents/Art/Images/HexaLife"
-		Texture.path += "/Users/antoine/Documents/Art/Images"
-		Texture.path += "textures"
-
 		renderer.start("title", initialWidth=800, initialHeight=600, fps=24, decorated=false, fullscreen=false, overSample=4, runAtInit = { ()=>
 
 			renderer.addScreen("default-screen")
@@ -39,41 +31,59 @@ class TestGame extends FlatSpec {
 		
 			val screen = renderer.currentScreen
 
+			screen.libraries.addResources("/Gloubs.xml")
+
 			screen.addAvatar(AvatarName("root"), "iso-root")
 			assertResult(1, "only one avatar") { renderer.currentScreen.subCount }
 
 			screen.addAvatar(AvatarName("root.world"), "iso-world")
 
-			val cellgrid0 = AvatarName("root.world.cellgrid0")
-			val cellgrid1 = AvatarName("root.world.cellgrid1")
-			val cellgrid2 = AvatarName("root.world.cellgrid2")
-			val cellgrid3 = AvatarName("root.world.cellgrid3")
+			// ---------------
 
-			screen.addAvatar(cellgrid0, "iso-cell-grid")
+			val underground = AvatarName("root.world.underground")
+			val ground      = AvatarName("root.world.ground")
+			val entities    = AvatarName("root.world.entities")
+
+			screen.addAvatar(underground, "iso-layer")
+			screen.addAvatar(ground, "iso-layer")
+			screen.addAvatar(entities, "iso-layer")
+
+			// ---------------
+
+			val cellgrid0 = AvatarName("root.world.ground.cellgrid0")
+			val cellgrid1 = AvatarName("root.world.ground.cellgrid1")
+			val cellgrid2 = AvatarName("root.world.ground.cellgrid2")
+			val cellgrid3 = AvatarName("root.world.ground.cellgrid3")
+
 			screen.addAvatar(cellgrid1, "iso-cell-grid")
-			screen.addAvatar(cellgrid2, "iso-cell-grid")
-			screen.addAvatar(cellgrid3, "iso-cell-grid")
-
-			screen.changeAvatar(cellgrid1, AvatarBaseStates.MoveAt(Point3(0,-1,0)) )
-			screen.changeAvatar(cellgrid2, AvatarBaseStates.MoveAt(Point3(-1,0,0)) )
-			screen.changeAvatar(cellgrid3, AvatarBaseStates.MoveAt(Point3(-1,-1,0)) )
+			screen.addAvatar(cellgrid0, "iso-cell-grid")
+			//screen.addAvatar(cellgrid2, "iso-cell-grid")
+			//screen.addAvatar(cellgrid3, "iso-cell-grid")
 
 			//val config = Array.ofDim[IsoCellConfig](10,10)
-			val config = Array.fill[IsoCellConfig](10,10) { IsoCellConfig(0, 1, 1) }
+			val relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 1, 1) }
+			val shape  = IsoCellGridShape(1f+(1f/8f), 0, -1f/16f)
+			val shade  = IsoCellGridShade("iso-shader", "ground-color-1", "ground-mask-1", 0.433f, 0.281f, 
+								Array[Float](0.027f, 0.027f, 0.027f, 0.514f, 0.514f, 0.514f),
+								Array[Float](0.046f, 0.359f, 0.671f, 0.046f, 0.359f, 0.671f))
 
-			//     y  x
-			config(2)(2) = IsoCellConfig(-1f, 2, 0)
-			config(2)(3) = IsoCellConfig(-2f, 3, 0)
-			config(2)(4) = IsoCellConfig(-1f, 4, 0)
+			screen.changeAvatar(cellgrid0, IsoCellGridConfig(shade, shape, relief))
+			screen.changeAvatar(cellgrid1, IsoCellGridConfig(shade, shape, relief))
+			//screen.changeAvatar(cellgrid2, IsoCellGridConfig(shade, shape, relief))
+			//screen.changeAvatar(cellgrid3, IsoCellGridConfig(shade, shape, relief))
 
-			config(3)(2) = IsoCellConfig(0, 4, 0)
-			config(3)(3) = IsoCellConfig(0, 5, 0)
-			config(3)(4) = IsoCellConfig(0, 0, 0)
+			screen.changeAvatar(cellgrid1, AvatarBaseStates.MoveAt(Point3(0,1,0)) )
+			//screen.changeAvatar(cellgrid2, AvatarBaseStates.MoveAt(Point3(-1,0,0)) )
+			//screen.changeAvatar(cellgrid3, AvatarBaseStates.MoveAt(Point3(-1,1,0)) )
 
-			screen.changeAvatar(cellgrid0, IsoCellGridConfig(config))
-			screen.changeAvatar(cellgrid1, IsoCellGridConfig(config))
-			screen.changeAvatar(cellgrid2, IsoCellGridConfig(config))
-			screen.changeAvatar(cellgrid3, IsoCellGridConfig(config))
+			// ---------------
+
+			val gloub1 = AvatarName("root.world.entities.gloub1")
+
+			val gconfig = IsoEntityConfig("gloub-armature", "eye-loop", "gloub-mask")
+
+			screen.addAvatar(gloub1, "iso-entity")
+			screen.changeAvatar(gloub1, gconfig)
 		})
 	}
 

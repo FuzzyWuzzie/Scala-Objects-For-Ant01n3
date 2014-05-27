@@ -16,6 +16,7 @@ class IsoWorldAvatarFactory extends DefaultAvatarFactory {
 		kind.toLowerCase match {
 			case "iso-root"      => new IsoRoot(name, screen)
 			case "iso-world"     => new IsoWorld(name, screen)
+			case "iso-layer"     => new IsoLayer(name, screen)
 			case "iso-cell-grid" => new IsoCellGrid(name, screen)
 			case "iso-cell"      => new IsoCell(name, screen)
 			case "iso-entity"    => new IsoEntity(name, screen)
@@ -35,11 +36,58 @@ trait IsoRenderUtils {
 
 	var uniformColorShader:ShaderProgram = null
 
-	var color = Rgba.Cyan
+	var fillColor = Rgba.Cyan
 
 	var lineColor = Rgba.Red
 
 	def self:Avatar
+
+	def strokeAvatarBox() {
+		import VertexAttribute._
+
+		val screen = self.screen
+		val space  = screen.space
+		val gl     = screen.gl
+
+		if(uniformColorShader eq null) {
+			uniformColorShader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
+		}
+
+		if(unitSquare eq null) {
+			unitSquare = screen.libraries.models.getOrAdd(gl, "unit-square") { (gl, name) =>
+				val m = new TrianglesMesh(2)
+				m.setPoint(0, -0.5f, -0.5f, 0f)
+				m.setPoint(1,  0.5f, -0.5f, 0f)
+				m.setPoint(2,  0.5f,  0.5f, 0f)
+				m.setPoint(3, -0.5f,  0.5f, 0f)
+				m.setTriangle(0, 0, 1, 2)
+				m.setTriangle(1, 0, 2, 3)
+				m.newVertexArray(gl, uniformColorShader, Vertex -> "position")
+				new ModelResource(name, m)
+			}
+
+			unitLineSquare = screen.libraries.models.getOrAdd(gl, "unit-line-square") { (gl, name) =>
+				val l = new LinesMesh(4)
+				l.setLine(0, -0.5f,-0.5f,0f,  0.5f,-0.5f,0f)
+				l.setLine(1,  0.5f,-0.5f,0f,  0.5f, 0.5f,0f)
+				l.setLine(2,  0.5f, 0.5f,0f, -0.5f, 0.5f,0f)
+				l.setLine(3, -0.5f, 0.5f,0f, -0.5f,-0.5f,0f)
+				l.newVertexArray(gl, uniformColorShader, Vertex -> "position")
+				new ModelResource(name, l)
+			}
+		}
+
+		val subSpace = self.space.subSpace
+
+		uniformColorShader.use
+		space.pushpop {
+			uniformColorShader.use
+			space.scale(subSpace.size(0), subSpace.size(1), 1)
+			space.uniformMVP(uniformColorShader)
+			uniformColorShader.uniform("uniformColor", lineColor)
+			unitLineSquare.draw(gl)
+		}
+	}
 
 	def fillAvatarBox() {
 		import VertexAttribute._
@@ -81,7 +129,7 @@ trait IsoRenderUtils {
 		uniformColorShader.use
 		space.pushpop {
 			uniformColorShader.use
-			uniformColorShader.uniform("uniformColor", color)
+			uniformColorShader.uniform("uniformColor", fillColor)
 			space.scale(subSpace.size(0), subSpace.size(1), 1)
 			space.uniformMVP(uniformColorShader)
 			unitSquare.draw(gl)
@@ -107,8 +155,8 @@ class IsoRootRender(avatar:Avatar) extends IsoRender(avatar) {
 		gl.lineWidth(1f)
 		gl.disable(gl.DEPTH_TEST)
 		gl.enable(gl.BLEND)
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-		//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)		// Premultiplied alpha
+		//gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)		// Premultiplied alpha
 
 		//println(s"* render ${self.name}")
 		gl.checkErrors
@@ -201,6 +249,17 @@ class IsoRootSpace(avatar:Avatar) extends IsoSpace(avatar) {
 abstract class IsoAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarComposed(name, screen) {}
 
 
+/** Iso Root is a container for the game, it has a
+  * space of 1 unit width and 1*ratio unit height.
+  * with an origin at the lower left corner. It allows
+  * to add a world that will define the game 2D coordinates,
+  * but also to add an UI on top of it.
+  *
+  * We use three coordinate systems:
+  *   - Root
+  *   - World 2D coordinate system of the game representation
+  *   - Game 3D coordinate system where Y is up, X is right, and Z front.
+  */
 class IsoRoot(name:AvatarName, screen:Screen)
 	extends IsoAvatar(name, screen) {
 

@@ -1,0 +1,33 @@
+<resources>
+	<pathes>
+		<shader>/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2</shader>
+		<shader>shaders</shader>
+		<tex>/Users/antoine/Documents/Art/Images/HexaLife</tex>
+		<tex>/Users/antoine/Documents/Art/Images</tex>
+		<tex>textures</tex>
+		<armature>/Users/antoine/Documents/Art/Images/HexaLife</armature>
+		<armature>svg</armature>
+	</pathes>
+	<shaders>
+		<shader id="image-shader"    vert="image_shader.vert.glsl"        frag="image_shader.frag.glsl"/>
+		<shader id="iso-shader"      vert="iso.vert.glsl"                 frag="iso.frag.glsl"/>
+		<shader id="armature-shader" vert="iso_armature_shader.vert.glsl" frag="iso_armature_shader.frag.glsl"/>
+	</shaders>
+	<texs>
+		<tex id="ground-color-1"       res="IsoTemplate_1024_Ground.png" alpha="premultiply"/>
+		<tex id="underground-color-1"  res="IsoTemplate_1024_Underground.png" alpha="premultiply"/>
+		<tex id="ground-mask-1"        res="IsoTemplate_1024_Ground-Mask.png" alpha="premultiply"/>
+		<tex id="underground-mask-1"   res="IsoTemplate_1024_Underground-Mask.png" alpha="premultiply"/>
+		<tex id="gloub-color"          res="Gloubs_1024.png" alpha="premultiply"/>
+		<tex id="gloub-mask"           res="GloubsMask_1024.png"/>
+	</texs>
+	<armatures>
+		<armature id="gloub-armature" tex="gloub-color" shader="armature-shader" svg="Gloubs.svg" armatureid="ArmatureGloub" scale="0.0025"/>
+	</armatures>
+	<behaviors>
+		<lerp-to-position arm="gloub-armature" joint="eye" id="eye-to-left" value="(-0.02,0)" duration="1000"/>
+		<lerp-to-position arm="gloub-armature" joint="eye" id="eye-to-right" value="(0.02,0)" duration="1000"/>
+		<in-sequence id="eye-seq" arm="gloub-armature" behaviors="eye-to-left, eye-to-right"/>
+		<loop id="eye-loop" arm="gloub-armature" behaviors="eye-seq"/>
+	</behaviors>
+</resources>

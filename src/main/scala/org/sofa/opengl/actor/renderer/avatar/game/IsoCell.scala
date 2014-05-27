@@ -21,7 +21,7 @@ object IsoCell {
 
 class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils {
 
-	color = Rgba.White
+	fillColor = Rgba.White
 
 	lineColor = Rgba.Black
 

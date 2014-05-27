@@ -108,6 +108,12 @@ object SVGArmatureLoader {
 }
 
 
+// TODO
+// Allow several armatures in one file, with multiple Armature layers.
+// Specify the armature layer name in the loader.
+// Find a way to avoid reloading the SVG file for multiple armatures.
+
+
 /** Load an Armature from a prepared SVG file. 
   *
   * This class allows to transform a SVG file into an armature, with its hierachy,
@@ -128,8 +134,8 @@ object SVGArmatureLoader {
   *     anchor identifier (between 0 and 255).
   *
   * The Z level and the hierachy or areas and how they are anchored one above the
-  * other is expressed in a layer of the document that must be named "Armature" (other
-  * layers are ignored).
+  * other is expressed in a layer of the document whose name is passed as the paramater
+  * `armatureId` (default is "Armature"). Other layers are ignored.
   *
   * In this layer one or more text elements define the arangement of Joints in an
   * Armature. We create each joint by giving a free name followed by an equal sign
@@ -176,8 +182,8 @@ class SVGArmatureLoader {
 	  * @param texRes Name of a texture in the resource [[Libraries]].
 	  * @param shaderRes Name of a shader in the resource [[Libraries]].
 	  * @param fileName Name fo the SVG file to use. */
-	def load(name:String, texRes:String, shaderRes:String, fileName:String):Armature = {
-		load(name, texRes, shaderRes, new FileInputStream(fileName))
+	def load(name:String, texRes:String, shaderRes:String, fileName:String, armatureId:String, scale:Double):Armature = {
+		load(name, texRes, shaderRes, new FileInputStream(fileName), armatureId, scale)
 	}
 
 	/** Load an [[Armature]] from a SVG file.
@@ -186,8 +192,8 @@ class SVGArmatureLoader {
 	  * @param texRes Name of a texture in the resource [[Libraries]].
 	  * @param shaderRes Name of a shader in the resource [[Libraries]].
 	  * @param file A file descriptor on a SVG file to use. */
-	def load(name:String, texRes:String, shaderRes:String, file:File):Armature = {
-		load(name, texRes, shaderRes, new FileInputStream(file))
+	def load(name:String, texRes:String, shaderRes:String, file:File, armatureId:String, scale:Double):Armature = {
+		load(name, texRes, shaderRes, new FileInputStream(file), armatureId, scale)
 	}
 
 	/** Load an [[Armature]] from a SVG file.
@@ -196,7 +202,7 @@ class SVGArmatureLoader {
 	  * @param texRes Name of a texture in the resource [[Libraries]].
 	  * @param shaderRes Name of a shader in the resource [[Libraries]].
 	  * @param stream A stream pointing at the SVG data to load and use. */
-	def load(name:String, texRes:String, shaderRes:String, stream:InputStream):Armature = {
+	def load(name:String, texRes:String, shaderRes:String, stream:InputStream, armatureId:String, scale:Double):Armature = {
 		val root      = XML.load(stream)
 		pagew         = (root \ "@width").text.toDouble
 		pageh         = (root \ "@height").text.toDouble
@@ -219,7 +225,7 @@ class SVGArmatureLoader {
 					val name = label.substring(1,label.length-1)
 
 					areas += (name -> parseArea(name, group))
-				} else if(label == "Armature") {
+				} else if(label == armatureId) {
 					armatureDecl = (group \ "text").text
 				}
 			}
@@ -228,7 +234,7 @@ class SVGArmatureLoader {
 //println("found %d areas =====".format(areas.size))
 //areas.foreach { area => println("area %s".format(area)) }
 
-		val armature = buildArmature(name, texRes, shaderRes)
+		val armature = buildArmature(name, texRes, shaderRes, scale)
 
 		areas.clear
 		joints.clear
@@ -330,7 +336,7 @@ class SVGArmatureLoader {
 	}
 
 	/** Build an Armature from the parsed [[areas]] and the [[armatureDecl]]. */
-	def buildArmature(name:String, texRes:String, shaderRes:String):Armature = {
+	def buildArmature(name:String, texRes:String, shaderRes:String, scale:Double):Armature = {
 		armatureDecl.split(';').foreach { areaDecl =>
 			val parts = areaDecl.trim.split('=')
 
@@ -345,7 +351,8 @@ class SVGArmatureLoader {
 
 		val root = joints.get("root").getOrElse(throw new ArmatureParseException("no 'root' joint found"))
 
-		Armature(name, 1.0/max(pagew,pageh), Point2(pagew, pageh), texRes, shaderRes, root)
+		//Armature(name, 1.0/max(pagew,pageh), Point2(pagew, pageh), texRes, shaderRes, root)
+		Armature(name, scale, Point2(pagew, pageh), texRes, shaderRes, root)
 	}
 
 	/** Parse a joint declaration and fill the joint with the corresponding area information.

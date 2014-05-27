@@ -83,11 +83,17 @@ abstract class Avatar(
 
 	/** By default handles avatar space and render states otherwise throw a NoSuchAvatarStateException. */
 	def change(state:AvatarState) {
-		state match {
-			case st:AvatarSpaceState => space.changeSpace(st)
-			case st:AvatarRenderState => renderer.changeRender(st)
-			case _ => throw NoSuchAvatarStateException(state)
-		}
+		var used = false
+		if(state.isInstanceOf[AvatarSpaceState])  { used = true; space.changeSpace(state.asInstanceOf[AvatarSpaceState]) }
+		if(state.isInstanceOf[AvatarRenderState]) { used = true; renderer.changeRender(state.asInstanceOf[AvatarRenderState]) }
+		// state match {
+		// 	case st:AvatarSpaceState => space.changeSpace(st)
+		// 	case st:AvatarRenderState => renderer.changeRender(st)
+		// 	case _ => throw NoSuchAvatarStateException(state)
+		// }
+
+		if(! used)
+			throw new NoSuchAvatarStateException(state)
 	}
 
 // Sub-Avatars

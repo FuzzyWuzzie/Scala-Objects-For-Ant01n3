@@ -19,7 +19,7 @@ case class NoSuchJointException(message:String) extends Exception(message)
 /** Pluggable loader for armature sources. */
 trait ArmatureLoader extends FileLoader {
     /** Try to open a resource, or throw an IOException if not available. */
-    def open(name:String, texRes:String, shaderRes:String, resource:String):Armature
+    def open(name:String, texRes:String, shaderRes:String, resource:String, armatureId:String="Armature", scale:Double = 1.0):Armature
 }
 
 
@@ -30,8 +30,8 @@ trait ArmatureLoader extends FileLoader {
 class DefaultArmatureLoader extends ArmatureLoader {
 	private[this] val SVGLoader = new SVGArmatureLoader
 
-    def open(name:String, texRes:String, shaderRes:String, resource:String):Armature =
-        SVGLoader.load(name, texRes, shaderRes, findPath(resource, Armature.path))
+    def open(name:String, texRes:String, shaderRes:String, resource:String, armatureId:String="Armature", scale:Double = 1.0):Armature =
+        SVGLoader.load(name, texRes, shaderRes, findPath(resource, Armature.path), armatureId, scale)
 }
 
 
@@ -45,7 +45,7 @@ object Armature {
 	/** Loader for armatures. */
 	var loader:ArmatureLoader = new DefaultArmatureLoader
 
-	def apply(name:String, scale:Double, area:(Double,Double), texResource:String, shaderResource:String, root:Joint):Armature = 
+	def apply(name:String, scale:Double, area:(Double,Double), texResource:String, shaderResource:String, root:Joint):Armature =
 		new Armature(name, scale, Point2(area._1, area._2), texResource, shaderResource, root)
 }
 
@@ -64,12 +64,15 @@ class Armature(val name:String,
                val area:Point2,
                val texResource:String,
                val shaderResource:String,
-               val root:Joint) {
+               val root:Joint
+              ) {
 
 	/** Global texture containing each part of the armature, each joint is a rectangle in this texture.
 	  * The origin of the joints area inside the texture is the bottom-left with positive X going
 	  * right and positive Y going up. */
 	var texture:Texture = null
+
+	var mask:Texture = null
 
 	/** The shader to use to display each joint. */
 	var shader:ShaderProgram = null
@@ -85,13 +88,12 @@ class Armature(val name:String,
 
 	/** Setup the hierachical joints armature, set parents, compute the uv positions in the texture and
 	  * finaly build a mesh of triangles where each joint is made of two triangles (joints are rectangular
-	  * areas in the texture). */
+	  * areas in the texture). The mesh uses only the "position" and "texCoords" attributes in the shader. */
 	def init(gl:SGL, libraries:Libraries) {
 		import VertexAttribute._
 
 		// Joints are created by an armature loader. The entire hierarchy is first built, and then
 		// the root is passed to the armature by the loader.
-
 		if(triangles eq null) { 
 			texture   = libraries.textures.get(gl, texResource)
 			shader    = libraries.shaders.get(gl, shaderResource)
@@ -104,11 +106,23 @@ class Armature(val name:String,
 		}
 	}
 
-	/** Display the whole armature, starting at root, but only joints that are visible. */
+	/** Display the whole armature, starting at root, but only joints that are visible
+	  * using the shader and texture given at construction. */
 	def display(gl:SGL, space:Space) = space.pushpop {
 		shader.use
 		texture.bindUniform(gl.TEXTURE0, shader, "texColor")
-		root.display(gl, this, space, shader)
+		displayArmature(gl, space)
+	}
+
+	/** Display the whole armature, starting at root, but only joints that are visible,
+	  * but do not setup the shader nor texture.
+	  *
+	  * This call consider the shader is active and current, and the texture is active. 
+	  * If you use a specific shader, with one (or more textures), or if you intend to
+	  * draw several armatures with the same shader and/or texture, it can be faster to
+	  * use this. */
+	def displayArmature(gl:SGL, space:Space) {
+		root.display(gl, this, space, shader)		
 	}
 
 	/** Obtain the joint corresponding to the given name or throw a [[NoSuchJointException]] exception. */

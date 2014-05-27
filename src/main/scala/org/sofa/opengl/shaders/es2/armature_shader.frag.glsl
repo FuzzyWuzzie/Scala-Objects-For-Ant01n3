@@ -8,11 +8,10 @@ uniform sampler2D texColor;
 uniform float highlight;
 
 void main(void) {
-	vec4 c = texture2D(texColor, X);
+	vec4  col = texture2D(texColor, X.st);
 
-	if(highlight != 0.0) {
-		gl_FragColor = vec4(1.0*c.a, c.g, c.b, c.a);
-	} else {
-		gl_FragColor = c;
-	}
+	if(highlight != 0.0)
+		col.r = 1.0*col.a;
+
+	gl_FragColor = col;
 }

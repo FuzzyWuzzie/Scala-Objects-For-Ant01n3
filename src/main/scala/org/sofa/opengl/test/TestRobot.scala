@@ -213,7 +213,7 @@ class TestRobot extends SurfaceRenderer {
 	}
 
 	protected def initArmatures(armatureFileName:String) {
-		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, libraries)
+		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, "Armature", libraries, 0.001)
 	}
 	
 	protected def initGeometry() {
@@ -252,10 +252,6 @@ class TestRobot extends SurfaceRenderer {
 	def display(surface:Surface) {
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-//	    var t = Platform.currentTime
-//	    var d = t - T
-//	    T = t
-
 	    animate
 
 	 	displayGrid
@@ -267,7 +263,6 @@ class TestRobot extends SurfaceRenderer {
 
 	    surface.swapBuffers
 	    gl.checkErrors
-//println("animate T = %d".format(d))
 	}
 
 	protected def displayGrid() {

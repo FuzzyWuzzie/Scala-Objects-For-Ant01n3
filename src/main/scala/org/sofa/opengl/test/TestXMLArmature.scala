@@ -126,7 +126,7 @@ class TestXMLArmature extends SurfaceRenderer {
 	}
 
 	protected def initArmatures(armatureFileName:String) {
-		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, libraries)
+		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, "Armature", libraries, 0.001)
 	}
 	
 	protected def initGeometry() {

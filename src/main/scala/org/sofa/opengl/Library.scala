@@ -88,8 +88,8 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 
 object Libraries {
 	protected final val PositionExpression    = """\s*\(\s*(\s*[-+]?\d+\.?\d*\s*)\s*,\s*(\s*[-+]?\d+\.?\d*\s*)\s*\)\s*""".r
-	protected final val DoubleExpression      = """([+-]?\d+(\.?\d*))""".r
-	protected final val PositiveIntExpression = """\s*(\+?\d)\s*""".r
+	protected final val DoubleExpression      = """([+-]?\d+\.?\d*?)""".r
+	protected final val PositiveIntExpression = """\s*(\+?\d+)\s*""".r
 
 	def apply(gl:SGL):Libraries = new Libraries(gl)
 }
@@ -137,7 +137,14 @@ class Libraries(gl:SGL) {
 	  * The file is searched in the classpath using the class loader
 	  * resources. For example if it is at the root of the class path,
 	  * put a / in front of the file name. */
-	def addResources(fileName:String) { addResources(XML.load(getClass.getResource(fileName))) }
+	def addResources(fileName:String) { 
+		val res = getClass.getResource(fileName)
+
+		if(res eq null)
+			throw new IOException("cannot find resource %s".format(fileName))
+
+		addResources(XML.load(res))
+	}
 
 	/** Add resources and pathes under the form of an XML file.
 	  *
@@ -221,8 +228,8 @@ class Libraries(gl:SGL) {
 						case _         ⇒ TexMag.Linear
 					},
 				alpha = (tex \\ "@alpha").text.toLowerCase match {
-						case "premultiply" ⇒ TexAlpha.Premultiply
-						case _             ⇒ TexAlpha.Nop
+						case "premultiply" ⇒ {println("**premultiply**");TexAlpha.Premultiply}
+						case _             ⇒ {println("**ARGGGG**");TexAlpha.Nop}
 					},
 				wrap = (tex \\ "@wrap").text.toLowerCase match {
 						case "clamp"          ⇒ TexWrap.Clamp
@@ -242,10 +249,13 @@ class Libraries(gl:SGL) {
 				(armature \\ "@id").text,
 				(armature \\ "@tex").text,
 				(armature \\ "@shader").text,
-				(armature \\ "@svg").text, this,
+				(armature \\ "@svg").text,
+				(armature \\ "@armatureid").text,
+				this,
 				(armature \\ "@scale").text match {
-					case DoubleExpression(dbl) => dbl.toDouble
-					case _                     => 1.0
+					case DoubleExpression(dbl)    => dbl.toDouble
+//					case PositiveIntExpression(i) => i.toInt
+					case _                        => 1.0
 				}))
 		}
 	}
@@ -455,25 +465,25 @@ class FontLibrary(gl:SGL) extends Library[GLFont](gl)
 
 
 object ArmatureResource {
-	def apply(name:String, texRes:String, shaderRes:String, fileName:String, libraries:Libraries, scale:Double=1.0):ArmatureResource = {
-		new ArmatureResource(name, texRes, shaderRes, fileName, libraries)
+	def apply(name:String, texRes:String, shaderRes:String, fileName:String, armatureId:String, libraries:Libraries, scale:Double=1.0):ArmatureResource = {
+		new ArmatureResource(name, texRes, shaderRes, fileName, armatureId, libraries, scale)
 	}
 }
 
-class ArmatureResource(name:String, texRes:String, shaderRes:String, fileName:String, val libraries:Libraries, private var data:Armature, scale:Double=1.0) extends ResourceDescriptor[Armature](name) {
+class ArmatureResource(name:String, texRes:String, shaderRes:String, fileName:String, armatureId:String, val libraries:Libraries, private var data:Armature, scale:Double=1.0) extends ResourceDescriptor[Armature](name) {
 
-	def this(name:String, texRes:String, shaderRes:String, fileName:String, libraries:Libraries, scale:Double=1.0) {
-		this(name, texRes, shaderRes, fileName, libraries, null, scale)
+	def this(name:String, texRes:String, shaderRes:String, fileName:String, armatureId:String, libraries:Libraries, scale:Double=1.0) {
+		this(name, texRes, shaderRes, fileName, armatureId, libraries, null, scale)
 	}
 
 	def this(name:String, armature:Armature, libraries:Libraries, scale:Double=1.0) {
-		this(name, armature.texResource, armature.shaderResource, null, libraries, armature, scale)
+		this(name, armature.texResource, armature.shaderResource, "Armature", null, libraries, armature, scale)
 	}
 
 	def value(gl:SGL):Armature = {
 		if(data eq null) {
 			try {
-				data = Armature.loader.open(name, texRes, shaderRes, fileName)
+				data = Armature.loader.open(name, texRes, shaderRes, fileName, armatureId, scale)
 				data.init(gl, libraries)
 			} catch {
 				case e:IOException => throw NoSuchResourceException(e.getMessage, e)
