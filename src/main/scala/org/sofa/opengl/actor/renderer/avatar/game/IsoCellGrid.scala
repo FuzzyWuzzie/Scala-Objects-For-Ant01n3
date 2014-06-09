@@ -62,26 +62,6 @@ case class IsoCellGridConfig(shade:IsoCellGridShade, shape:IsoCellGridShape, rel
 object IsoCellGrid {
 	/** Shortcut to the value of sqrt(3). */
 	final val Sqrt3 = math.sqrt(3).toFloat
-
-	// /** Bottom-left U texture coordinate of the four underground patterns. */
-	// final val UGTexU = Array[Float](0.027f, 0.027f, 0.514f, 0.514f)
-	// /** Bottom-left V texture coordinate of the four underground patterns. */
-	// final val UGTexV = Array[Float](0.015f, 0.453f, 0.015f, 0.453f)
-
-	// /** Bottom-left U texture coordinate of the six ground patterns. */
-	// final val GTexU = Array[Float](0.027f, 0.027f, 0.027f, 0.514f, 0.514f, 0.514f)
-	// /** Bottom-left V texture coordinate of the six ground patterns. */
-	// final val GTexV = Array[Float](0.046f, 0.359f, 0.671f, 0.046f, 0.359f, 0.671f)
-
-	// /** Width (U) in texture coordinate of an underground pattern. */
-	// final val UGU = 0.433f
-	// /** Height (V) in texture coordinate of an underground pattern. */
-	// final val UGV = 0.468f
-
-	// /** Width (U) in texture coordinate of an ground pattern. */
-	// final val GU = 0.433f
-	// /** Height (V) in texture coordinate of an ground pattern. */
-	// final val GV = 0.281f
 }
 
 
@@ -146,7 +126,7 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 				x = 0
 				while(x < gw) {
 					val xx = shape.offsetx -(y * Sqrt3 * 0.5f) + (x * Sqrt3 * 0.5f)
-					val yy = shape.offsety -(y * 0.5f) - (x * 0.5f)
+					val yy = shape.offsety -(y * 0.5f) - (x * 0.5f) + relief(y)(x).relief
 					val uu = shade.x(relief(y)(x).texx)
 					val vv = shade.y(relief(y)(x).texy)
 
@@ -199,7 +179,7 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 		   	    	gl.disable(gl.BLEND)
 		    	}
 		    }
-		    strokeAvatarBox
+		    //strokeAvatarBox
 
 			self.renderSubs
 		

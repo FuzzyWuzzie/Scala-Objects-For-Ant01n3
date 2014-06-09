@@ -17,7 +17,7 @@ import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController,
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute}
 import org.sofa.opengl.mesh.skeleton.{Bone ⇒ SkelBone}
 
-import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
+import akka.actor.{Actor, Props, ActorSystem, ActorRefFactory, ReceiveTimeout, ActorRef}
 import scala.concurrent.duration._
 import org.sofa.opengl.akka.SurfaceExecutorService
 
@@ -26,7 +26,10 @@ import org.sofa.opengl.akka.SurfaceExecutorService
 
 
 /** Represents the messages actors controling the renderer can receive from it. */
-object RendererControler {
+object RendererController {
+	/** Sent when the renderer started and is ready to render. */
+	case class Start(rendererActor:ActorRef)
+
 	/** Request to exit the application: a window or screen is closed by the user. */
 	case class Exit()
 }
@@ -76,11 +79,6 @@ object RendererActor {
 	/** Ask the renderer to print its status on the console. */
 	case class PrintStatus()
 
-	//== Sent messages ======================================
-
-	/** Sent when a screen is closed, to the screen, and to all its avatar hierarchy. */
-	case class Closed()
-
 	//== Creation ===========================================
 
 	/** Create a new renderer actor (usually only one is needed) that will run all its messages
@@ -95,6 +93,7 @@ object RendererActor {
 	  * internal temporized loop.
 	  *
 	  * @param system The actor system.
+	  * @param controller An actor that controls the renderer, the renderer actor-ref will be sent to it when ready.
 	  * @param renderer The renderer (created depending on the underlying system).
 	  * @param title The window title if in a windowed system and not fullscreen.
 	  * @param width The initial width in pixels of the surface (if possible).
@@ -105,7 +104,8 @@ object RendererActor {
 	  * @param overSample If larger than one, try to oversample each pixel by the amount given (default 4).
 	  * @param rendererActorName The default is "renderer-actor", but you can change it if needed. There is
 	  *        always only one renderer actor. */
-	def apply(system:ActorSystem,
+	def apply(system:ActorRefFactory,
+			  controller:ActorRef,
 	          renderer:Renderer,
 	          title:String,
 	          width:Int,
@@ -114,13 +114,21 @@ object RendererActor {
 	          decorated:Boolean = false,
 	          fullscreen:Boolean = false,
 	          overSample:Int = 4,
-	          rendererActorName:String = "renderer-actor"):ActorRef = {
-		renderer.start(title, width, height, fps, decorated, fullscreen, overSample)
-		// Tell our specific executor service which thread to use (the same as the one of the OpenGL surface used).
-		SurfaceExecutorService.setSurface(renderer.surface)
-		// Create our renderer actor with the specific executor service so that all its messages
-		// are executed in the same thread as the OpenGL surface.
-		system.actorOf(Props(new RendererActor(renderer)).withDispatcher(SurfaceExecutorService.configKey), name=rendererActorName)
+	          rendererActorName:String = "renderer-actor") {
+		renderer.start(title, width, height, fps, decorated, fullscreen, overSample, { () => 
+			// This is executed when the renderer is ready. In the OpenGL surface thread.
+
+			// Tell our specific executor service which thread to use (the same as the one of the OpenGL surface used).
+			SurfaceExecutorService.setSurface(renderer.surface)
+			
+			renderer.setController(controller)
+
+			// Create our renderer actor with the specific executor service so that all its messages
+			// are executed in the same thread as the OpenGL surface.
+			val ractor = system.actorOf(Props(new RendererActor(renderer)).withDispatcher(SurfaceExecutorService.configKey), name=rendererActorName)
+
+			ractor ! Start
+		})
 	}
 }
 
@@ -135,8 +143,8 @@ class RendererActor(val renderer:Renderer) extends Actor {
 	import RendererActor._
 
 	def receive() = {
-		case Start()                                  ⇒ { }
-		case AddScreen(name, screenType)              ⇒ renderer.addScreen(name, screenType)
+		case Start                                    ⇒ renderer.onStart(self)
+		case AddScreen(name, screenType)              ⇒ {println("adding screen");renderer.addScreen(name, screenType)}
 		case RemoveScreen(name)                       ⇒ renderer.removeScreen(name)
 		case SwitchScreen(name)                       ⇒ renderer.switchToScreen(name)
 		case AddAvatar(atype, name)                   ⇒ renderer.currentScreen.addAvatar(name, atype)
@@ -145,7 +153,8 @@ class RendererActor(val renderer:Renderer) extends Actor {
 		case ChangeAvatar(name, state)                ⇒ renderer.currentScreen.changeAvatar(name, state)
 		case AddAvatarAcquaintance(name, acqaintance) ⇒ renderer.currentScreen.addAvatarAcquaintance(name, acqaintance)
 		case AddResource(res)                         ⇒ renderer.libraries.addResource(res)
-		case AddResources(xmlFileName)                ⇒ renderer.libraries.addResources(xmlFileName)
+		case AddResources(xmlFileName)                ⇒ {println("adding resources ${xmlFileName}"); renderer.libraries.addResources(xmlFileName)}
 		case PrintStatus                              ⇒ println(renderer)
+		case x                                        ⇒ println(s"RendererActor unknown message ${x}")
 	}
 }

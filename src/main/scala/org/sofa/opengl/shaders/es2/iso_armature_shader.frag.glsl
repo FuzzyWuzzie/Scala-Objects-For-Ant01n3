@@ -14,16 +14,16 @@ void main(void) {
 	vec3  msk = texture2D(texMask, X.st).xyz;
 	float dif = max(dot(msk,normalize(lightDir)),0.0);
 
-	dif = min(dif * 1.2, 1.0);
+	dif *= 0.5;
+	dif += 0.5;
 
-//	if(col.a <= 0.1) {
-//		discard;
-//	} else {
-		if(highlight != 0.0)
-			col.r = 1.0*col.a;
+	dif = max(dif, 0.0);
+	dif = min(dif, 1.0);
 
-		if(dif >= 0) 
-		     gl_FragColor = vec4(col.r * dif, col.g * dif, col.b * dif, col.a);
-		else gl_FragColor = vec4(0, 0, 0, col.a);
-//	}
+	if(highlight != 0.0)
+		col.r = 1.0*col.a;
+
+	if(dif >= 0) 
+	     gl_FragColor = vec4(col.r * dif, col.g * dif, col.b * dif, col.a);
+	else gl_FragColor = vec4(0, 0, 0, col.a);
 }

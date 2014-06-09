@@ -131,7 +131,7 @@ object SVGArmatureLoader {
   *   - Each area must contain one circle, of fill color red (FF0000) wich will become
   *     its pivot point.
   *   - Each area can contain other circles, of fill color (FFxx00) with xx being the
-  *     anchor identifier (between 0 and 255).
+  *     anchor identifier (between 1 and 255).
   *
   * The Z level and the hierachy or areas and how they are anchored one above the
   * other is expressed in a layer of the document whose name is passed as the paramater
@@ -230,6 +230,9 @@ class SVGArmatureLoader {
 				}
 			}
 		}
+
+		if(armatureDecl eq null)
+			throw new ArmatureParseException(s"no armature layer named `${armatureId}` found")
 
 //println("found %d areas =====".format(areas.size))
 //areas.foreach { area => println("area %s".format(area)) }
@@ -347,6 +350,11 @@ class SVGArmatureLoader {
 			val joint = findJoint(name)
 
 			parseJointDeclaration(joint, decl)
+		}
+
+		joints.foreach { joint =>
+			if(joint._2.fromUV eq null) // not initialized ?
+				throw new ArmatureParseException(s"a joint `${joint._2.name} is used in the armature but never defined")
 		}
 
 		val root = joints.get("root").getOrElse(throw new ArmatureParseException("no 'root' joint found"))

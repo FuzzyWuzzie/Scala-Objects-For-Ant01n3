@@ -25,7 +25,7 @@ case class RendererException(msg:String) extends Exception(msg)
 
 /** Renderer companion object. */
 object Renderer {
-	def apply(controler:ActorRef):Renderer = new backend.RendererNewt(controler) 
+	def apply(factory:AvatarFactory=null):Renderer = new backend.RendererNewt(factory) 
 }
 
 
@@ -64,7 +64,7 @@ object Renderer {
   *       // inside the surface thread.
   *   })
   */
-abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null) extends SurfaceRenderer {
+abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRenderer {
 // General
 
 	/** OpenGL. */    
@@ -84,6 +84,14 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 
 	/** True as soon as initialized. */
 	protected[this] var inited:Boolean = false
+
+	/** An actor that is controlling the renderer actor and this renderer. Can be null if the renderer
+	  * is used as a stand-alone renderer. */
+	protected[this] var controller:ActorRef = null
+
+	/** An actor that controls the renderer and runs in the same thread. Can be null if the renderer
+	  * is used as a stand-alone renderer. */
+	protected[this] var rendererActor:ActorRef = null
 
 	if(factory eq null)
 		factory = new DefaultAvatarFactory()
@@ -123,6 +131,9 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 	    							decorated, fullscreen, overSample)
 	}
 
+	/** Set or change the `controlActor`. The old one, if present, is erased. No message is sent to the old or new one. */
+	def setController(controlActor:ActorRef) { controller = controlActor }
+
 	/** Only method to implement in descendant classes to create a surface that suits the system. */
 	protected def newSurface(renderer:SurfaceRenderer, width:Int, height:Int, title:String, fps:Int, decorated:Boolean, fullscreen:Boolean, overSample:Int):Surface
 
@@ -142,6 +153,9 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 		screen         = null
 		gl             = null
 
+		if(SurfaceExecutorService.isSurface(surface))
+			SurfaceExecutorService.setSurface(null)
+
 		surface.destroy
 
 		surface = null
@@ -150,9 +164,14 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 
 // == Surface events ===========================
 
+	def onStart(rendererActor:ActorRef) {
+		this.rendererActor = rendererActor
+
+		if(controller ne null) controller ! RendererController.Start(rendererActor)
+	}
+
 	def onClose(surface:Surface) {
-		if(controler ne null)
-			controler ! RendererControler.Exit
+		if(controller ne null) controller ! RendererController.Exit
 
 		destroy
 	}
@@ -260,37 +279,6 @@ abstract class Renderer(val controler:ActorRef, var factory:AvatarFactory = null
 
 		result.toString
 	}
-
-	// /** Transforms a Size into a triplet of values. */
-	// def toTriplet(sz:Size):NumberSeq3 = {
-	// 	sz match {
-	// 		case fromTex:SizeFromTextureWidth ⇒ {
-	// 			val tex = libraries.textures.get(gl, fromTex.fromTexture)
-	// 			Vector3(fromTex.scale, fromTex.scale / tex.ratio, 0.01)
-	// 		}
-	// 		case fromTex:SizeFromTextureHeight ⇒ {
-	// 			val tex = libraries.textures.get(gl, fromTex.fromTexture)
-	// 			Vector3(fromTex.scale * tex.ratio, fromTex.scale, 0.01)
-	// 		}
-	// 		case fromScreen:SizeFromScreenWidth ⇒ {
-	// 			if(screen ne null) {
-	// 				val tex = libraries.textures.get(gl, fromScreen.fromTexture)
-	// 				Vector3((fromScreen.scale * screen.width), (fromScreen.scale * screen.width) / tex.ratio, 0.01)
-	// 			} else {
-	// 				throw NoSuchScreenException("cannot use SizeFromScreenWidth since there is no current screen")
-	// 			}
-	// 		}
-	// 		case fromScreen:SizeFromScreenHeight ⇒ {
-	// 			if(screen ne null) {
-	// 				val tex = libraries.textures.get(gl, fromScreen.fromTexture)
-	// 				Vector3((fromScreen.scale * screen.height) * tex.ratio, (fromScreen.scale * screen.height), 0.01)
-	// 			} else {
-	// 				throw NoSuchScreenException("cannot use SizeFromScreenHeight since there is no current screen")
-	// 			}
-	// 		}
-	// 		case triplet:SizeTriplet ⇒ { Vector3(triplet.x, triplet.y, triplet.z) }
-	// 	}
-	// }
 }
 
 

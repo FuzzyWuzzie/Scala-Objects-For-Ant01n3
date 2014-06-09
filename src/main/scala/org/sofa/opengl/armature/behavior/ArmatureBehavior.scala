@@ -133,6 +133,23 @@ class InParallelDynamic(name:String, behaviorList:ArmatureBehavior *) extends Ar
 }
 
 
+object Wait {
+	def apply(name:String, duration:Long):Wait = new Wait(name, duration)
+}
+
+
+/** Does nothing excepted consuming time until a given delay. */
+class Wait(name:String, duration:Long) extends ArmatureBehavior(name) {
+	protected[this] var startTime = 0L
+
+	def start(t:Long):ArmatureBehavior = { startTime = t; this }
+
+	def animate(t:Long) {}
+
+	def finished(t:Long) = t >= (startTime+duration) 
+}
+
+
 object InSequence {
 	def apply(name:String, behaviors:ArmatureBehavior*):InSequence = 
 		new InSequence(name, behaviors:_*)
@@ -260,8 +277,11 @@ class Switch(name:String, val duration:Long, val joints:Joint *) extends Armatur
 			index = joints.size - 1
 			joints(index).visible = true
 		} else {
-			val idx = (t - startTime) / duration
+			var idx = (t - startTime) / duration
 
+			if(idx >= joints.length) idx = joints.length-1
+//printf("joints(%d) t=%d startTime=%d duration=%d, (t-startTime)=%d, (t-startTime)/duration=%d%n",
+//			joints.length, t, startTime, duration, (t-startTime), (t-startTime)/duration)
 			if(idx > index) {
 				joints(index).visible = false
 				index = idx.toInt
@@ -330,7 +350,7 @@ object LerpToPosition {
 }
 
 
-/** Animate a displacement of the joint until it reaches a given `targetPosition` at the givne start date plus the `duration`. 
+/** Animate a displacement of the joint until it reaches a given `targetPosition` at the given start date plus the `duration`. 
   * This is an absolute displacement. The joint will at the end be at the given `targetPosition`. */
 class LerpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends LerpBehavior(name, joint, duration) {
 	var startPosition = new Point2(0,0)
@@ -348,6 +368,36 @@ class LerpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double
 			joint.transform.translation.set(
 				startPosition.x + ((targetPosition._1 - startPosition.x) * interp),
 				startPosition.y + ((targetPosition._2 - startPosition.y) * interp)
+			)
+		}
+	}
+}
+
+
+object LerpToScale {
+	def apply(name:String, joint:Joint, targetScale:(Double,Double), duration:Long):LerpToScale =
+		new LerpToScale(name, joint, targetScale, duration)
+}
+
+
+/** Animate a scale of the joint until it reaches a given `targetScale` at the given start date plus the `duration`. 
+  * This is an absolute scale. The joint will at the end be at the given `targetScale`. */
+class LerpToScale(name:String, joint:Joint, val targetScale:(Double,Double), duration:Long) extends LerpBehavior(name, joint, duration) {
+	var startScale = new Point2(0,0)
+
+	override def start(t:Long):ArmatureBehavior = {
+		startScale.copy(joint.transform.scale)
+		super.start(t)
+	}
+
+	def animate(t:Long) {
+		if(finished(t)) {
+			joint.transform.scale.set(targetScale._1, targetScale._2)
+		} else {
+			val interp = interpolation(t)
+			joint.transform.scale.set(
+				startScale.x + ((targetScale._1 - startScale.x) * interp),
+				startScale.y + ((targetScale._2 - startScale.y) * interp)
 			)
 		}
 	}

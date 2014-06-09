@@ -62,6 +62,9 @@ object SurfaceExecutorService extends AbstractExecutorService {
 	  * are not created and managed by us. */
 	def setSurface(surface:Surface) { this.surface = surface }
 
+	/** True if this service uses the given `surface`. */
+	def isSurface(surface:Surface):Boolean = this.surface == surface
+
 	def execute(command:Runnable) = {
 		if(surface ne null) {
 //Console.err.println("***(surface-dispatcher)*** BEFORE from thread %s".format(Thread.currentThread.getName))

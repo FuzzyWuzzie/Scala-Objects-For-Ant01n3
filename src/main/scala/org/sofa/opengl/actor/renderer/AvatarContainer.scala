@@ -145,9 +145,12 @@ trait AvatarContainerArray extends AvatarContainer {
 	val screen:Screen
 
 	/** All sub-avatars, null as long as there are no sub avatars. */
-	protected var subs:ArrayBuffer[Avatar] = null
+	protected[this] var subs:ArrayBuffer[Avatar] = null
 
 	protected def self:Avatar
+
+	/** If non-null, sort avatars before rendering using this function. */
+	protected[this] var orderSubs:(Avatar, Avatar) ⇒ Boolean = null
 
 	def subCount = if(subs ne null) subs.size else 0
 
@@ -207,6 +210,9 @@ trait AvatarContainerArray extends AvatarContainer {
 
 	def renderSubs() {
 		if(subs ne null) {
+			if(orderSubs ne null)
+				subs.sortWith(orderSubs)
+
 			var i = 0
 			val n = subs.size
 			while(i < n) { subs(i).render(); i += 1 }	// for performance reasons.
@@ -262,5 +268,9 @@ trait AvatarContainerArray extends AvatarContainer {
 		foreachSub { buf ++= _.hierarchyToString(depth + 1) }
 
 		buf.toString
+	}
+
+	def sortSubsBeforeRender(order:(Avatar, Avatar) => Boolean) {
+		orderSubs = order
 	}
 }

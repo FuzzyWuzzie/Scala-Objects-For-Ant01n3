@@ -310,9 +310,11 @@ class SurfaceNewt(
     	if(invokeThread eq Thread.currentThread) {
 	    	runnable.run
     	} else {
-    		win.invoke(false,
-	    		new GLRunnable() { override def run(win:GLAutoDrawable) = { if(invokeThread eq null) invokeThread = Thread.currentThread; runnable.run; true } }
-    		)
+    		if(win ne null) {
+    			win.invoke(false,
+	    			new GLRunnable() { override def run(win:GLAutoDrawable) = { if(invokeThread eq null) invokeThread = Thread.currentThread; runnable.run; true } }
+    			)
+    		}
     	}
    	}
 
@@ -340,6 +342,7 @@ class SurfaceNewt(
     def destroy() {
     	anim.stop
     	win.destroy
+    	win = null
     }
 
    	// -- GUI Events --------------------------------------------------------------

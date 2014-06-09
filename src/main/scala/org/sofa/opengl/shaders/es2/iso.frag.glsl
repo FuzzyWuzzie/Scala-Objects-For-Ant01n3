@@ -11,13 +11,11 @@ void main(void) {
 	vec3  msk = texture2D(texMask, vTexCoords.st).xyz;
 	float dif = max(dot(msk,normalize(lightDir)),0.0);
 
-	dif = min(dif * 1.2, 1.0);
+	dif *= 0.5;
+	dif += 0.5;
 
-	// if(col.a <= 0.0) {
-	// 	discard;
-	// } else {
-		//if(dif >= 0) 
-		     gl_FragColor = vec4(col.r * dif, col.g * dif, col.b * dif, col.a);
-		//else discard;
-	// }
+	dif = max(dif, 0.0);
+	dif = min(dif, 1.0);
+
+	gl_FragColor = vec4(col.r * dif, col.g * dif, col.b * dif, col.a);
 }

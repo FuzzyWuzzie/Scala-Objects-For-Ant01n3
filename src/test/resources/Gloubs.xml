@@ -14,20 +14,45 @@
 		<shader id="armature-shader" vert="iso_armature_shader.vert.glsl" frag="iso_armature_shader.frag.glsl"/>
 	</shaders>
 	<texs>
-		<tex id="ground-color-1"       res="IsoTemplate_1024_Ground.png" alpha="premultiply"/>
 		<tex id="underground-color-1"  res="IsoTemplate_1024_Underground.png" alpha="premultiply"/>
-		<tex id="ground-mask-1"        res="IsoTemplate_1024_Ground-Mask.png" alpha="premultiply"/>
-		<tex id="underground-mask-1"   res="IsoTemplate_1024_Underground-Mask.png" alpha="premultiply"/>
-		<tex id="gloub-color"          res="Gloubs_1024.png" alpha="premultiply"/>
-		<tex id="gloub-mask"           res="GloubsMask_1024.png"/>
+		<tex id="underground-mask-1"   res="IsoTemplate_1024_Underground-Mask.png"/>
+		<tex id="ground-color-1"       res="Ground_Color.png" alpha="premultiply" mipmap="generate" minfilter="linearandmipmaplinear" magfilter="linear"/>
+		<tex id="ground-mask-1"        res="Ground_Mask.png" mipmap="generate" minfilter="linearandmipmaplinear" magfilter="linear"/>
+		<tex id="gloub-color"          res="Gloubs_1024.png" alpha="premultiply" mipmap="generate" minfilter="linearandmipmaplinear" magfilter="linear"/>
+		<tex id="gloub-mask"           res="GloubsMask_1024.png" mipmap="generate" minfilter="linearandmipmaplinear" magfilter="linear"/>
+		<tex id="habitat1-color"       res="Habitat_Color.png" alpha="premultiply" mipmap="generate" minfilter="linearandmipmaplinear" magfilter="linear"/>
+		<tex id="habitat1-mask"        res="Habitat_Mask.png" mipmap="generate" minfilter="linearandmipmaplinear" magfilter="linear"/>
+		<tex id="bolok-color"          res="Bolok_Color.png" alpha="premultiply" mipmap="generate" minfilter="linearandmipmaplinear" magfilter="linear"/>
+		<tex id="bolok-mask"           res="Bolok_Mask.png" mipmap="generate" minfilter="linearandmipmaplinear" magfilter="linear"/>
 	</texs>
 	<armatures>
 		<armature id="gloub-armature" tex="gloub-color" shader="armature-shader" svg="Gloubs.svg" armatureid="ArmatureGloub" scale="0.0025"/>
+		<armature id="habitat1-armature" tex="habitat1-color" shader="armature-shader" svg="Habitats.svg" armatureid="Habitat1" scale="0.0025"/>
+		<armature id="bolok-armature" tex="bolok-color" shader="armature-shader" svg="Boloks.svg" armatureid="Bolok1" scale="0.0025"/>
+		<armature id="dock-armature" tex="bolok-color" shader="armature-shader" svg="Boloks.svg" armatureid="Dock1" scale="0.0025"/>
 	</armatures>
 	<behaviors>
-		<lerp-to-position arm="gloub-armature" joint="eye" id="eye-to-left" value="(-0.02,0)" duration="1000"/>
-		<lerp-to-position arm="gloub-armature" joint="eye" id="eye-to-right" value="(0.02,0)" duration="1000"/>
-		<in-sequence id="eye-seq" arm="gloub-armature" behaviors="eye-to-left, eye-to-right"/>
-		<loop id="eye-loop" arm="gloub-armature" behaviors="eye-seq"/>
+		<lerp-to-position arm="gloub-armature" joint="eye" id="gloub-eye-to-left" value="(-0.02,0)" duration="1000"/>
+		<lerp-to-position arm="gloub-armature" joint="eye" id="gloub-eye-to-right" value="(0.02,0)" duration="1000"/>
+		<in-sequence id="gloub-eye-seq" arm="gloub-armature" behaviors="gloub-eye-to-left, gloub-eye-to-right"/>
+		<loop id="gloub-eye-loop" arm="gloub-armature" behaviors="gloub-eye-seq"/>
+
+		<lerp-to-position arm="bolok-armature" joint="iris" id="bolok-eye-to-left" value="(-0.02,0)" duration="1250"/>
+		<lerp-to-position arm="bolok-armature" joint="iris" id="bolok-eye-to-right" value="(0.02,0)" duration="1250"/>
+		<lerp-to-position arm="bolok-armature" joint="uplid" id="bolok-close-uplid" value="(0,-0.038)" duration="300"/>
+		<lerp-to-position arm="bolok-armature" joint="uplid" id="bolok-open-uplid"  value="(0, 0.0)" duration="200"/>
+		<lerp-to-position arm="bolok-armature" joint="downlid" id="bolok-close-downlid" value="(0, 0.038)" duration="300"/>
+		<lerp-to-position arm="bolok-armature" joint="downlid" id="bolok-open-downlid"  value="(0, 0.0)" duration="200"/>
+		<in-parallel id="bolok-close-eye" arm="bolok-armature" behaviors="bolok-close-uplid, bolok-close-downlid"/>
+		<in-parallel id="bolok-open-eye" arm="bolok-armature" behaviors="bolok-open-uplid, bolok-open-downlid"/>
+		<in-sequence id="bolok-blink" arm="bolok-armature" behaviors="bolok-close-eye, bolok-open-eye, wait(2000)"/>
+		<in-sequence id="bolok-eye-seq" arm="bolok-armature" behaviors="bolok-eye-to-left, bolok-eye-to-right"/>
+		<in-parallel id="bolok-eye" arm="bolok-armature" behaviors="bolok-eye-seq, bolok-blink"/>
+		<loop id="bolok-eye-loop" arm="bolok-armature" behaviors="bolok-eye"/>
+
+		<lerp-to-scale arm="dock-armature" joint="root" id="dock-grow" value="(1.15,1.0)" duration="1200"/>
+		<lerp-to-scale arm="dock-armature" joint="root" id="dock-shrink" value="(1.0,1.0)" duration="400"/>
+		<in-sequence id="dock-grow-shrink" arm="dock-armature" behaviors="dock-grow, dock-shrink"/>
+		<loop id="dock-grow-shrink-loop" arm="dock-armature" behaviors="dock-grow-shrink"/>
 	</behaviors>
 </resources>

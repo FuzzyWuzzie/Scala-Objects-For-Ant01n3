@@ -84,6 +84,13 @@ class TestGame extends FlatSpec {
 
 			screen.addAvatar(gloub1, "iso-entity")
 			screen.changeAvatar(gloub1, gconfig)
+
+			val habitat1 = AvatarName("root.world.entities.habitat1")
+			val hconfig = IsoEntityConfig("habitat1-armature", "<none>", "habitat1-mask")
+
+			screen.addAvatar(habitat1, "iso-entity")
+			screen.changeAvatar(habitat1, hconfig)
+			screen.changeAvatar(habitat1, AvatarBaseStates.MoveAt(Point3(1,0,0)))
 		})
 	}
 

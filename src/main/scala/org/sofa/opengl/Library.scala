@@ -8,13 +8,17 @@ import org.sofa.FileLoader
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.armature.{Armature, Joint}
-import org.sofa.opengl.armature.behavior.{ArmatureBehavior, LerpToAngle, LerpToPosition, LerpMove, InParallel, InSequence, Loop, Switch, LerpKeyArmature}
+import org.sofa.opengl.armature.behavior.{ArmatureBehavior, Wait, LerpToAngle, LerpToPosition, LerpToScale, LerpMove, InParallel, InSequence, Loop, Switch, LerpKeyArmature}
 
 import scala.xml.{XML, Elem, Node, NodeSeq}
 
 
 /** When a resource cannot be loaded. */
 case class NoSuchResourceException(msg:String,nested:Throwable=null) extends Exception(msg,nested)
+
+
+/** When the resources XML file cannot be properly parsed. */
+case class ResourcesParseException(msg:String,nested:Throwable=null) extends Exception(msg,nested)
 
 
 /** A resource. */
@@ -45,6 +49,15 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 	def get(gl:SGL, name:String):T = library.get(name).getOrElse(
 			throw new NoSuchResourceException("resource '%s' unknown, did you put it in the Library ? use Library.add()".format(name))
 		).value(gl)
+
+	/** Load or retrieve a resource, or if not found, run the given code. The result of the
+	  * given code is not inserted in the library since it is not a resource.
+	  * See `getOrAdd()`. */
+	def getOr(gl:SGL, name:String)(code: => T):T = {
+		if(library.contains(name))
+			 library.get(name).get.value(gl)
+		else code
+	}
 
 	/** Retrieve a resource if it already exists, else add it via a descript and return it. */
 	def addAndGet(gl:SGL, name:String, newResource:ResourceDescriptor[T]):T = library.get(name) match {
@@ -87,9 +100,10 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 
 
 object Libraries {
-	protected final val PositionExpression    = """\s*\(\s*(\s*[-+]?\d+\.?\d*\s*)\s*,\s*(\s*[-+]?\d+\.?\d*\s*)\s*\)\s*""".r
+	protected final val Vector2Expression     = """\s*\(\s*(\s*[-+]?\d+\.?\d*\s*)\s*,\s*(\s*[-+]?\d+\.?\d*\s*)\s*\)\s*""".r
 	protected final val DoubleExpression      = """([+-]?\d+\.?\d*?)""".r
 	protected final val PositiveIntExpression = """\s*(\+?\d+)\s*""".r
+	protected final val WaitExpression        = """\s*wait\s*\(\s*(\d+)\s*\)\s*""".r
 
 	def apply(gl:SGL):Libraries = new Libraries(gl)
 }
@@ -169,14 +183,16 @@ class Libraries(gl:SGL) {
 	  *             <armature id="man" tex="man-tex" shader="man-shader" svg="man-svg" scale="1.0"/>
 	  *         </armatures>
 	  *         <behaviors>
-	  *             <in-parallel      id="" arm="" behaviors=",,,,"/>
-	  *				<in-sequence      id="" arm="" behaviors=",,,,"/>
-	  *             <loop             id="" arm="" limit="" behaviors=",,,,"/>
-	  *             <switch           id="" arm="" joints=",,,," duration=""/>
-	  *             <lerp-to-angle    id="" arm="" joint="" value="" duration=""/>
-	  *             <lerp-to-position id="" arm="" joint="" value="(,)" duration=""/>
-	  *             <lerp-move        id="" arm="" joint="" value="(,)", duration=""/>
-	  *             <lerp-keys        id="" arm="" filename="" scale=""/>
+	  *             <in-parallel      id="S" arm="S" behaviors="S,S,S,S,S"/>
+	  *				<in-sequence      id="S" arm="S" behaviors="S,S,S,S,S"/>
+	  *             <loop             id="S" arm="S" limit="L" behaviors="S,S,S,S,S"/>
+	  *             <switch           id="S" arm="S" joints="S,S,S,S,S" duration="L"/>
+	  *             <lerp-to-angle    id="S" arm="S" joint="S" value="" duration="L"/>
+	  *             <lerp-to-position id="S" arm="S" joint="S" value="(D,D)" duration="L"/>
+	  *				<lerp-to-scale    id="S" arm="S" joint="S" value="(D,D)" duration="L"/>
+	  *             <lerp-move        id="S" arm="S" joint="S" value="(D,D)", duration="L"/>
+	  *             <lerp-keys        id="S" arm="S" filename="S" scale="D"/>
+	  *				<wait             id="S" arm="S" duration="L"/>
 	  *         </behaviors>
 	  *		</resources>
 	  *
@@ -228,8 +244,8 @@ class Libraries(gl:SGL) {
 						case _         ⇒ TexMag.Linear
 					},
 				alpha = (tex \\ "@alpha").text.toLowerCase match {
-						case "premultiply" ⇒ {println("**premultiply**");TexAlpha.Premultiply}
-						case _             ⇒ {println("**ARGGGG**");TexAlpha.Nop}
+						case "premultiply" ⇒ TexAlpha.Premultiply
+						case _             ⇒ TexAlpha.Nop
 					},
 				wrap = (tex \\ "@wrap").text.toLowerCase match {
 						case "clamp"          ⇒ TexWrap.Clamp
@@ -260,56 +276,72 @@ class Libraries(gl:SGL) {
 		}
 	}
 
-	/** */
+	/** Parse the behaviors. */
 	protected def parseBehaviors(nodes:NodeSeq) {
-	  	nodes foreach { node =>
-		  	node.child foreach { child => child match {
-		  			case elem:Elem => {
-				  		val armature = armatures.get(gl, (elem \\ "@arm").text)
-				  		val name     = (elem \\ "@id").text
-				  		
-				  		elem match {
-				  			case node:Node if node.label == "in-parallel" => {
-				  				behaviors += BehaviorResource(name, InParallel(
-				  					name, parseArray((node \\ "@behaviors").text):_*))
-				  			}
-				  			case node:Node if node.label == "in-sequence" => {
-				  				behaviors += BehaviorResource(name, InSequence(
-				  					name, parseArray((node \\ "@behaviors").text):_*))
-				  			}
-				  			case node:Node if node.label == "loop" => {
-				  				behaviors += BehaviorResource(name, Loop(
-				  					name, optInt((node \\ "@limit").text), parseArray((node \\ "@behaviors").text):_*))
-				  			}
-				  			case node:Node if node.label == "switch" => {
-				  				behaviors += BehaviorResource(name, Switch(
-				  					name, (node \\ "@duration").text.toLong, parseJoints(armature, (node \\ "@joints").text):_*))
-				  			}
-				  			case node:Node if node.label == "lerp-to-angle" => {
-				  				behaviors += BehaviorResource(name, LerpToAngle(
-				  					name, armature \\ (node \\ "@joint").text,
-				  					(node \\ "@value").text.toDouble, (node \\ "@duration").text.toLong))
-				  			}
-				  			case node:Node if node.label == "lerp-to-position" => {
-				  				behaviors += BehaviorResource(name, LerpToPosition(
-				  					name, armature \\ (node \\ "@joint").text,
-				  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
-				  			}
-				  			case node:Node if node.label == "lerp-move" => {
-				  				behaviors += BehaviorResource(name, LerpMove(
-				  					name, armature \\ (node \\ "@joint").text,
-				  					parsePosition((node \\ "@value").text), (node \\ "@duration").text.toLong))
-				  			}
-				  			case node:Node if node.label == "lerp-keys" => {
-				  				behaviors += BehaviorResource(name, LerpKeyArmature(
-				  					name, armature, (node \\ "@filename").text, (node \\ "@scale").text.toDouble))
-				  			}
-				  			case _ => throw new RuntimeException("unknown behavior %s".format(node.label))
-			  			}
+		// TODO handle errors !!!!!
 
-			  		}
-			  		case _ => {}
-			  	}
+	  	nodes foreach { node =>
+		  	node.child foreach { child =>
+			  	child match {
+			  		case elem:Elem => {
+			  			try {
+					  		val armature = armatures.get(gl, (elem \\ "@arm").text)
+					  		val name     = (elem \\ "@id").text
+					  		
+					  		elem match {
+					  			case node:Node if node.label == "in-parallel" => {
+					  				behaviors += BehaviorResource(name, InParallel(
+					  					name, parseArray((node \\ "@behaviors").text):_*))
+					  			}
+					  			case node:Node if node.label == "in-sequence" => {
+					  				behaviors += BehaviorResource(name, InSequence(
+					  					name, parseArray((node \\ "@behaviors").text):_*))
+					  			}
+					  			case node:Node if node.label == "loop" => {
+					  				behaviors += BehaviorResource(name, Loop(
+					  					name, optInt((node \\ "@limit").text), parseArray((node \\ "@behaviors").text):_*))
+					  			}
+					  			case node:Node if node.label == "switch" => {
+					  				behaviors += BehaviorResource(name, Switch(
+					  					name, (node \\ "@duration").text.toLong, parseJoints(armature, (node \\ "@joints").text):_*))
+					  			}
+					  			case node:Node if node.label == "lerp-to-angle" => {
+					  				behaviors += BehaviorResource(name, LerpToAngle(
+					  					name, armature \\ (node \\ "@joint").text,
+					  					(node \\ "@value").text.toDouble, (node \\ "@duration").text.toLong))
+					  			}
+					  			case node:Node if node.label == "lerp-to-position" => {
+					  				behaviors += BehaviorResource(name, LerpToPosition(
+					  					name, armature \\ (node \\ "@joint").text,
+					  					parseVector2((node \\ "@value").text), (node \\ "@duration").text.toLong))
+					  			}
+					  			case node:Node if node.label == "lerp-to-scale" => {
+					  				behaviors += BehaviorResource(name, LerpToScale(
+					  					name, armature \\ (node \\ "@joint").text,
+					  					parseVector2((node \\ "@value").text), (node \\ "@duration").text.toLong))
+					  			}
+					  			case node:Node if node.label == "lerp-move" => {
+					  				behaviors += BehaviorResource(name, LerpMove(
+					  					name, armature \\ (node \\ "@joint").text,
+					  					parseVector2((node \\ "@value").text), (node \\ "@duration").text.toLong))
+					  			}
+					  			case node:Node if node.label == "lerp-keys" => {
+					  				behaviors += BehaviorResource(name, LerpKeyArmature(
+					  					name, armature, (node \\ "@filename").text, (node \\ "@scale").text.toDouble))
+					  			}
+					  			case node:Node if node.label == "wait" => {
+					  				behaviors += BehaviorResource(name, Wait(name, (node \\ "@duration").text.toLong))
+					  			}
+					  			case _ => throw new RuntimeException("unknown behavior %s".format(node.label))
+				  			}
+						} catch {
+							case e:Throwable => {
+								throw new ResourcesParseException("parse error in '%s' (cause: %s)".format(elem.toString, e.getMessage),e)
+							}
+						}
+				  	}
+				  	case _ => {}
+				}
 	  		}
 	  	}
 	}
@@ -321,13 +353,27 @@ class Libraries(gl:SGL) {
 	}
 
 	/** Parse two double numbers inside parenthesis separated by a comma. */
-	protected def parsePosition(pos:String):(Double,Double) = pos match {
-		case PositionExpression(a,b) => (a.toDouble,b.toDouble) 
+	protected def parseVector2(pos:String):(Double,Double) = pos match {
+		case Vector2Expression(a,b) => (a.toDouble,b.toDouble) 
 		case _ => throw new RuntimeException("cannot parse position '%s'".format(pos))
 	}
 
 	/** Parse an array of behavior names separated by commas. */
-	protected def parseArray(behaviorList:String):Array[ArmatureBehavior] = behaviorList.split(",").map(s => behaviors.get(gl,s.trim))
+	protected def parseArray(behaviorList:String):Array[ArmatureBehavior] = behaviorList.split(",").map { s =>
+	 	s match {
+	 		case WaitExpression(duration) => {
+	 			val id = s"wait(${duration})"
+	 			
+	 			if(! behaviors.contains(id))
+	 				behaviors.add(BehaviorResource(id, Wait(id, duration.toLong)))
+
+	 			behaviors.get(gl,id)
+	 		}
+	 		case _ => {
+	 			behaviors.get(gl,s.trim)
+	 		}
+	 	}
+	}
 
 	/** Parse an array of joint name in the `armature` separated by commas. */
 	protected def parseJoints(armature:Armature, jointList:String):Array[Joint] = jointList.split(",").map(s => armature \\ s.trim)

@@ -7,7 +7,7 @@ import org.sofa.opengl.{Texture, ShaderResource, ModelResource, TextureResource,
 import org.sofa.opengl.armature.{Armature}
 import org.sofa.opengl.armature.behavior.{ArmatureBehavior}
 import org.sofa.opengl.actor.renderer.{Screen}
-import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarRenderState}
+import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarRenderState, AvatarBaseStates}
 import org.sofa.opengl.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarMotionEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarKeyEvent, AvatarZoomEvent}
 import org.sofa.opengl.actor.renderer.{NoSuchAvatarException}
 
@@ -19,6 +19,12 @@ import org.sofa.opengl.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh, He
 
 
 case class IsoEntityConfig(armature:String, behavior:String, mask:String) extends AvatarRenderState {}
+
+
+object IsoEntity {
+	/** Shortcut to the value of sqrt(3). */
+	final val Sqrt3 = math.sqrt(3).toFloat
+}
 
 
 class IsoEntityRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils {
@@ -49,12 +55,13 @@ class IsoEntityRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUti
 	protected def init(armature:String, behavior:String, mask:String) {
 		val gl   = self.screen.gl
 		this.armature = screen.libraries.armatures.get(gl, armature)
-		this.behavior = screen.libraries.behaviors.get(gl, behavior)
+		this.behavior = screen.libraries.behaviors.getOr(gl, behavior) { null }
 		this.shader   = this.armature.shader
 		this.texColor = this.armature.texture
 		this.texMask  = screen.libraries.textures.get(gl, mask)
 
-		this.behavior.start(Platform.currentTime)
+		if(this.behavior ne null)
+			this.behavior.start(Platform.currentTime)
 
 		world = screen.avatar(AvatarName("root.world")).getOrElse(throw new RuntimeException("no world avatar ??"))
 	}
@@ -72,11 +79,10 @@ class IsoEntityRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUti
 		val space = self.space
 		val text  = screen.textLayer
 		val gl    = self.screen.gl
-//		val lightDir = self.parent.renderer.asInstanceOf[IsoWorldRender].lightDir
-		val lightDir = world.renderer.asInstanceOf[IsoWorldRender].lightDir
 
 		space.pushSubSpace
 			if(armature ne null) {
+				val lightDir = world.renderer.asInstanceOf[IsoWorldRender].lightDir
 //				fillAvatarBox
 
 				gl.enable(gl.BLEND)
@@ -107,10 +113,9 @@ class IsoEntityRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUti
 class IsoEntitySpace(avatar:Avatar) extends IsoSpace(avatar) {
 	var scale1cm = 1.0
 
-	var fromSpace = new Box3PosCentered {
+	var fromSpace = new Box3Sized {
 		pos.set(0, 0, 0)
-		from.set(-0.5, 0, -0.5)
-		to.set(0.5, 1, 0.5)
+		size.set(1, 1, 1)
 	}
 
 	var toSpace = fromSpace
@@ -118,6 +123,25 @@ class IsoEntitySpace(avatar:Avatar) extends IsoSpace(avatar) {
 	def thisSpace = fromSpace
 
 	def subSpace = toSpace
+
+	override def changeSpace(newState:AvatarSpaceState) {
+		import IsoEntity._
+
+		newState match {
+			case AvatarBaseStates.Move(offset) => {
+				println("Cannot move an iso entity, use MoveAt")
+			}
+			case AvatarBaseStates.MoveAt(position:Point3) => {
+				fromSpace.pos.x = (position.x * Sqrt3 * 0.5) + (position.y * Sqrt3 * 0.5)
+				fromSpace.pos.y = (position.y * 0.5) - (position.x * 0.5)
+				fromSpace.pos.z = 0
+			}
+			case AvatarBaseStates.Resize(size) => {
+				println("Cannot resize an iso entity")
+			}
+			case _ => super.changeSpace(newState)
+		}
+	}
 
 	override def animateSpace() {
 	}
