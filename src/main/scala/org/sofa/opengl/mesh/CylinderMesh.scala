@@ -143,7 +143,9 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
     
     // -- Mesh interface -----------------------------------------
 
-    def attribute(name:String):FloatBuffer = {
+    def vertexCount:Int = (6 * (sections + 1)) + 2
+
+    override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => V
     		case VertexAttribute.Color    => C
@@ -151,22 +153,22 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
     		case VertexAttribute.Tangent  => T
     		case VertexAttribute.TexCoord => X
     		case VertexAttribute.Bone     => B
-    		case _                        => throw new RuntimeException("mesh has no %s attribute".format(name))
+    		case _                        => super.attribute(name) //throw new RuntimeException("mesh has no %s attribute".format(name))
     	}
     }
     
     override def indices:IntBuffer = I
 
-    def attributeCount():Int = 6
+    override def attributeCount():Int = 6 + super.attributeCount
 
-    def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString,
+    override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString,
     											   VertexAttribute.Color.toString,
     											   VertexAttribute.Normal.toString,
     											   VertexAttribute.Tangent.toString,
     											   VertexAttribute.TexCoord.toString,
-    											   VertexAttribute.Bone.toString)
+    											   VertexAttribute.Bone.toString) ++ super.attributes
      
-    def components(name:String):Int = {
+    override def components(name:String):Int = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => 3
     		case VertexAttribute.Color    => 4
@@ -174,11 +176,11 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
     		case VertexAttribute.Tangent  => 3
     		case VertexAttribute.TexCoord => 2
     		case VertexAttribute.Bone     => 1
-    		case _                        => throw new RuntimeException("mesh has no %s attribute".format(name))
+    		case _                        => super.components(name) //throw new RuntimeException("mesh has no %s attribute".format(name))
     	}
     }
 
-    def has(name:String):Boolean = {
+    override def has(name:String):Boolean = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => true
     		case VertexAttribute.Color    => true
@@ -186,7 +188,7 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
     		case VertexAttribute.Tangent  => true
     		case VertexAttribute.TexCoord => true
     		case VertexAttribute.Bone     => true
-    		case _                        => false
+    		case _                        => super.has(name) //false
     	}
     }
     

@@ -21,32 +21,34 @@ class LinesMesh(val count:Int) extends Mesh {
 
     // -- Mesh Interface -----------------------------------------------
     
-    def attribute(name:String):FloatBuffer = {
+    def vertexCount:Int = count * 2
+
+    override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => V
     		case VertexAttribute.Color  => C
-    		case _                      => throw new RuntimeException("no %s attribute in this mesh".format(name))
+    		case _                      => super.attribute(name) //throw new RuntimeException("no %s attribute in this mesh".format(name))
     	}
     }
 
-    def attributeCount():Int = 2
+    override def attributeCount():Int = 2 + super.attributeCount
 
-    def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Color.toString)
+    override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Color.toString) ++ super.attributes
         
-    def components(name:String):Int = {
+    override def components(name:String):Int = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => 3
     		case VertexAttribute.Color  => 4
-    		case _                      => throw new RuntimeException("no %s attribute in this mesh".format(name))
+    		case _                      => super.components(name) //throw new RuntimeException("no %s attribute in this mesh".format(name))
     	}
 
     }
 
-    def has(name:String):Boolean = {
+    override def has(name:String):Boolean = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => true
     		case VertexAttribute.Color  => true
-    		case _                      => false
+    		case _                      => super.has(name)// false
     	}
     }
 

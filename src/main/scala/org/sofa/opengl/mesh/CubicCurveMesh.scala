@@ -76,28 +76,30 @@ class CubicCurveMesh(countCurves:Int, val segments:Int) extends Mesh {
 	    }
     }
 
-    def attribute(name:String):FloatBuffer = {
+    def vertexCount:Int = (segments + 1) * count
+
+    override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => V
-    		case _                      => throw new RuntimeException("mesh has no %s attribute".format(name))
+    		case _                      => super.attribute(name)// throw new RuntimeException("mesh has no %s attribute".format(name))
     	}
     }
 
-    def attributeCount():Int = 1
+    override def attributeCount():Int = 1 + super.attributeCount
 
-    def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString)
+    override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString) ++ super.attributes
 
-    def components(name:String):Int = {
+    override def components(name:String):Int = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => 1
-    		case _                      => throw new RuntimeException("mesh has no %s attribute".format(name))
+    		case _                      => super.components(name)// throw new RuntimeException("mesh has no %s attribute".format(name))
     	}
     }
 
-    def has(name:String):Boolean = {
+    override def has(name:String):Boolean = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => true
-    		case _                      => false
+    		case _                      => super.has(name) //false
     	}    	
     }
         

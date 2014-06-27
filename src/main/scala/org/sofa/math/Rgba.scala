@@ -1,5 +1,7 @@
 package org.sofa.math
 
+import scala.math._
+
 object Rgba {
     final val Black   = new Rgba(0, 0, 0, 1)
     final val White   = new Rgba(1, 1, 1, 1)
@@ -30,6 +32,10 @@ object Rgba {
     def apply(from:(Double,Double,Double)) = new Rgba(from._1, from._2, from._3, 1)
 
     def apply(from:java.awt.Color):Rgba = new Rgba(from.getRed/255.0, from.getGreen/255.0, from.getBlue/255.0, from.getAlpha/255.0)
+
+    def apply(r:Int, g:Int, b:Int):Rgba = apply(r,g,b,255)
+
+    def apply(r:Int, g:Int, b:Int, a:Int):Rgba = new Rgba(r/255.0, g/255.0, b/255.0, a/255.0)
     
     def apply(r:Double, g:Double, b:Double, a:Double):Rgba = new Rgba(r, g, b, a)
     
@@ -92,6 +98,17 @@ class Rgba(
 		blue  *= alpha
 	}
 
+	/** Convert the rgb part to a normal vector as used in normal maps.
+	  * The red, green, blue values are mapped from [0:1] to [-1:1]. It must not be alpha premultiplied. */
+	def toNormal() = Vector3(
+		// (red   * 2.0) - 1.0,
+		// (green * 2.0) - 1.0,
+		// (blue  * 2.0) - 1.0
+		(red   - 0.5) * 2.0,
+		(green - 0.5) * 2.0,
+		(blue  - 0.5) * 2.0
+	)
+
 	/** New copy of this with red, green and blue components multiplied by alpha. Alpha is unchanged. */
 	def alphaPremultiplied():Rgba = Rgba(red*alpha, green*alpha, blue*alpha, alpha)
 
@@ -119,5 +136,5 @@ class Rgba(
 	//		
 	// }
 
-	override def toString():String = "RGBA[%f, %f, %f, %f]".format(red, green, blue, alpha)
+	override def toString():String = "RGBA[%.3f %.3f %.3f %.3f]".format(red, green, blue, alpha)
 }

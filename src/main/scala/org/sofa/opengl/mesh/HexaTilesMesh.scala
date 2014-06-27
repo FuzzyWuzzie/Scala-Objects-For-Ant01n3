@@ -105,6 +105,8 @@ class HexaTilesMesh(
 
     def tileOffsetY = 2.0 * (3.0/4.0)
 
+    def vertexCount = vcount
+
     // -- Mesh creation ------------------------------------------------
 
     protected def setPoint(p:Int, x:Float, y:Float, data:FloatBuffer=V) {
@@ -255,36 +257,36 @@ class HexaTilesMesh(
 
     // -- Mesh Interface -----------------------------------------------
     
-    def attribute(name:String):FloatBuffer = {
+    override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => V
     		case VertexAttribute.TexCoord => T
-    		case _                        => throw new RuntimeException("no %s attribute in this mesh".format(name))
+    		case _                        => super.attribute(name) //throw new RuntimeException("no %s attribute in this mesh".format(name))
     	}
     }
 
-    def attributeCount():Int = 2
+    override def attributeCount():Int = 2 + super.attributeCount
 
-    def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.TexCoord.toString)
+    override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.TexCoord.toString) ++ super.attributes
         
 	override def indices:IntBuffer = I
 		
 	override def hasIndices = true
 
-    def components(name:String):Int = {
+    override def components(name:String):Int = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => 3
     		case VertexAttribute.TexCoord => 2
-    		case _                        => throw new RuntimeException("no %s attribute in this mesh".format(name))
+    		case _                        => super.components(name) //throw new RuntimeException("no %s attribute in this mesh".format(name))
     	}
 
     }
 
-    def has(name:String):Boolean = {
+    override def has(name:String):Boolean = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => true
     		case VertexAttribute.TexCoord => true
-    		case _                        => false
+    		case _                        => super.has(name) //false
     	}
     }
 

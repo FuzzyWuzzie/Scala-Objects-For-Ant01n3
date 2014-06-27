@@ -11,7 +11,9 @@
 	<shaders>
 		<shader id="image-shader"    vert="image_shader.vert.glsl"        frag="image_shader.frag.glsl"/>
 		<shader id="iso-shader"      vert="iso.vert.glsl"                 frag="iso.frag.glsl"/>
+		<shader id="iso-shader2"     vert="iso.vert.glsl"                 frag="iso_nm.frag.glsl"/>
 		<shader id="armature-shader" vert="iso_armature_shader.vert.glsl" frag="iso_armature_shader.frag.glsl"/>
+		<shader id="armature-shader2" vert="iso_armature_shader.vert.glsl" frag="iso_nm_armature_shader.frag.glsl"/>
 	</shaders>
 	<texs>
 		<tex id="underground-color-1"  res="IsoTemplate_1024_Underground.png" alpha="premultiply"/>
@@ -30,6 +32,8 @@
 		<armature id="habitat1-armature" tex="habitat1-color" shader="armature-shader" svg="Habitats.svg" armatureid="Habitat1" scale="0.0025"/>
 		<armature id="bolok-armature" tex="bolok-color" shader="armature-shader" svg="Boloks.svg" armatureid="Bolok1" scale="0.0025"/>
 		<armature id="dock-armature" tex="bolok-color" shader="armature-shader" svg="Boloks.svg" armatureid="Dock1" scale="0.0025"/>
+		<armature id="somadrop-armature" tex="habitat1-color" shader="armature-shader" svg="Habitats.svg" armatureid="SomaDrop" scale="0.0025"/>
+		<armature id="dock2-armature" tex="bolok-color" shader="armature-shader2" svg="Boloks.svg" armatureid="Dock2" scale="0.0025"/>
 	</armatures>
 	<behaviors>
 		<lerp-to-position arm="gloub-armature" joint="eye" id="gloub-eye-to-left" value="(-0.02,0)" duration="1000"/>

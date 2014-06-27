@@ -16,18 +16,20 @@ import org.sofa.opengl.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh, He
 
 class IsoWorldRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils {
 	
-	val lightDir = Vector3(1, 1.5, 0)
+	val lightDir = Vector3(1, 1.1, 0)
 	
-	protected[this] var dir = 0.01
+	protected[this] var dir = 0.005
 
 	override def animateRender() {
 		lightDir.x = lightDir.x + dir
 		lightDir.z = lightDir.z - dir
 
-		if(lightDir.x > 1) { lightDir.x = 1; dir = -dir }
-		else if(lightDir.x < 0) { lightDir.x = 0; dir = -dir }
-		if(lightDir.z > 1) { lightDir.z = 1 }
-		else if(lightDir.z < 0) { lightDir.z = 0 }
+		if     (lightDir.x >= 1) { lightDir.x = 1; dir = -dir }
+		else if(lightDir.x <= 0) { lightDir.x = 0; dir = -dir }
+		if     (lightDir.z >= 1) { lightDir.z = 1 }
+		else if(lightDir.z <= 0) { lightDir.z = 0 }
+
+		//println(s"lightdir = ${lightDir}")
 	}
 
 	override def render() {

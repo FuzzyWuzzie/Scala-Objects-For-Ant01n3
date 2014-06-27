@@ -6,24 +6,25 @@ varying vec2 X;
 
 uniform sampler2D texColor;
 uniform sampler2D texMask;
-uniform float highlight;
 uniform vec3 lightDir;
 
 void main(void) {
-	vec4  col = texture2D(texColor, X.st);
-	vec3  msk = texture2D(texMask, X.st).xyz;
-	float dif = max(dot(msk,normalize(lightDir)),0.0);
+	float diffuse   = 0.5;
+	float shininess = 1.0;
+	float specular  = 1.0;
+	float ambient   = 1.0 -  diffuse;
+	vec3  l         = normalize(lightDir);
 
-	dif *= 0.5;
-	dif += 0.5;
+	vec4  c = texture2D(texColor, X.st);											// Base color.
+	vec3  n = texture2D(texMask, X.st).xyz;											// Normal from mask.
+	float d = max(dot(n, l), 0.0);													// Diffuse coef.
+	vec3  r = reflect(-l, n);														// Reflect vector.
+	float s = pow(max(dot(r, vec3(0.57735, 0.57735, 0.57735)), 0.0), shininess);	// Specular coef.	Observer is constant.
 
-	dif = max(dif, 0.0);
-	dif = min(dif, 1.0);
+	d = clamp(d * diffuse + ambient, 0.0, 1.0);										// Mix diffuse and ambient.
+	s = s * specular;
 
-	if(highlight != 0.0)
-		col.r = 1.0*col.a;
-
-	if(dif >= 0) 
-	     gl_FragColor = vec4(col.r * dif, col.g * dif, col.b * dif, col.a);
-	else gl_FragColor = vec4(0, 0, 0, col.a);
+	if(c.a > 0.95) 	// We consider a specular always white, so just add 's'. But only for non transparent pixels.
+	     gl_FragColor = vec4(c.r * d + s, c.g * d + s, c.b * d + s, c.a);
+	else gl_FragColor = vec4(c.r * d,     c.g * d,     c.b * d,     c.a);
 }

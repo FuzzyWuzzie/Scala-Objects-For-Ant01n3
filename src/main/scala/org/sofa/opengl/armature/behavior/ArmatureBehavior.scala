@@ -99,7 +99,7 @@ object InParallelDynamic {
   * are automatically removed. As long as it remains an agregated behavior that is not
   * finished, this behavior will not be finished. When finished this is empty. */
 class InParallelDynamic(name:String, behaviorList:ArmatureBehavior *) extends ArmatureBehavior(name) {
-	val behaviors = new HashSet[ArmatureBehavior]()
+	protected[this] val behaviors = new HashSet[ArmatureBehavior]()
 
 	behaviors ++= behaviorList
 
@@ -160,9 +160,9 @@ object InSequence {
   * the one of the given behavior list. The duration of this behavior is the
   * sum of the duration of its agregated behaviors. */
 class InSequence(name:String, b:ArmatureBehavior *) extends ArmatureBehavior(name) {
-	val behaviors = b.toArray
+	protected[this] val behaviors = b.toArray
 	
-	var index = 0
+	protected[this] var index = 0
 
 	def start(t:Long):ArmatureBehavior = {
 		index = 0
@@ -200,10 +200,10 @@ object Loop {
   * This behavior may never finish if the `limit` is zero or negative. */
 class Loop(name:String, val limit:Int, val behaviors:ArmatureBehavior *) extends ArmatureBehavior(name) {
 	/** Number of repetitions for each behavior. */
-	protected val repeated = new Array[Int](behaviors.size)
+	protected[this] val repeated = new Array[Int](behaviors.size)
 
 	/** How many behaviors finished. */
-	protected var howManyFinished = 0
+	protected[this] var howManyFinished = 0
 
 	def start(t:Long):ArmatureBehavior = {
 		var i = 0
@@ -259,9 +259,9 @@ object Switch {
   * passed, the joint is made invisible and another is made visible. This in an infinite
   * loop. The joints visibility order it the one of the given parameter list. */
 class Switch(name:String, val duration:Long, val joints:Joint *) extends ArmatureBehavior(name) {
-	protected var index = 0
+	protected[this] var index = 0
 
-	protected var startTime = 0L
+	protected[this] var startTime = 0L
 
 	def start(t:Long):ArmatureBehavior = {
 		index = 0
@@ -306,9 +306,9 @@ abstract class JointBehavior(name:String, val joint:Joint) extends ArmatureBehav
   * The interpolation is time based, this means that knowing the start of the behavior and its
   * duration, when `animate() is called, the interpolated value depends on the time. */
 abstract class LerpBehavior(name:String, joint:Joint, val duration:Long) extends JointBehavior(name, joint) {
-	var from = 0L
+	protected[this] var from = 0L
 
-	var to = 0L
+	protected[this] var to = 0L
 	
 	def start(t:Long):ArmatureBehavior = { from = t; to = t + duration; this }
 
@@ -326,7 +326,7 @@ object LerpToAngle {
 /** Animate a rotation of the joint until it reaches a given `targetAngle` a the given start date plus the `duration`. 
   * This is an absolute rotation. The joint will at the end be oriented by the given `targetAngle`. */
 class LerpToAngle(name:String, joint:Joint, val targetAngle:Double, duration:Long) extends LerpBehavior(name, joint, duration) {
-	var startAngle:Double = 0.0
+	protected[this] var startAngle:Double = 0.0
 
 	override def start(t:Long):ArmatureBehavior = {
 		startAngle = joint.transform.angle
@@ -353,7 +353,7 @@ object LerpToPosition {
 /** Animate a displacement of the joint until it reaches a given `targetPosition` at the given start date plus the `duration`. 
   * This is an absolute displacement. The joint will at the end be at the given `targetPosition`. */
 class LerpToPosition(name:String, joint:Joint, val targetPosition:(Double,Double), duration:Long) extends LerpBehavior(name, joint, duration) {
-	var startPosition = new Point2(0,0)
+	protected[this] var startPosition = new Point2(0,0)
 
 	override def start(t:Long):ArmatureBehavior = {
 		startPosition.copy(joint.transform.translation)
@@ -383,7 +383,7 @@ object LerpToScale {
 /** Animate a scale of the joint until it reaches a given `targetScale` at the given start date plus the `duration`. 
   * This is an absolute scale. The joint will at the end be at the given `targetScale`. */
 class LerpToScale(name:String, joint:Joint, val targetScale:(Double,Double), duration:Long) extends LerpBehavior(name, joint, duration) {
-	var startScale = new Point2(0,0)
+	protected[this] var startScale = new Point2(0,0)
 
 	override def start(t:Long):ArmatureBehavior = {
 		startScale.copy(joint.transform.scale)
@@ -414,7 +414,7 @@ object LerpMove {
   * This is a relative displacement. The joint will start at its current position and end at this
   * position plus the `displacement` after the given duration. */
 class LerpMove(name:String, joint:Joint, val displacement:(Double,Double), duration:Long) extends LerpBehavior(name, joint, duration) {
-	var startPosition = new Point2(0,0)
+	protected[this] var startPosition = new Point2(0,0)
 
 	override def start(t:Long):ArmatureBehavior = {
 		startPosition.copy(joint.transform.translation)
@@ -441,13 +441,13 @@ class LerpMove(name:String, joint:Joint, val displacement:(Double,Double), durat
 /** Base interpolator for joints using a sequence of keys at specific times. */
 abstract class LerpKeyJoint(name:String, joint:Joint) extends JointBehavior(name, joint) {
 	/** Time at start (used to avoid time drift). */
-	var init = 0L
+	protected[this] var init = 0L
 
 	/** The current key start time. */
-	var from = 0L
+	protected[this] var from = 0L
 
 	/** The current key end time. */
-	var to = 0L
+	protected[this] var to = 0L
 
 	def start(t:Long):ArmatureBehavior = { init = t; from = t; to = t + next; this }
 
@@ -468,13 +468,13 @@ abstract class LerpKeyJoint(name:String, joint:Joint) extends JointBehavior(name
   * The set of translation vectors are absolute positions according to the start position, not relative one
   * with another. Each vector has a time that is relative to the start not to the previous key. */
 class LerpKeyMoveJoint(name:String, joint:Joint, val translate:Array[TimedVector]) extends LerpKeyJoint(name, joint) {
-	var index = -1
+	protected[this] var index = -1
 
-	var startPosition = Vector2(0,0)
+	protected[this] var startPosition = Vector2(0,0)
 
-	var fromPosition = Vector2(0,0)
+	protected[this] var fromPosition = Vector2(0,0)
 
-	var toPosition = Vector2(0,0)
+	protected[this] var toPosition = Vector2(0,0)
 
 	override def start(t:Long):ArmatureBehavior = {
 		index = -1
@@ -521,13 +521,13 @@ class LerpKeyMoveJoint(name:String, joint:Joint, val translate:Array[TimedVector
   * The set of angles are absolute values, not relative one with another.
   * Each rotation has a time that is relative to the start not to the previous key. */
 class LerpKeyRotateJoint(name:String, joint:Joint, val rotate:Array[TimedValue]) extends LerpKeyJoint(name, joint) {
-	var index = -1
+	protected[this] var index = -1
 
-	var startAngle = 0.0
+	protected[this] var startAngle = 0.0
 
-	var fromAngle = 0.0
+	protected[this] var fromAngle = 0.0
 
-	var toAngle = 0.0
+	protected[this] var toAngle = 0.0
 
 	override def start(t:Long):ArmatureBehavior = {
 		index     = -1

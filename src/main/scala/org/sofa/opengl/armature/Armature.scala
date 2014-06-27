@@ -54,8 +54,10 @@ object Armature {
   *
   * An armature encapsulate a hierarchy of [[Joint]]s, and specify a scale, a global name, a shader,
   * an a texture that maps to the joints. Knowing all these elements, the armature provides a way
-  * to render the joint hierarchy. It also contains a way to quicklu retrieve joints and configure
-  * them (rotation, scaling, etc.) to animate the hierachy. 
+  * to render the joint hierarchy. It also contains a way to quickly retrieve joints and configure
+  * them (rotation, scaling, etc.) to animate the hierachy. Each joints is considered habing a
+  * different name. If not please name them using a dot notation with the name of their parent
+  * joints before.
   *
   * To easily animate an armature, consider using an [[ArmatureBehavior]].
   */
@@ -83,7 +85,7 @@ class Armature(val name:String,
 	/** Number of pair of triangles (each joint uses one pair of triangles). */
 	var count:Int = 0
 
-	/** For fast retrieval of joints. */
+	/** For fast retrieval of all joints. */
 	val jointMap = new HashMap[String,Joint]
 
 	/** Setup the hierachical joints armature, set parents, compute the uv positions in the texture and
@@ -414,11 +416,11 @@ class Joint(val name:String,
 
 	/** Display this joint. */
 	protected def displaySelf(gl:SGL, armature:Armature, space:Space, shader:ShaderProgram) {
-		if(selected)
-		     shader.uniform("highlight", 1.0f)
-		else shader.uniform("highlight", 0.0f)
+		//if(selected)
+		//     shader.uniform("highlight", 1.0f)
+		//else shader.uniform("highlight", 0.0f)
 		space.uniformMVP(armature.shader)
-		armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs(gl), triangle*3, 2*3)		
+		armature.triangles.lastVertexArray.drawArrays(armature.triangles.drawAs(gl), triangle*3, 2*3)
 	}
 
 	/** Return a multiline string where sub joints are indented. */

@@ -18,33 +18,35 @@ class WireCubeMesh(val side:Float) extends Mesh  {
 
     // -- Mesh interface ------------------------------------
 
-    def attribute(name:String):FloatBuffer = {
+    def vertexCount:Int = 6
+
+    override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => V
     		case VertexAttribute.Color  => C
-    		case _                      => throw new RuntimeException("this mesh does not have attribute %s".format(name))
+    		case _                      => super.attribute(name)// throw new RuntimeException("this mesh does not have attribute %s".format(name))
     	}
     }
 
     override def indices:IntBuffer = I
 
-    def attributeCount() = 2
+    override def attributeCount() = 2 + super.attributeCount
 
-    def attributes() = Array[String](VertexAttribute.Vertex.toString,VertexAttribute.Color.toString)
+    override def attributes() = Array[String](VertexAttribute.Vertex.toString,VertexAttribute.Color.toString) ++ super.attributes
 
-    def components(name:String) = {
+    override def components(name:String) = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => 3
     		case VertexAttribute.Color  => 4
-    		case _                      => throw new RuntimeException("this mesh does not have attribute %s".format(name))    		
+    		case _                      => super.components(name)// throw new RuntimeException("this mesh does not have attribute %s".format(name))    		
     	}
     }
 
-    def has(name:String) = {
+    override def has(name:String) = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => true
     		case VertexAttribute.Color  => true
-    		case _                      => false
+    		case _                      => super.has(name) //false
     	}    	
     }
 

@@ -71,41 +71,43 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 
     // -- Mesh interface --------------------------------------------------------
 
-    def attribute(name:String):FloatBuffer = {
+    def vertexCount:Int = nVertX * nVertZ
+
+    override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => V
     		case VertexAttribute.Color    => C
     		case VertexAttribute.Normal   => N
     		case VertexAttribute.Tangent  => T
     		case VertexAttribute.TexCoord => X
-    		case _                        => throw new RuntimeException("This mesh does not have a vertex attribute %s".format(name))
+    		case _                        => super.attribute(name) //throw new RuntimeException("This mesh does not have a vertex attribute %s".format(name))
     	}
     }
 
-    def attributeCount:Int = 5
+    override def attributeCount:Int = 5 + super.attributeCount
 
-    def attributes() = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString,
-    		VertexAttribute.Tangent.toString, VertexAttribute.TexCoord.toString, VertexAttribute.Color.toString)
+    override def attributes() = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString,
+    		VertexAttribute.Tangent.toString, VertexAttribute.TexCoord.toString, VertexAttribute.Color.toString) ++ super.attributes
 
-    def components(name:String):Int = {
+    override def components(name:String):Int = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => 3
     		case VertexAttribute.Color    => 4
     		case VertexAttribute.Normal   => 3
     		case VertexAttribute.Tangent  => 3
     		case VertexAttribute.TexCoord => 2
-    		case _                        => throw new RuntimeException("This mesh does not have a vertex attribute %s".format(name))
+    		case _                        => super.components(name) //throw new RuntimeException("This mesh does not have a vertex attribute %s".format(name))
     	}
     }
 
-    def has(name:String):Boolean = {
+    override def has(name:String):Boolean = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => true
     		case VertexAttribute.Color    => true
     		case VertexAttribute.Normal   => true
     		case VertexAttribute.Tangent  => true
     		case VertexAttribute.TexCoord => true
-    		case _                        => false
+    		case _                        => super.has(name) //false
     	}    	
     }
 

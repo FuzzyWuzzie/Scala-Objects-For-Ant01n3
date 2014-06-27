@@ -5,97 +5,99 @@ import org.sofa.math.{Rgba, Point3, Vector3, NumberSeq2, NumberSeq3, Triangle}
 import org.sofa.nio.{IntBuffer, FloatBuffer}
 
 
-/** A dynamic set of triangles that can be updated and tries to send only changed
-  * informations to the GL.
+/** A dynamic set of independant triangles that can be dynamically updated and
+  * tries to send only changed informations to the GL.
   *
   * There are `size` triangles at max in the mesh. */
 class TrianglesMesh(val size:Int) extends Mesh {
 	
 	/** The mutable set of coordinates. */
-	protected lazy val V:FloatBuffer = FloatBuffer(size*3*3)
+	protected[this] lazy val V:FloatBuffer = FloatBuffer(size*3*3)
 	
 	/** The mutable set of colors. */
-	protected lazy val C:FloatBuffer = FloatBuffer(size*4*3)
+	protected[this] lazy val C:FloatBuffer = FloatBuffer(size*4*3)
 	
 	/** The mutable set of normals, changes with the triangles. */
-	protected lazy val N:FloatBuffer = FloatBuffer(size*3*3)
+	protected[this] lazy val N:FloatBuffer = FloatBuffer(size*3*3)
 
 	/** The mutable set of texture coordinates, changes with the triangles. */
-	protected lazy val T:FloatBuffer = FloatBuffer(size*2*3)
+	protected[this] lazy val T:FloatBuffer = FloatBuffer(size*2*3)
 	
 	/** The mutable set of elements to draw. */
-	protected lazy val I:IntBuffer = IntBuffer(size*3)
+	protected[this] lazy val I:IntBuffer = IntBuffer(size*3)
 	
 	/** Start position of the last modification inside the index array. */
-	protected var ibeg = size
+	protected[this] var ibeg = size
 	
 	/** End position of the last modification inside the index array. */
-	protected var iend = 0
+	protected[this] var iend = 0
 	
     /** Start position of the last modification inside the coordinates array. */
-    protected var vbeg = size
+    protected[this] var vbeg = size
     
     /** End position of the last modification inside the coordinates array. */
-    protected var vend = 0
+    protected[this] var vend = 0
     
     /** Start position of the last modification inside the normal array. */
-    protected var nbeg = size
+    protected[this] var nbeg = size
     
     /** End position of the last modification inside the normal array. */
-    protected var nend = 0
+    protected[this] var nend = 0
     
     /** Start position of the last modification inside the texcoords array. */
-    protected var tbeg = size
+    protected[this] var tbeg = size
     
     /** End position of the last modification inside the texcoords array. */
-    protected var tend = 0
+    protected[this] var tend = 0
     
     /** Start position of the last modification inside the color array. */
-    protected var cbeg = size
+    protected[this] var cbeg = size
     
     /** End position of the last modification inside the color array. */
-    protected var cend = 0
+    protected[this] var cend = 0
     	
 	// -- Mesh interface -----------------------------------------------------
 
-	def attribute(name:String):FloatBuffer = {
+	def vertexCount:Int = size * 3
+
+	override def attribute(name:String):FloatBuffer = {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => V
 			case VertexAttribute.Normal   => N
 			case VertexAttribute.TexCoord => T
 			case VertexAttribute.Color    => C
-			case _                        => throw new RuntimeException("this mesh has no attribute %s".format(name))
+			case _                        => super.attribute(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
 		}
 	}
 
 	override def indices:IntBuffer = I
 
-	def attributeCount():Int = 4
+	override def attributeCount():Int = super.attributeCount + 4
 
-	def attributes():Array[String] = Array[String](
+	override def attributes():Array[String] = Array[String](
 				VertexAttribute.Vertex.toString,
 				VertexAttribute.Normal.toString,
 				VertexAttribute.TexCoord.toString,
-				VertexAttribute.Color.toString)
+				VertexAttribute.Color.toString) ++ super.attributes
 	
-	def components(name:String):Int = {
+	override def components(name:String):Int = {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => 3
 			case VertexAttribute.Normal   => 3
 			case VertexAttribute.TexCoord => 2
 			case VertexAttribute.Color    => 4
-			case _                        => throw new RuntimeException("this mesh has no attribute %s".format(name))
+			case _                        => super.components(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
 		}
 
 	}
 
-	def has(name:String):Boolean = {
+	override def has(name:String):Boolean = {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => true
 			case VertexAttribute.Normal   => true
 			case VertexAttribute.TexCoord => true
 			case VertexAttribute.Color    => true
-			case _                        => false
+			case _                        => super.has(name)
 		}
 	}
 
@@ -260,35 +262,37 @@ class UnindexedTrianglesMesh(val size:Int) extends Mesh {
 
     // -- Mesh interface ---------------------------------------
 
-    def attribute(name:String):FloatBuffer = {
+    def vertexCount:Int = size * 3
+
+    override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => V
     		case VertexAttribute.Normal => N
     		case VertexAttribute.Color  => C
-    		case _                      => throw new RuntimeException("this mesh has no %s attribute".format(name))
+    		case _                      => super.attribute(name) //throw new RuntimeException("this mesh has no %s attribute".format(name))
     	}
     }
 
-    def attributeCount():Int = 3
+    override def attributeCount():Int = 3 + super.attributeCount
 
-    def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString, VertexAttribute.Color.toString)
+    override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString, VertexAttribute.Color.toString) ++ super.attributes
     
-    def components(name:String):Int = {
+    override def components(name:String):Int = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => 3
     		case VertexAttribute.Normal => 3
     		case VertexAttribute.Color  => 4
-    		case _                      => throw new RuntimeException("this mesh has no %s attribute".format(name))
+    		case _                      => super.components(name) //throw new RuntimeException("this mesh has no %s attribute".format(name))
     	}
 
     }
 
-    def has(name:String):Boolean = {
+    override def has(name:String):Boolean = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => true
     		case VertexAttribute.Normal => true
     		case VertexAttribute.Color  => true
-    		case _                      => false
+    		case _                      =>  super.has(name) //false
     	}    	
     }
 

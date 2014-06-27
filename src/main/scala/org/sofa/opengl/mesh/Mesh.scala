@@ -15,6 +15,17 @@ import org.sofa.opengl.io.collada.ColladaFile
 import scala.collection.mutable.HashMap
 
 
+
+// TODO 
+// - Generalize the MeshAttribute so that each set of data is stored the same way.
+// - Make attribute(), attributeCount(), attributes(), has(), components() generic in mesh.
+// - change EditableMesh to use these features (actually it duplicates them).
+// - for dynamic meshes, use the VertexAttribute names or the name of the user attributes
+//   to specify what to update.
+// - Store in the MeshAttribute the part that have been updated (beg, end...).
+
+
+
 /** Predefined vertex attribute names. More are possible. */
 object VertexAttribute extends Enumeration {
 	type VertexAttribute = Value
@@ -81,35 +92,112 @@ object Mesh {
 trait Mesh {
 	import VertexAttribute._
 
+	/** Representation of a user-defined attribute.
+	  * 
+	  * Such attributes are set of floats (1 to 4, depending on the number of components),
+	  * each one being associated to a vertex. Individual meshes have to allocate these
+	  * attribute by giving the number of vertices. This encapsulate a [[FloatBuffer]]
+	  * to store data. */
+	class MeshAttribute(val name:String, val components:Int, val vertexCount:Int) {
+		
+		protected[this] var theData = FloatBuffer(vertexCount * components)
+
+		protected[this] var beg:Int = vertexCount
+
+		protected[this] var end:Int = 0
+
+		/** Data under the form a float buffer. */
+		def data:FloatBuffer = theData
+
+		/** Update the buffer with the same name as this attribute if some elements have been changed. */
+		def update(va:VertexArray) {
+			if(end > beg) {
+				va.buffer(name).update(beg, end, theData)
+				beg = vertexCount
+				end = 0
+			}
+		}
+	}
+
 	/** Last produced vertex array. */
-	protected var va:VertexArray = _
+	protected[this] var va:VertexArray = _
+
+	/** Set of user defined vertex attributes. Allocated on demand. */
+	protected[this] var meshAttributes:HashMap[String, MeshAttribute] = null
 
 	/** Release the resource of this mesh, the mesh is no more usable after this. */
 	def dispose() { if(va ne null) va.dispose }
 
+	/** Declare a vertex attribute `name` for the mesh.
+	  *
+	  * The attribute is made of the given number of `components`. For example,
+	  * if this is a point in 3D there are 3 components. If this is a 2D texture UV
+	  * coordinates, there are 2 components. */
+	def addAttribute(name:String, components:Int) {
+		if(meshAttributes eq null)
+			meshAttributes = new HashMap[String, MeshAttribute]()
+
+		meshAttributes += ((name, new MeshAttribute(name, components, vertexCount)))
+	}
+
+	/** Number of vertices in the mesh. */
+	def vertexCount:Int
+
 	/** A vertex attribute by its name. */
-	def attribute(name:String):FloatBuffer
+	def attribute(name:String):FloatBuffer = {
+		if(meshAttributes ne null) {
+			meshAttributes.get(name) match {
+				case Some(x) => x.data
+				case None => null
+			}
+		} else {
+			null
+		}
+	}
 
 	/** A vertex attribute by its enumeration name. */
 	def attribute(name:VertexAttribute.Value):FloatBuffer = attribute(name.toString)
  
     /** Number of vertex attributes defined. */
-    def attributeCount():Int
+    def attributeCount():Int = {
+    	if(meshAttributes ne null)
+    		 meshAttributes.size
+    	else 0
+    }
 
     /** Name and order of all the vertex attributes defined by this mesh. */
-    def attributes():Array[String]
+    def attributes():Array[String] = {
+    	if(meshAttributes ne null)
+    		(meshAttributes.map { item => item._1 }).toArray
+    	else {
+     		return new Array(0)   		
+    	}
+    }
 
     /** Indices in the attributes array, draw order. */
     def indices:IntBuffer = throw new RuntimeException("no indices in this mesh")
 
     /** Number of components of the given vertex attribute. */
-    def components(name:String):Int
+    def components(name:String):Int = {
+    	if(meshAttributes ne null) {
+    		meshAttributes.get(name) match {
+    			case Some(x) => x.components
+    			case None => throw new RuntimeException("mesh has no attribute named %s".format(name))
+    		}
+    	} else {
+			throw new RuntimeException("mesh has no attribute named %s".format(name))
+    	}
+    }
 
     /** Number of components of the given vertex attribute. */
     def components(name:VertexAttribute.Value):Int = components(name.toString)
 
     /** True if the vertex attribute whose name is given is defined in this mesh. */
-    def has(name:String):Boolean
+    def has(name:String):Boolean = {
+    	if(meshAttributes ne null)
+    		 meshAttributes.contains(name)
+    	else false
+    }
 
     /** True if the vertex attribute whose name is given is defined in this mesh. */
     def has(name:VertexAttribute.Value):Boolean = has(name.toString)

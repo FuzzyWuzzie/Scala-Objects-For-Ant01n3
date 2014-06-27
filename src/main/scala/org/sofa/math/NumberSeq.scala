@@ -75,10 +75,10 @@ trait NumberSeq extends IndexedSeq[Double] {
 		buf.append("(")
 		var i = 0
 		while(i < data.length) {
-			buf.append("%.2f".format(data(i)))
+			buf.append("%+.2f".format(data(i)))
 			i += 1
 			if(i != data.length)
-				buf.append(",")
+				buf.append(" ")
 		}
 		buf.append(")")
 		buf.toString

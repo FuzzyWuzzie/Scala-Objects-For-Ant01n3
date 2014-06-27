@@ -85,44 +85,46 @@ class RealQuadsMesh(val size:Int) extends Mesh {
     	
 	// -- Mesh interface -----------------------------------------------------
 
-	def attribute(name:String):FloatBuffer = {
+	def vertexCount:Int = size * 4
+
+	override def attribute(name:String):FloatBuffer = {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => V
 			case VertexAttribute.Normal   => N
 			case VertexAttribute.TexCoord => T
 			case VertexAttribute.Color    => C
-			case _                        => throw new RuntimeException("this mesh has no attribute %s".format(name))
+			case _                        => super.attribute(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
 		}
 	}
 
 	override def indices:IntBuffer = I
 
-	def attributeCount():Int = 4
+	override def attributeCount():Int = 4 + super.attributeCount
 
-	def attributes():Array[String] = Array[String](
+	override def attributes():Array[String] = Array[String](
 				VertexAttribute.Vertex.toString,
 				VertexAttribute.Normal.toString,
 				VertexAttribute.TexCoord.toString,
-				VertexAttribute.Color.toString)
+				VertexAttribute.Color.toString) ++ super.attributes
 	
-	def components(name:String):Int = {
+	override def components(name:String):Int = {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => 3
 			case VertexAttribute.Normal   => 3
 			case VertexAttribute.TexCoord => 2
 			case VertexAttribute.Color    => 4
-			case _                        => throw new RuntimeException("this mesh has no attribute %s".format(name))
+			case _                        => super.components(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
 		}
 
 	}
 
-	def has(name:String):Boolean = {
+	override def has(name:String):Boolean = {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => true
 			case VertexAttribute.Normal   => true
 			case VertexAttribute.TexCoord => true
 			case VertexAttribute.Color    => true
-			case _                        => false
+			case _                        => super.has(name)// false
 		}
 	}
 

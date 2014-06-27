@@ -9,7 +9,7 @@ uniform vec3 lightDir;
 void main(void) {
 	vec4  col = texture2D(texColor, vTexCoords.st);
 	vec3  msk = texture2D(texMask, vTexCoords.st).xyz;
-	float dif = max(dot(msk,normalize(lightDir)),0.0);
+	float dif = max(dot(normalize(msk),normalize(lightDir)),0.0);
 
 	dif *= 0.5;
 	dif += 0.5;

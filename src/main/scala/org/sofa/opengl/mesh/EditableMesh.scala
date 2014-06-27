@@ -48,6 +48,8 @@ class EditableMesh extends Mesh {
 	// --------------------------------------------------------------
 	// Command, mesh building
 
+	def vertexCount:Int = vertexBuffer.elements
+
 	/** Start to build the vertex attributes. 
 	  * The draw mode for the primitive must be given here. Any previous values are deleted. */
 	def begin() {
@@ -433,7 +435,7 @@ class EditableMesh extends Mesh {
     protected def getNioCache(name:String):FloatBuffer =
     		buffers.get(name).getOrElse(throw new RuntimeException("no %s attribute in this mesh only { %s }".format(name, attributes.mkString(", ")))).nioBuffer
 	
-    def attribute(name:String):FloatBuffer = getNioCache(name)
+    override def attribute(name:String):FloatBuffer = getNioCache(name)
 
     override def indices:IntBuffer = {
 		if(indexBuffer ne null) {
@@ -445,9 +447,9 @@ class EditableMesh extends Mesh {
 		}
     }
 
-    def attributeCount():Int = buffers.size
+    override def attributeCount():Int = buffers.size
 
-    def attributes():Array[String] = {
+    override def attributes():Array[String] = {
     	val attrs = new Array[String](attributeCount)
     	var i     = 0
     	
@@ -459,7 +461,7 @@ class EditableMesh extends Mesh {
     	attrs
     }
 
-    def components(name:String):Int = {
+    override def components(name:String):Int = {
     	val buf = buffers.get(name).getOrElse(null)
     	if(buf ne null) {
     		buf.components
@@ -468,7 +470,7 @@ class EditableMesh extends Mesh {
     	}
     }
 
-    def has(name:String):Boolean = buffers.contains(name)
+    override def has(name:String):Boolean = buffers.contains(name)
     
     override def hasIndices:Boolean = (indexBuffer ne null)
 }

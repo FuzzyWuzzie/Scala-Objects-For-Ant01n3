@@ -154,6 +154,21 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
         len
     }
 
+    /** Switch axes from the blender convention. The x of remains the one of blender.
+      * However the y becomes z of blender and the z become the -y of blender. In
+      * other terms:
+      *
+      *     x =  xb
+      *     y =  zb
+      *     z = -yb
+      *
+      * When x, y, z are our coordinates and xb, yb, zb the ones of blender. */
+    def fromBlender() {
+    	val z = -data(1)
+    	data(1) = data(2)
+    	data(2) = z
+    }
+
     def +(other:Vector3):ReturnType = {
         val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
         result.addBy(other)
