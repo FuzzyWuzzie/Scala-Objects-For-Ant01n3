@@ -185,7 +185,7 @@ class NormalMap extends SurfaceRenderer {
 
 class MyCameraController(camera:Camera, light:Vector4) extends BasicCameraController(camera) {
     override def key(surface:Surface, keyEvent:KeyEvent) {
-        import keyEvent.ActionChar._
+        import org.sofa.opengl.surface.ActionChar._
         if(keyEvent.isShiftDown) {
             if(! keyEvent.isPrintable) {
                 keyEvent.actionChar match {

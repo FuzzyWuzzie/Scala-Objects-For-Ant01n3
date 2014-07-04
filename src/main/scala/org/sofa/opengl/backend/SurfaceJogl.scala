@@ -356,7 +356,7 @@ class SurfaceNewt(
     def windowLostFocus(e:JoglWindowEvent) {} 
     def windowMoved(e:JoglWindowEvent) {}
     def windowRepaint(e:JoglWindowUpdateEvent) {} 
-    def windowResized(e:JoglWindowEvent) {Console.err.println("resized w=%d h=%d".format(win.getWidth, win.getHeight))} 
+    def windowResized(e:JoglWindowEvent) {/*Console.err.println("resized w=%d h=%d".format(win.getWidth, win.getHeight))*/} 
     
 	def keyPressed(e:JoglKeyEvent) {} 
 	def keyReleased(e:JoglKeyEvent) { eventQueue.enqueue(new KeyEventJogl(e)) }

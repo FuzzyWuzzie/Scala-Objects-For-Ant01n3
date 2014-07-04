@@ -11,6 +11,7 @@ import org.sofa.math.Axis._
 /** Objects of this class simulate a point of view (eye) and a looked at point (focus). It
   * can be freely positioned in Cartesian coordinates. It can also be positioned in spherical
   * coordinates around the focus. Its banking can be controlled using its up vector. 
+  *
   * The object automatically updates the coordinates in Cartesian or spherical forms, when
   * the other is changed so that both are always available.
   *
@@ -18,8 +19,19 @@ import org.sofa.math.Axis._
   * axis, [[phi]] as the angle on the vertical axis, and [[radius]] as the distance from
   * the focus point.
   *
+  * Angles are expressed in radians.
+  *
+  * The [[theta]] angle origin is at [[radius]] units aligned on the positive X axis.
+  * When you increment [[theta]] you first go toward Z positive (trigonometric 
+  * direction, on the XZ plane).
+  *
+  * The [[phi]] angle origin is at [[radius]] units aligned on the positive Y axis.
+  * When you increment [[phi]], you first got toward Z positive (trigonometric
+  * direction on the YZ plane). 
+  *
   * The object also stores a "eye angle" that represent the half angle between two eyes for
-  * stereo representations. */
+  * stereo representations. 
+  */
 trait PointOfView {
 
     /** Up direction, for camera banking. */
@@ -134,10 +146,9 @@ object Camera { def apply() = new Camera() }
 
 /** A camera analogy for OpenGL.
   *
-  * Objects of this class simulate a camera point of view (eye) and looked at point (focus). It
-  * can be freely positioned in Cartesian coordinates, and will automatically point at the focus.
-  * It can also be positioned in spherical coordinates around the focus. Its banking can be
-  * controlled using its up vector.
+  * The camera fully implement a [[PointOfView]] and has the same abilities (the position
+  * of the viewer is called "eye", the looked-at point is the "focus" and an "up" vector
+  * allows to bank the camera).
   * 
   * The camera maintains a projection and a model-view matrix. The model-view matrix allows to
   * "move" the camera in space. The projection matrix allows to specify the camera viewing

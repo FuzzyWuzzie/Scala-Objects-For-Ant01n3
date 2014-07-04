@@ -7,10 +7,10 @@
 		<tex>textures</tex>
 	</pathes>
 	<shaders>
-		<shader id="ground-shader" vert="iso.vert.glsl" frag="iso_nm.frag.glsl"/>
+		<shader id="ground-shader" vert="moving_tex.vert.glsl" frag="moving_tex.frag.glsl"/>
+		<shader id="color-shader"  vert="plainColor.vert.glsl" frag="plainColor.frag.glsl"/>
 	</shaders>
 	<texs>
 		<tex id="ground-color" res="Ground_Color.png" alpha="premultiply"/>
-		<tex id="ground-mask"  res="Ground_Mask.png"/>
 	</texs>
 </resources>

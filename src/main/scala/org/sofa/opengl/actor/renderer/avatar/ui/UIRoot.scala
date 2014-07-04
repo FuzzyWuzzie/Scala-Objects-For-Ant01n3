@@ -15,7 +15,7 @@ class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) {
 	override def render() {
 		val gl = screen.gl
 
-		gl.clearColor(Rgba.White)
+		gl.clearColor(Rgba.Grey80)
 		gl.clear(gl.COLOR_BUFFER_BIT)
 
 		gl.lineWidth(1f)
@@ -115,7 +115,7 @@ class UIRoot(name: AvatarName, screen: Screen)
 	var renderer = new UIAvatarRenderRoot(this)
 
 	def consumeEvent(event: AvatarEvent): Boolean = {
-		println("%s ignore event %s".format(name, event))
+		//println("%s ignore event %s".format(name, event))
 		false
 	}
 }

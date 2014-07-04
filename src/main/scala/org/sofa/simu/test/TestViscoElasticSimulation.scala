@@ -515,7 +515,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 /** A simple mouse/key controller for the camera and simulation. */
 class TVESCameraController(camera:Camera, val ves:TestViscoElasticSimulation) extends BasicCameraController(camera) {
     override def key(surface:Surface, keyEvent:KeyEvent) {
-        import keyEvent.ActionChar._
+        import org.sofa.opengl.surface.ActionChar._
         if(keyEvent.isPrintable) {
         	keyEvent.unicodeChar match {
             	case ' ' => { ves.pausePlay }

@@ -1,9 +1,10 @@
 package org.sofa.opengl.actor.renderer.avatar.ui
 
 import org.sofa.math.{ Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default }
+import org.sofa.opengl.surface.{ ActionChar=>SurfaceActionChar }
 import org.sofa.opengl.actor.renderer.{ Screen }
 import org.sofa.opengl.actor.renderer.{ Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarBaseStates }
-import org.sofa.opengl.actor.renderer.{ AvatarEvent, AvatarSpatialEvent, AvatarMotionEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarKeyEvent }
+import org.sofa.opengl.actor.renderer.{ AvatarEvent, AvatarSpatialEvent, AvatarMotionEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarKeyEvent, AvatarZoomEvent }
 import org.sofa.opengl.actor.renderer.{ NoSuchAvatarException }
 
 import org.sofa.opengl.{ SGL, ShaderProgram, CameraSpace }
@@ -30,8 +31,42 @@ class UIPerspective(name: AvatarName, screen: Screen)
 	var renderer = new UIAvatarRenderPerspective(this)
 
 	def consumeEvent(event: AvatarEvent): Boolean = {
-		println("%s ignore event %s".format(name, event))
-		false
+		event match {
+			case ev:AvatarZoomEvent ⇒ {
+				space.camera.rotateEyeHorizontal(ev.amount/1000.0)
+				true
+			}
+			case ev:AvatarKeyEvent ⇒ {
+				ev.actionChar match {
+					case SurfaceActionChar.PageUp ⇒ {
+						space.camera.eyeTraveling(-0.1)
+						true 
+					}
+					case SurfaceActionChar.PageDown ⇒ {
+						space.camera.eyeTraveling(0.1)
+						true
+					}
+					case SurfaceActionChar.Left ⇒ { 
+						space.camera.rotateEyeHorizontal(-0.05)
+						true
+					}
+					case SurfaceActionChar.Right ⇒ {
+						space.camera.rotateEyeHorizontal(0.05)
+						true
+					}
+					case SurfaceActionChar.Up ⇒ { 
+						space.camera.rotateEyeVertical(0.05)
+						true
+					}
+					case SurfaceActionChar.Down ⇒ {
+						space.camera.rotateEyeVertical(-0.05)
+						true
+					}
+					case _ ⇒ { false }
+				}
+			}
+			case _ ⇒ false
+		}
 	}
 }
 
@@ -56,7 +91,7 @@ class UIAvatarSpacePerspective(avatar: Avatar) extends UIAvatarSpace(avatar) {
 	/** Ratiohw height / width. */
 	protected[this] var ratiohw = 1.0
 
-	protected[this] val camera = new CameraSpace
+	val camera = new CameraSpace
 
 	var scale1cm = 1.0
 

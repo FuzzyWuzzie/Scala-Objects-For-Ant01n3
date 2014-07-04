@@ -75,9 +75,27 @@ trait AvatarZoomEvent extends AvatarEvent {
 
 /** A key has been pressed and released. */
 trait AvatarKeyEvent extends AvatarEvent {
-	def keyCode:Int
+	/** An action (from [[org.sofa.opengl.surface.KeyEvent.ActionChar]]).
+	  * This equals to action `Unknown` if another key is pressed. */
+	def actionChar:org.sofa.opengl.surface.ActionChar.Value
 
+	/** The unicode representation of the key if available. */
 	def unicodeChar:Char 
+
+	/** True if one of the control keys is pressed. */
+	def isControlDown:Boolean
+    
+    /** True if the left alt key is pressed. */
+    def isAltDown:Boolean
+    
+    /** True if the right alt key is pressed. */
+    def isAltGrDown:Boolean
+    
+    /** True if one of the shift key is pressed. */
+    def isShiftDown:Boolean
+    
+    /** True if one of the meta (or Windows or command) key is pressed. */
+    def isMetaDown:Boolean
 }
 
 

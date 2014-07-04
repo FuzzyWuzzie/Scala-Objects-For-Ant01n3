@@ -13,7 +13,7 @@ class BasicCameraController(val camera:Camera) {
 	} 
 	
 	def key(surface:Surface, e:KeyEvent) {
-	    import e.ActionChar._
+	    import org.sofa.opengl.surface.ActionChar._
 	    if(! e.isPrintable) {
 	    	e.actionChar match {
 		    	case PageUp   => { camera.eyeTraveling(-step) } 

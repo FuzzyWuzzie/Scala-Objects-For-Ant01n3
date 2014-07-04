@@ -442,6 +442,8 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
         else throw ShaderAttributeException("matrix must be 9 (3x3) or 16 (4x4) floats");
     }
 
+    def uniformTexture(texture:Texture, uniformName:String) { uniformTexture(gl.TEXTURE0, texture, uniformName) }
+
     def uniformTexture(textureUnit:Int, texture:Texture, uniformName:String) {
     	val pos = textureUnit match {
 			case gl.TEXTURE0 => 0

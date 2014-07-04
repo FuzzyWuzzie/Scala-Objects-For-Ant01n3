@@ -97,19 +97,51 @@ trait Mesh {
 	  * Such attributes are set of floats (1 to 4, depending on the number of components),
 	  * each one being associated to a vertex. Individual meshes have to allocate these
 	  * attribute by giving the number of vertices. This encapsulate a [[FloatBuffer]]
-	  * to store data. */
+	  * to store data.
+	  *
+	  * This class has a generic `set()` method allowing to change an individual
+	  * attribute values, but for efficiency reasons, you have plain access to
+	  * the [[theData]] field wich is a buffer of [[vertexCount]]*[[components]]
+	  * floats, and [[beg]] and [[end]] that mark the extent of modifications
+	  * in the buffer. If you mess with these fields, you known the consequences. */
 	class MeshAttribute(val name:String, val components:Int, val vertexCount:Int) {
 		
-		protected[this] var theData = FloatBuffer(vertexCount * components)
+		var theData = FloatBuffer(vertexCount * components)
 
-		protected[this] var beg:Int = vertexCount
+		var beg:Int = vertexCount
 
-		protected[this] var end:Int = 0
+		var end:Int = 0
 
 		/** Data under the form a float buffer. */
 		def data:FloatBuffer = theData
 
-		/** Update the buffer with the same name as this attribute if some elements have been changed. */
+		/** Change [[components]] values at `vertex` in the buffer.
+		  * @param values must contain at least [[components]] elements.
+		  * @param vertex an index as a vertex number. */
+		def set(vertex:Int, values:Float*) {
+			val i = vertex *  components
+
+			if(values.length >= components) {
+				if(i >= 0 && i < theData.size) {
+					if(beg > vertex) beg = vertex
+					if(end < vertex) end = vertex
+
+					var j = 0
+
+					while(j < components) {
+						theData(i+j) = values(j)
+						j += 1
+					}
+				} else {
+					throw new RuntimeException(s"invalid vertex ${vertex} out of attribute buffer (size=${vertexCount})")
+				}
+			} else {
+				throw new RuntimeException(s"no enough values passed for attribute (${values.length}), needs ${components} components")
+			}
+		}
+
+		/** Update the buffer (send it to OpenGL) with the same name as this attribute if
+		  * some elements have been changed. */
 		def update(va:VertexArray) {
 			if(end > beg) {
 				va.buffer(name).update(beg, end, theData)
@@ -145,6 +177,20 @@ trait Mesh {
 			meshAttributes = new HashMap[String, MeshAttribute]()
 
 		meshAttributes += ((name, new MeshAttribute(name, components, vertexCount)))
+	}
+
+	/** Change the value of an attribute at the given `vertex`. The `values` must
+	  * have as many elements as the attribute has components.
+	  * @param name The attribute name.
+	  * @param vertex The vertex tied to this attribute values.
+	  * @param values a set of floats one for each component. */
+	def setAttribute(name:String, vertex:Int, values:Float*) {
+		val data:MeshAttribute = if(meshAttributes ne null) meshAttributes.get(name).getOrElse { 
+			throw new RuntimeException(s"mesh has no attribute named ${name}")
+			null
+		} else null
+		
+		data.set(vertex, values:_*)
 	}
 
 	/** Number of vertices in the mesh. */

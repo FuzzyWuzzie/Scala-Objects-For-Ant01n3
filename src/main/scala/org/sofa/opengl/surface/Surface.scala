@@ -120,8 +120,25 @@ trait SurfaceRenderer {
 /** Generic event. */
 trait Event {}
 
+
+object ActionChar extends Enumeration {
+	val Escape = Value
+	val PageUp = Value
+	val PageDown = Value
+	val Up = Value
+	val Down = Value
+	val Right = Value
+	val Left = Value
+	val Unknown = Value
+	val Space = Value
+	type ActionChar = Value
+}
+
+
 /** Key. */
 abstract class KeyEvent extends Event {
+	import ActionChar._
+
     /** True if the key-code is a printable character. */
     def isPrintable:Boolean
     
@@ -140,19 +157,6 @@ abstract class KeyEvent extends Event {
     def isShiftDown:Boolean
     
     def isMetaDown:Boolean
-    
-    object ActionChar extends Enumeration {
-    	val Escape = Value
-    	val PageUp = Value
-    	val PageDown = Value
-    	val Up = Value
-    	val Down = Value
-    	val Right = Value
-    	val Left = Value
-    	val Unknown = Value
-    	val Space = Value
-    	type ActionChar = Value
-    }
 }
 
 /** Action. */

@@ -62,14 +62,15 @@ class TrianglesMesh(val size:Int) extends Mesh {
 
 	def vertexCount:Int = size * 3
 
-	override def attribute(name:String):FloatBuffer = {
+	override def attribute(name:String):FloatBuffer = try {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => V
 			case VertexAttribute.Normal   => N
 			case VertexAttribute.TexCoord => T
 			case VertexAttribute.Color    => C
-			case _                        => super.attribute(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
 		}
+	} catch {
+		case _:NoSuchElementException => super.attribute(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
 	}
 
 	override def indices:IntBuffer = I
@@ -82,25 +83,26 @@ class TrianglesMesh(val size:Int) extends Mesh {
 				VertexAttribute.TexCoord.toString,
 				VertexAttribute.Color.toString) ++ super.attributes
 	
-	override def components(name:String):Int = {
+	override def components(name:String):Int = try {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => 3
 			case VertexAttribute.Normal   => 3
 			case VertexAttribute.TexCoord => 2
 			case VertexAttribute.Color    => 4
-			case _                        => super.components(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
 		}
-
+	} catch {
+		case _:NoSuchElementException => super.components(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
 	}
 
-	override def has(name:String):Boolean = {
+	override def has(name:String):Boolean = try {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => true
 			case VertexAttribute.Normal   => true
 			case VertexAttribute.TexCoord => true
 			case VertexAttribute.Color    => true
-			case _                        => super.has(name)
 		}
+	} catch {
+			case _:NoSuchElementException => super.has(name)		
 	}
 
     override def hasIndices():Boolean = true
@@ -109,9 +111,17 @@ class TrianglesMesh(val size:Int) extends Mesh {
 
 	// -- Constructive interface ---------------------------------------------------
 	
-	def setPoint(i:Int, p:NumberSeq3) { setPoint(i, p.x.toFloat, p.y.toFloat, p.z.toFloat) }
+	def xyz (i:Int, x:Float, y:Float, z:Float):TrianglesMesh = setPoint(i,x,y,z)
+	def uv (i:Int, u:Float, v:Float):TrianglesMesh = setPointTexCoord(i,u,v)
+	def rgb (i:Int, r:Float, g:Float, b:Float) = setPointColor(i,r,g,b,1f)
+	def rgba (i:Int, r:Float, g:Float, b:Float, a:Float) = setPointColor(i,r,g,b,a)
+	def nnn (i:Int, x:Float, y:Float, z:Float) = setPointNormal(i,x,y,z)
+	def user (name:String, i:Int, values:Float*) = setAttribute(name, i, values:_*)
+	def triangle (i:Int, p0:Int, p1:Int, p2:Int) = setTriangle(i, p0, p1, p2)
 
-	def setPoint(i:Int, x:Float, y:Float, z:Float) {
+	def setPoint(i:Int, p:NumberSeq3):TrianglesMesh = setPoint(i, p.x.toFloat, p.y.toFloat, p.z.toFloat)
+
+	def setPoint(i:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
 		val p = i*3
 		
 		V(p)   = x
@@ -120,12 +130,14 @@ class TrianglesMesh(val size:Int) extends Mesh {
 		
 		if(i < vbeg) vbeg = i
 		if(i+1 > vend) vend = i+1
+
+		this
 //Console.err.println("setPoint(%d -> %d)".format(vbeg, vend))
 	}
 	
-	def setPointColor(i:Int, c:Rgba) { setPointColor(i, c.red.toFloat, c.green.toFloat, c.blue.toFloat, c.alpha.toFloat) }
+	def setPointColor(i:Int, c:Rgba):TrianglesMesh = setPointColor(i, c.red.toFloat, c.green.toFloat, c.blue.toFloat, c.alpha.toFloat)
 	
-	def setPointColor(i:Int, red:Float, green:Float, blue:Float, alpha:Float) {
+	def setPointColor(i:Int, red:Float, green:Float, blue:Float, alpha:Float):TrianglesMesh = {
 		val p = i*4
 		
 		C(p  ) = red
@@ -135,11 +147,13 @@ class TrianglesMesh(val size:Int) extends Mesh {
 		
 		if(i < cbeg) cbeg = i
 		if(i+1 > cend) cend = i + 1
+
+		this
 	}
 	
-	def setPointNormal(i:Int, n:NumberSeq3) { setPointNormal(i, n.x.toFloat, n.y.toFloat, n.z.toFloat) }
+	def setPointNormal(i:Int, n:NumberSeq3):TrianglesMesh = setPointNormal(i, n.x.toFloat, n.y.toFloat, n.z.toFloat)
 	
-	def setPointNormal(i:Int, x:Float, y:Float, z:Float) {
+	def setPointNormal(i:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
 		val p = i*3
 		
 		N(p)   = x
@@ -148,11 +162,13 @@ class TrianglesMesh(val size:Int) extends Mesh {
 		
 		if(i < nbeg) nbeg = i
 		if(i+1 > nend) nend = i+1
+
+		this
 	}
 
-	def setPointTexCoord(i:Int, uv:NumberSeq2) { setPointTexCoord(i, uv.x.toFloat, uv.y.toFloat) }
+	def setPointTexCoord(i:Int, uv:NumberSeq2):TrianglesMesh = setPointTexCoord(i, uv.x.toFloat, uv.y.toFloat)
 
-	def setPointTexCoord(i:Int, u:Float, v:Float) {
+	def setPointTexCoord(i:Int, u:Float, v:Float):TrianglesMesh = {
 		val p = i*2
 
 		T(p)   = u
@@ -160,6 +176,8 @@ class TrianglesMesh(val size:Int) extends Mesh {
 
 		if(i < tbeg) tbeg = i
 		if(i+1 > tend) tend = i+1
+
+		this
 	}
 	
 	/** Tell which vertex attribute to reference for the i-th triangle. */

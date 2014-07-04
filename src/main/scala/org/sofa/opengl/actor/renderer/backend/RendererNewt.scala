@@ -50,7 +50,7 @@ class RendererNewt(factory:AvatarFactory=null) extends Renderer(factory) {
 
 	def onKey(surface:Surface, e:KeyEvent) {
 		if(screen ne null) {
-			println("@@ TODO key event")
+			screen.propagateEvent(NewtAvatarKeyEvent(e))
 		}
 	}
 
@@ -133,4 +133,16 @@ object NewtAvatarZoomEvent { def apply(source:ScrollEvent) = new NewtAvatarZoomE
 class NewtAvatarZoomEvent(val source:ScrollEvent) extends AvatarZoomEvent {
 	// TODO probably add a factor...
 	def amount:Double = source.amount
+}
+
+
+object NewtAvatarKeyEvent { def apply(source:KeyEvent) = new NewtAvatarKeyEvent(source) }
+class NewtAvatarKeyEvent(val source:KeyEvent) extends AvatarKeyEvent {
+	def actionChar:org.sofa.opengl.surface.ActionChar.Value = source.actionChar
+	def unicodeChar:Char = source.unicodeChar
+	def isControlDown:Boolean = source.isControlDown
+    def isAltDown:Boolean = source.isAltDown
+    def isAltGrDown:Boolean = source.isAltGrDown
+    def isShiftDown:Boolean = source.isShiftDown
+    def isMetaDown:Boolean = source.isMetaDown
 }

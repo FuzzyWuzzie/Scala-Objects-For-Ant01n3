@@ -827,7 +827,7 @@ triangleCount = 0
 /** A simple mouse/key controller for the camera and simulation. */
 class TVESCameraController2D(camera:Camera, val ves:ViscoElasticSimulationViewer2D) extends BasicCameraController(camera) {
     override def key(surface:Surface, keyEvent:KeyEvent) {
-        import keyEvent.ActionChar._
+        import org.sofa.opengl.surface.ActionChar._
         if(keyEvent.isPrintable) {
         	Console.err.println("KEY=%c".format(keyEvent.unicodeChar))
         	keyEvent.unicodeChar match {

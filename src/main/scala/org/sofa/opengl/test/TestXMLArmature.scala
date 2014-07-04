@@ -286,7 +286,7 @@ class TestXMLArmatureCameraController(camera:Camera, val app:TestXMLArmature) ex
 	} 
 	
 	override def key(surface:Surface, e:KeyEvent) {
-	    import e.ActionChar._
+	    import org.sofa.opengl.surface.ActionChar._
 	 
 	    if(! e.isPrintable) {
 	    	e.actionChar match {

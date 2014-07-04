@@ -1017,6 +1017,7 @@ trait NumberGrid4 extends NumberGrid {
 		var x:Vector3 = null
 		var y  = new Vector3(upvX, upvY, upvZ)
 		var z  = new Vector3((eyeX - ctrX), (eyeY - ctrY), (eyeZ - ctrZ))
+//		var z  = new Vector3((ctrX - eyeX), (ctrY - eyeY), (ctrZ - eyeZ))
 
 		z.normalize
 		x = y X z
@@ -1049,6 +1050,7 @@ trait NumberGrid4 extends NumberGrid {
 		// Compose the translation with the rotation:
 
 		multBy(mm)
+		//transpose()
 	}
 	
 	/** 3x3 submatrix of this 4x4 matrix excepted the given `row` and ` col`umn. 

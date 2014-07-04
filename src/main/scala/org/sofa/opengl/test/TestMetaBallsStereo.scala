@@ -452,7 +452,7 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 
 class MetaBallsCameraControllerStereo(camera:Camera, val mb:TestMetaBallsStereo) extends BasicCameraController(camera) {
     override def key(surface:Surface, keyEvent:KeyEvent) {
-        import keyEvent.ActionChar._
+        import org.sofa.opengl.surface.ActionChar._
         if(keyEvent.isPrintable) {
         	keyEvent.unicodeChar match {
             	case ' ' => { mb.pausePlay }

@@ -349,7 +349,7 @@ class RobotInteraction(camera:Camera, val renderer:TestRobot) extends BasicCamer
 	val vector = Vector3()
 
 	override def key(surface:Surface, e:KeyEvent) {
-	    import e.ActionChar._
+	    import org.sofa.opengl.surface.ActionChar._
 	 
 	    if(! e.isPrintable) {
 	    	e.actionChar match {
