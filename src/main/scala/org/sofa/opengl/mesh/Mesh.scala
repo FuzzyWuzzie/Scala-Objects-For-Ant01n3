@@ -17,12 +17,9 @@ import scala.collection.mutable.HashMap
 
 
 // TODO 
-// - Generalize the MeshAttribute so that each set of data is stored the same way.
-// - Make attribute(), attributeCount(), attributes(), has(), components() generic in mesh.
-// - change EditableMesh to use these features (actually it duplicates them).
+// - change EditableMesh to use these MeshAttribute (actually it duplicates them).
 // - for dynamic meshes, use the VertexAttribute names or the name of the user attributes
-//   to specify what to update.
-// - Store in the MeshAttribute the part that have been updated (beg, end...).
+//   to specify what to update (see TrianglesMesh as an example).
 
 
 
@@ -71,6 +68,21 @@ class ColladaMeshLoader extends MeshLoader {
 
 /** Thrown when the mesh should have a vertex array but have not. */
 class NoVertexArrayException(msg:String) extends Exception(msg)
+
+/** Thrown when a vertex attribute is not declared in a mesh. */
+class NoSuchVertexAttributeException(msg:String) extends Exception(msg)
+
+/** Thrown when a vertex index is out of bounds in a vertex attribute. */
+class InvalidVertexException(msg:String) extends Exception(msg)
+
+/** Thrown when a vertex component index is out of bounds. */
+class InvalidVertexComponentException(msg:String) extends Exception(msg)
+
+/** Thrown when a primitive index is out of bounds. */
+class InvalidPrimitiveException(msg:String) extends Exception(msg)
+
+/** Thrown when a primitive vertex index is out of bounds. */
+class InvalidPrimitiveVertexException(msg:String) extend Exception(msg)
 
 
 object Mesh {
@@ -141,10 +153,10 @@ trait Mesh {
 						j += 1
 					}
 				} else {
-					throw new RuntimeException(s"invalid vertex ${vertex} out of attribute buffer (size=${vertexCount})")
+					throw new InvalidVertexException(s"invalid vertex ${vertex} out of attribute buffer (size=${vertexCount})")
 				}
 			} else {
-				throw new RuntimeException(s"no enough values passed for attribute (${values.length}), needs ${components} components")
+				throw new InvalidVertexComponentException(s"no enough values passed for attribute (${values.length}), needs ${components} components")
 			}
 		}
 
@@ -201,10 +213,10 @@ trait Mesh {
 						j += 1
 					}
 				} else {
-					throw new RuntimeException(s"invalid primitive index ${prim} out of index buffer (size=${primCount})")
+					throw new InvalidPrimitiveException(s"invalid primitive index ${prim} out of index buffer (size=${primCount})")
 				}
 			} else {
-				throw new RuntimeException(s"no enough values passed for primitive (${values.length}), needs ${verticesPerPrim} vertices indices")
+				throw new InvalidPrimitiveVertexException(s"no enough values passed for primitive (${values.length}), needs ${verticesPerPrim} vertices indices")
 			}
 		}
 
@@ -281,7 +293,7 @@ trait Mesh {
 	  * under the form of the [[MeshAttribute]] handling it. */
 	protected def meshAttribute(name:String):MeshAttribute = {
 		if(meshAttributes ne null) meshAttributes.get(name).getOrElse { 
-			throw new RuntimeException(s"mesh has no attribute named ${name}")
+			throw new NoSuchVertexAttributeException(s"mesh has no attribute named ${name}")
 		} else {
 			null
 		}
@@ -319,17 +331,17 @@ trait Mesh {
     }
 
     /** Indices in the attributes array, draw order. */
-    def indices:IntBuffer = throw new RuntimeException("no indices in this mesh")
+    def indices:IntBuffer = throw new InvalidPrimitiveException("no indices in this mesh")
 
     /** Number of components of the given vertex attribute. */
     def components(name:String):Int = {
     	if(meshAttributes ne null) {
     		meshAttributes.get(name) match {
     			case Some(x) => x.components
-    			case None => throw new RuntimeException("mesh has no attribute named %s".format(name))
+    			case None => throw new NoSuchVertexAttributeException("mesh has no attribute named %s".format(name))
     		}
     	} else {
-			throw new RuntimeException("mesh has no attribute named %s".format(name))
+			throw new NoSuchVertexAttributeException("mesh has no attribute named %s".format(name))
     	}
     }
 

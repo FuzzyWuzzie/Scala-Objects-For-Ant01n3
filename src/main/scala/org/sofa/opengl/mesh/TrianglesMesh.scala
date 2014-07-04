@@ -5,10 +5,15 @@ import org.sofa.math.{Rgba, Point3, Vector3, NumberSeq2, NumberSeq3, Triangle}
 import org.sofa.nio.{IntBuffer}
 
 
-/** A dynamic set of independant triangles that can be dynamically updated and
+/** A set of independant triangles that can be dynamically updated and
   * tries to send only changed informations to the GL.
   *
-  * There are `size` triangles at max in the mesh. */
+  * There are `size` triangles at max in the mesh, and `size`*3 vertices
+  * will be allocated. You can share vertices if you which, not all allocated
+  * vertices need to be used. The attributes Vertex, Color, Normal and TexCoord,
+  * are faster to use than other generic attributes due to some caching.
+  *
+  * @param size The max number of triangles. */
 class TrianglesMesh(val size:Int) extends Mesh {
 
 	/** The mutable set of coordinates. */
