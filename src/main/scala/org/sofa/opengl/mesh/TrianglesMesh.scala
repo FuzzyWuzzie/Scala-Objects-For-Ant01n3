@@ -2,7 +2,7 @@ package org.sofa.opengl.mesh
 
 import org.sofa.opengl.{SGL, VertexArray, ShaderProgram}
 import org.sofa.math.{Rgba, Point3, Vector3, NumberSeq2, NumberSeq3, Triangle}
-import org.sofa.nio.{IntBuffer, FloatBuffer}
+import org.sofa.nio.{IntBuffer}
 
 
 /** A dynamic set of independant triangles that can be dynamically updated and
@@ -15,22 +15,16 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	protected[this] lazy val V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)
 	
 	/** The mutable set of colors. */
-	protected[this] lazy val C:MeshAttribute = addMeshAttribute(VertexAttribute.Color, 4) //FloatBuffer = FloatBuffer(size*4*3)
+	protected[this] lazy val C:MeshAttribute = addMeshAttribute(VertexAttribute.Color, 4)
 	
 	/** The mutable set of normals, changes with the triangles. */
-	protected[this] lazy val N:MeshAttribute = addMeshAttribute(VertexAttribute.Normal, 3) //FloatBuffer = FloatBuffer(size*3*3)
+	protected[this] lazy val N:MeshAttribute = addMeshAttribute(VertexAttribute.Normal, 3)
 
 	/** The mutable set of texture coordinates, changes with the triangles. */
-	protected[this] lazy val T:MeshAttribute = addMeshAttribute(VertexAttribute.TexCoord, 2) //FloatBuffer(size*2*3)
-	
+	protected[this] lazy val T:MeshAttribute = addMeshAttribute(VertexAttribute.TexCoord, 2)
+
 	/** The mutable set of elements to draw. */
-	protected[this] lazy val I:IntBuffer = IntBuffer(size*3)
-	
-	/** Start position of the last modification inside the index array. */
-	protected[this] var ibeg = size
-	
-	/** End position of the last modification inside the index array. */
-	protected[this] var iend = 0
+	protected[this] lazy val I:MeshIndex = new MeshIndex(size, 3)
     	
 	// -- Mesh interface -----------------------------------------------------
 
@@ -38,7 +32,7 @@ class TrianglesMesh(val size:Int) extends Mesh {
 
 	def drawAs(gl:SGL):Int = gl.TRIANGLES
 
-	override def indices:IntBuffer = I
+	override def indices:IntBuffer = I.data
 
     override def hasIndices():Boolean = true
 
@@ -142,15 +136,18 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	}
 	
 	/** Tell which vertex attribute to reference for the i-th triangle. */
-	def setTriangle(i:Int, a:Int, b:Int, c:Int) {
-		val p = i*3
+	def setTriangle(t:Int, a:Int, b:Int, c:Int):TrianglesMesh = {
+		val i = t * I.verticesPerPrim
+		val data = I.theData
+
+		data(i)   = a
+		data(i+1) = b
+		data(i+2) = c
 		
-		I(p)   = a
-		I(p+1) = b
-		I(p+2) = c
-		
-		if(p < ibeg) ibeg = p
-		if(p+3 > iend) iend = p+3
+		if(i < I.beg) I.beg = i
+		if(i+I.verticesPerPrim > I.end) I.end = i + I.verticesPerPrim
+
+		this
 	}
 	
 	/** The i-th point in the position vertex attribute. */
@@ -169,9 +166,10 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	
 	/** The i-th triangle in the index array. The returned tuple contains the three indices of
 	  * points in the position vertex array. See getPoint(Int)`. */
-	def getTriangle(i:Int):(Int,Int,Int) = {
-		val p = i*3
-		(I(p), I(p+1), I(p+2))
+	def getTriangle(t:Int):(Int,Int,Int) = {
+		val i = t * I.verticesPerPrim
+		val data = I.theData
+		(data(i), data(i+1), data(i+2))
 	}
 
 	// -- Dynamic updating -------------------------------------------
@@ -181,7 +179,7 @@ class TrianglesMesh(val size:Int) extends Mesh {
 		if(has(VertexAttribute.Vertex))   V.resetMarkers
 		if(has(VertexAttribute.TexCoord)) T.resetMarkers
 		if(has(VertexAttribute.Normal))   N.resetMarkers
-		ibeg = size; iend = 0
+		I.resetMarkers
     }
 
 	/** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
@@ -197,11 +195,7 @@ class TrianglesMesh(val size:Int) extends Mesh {
 			if(updateNormals) N.update(va)
 			if(updateColors) C.update(va)
 			if(updateTexCoords) T.update(va)
-			if(iend > ibeg) {
-				va.indices.update(ibeg, iend, I)
-				ibeg = size
-				iend = 0
-			}
+			I.update(va)
 		}
 	}
 
@@ -210,12 +204,7 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	  * that you want to update or not. */
 	def updateVertexArray(gl:SGL, attributes:String*) {
 		if(va ne null) {
-			if(iend > ibeg) {
-				va.indices.update(ibeg, iend, I)
-				ibeg = size
-				iend = 0
-			}
-
+			I.update(va)
 			attributes.foreach { meshAttribute(_).update(va) }
 		}
 	}

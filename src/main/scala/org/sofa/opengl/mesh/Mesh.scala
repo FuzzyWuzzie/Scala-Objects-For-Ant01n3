@@ -168,6 +168,66 @@ trait Mesh {
 		}
 	}
 
+	/** Same role as [[MeshAttribute]] for the index of primitives to draw.
+	  * 
+	  * You are responsible for creating and maintaining an instance of this
+	  * class in sub-classes of [[Mesh]], this cannot be done automatically.
+	  *
+	  * @param primCount the number of primitives.
+	  * @param verticesPerPrim the number of vertices for one primitive. */
+	class MeshIndex(val primCount:Int, val verticesPerPrim:Int) {
+		
+		var theData = IntBuffer(primCount * verticesPerPrim)
+
+		var beg:Int = primCount * verticesPerPrim
+
+		var end:Int = 0
+
+		/** Data under the form an int buffer. */
+		def data:IntBuffer = theData
+
+		def set(prim:Int, values:Int*) {
+			val i = prim * verticesPerPrim
+
+			if(values.length >= verticesPerPrim) {
+				if(i >= 0 && i < theData.size) {
+					if(beg > i) beg = i
+					if(end < i+verticesPerPrim) end = i+verticesPerPrim
+
+					var j = 0
+
+					while(j < verticesPerPrim) {
+						theData(i+j) = values(j)
+						j += 1
+					}
+				} else {
+					throw new RuntimeException(s"invalid primitive index ${prim} out of index buffer (size=${primCount})")
+				}
+			} else {
+				throw new RuntimeException(s"no enough values passed for primitive (${values.length}), needs ${verticesPerPrim} vertices indices")
+			}
+		}
+
+		/** Update the buffer (send it to OpenGL) with the same name as this attribute if
+		  * some elements have been changed. */
+		def update(va:VertexArray) {
+			if(end > beg) {
+				if(beg==0 && end == primCount*verticesPerPrim)
+				     va.indices.update(theData)
+				else va.indices.update(beg, end, theData)
+				resetMarkers
+			}
+		}
+
+		/** Used to reset the [[beg]] and [[end]] markers as if no changes
+		  * have been made to the values. Used after `update()` and by the
+		  * mesh before creating a new vertex array. */
+		def resetMarkers() {
+			beg = primCount * verticesPerPrim
+			end = 0
+		}
+	}
+
 	/** Last produced vertex array. */
 	protected[this] var va:VertexArray = _
 
