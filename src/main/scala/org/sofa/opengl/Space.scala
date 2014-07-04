@@ -197,6 +197,30 @@ trait Space {
         modelview.scale(by)
         needRecomputeMVP = true
     }
+
+    /** Define a model-view matrix according to the `eye` position and pointing at the
+      * `focusPoint`. This erases the model-view matrix at the top of the stack and copy in
+      * it the new "look-at" matrix.
+      *
+      * The `up` vector allow to bank the camera, most often, as it name suggests, it points
+      * up (0,1,0).
+      * 
+      * This method must be called before any transform done on the "model", usually first
+      * before drawing anything. It is suitable for a 3D environment with a perspective
+      * transform. For an orthographic transform, you should not need this (it should work
+      * however, if you know what you do).
+      * 
+      * This method does not empty the model-view matrix stack. */
+    def lookAt(eye:Vector3, focusPoint:Vector3, up:Vector3) {
+        modelview.setIdentity
+        modelview.lookAt(eye, focusPoint, up)
+        needRecomputeMVP = true
+    }
+
+    /** Same as lookAt(eye, focusPoint, up), but takes its information from [[PointOfView]] instance. */
+    def lookAt(pov:PointOfView) {
+    	lookAt(pov.cartesianEye, pov.focus, pov.up)
+    }
     
     /** Apply the given `transform` to the current model-view matrix. */
     def transform(transform:Matrix4) {

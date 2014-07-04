@@ -179,7 +179,15 @@ abstract class DefaultAvatar(
 /** A default base avatar that mixes [[AvatarSpace]] and [[AvatarRender]].
   * 
   * This means that avatars inheriting this class cannot dynamically change their
-  * space transformation and renderer. */
+  * space transformation and renderer. You have to override:
+  *  - `render()`.
+  * An eventually:
+  *  - `animateRender()`,
+  *  - `changeRender()`,
+  *  - `pushSubSpace()` and `popSubSpace()`,
+  *  - `animateSpace()`,
+  *  - `changeSpace()`.
+  */
 abstract class DefaultAvatarMixed(name:AvatarName, screen:Screen) extends DefaultAvatar(name, screen) with AvatarSpace with AvatarRender {
 
 	def space:AvatarSpace = this

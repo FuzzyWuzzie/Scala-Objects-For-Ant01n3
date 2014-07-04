@@ -441,6 +441,19 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
             uniformMatrix4(loc, 1, false, matrix)
         else throw ShaderAttributeException("matrix must be 9 (3x3) or 16 (4x4) floats");
     }
+
+    def uniformTexture(textureUnit:Int, texture:Texture, uniformName:String) {
+    	val pos = textureUnit match {
+			case gl.TEXTURE0 => 0
+			case gl.TEXTURE1 => 1
+			case gl.TEXTURE2 => 2
+			case _ => throw new RuntimeException("cannot handle more than 3 texture unit yet")
+		}
+
+		activeTexture(textureUnit)
+		texture.bind
+		uniform(uniformName, pos)
+    }
     
     def getAttribLocation(variable:String):Int = {
         var loc = attributeLocations.get(variable).getOrElse {

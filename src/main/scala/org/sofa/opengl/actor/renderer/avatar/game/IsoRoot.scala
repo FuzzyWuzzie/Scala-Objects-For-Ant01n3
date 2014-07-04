@@ -20,7 +20,7 @@ class IsoWorldAvatarFactory extends DefaultAvatarFactory {
 			case "iso-cell-grid" => new IsoCellGrid(name, screen)
 			case "iso-cell"      => new IsoCell(name, screen)
 			case "iso-entity"    => new IsoEntity(name, screen)
-			case _               => throw new NoSuchAvatarException("avatar kind %s does not exist in avatar factory 'Iso'".format(kind))
+			case _               => chainAvatarFor(name, screen, kind)
 		}
 	}
 }
@@ -171,9 +171,6 @@ class IsoRootRender(avatar:Avatar) extends IsoRender(avatar) {
 
 
 abstract class IsoSpace(var self:Avatar) extends AvatarSpace {
-	def animateSpace() {}
-
-	def changeSpace(newState:AvatarSpaceState) {}
 }
 
 
@@ -221,7 +218,7 @@ class IsoRootSpace(avatar:Avatar) extends IsoSpace(avatar) {
 		layoutSubs
 	}
 
-	def pushSubSpace() {
+	override def pushSubSpace() {
 		val space = self.screen.space
 
 		// we pass from x [-1..1] positive right and y [-1..1] positive top to
@@ -232,7 +229,7 @@ class IsoRootSpace(avatar:Avatar) extends IsoSpace(avatar) {
 		space.scale(2, -2/ratiohw, 1)
 	}
 
-	def popSubSpace() { self.screen.space.pop }
+	override def popSubSpace() { self.screen.space.pop }
 
 	def layoutSubs() {
 		self.foreachSub { sub =>

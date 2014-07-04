@@ -33,21 +33,23 @@ trait AvatarSpace {
 	/** The avatar. */
 	protected def self:Avatar 
 
-	/** The number of units that represent 1 centimeter inside the sub-space of this avatar. */
+	/** The number of units that represent 1 centimeter inside the sub-space of this avatar. When
+	  * the projection is perspective, this scale is 1 centimeter for a vector aligne with the
+	  * projection plane (the screen). */
 	def scale1cm:Double
 
 	/** Handle changes in the position and eventually communicate it to the sub avatars.
 	  * For example, if there is a layout for sub-avatars, it takes place here. */
-	def animateSpace()
+	def animateSpace() {}
 
 	/** Change the space. Send any kind of state change event to modify the space. */
-	def changeSpace(newState:AvatarSpaceState)
+	def changeSpace(newState:AvatarSpaceState) {}
 
 	/** Setup the sub-space for sub avatars. */
-	def pushSubSpace()
+	def pushSubSpace() {}
 
 	/** Revert to the space before the call to `push()`. */
-	def popSubSpace()
+	def popSubSpace() {}
 
 	/** Position and size of this avatar in the parent space. */
 	def thisSpace:Box3

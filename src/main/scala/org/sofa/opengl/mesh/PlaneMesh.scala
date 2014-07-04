@@ -29,7 +29,7 @@ import org.sofa.math.Rgba
   * 
   * Triangles are in CW order.
   */
-class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, var isXY:Boolean) extends Mesh {
+class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, var isXY:Boolean = false) extends Mesh {
     import VertexAttribute._
 
     protected lazy val V:FloatBuffer = allocateVertices
@@ -47,8 +47,6 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     protected var textureRepeatS:Int = 1
 
     protected var textureRepeatT:Int = 1
-
-    def this(nVertX:Int, nVertZ:Int, width:Float, depth:Float) { this(nVertX, nVertZ, width, depth, false) }
 
 	/** Define how many times the texture repeats along the S and T coordinates. This must be
 	  * done before the plane is transformed to a mesh. */    

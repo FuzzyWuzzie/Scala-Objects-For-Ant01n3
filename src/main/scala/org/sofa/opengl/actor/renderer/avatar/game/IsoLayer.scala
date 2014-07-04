@@ -69,7 +69,7 @@ class IsoLayerSpace(avatar:Avatar) extends IsoSpace(avatar) {
 
  	override def animateSpace() {}
 
- 	def pushSubSpace() {
+ 	override def pushSubSpace() {
  		scale1cm  = self.parent.space.scale1cm		
 		val space = self.screen.space
 
@@ -77,7 +77,7 @@ class IsoLayerSpace(avatar:Avatar) extends IsoSpace(avatar) {
  		space.translate(fromSpace.pos.x, fromSpace.pos.y, fromSpace.pos.z)
  	}
 
- 	def popSubSpace() {
+ 	override def popSubSpace() {
 		self.screen.space.pop
  	}
 }

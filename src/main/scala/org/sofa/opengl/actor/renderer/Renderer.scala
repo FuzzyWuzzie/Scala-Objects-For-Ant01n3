@@ -280,29 +280,3 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 		result.toString
 	}
 }
-
-
-/** Factory for avatars and screens. */
-trait AvatarFactory {
-	/** Should produce a screen of the given `screenType`. If the screen 
-	  * type is not given, a default screen is created. It is rarely needed
-	  * to override the default screen type. */
-	def screenFor(name:String, renderer:Renderer, screenType:String = "default"):Screen
-
-	/** Should produce an avatar of the given `avatarType`. */
-	def avatarFor(name:AvatarName, screen:Screen, avatarType:String):Avatar
-}
-
-
-class DefaultAvatarFactory extends AvatarFactory {
-	def screenFor(name:String, renderer:Renderer, screenType:String = "default"):Screen = {
-		screenType match {
-			case "default" => new DefaultScreen(name, renderer)
-			case _         => throw new NoSuchScreenException("screen type %s is unknown (maybe change or edit the AvatarFactory in the Renderer)".format(screenType))
-		}
-	}
-
-	def avatarFor(name:AvatarName, screen:Screen, avatarType:String):Avatar = {
-		throw new NoSuchAvatarException("the factory does not know how to create avatar of kind %s".format(avatarType))
-	}
-}

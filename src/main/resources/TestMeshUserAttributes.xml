@@ -1,0 +1,16 @@
+<resources>
+	<pathes>
+		<shader>/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2</shader>
+		<shader>shaders</shader>
+		<tex>/Users/antoine/Documents/Art/Images/HexaLife</tex>
+		<tex>/Users/antoine/Documents/Art/Images</tex>
+		<tex>textures</tex>
+	</pathes>
+	<shaders>
+		<shader id="ground-shader" vert="iso.vert.glsl" frag="iso_nm.frag.glsl"/>
+	</shaders>
+	<texs>
+		<tex id="ground-color" res="Ground_Color.png" alpha="premultiply"/>
+		<tex id="ground-mask"  res="Ground_Mask.png"/>
+	</texs>
+</resources>

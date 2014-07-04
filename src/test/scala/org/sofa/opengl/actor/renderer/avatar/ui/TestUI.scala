@@ -37,17 +37,17 @@ class TestUI extends FlatSpec {
 		renderer.switchToScreen("default-screen")
 		assert(renderer.hasCurrentScreen, "renderer has a current screen")
 		
-		renderer.currentScreen.addAvatar(AvatarName("root"), "ui-root")
+		renderer.currentScreen.addAvatar(AvatarName("root"), "ui.root")
 		assertResult(1, "only one avatar") { renderer.currentScreen.subCount }
 
-		renderer.currentScreen.addAvatar(AvatarName("root.list"), "ui-list")
+		renderer.currentScreen.addAvatar(AvatarName("root.list"), "ui.list")
 
-		renderer.currentScreen.addAvatar(AvatarName("root.list.item1"), "ui-list-item")
-		renderer.currentScreen.addAvatar(AvatarName("root.list.item2"), "ui-list-item")
-		renderer.currentScreen.addAvatar(AvatarName("root.list.item3"), "ui-list-item")
-		renderer.currentScreen.addAvatar(AvatarName("root.list.item4"), "ui-list-item")
-		renderer.currentScreen.addAvatar(AvatarName("root.list.item5"), "ui-list-item")
-		renderer.currentScreen.addAvatar(AvatarName("root.list.item6"), "ui-list-item")
+		renderer.currentScreen.addAvatar(AvatarName("root.list.item1"), "ui.list-item")
+		renderer.currentScreen.addAvatar(AvatarName("root.list.item2"), "ui.list-item")
+		renderer.currentScreen.addAvatar(AvatarName("root.list.item3"), "ui.list-item")
+		renderer.currentScreen.addAvatar(AvatarName("root.list.item4"), "ui.list-item")
+		renderer.currentScreen.addAvatar(AvatarName("root.list.item5"), "ui.list-item")
+		renderer.currentScreen.addAvatar(AvatarName("root.list.item6"), "ui.list-item")
 	}
 
 	it should "exit gracefully" in {

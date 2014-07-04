@@ -94,7 +94,7 @@ class IsoWorldSpace(avatar:Avatar) extends IsoSpace(avatar) {
  		layoutSubs
  	}
 
- 	def pushSubSpace() {
+ 	override def pushSubSpace() {
  		val space = avatar.screen.space
  		val fsize = fromSpace.size
  		val tsize = toSpace.size
@@ -107,7 +107,7 @@ class IsoWorldSpace(avatar:Avatar) extends IsoSpace(avatar) {
  		space.translate(toSpace.pos.x, -toSpace.pos.y, toSpace.pos.z)
  	}
 
- 	def popSubSpace() {
+ 	override def popSubSpace() {
 		self.screen.space.pop
  	}
 

@@ -133,6 +133,13 @@ trait Mesh {
 	  * The attribute is made of the given number of `components`. For example,
 	  * if this is a point in 3D there are 3 components. If this is a 2D texture UV
 	  * coordinates, there are 2 components. */
+	def addAttribute(name:VertexAttribute, components:Int) { addAttribute(name.toString, components) }
+
+	/** Declare a vertex attribute `name` for the mesh.
+	  *
+	  * The attribute is made of the given number of `components`. For example,
+	  * if this is a point in 3D there are 3 components. If this is a 2D texture UV
+	  * coordinates, there are 2 components. */
 	def addAttribute(name:String, components:Int) {
 		if(meshAttributes eq null)
 			meshAttributes = new HashMap[String, MeshAttribute]()
@@ -205,12 +212,13 @@ trait Mesh {
     /** True if the mesh has indices in the vertex attributes to define primitives. */
     def hasIndices():Boolean = false
 
-    /** How to draw the mesh (as lines, lines loops, triangles, quads, etc.).
+    /** How to draw the mesh (as points, lines, lines loops, triangles, etc.).
       * This depends on the way the data is defined. */
     def drawAs(gl:SGL):Int
 
     /** Draw the last vertex array created. If no vertex array has been created 
-      * a NoVertexArrayException is thrown. */
+      * a NoVertexArrayException is thrown. Use the `drawAs()` method to select
+      * how to draw the mesh (triangles, points, etc.). */
     def draw(gl:SGL) {
     	if(va ne null)
     		va.draw(drawAs(gl)) 
@@ -240,10 +248,10 @@ trait Mesh {
     /** True if at least one vertex array was created. You can access it using `lastva()`. */
     def hasva:Boolean = (va ne null)
 
-    /** Always called before creating a new vertex array. Hook for descendants. */
+    /** Always called before creating a new vertex array. Hook for sub-classes. */
     protected def beforeNewVertexArray() {}
 
-    /** Always called after creating a new vertex array. Hook for descendants. */
+    /** Always called after creating a new vertex array. Hook for sub-classes. */
     protected def afterNewVertexArray() {}
 
     /** Create a vertex array for the mesh. This method will create the vertex array with

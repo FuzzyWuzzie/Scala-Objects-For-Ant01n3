@@ -23,16 +23,16 @@ import org.sofa.math.Axis._
 trait PointOfView {
 
     /** Up direction, for camera banking. */
-    var up = Vector3(0, 1,  0)
+    val up = Vector3(0, 1,  0)
     
     /** Position of the camera eye in spherical coordinates. */
-    var sphericalEye = Vector3(0, 0,  1)
+    val sphericalEye = Vector3(0, 0,  1)
     
     /** Position of the camera eye in Cartesian coordinates. */
-    var cartesianEye = Vector3(0, 0, -1)
+    val cartesianEye = Vector3(0, 0, -1)
 
     /** The looked at point. */
-    var focus = Vector3(0, 0, 0)
+    val focus = Vector3(0, 0, 0)
 
     /** Distance between the two eyes divided by two. This value is used
       * by `lookAtLeftEye` and `lookAtRightEye`. */
@@ -159,11 +159,7 @@ class Camera extends Space with PointOfView {
       * however, if you know what you do).
       * 
       * This method does not empty the model-view matrix stack. */
-    def lookAt() {
-        modelview.setIdentity
-        modelview.lookAt(cartesianEye, focus, up)
-        needRecomputeMVP = true
-    }
+    def lookAt() { lookAt(cartesianEye, focus, up) }
 
     /** Same as [[lookAt]], but offset the eye around the focus point by `eyeAngle` to
       * represent the scene as seen from the left eye. */
@@ -184,4 +180,33 @@ class Camera extends Space with PointOfView {
     }
 
     override def toString() = "cam{cartesian(%s) spherical(%s) focus(%s) up(%s) vp(%s)}".format(cartesianEye, sphericalEye, focus, up, viewportPx)
+}
+
+
+/** Identical to the [[Camera]] object but allows to wrap a [[Space]] instance to
+  * reuse it as an orbiting camera. Use the `setSpace()` method to specify the space
+  * to use. The `lookAt()`  method will overwrite the top-most model-view matrix. */
+class CameraSpace extends PointOfView {
+	protected[this] var space:Space = null
+
+	def setSpace(space:Space) { this.space = space }
+
+	def lookAt() {
+		if(space ne null)
+			space.lookAt(cartesianEye, focus, up)
+	}
+
+	def lookAtLeftEye() {
+		val t = theta
+		theta = t + eyeAngle
+		lookAt
+		theta = t
+	}
+
+	def lookAtRightEye() {
+		val t = theta
+		theta = t - eyeAngle
+		lookAt
+		theta = t
+	}
 }

@@ -146,7 +146,7 @@ class IsoEntitySpace(avatar:Avatar) extends IsoSpace(avatar) {
 	override def animateSpace() {
 	}
 
-	def pushSubSpace() {
+	override def pushSubSpace() {
 		val space  = self.screen.space
 
  		scale1cm = self.parent.space.scale1cm
@@ -155,7 +155,7 @@ class IsoEntitySpace(avatar:Avatar) extends IsoSpace(avatar) {
  		space.translate(fromSpace.pos.x, fromSpace.pos.y, 0)
 	}
 
-	def popSubSpace() {
+	override def popSubSpace() {
 		self.screen.space.pop
 	}
 }

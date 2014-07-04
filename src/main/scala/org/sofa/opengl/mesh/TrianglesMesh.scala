@@ -11,6 +11,8 @@ import org.sofa.nio.{IntBuffer, FloatBuffer}
   * There are `size` triangles at max in the mesh. */
 class TrianglesMesh(val size:Int) extends Mesh {
 	
+	// TODO remove this awful list of attributes using the MeshAttribute interface in Mesh.
+
 	/** The mutable set of coordinates. */
 	protected[this] lazy val V:FloatBuffer = FloatBuffer(size*3*3)
 	
@@ -237,6 +239,11 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	}
 }
 
+
+// -------------------------------------------------------------------------------
+
+
+/** Like a [[TriangleMesh]] but without an index. */
 class UnindexedTrianglesMesh(val size:Int) extends Mesh {
 
 	/** The mutable set of coordinates. */
