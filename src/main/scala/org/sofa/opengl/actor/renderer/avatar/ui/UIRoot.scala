@@ -15,7 +15,7 @@ class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) {
 	override def render() {
 		val gl = screen.gl
 
-		gl.clearColor(Rgba.Grey80)
+		gl.clearColor(Rgba.White)
 		gl.clear(gl.COLOR_BUFFER_BIT)
 
 		gl.lineWidth(1f)

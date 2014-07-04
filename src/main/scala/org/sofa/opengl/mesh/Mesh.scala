@@ -95,15 +95,23 @@ trait Mesh {
 	/** Representation of a user-defined attribute.
 	  * 
 	  * Such attributes are set of floats (1 to 4, depending on the number of components),
-	  * each one being associated to a vertex. Individual meshes have to allocate these
-	  * attribute by giving the number of vertices. This encapsulate a [[FloatBuffer]]
-	  * to store data.
+	  * each one being associated to a vertex. You can index the attribute by the
+	  * vertex number. Individual meshes have to allocate these
+	  * attribute by giving the number of vertices and the number of components per
+	  * vertice. This encapsulate a [[FloatBuffer]] to store data.
 	  *
-	  * This class has a generic `set()` method allowing to change an individual
-	  * attribute values, but for efficiency reasons, you have plain access to
+	  * This class also allows to memorize two vertex positions that mark the
+	  * begin and end of the area where modifcations have been done since the last
+	  * update (an update consists in sending data to OpenGL). These two markers
+	  * are update by `set()` method.
+	  *
+	  * The `set()` method allow to change individual
+	  * attribute values per vertex. However for efficiency reasons, as the creator
+	  * of sub-classes of this one, you have plain access to
 	  * the [[theData]] field wich is a buffer of [[vertexCount]]*[[components]]
-	  * floats, and [[beg]] and [[end]] that mark the extent of modifications
-	  * in the buffer. If you mess with these fields, you known the consequences. */
+	  * floats, and [[beg]] and [[end]] markers, indicating the extent of modifications
+	  * in the buffer. If you mess with these fields, you known the consequences.
+	  * However this will be far faster than using the `set*()` methods. */
 	class MeshAttribute(val name:String, val components:Int, val vertexCount:Int) {
 		
 		var theData = FloatBuffer(vertexCount * components)
@@ -119,12 +127,12 @@ trait Mesh {
 		  * @param values must contain at least [[components]] elements.
 		  * @param vertex an index as a vertex number. */
 		def set(vertex:Int, values:Float*) {
-			val i = vertex *  components
+			val i = vertex * components
 
 			if(values.length >= components) {
 				if(i >= 0 && i < theData.size) {
-					if(beg > vertex) beg = vertex
-					if(end < vertex) end = vertex
+					if(beg > vertex)   beg = vertex
+					if(end < vertex+1) end = vertex+1
 
 					var j = 0
 
@@ -144,10 +152,19 @@ trait Mesh {
 		  * some elements have been changed. */
 		def update(va:VertexArray) {
 			if(end > beg) {
-				va.buffer(name).update(beg, end, theData)
-				beg = vertexCount
-				end = 0
+				if(beg==0 && end == vertexCount)
+				     va.buffer(name).update(theData)
+				else va.buffer(name).update(beg, end, theData)
+				resetMarkers
 			}
+		}
+
+		/** Used to reset the [[beg]] and [[end]] markers as if no changes
+		  * have been made to the values. Used after `update()` and by the
+		  * mesh before creating a new vertex array. */
+		def resetMarkers() {
+			beg = vertexCount
+			end = 0
 		}
 	}
 
@@ -162,39 +179,53 @@ trait Mesh {
 
 	/** Declare a vertex attribute `name` for the mesh.
 	  *
-	  * The attribute is made of the given number of `components`. For example,
+	  * The attribute is made of the given number of `components` per vertex. For example,
 	  * if this is a point in 3D there are 3 components. If this is a 2D texture UV
 	  * coordinates, there are 2 components. */
 	def addAttribute(name:VertexAttribute, components:Int) { addAttribute(name.toString, components) }
 
 	/** Declare a vertex attribute `name` for the mesh.
 	  *
-	  * The attribute is made of the given number of `components`. For example,
+	  * The attribute is made of the given number of `components` per vertex. For example,
 	  * if this is a point in 3D there are 3 components. If this is a 2D texture UV
 	  * coordinates, there are 2 components. */
-	def addAttribute(name:String, components:Int) {
+	def addAttribute(name:String, components:Int) { addMeshAttribute(name, components) }
+
+	/** Internal method used to declare a new attribute, its `name` and the
+	  * number of `components`, that is the number of values per vertex.
+	  * The returned [[MeshAttribute]] is stored. */
+	protected def addMeshAttribute(name:String, components:Int):MeshAttribute = {
 		if(meshAttributes eq null)
 			meshAttributes = new HashMap[String, MeshAttribute]()
 
-		meshAttributes += ((name, new MeshAttribute(name, components, vertexCount)))
+		val meshAttr = new MeshAttribute(name, components, vertexCount)
+
+		meshAttributes += name -> meshAttr
+
+		meshAttr		
 	}
 
-	/** Change the value of an attribute at the given `vertex`. The `values` must
+	/** Change the value of an attribute for the given `vertex`. The `values` must
 	  * have as many elements as the attribute has components.
 	  * @param name The attribute name.
 	  * @param vertex The vertex tied to this attribute values.
 	  * @param values a set of floats one for each component. */
 	def setAttribute(name:String, vertex:Int, values:Float*) {
-		val data:MeshAttribute = if(meshAttributes ne null) meshAttributes.get(name).getOrElse { 
-			throw new RuntimeException(s"mesh has no attribute named ${name}")
-			null
-		} else null
-		
-		data.set(vertex, values:_*)
+		meshAttribute(name).set(vertex, values:_*)
 	}
 
 	/** Number of vertices in the mesh. */
 	def vertexCount:Int
+
+	/** Internal method used to access a vertex attribute by its name 
+	  * under the form of the [[MeshAttribute]] handling it. */
+	protected def meshAttribute(name:String):MeshAttribute = {
+		if(meshAttributes ne null) meshAttributes.get(name).getOrElse { 
+			throw new RuntimeException(s"mesh has no attribute named ${name}")
+		} else {
+			null
+		}
+	}
 
 	/** A vertex attribute by its name. */
 	def attribute(name:String):FloatBuffer = {

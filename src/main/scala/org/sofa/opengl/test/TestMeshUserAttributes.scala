@@ -125,12 +125,13 @@ class MeshUserAttributesAvatar(name:AvatarName, screen:Screen) extends UIPaint(n
 
 	protected[this] var texDisplacement = Vector2(0, 0)
 
-	protected[this] var dir = 0.005
+	protected[this] var dir = 0.001
 
 	override def animateRender() {
-		texDisplacement.x = texDisplacement.x + dir
+		texDisplacement.x = texDisplacement.x + dir * sqrt(3)
+		texDisplacement.y = texDisplacement.y + dir * 1
 
-		if(texDisplacement.x >= 0.1) { texDisplacement.x = 0;  }
+		if(texDisplacement.x >= 0.1) { texDisplacement.x = 0; texDisplacement.y = 0 }
 	}
 
 	override def changeRender(newState:AvatarRenderState) {
@@ -161,32 +162,39 @@ class MeshUserAttributesAvatar(name:AvatarName, screen:Screen) extends UIPaint(n
 				val w2 = sqrt(3).toFloat
 				val h2 = 1f
 
+				val u0 = 0.027f
+				val u1 = 0.243f
+				val u2 = 0.460f
+				val v0 = 0.390f
+				val v1 = 0.515f
+				val v2 = 0.640f
+
 				ground.addAttribute("moving", 3)
 
 				// Triangle 0
-				ground xyz (0,  -w2, -h2, 0f)  uv (0, 0f,   0f)    user("moving", 0,  0, 0, 0)
-				ground xyz (1,   0f, -h2, 0f)  uv (1, 0.5f, 0f)    user("moving", 1,  0, 0, 0)
-				ground xyz (2,  -w2,  0f, 0f)  uv (2, 0f,   0.5f)  user("moving", 2,  0, 0, 0)
+				ground  xyz(0,  -w2, -h2, 0f)   uv(0, u0, v0)  user("moving", 0,  0, 0, 0)
+				ground  xyz(1,   0f, -h2, 0f)   uv(1, u1, v0)  user("moving", 1,  0, 0, 0)
+				ground  xyz(2,  -w2,  0f, 0f)   uv(2, u0, v1)  user("moving", 2,  0, 0, 0)
 				// Triangle 1
-				ground xyz (3,   0f, -h2, 0f)  uv(3, 0.5f, 0f)     user("moving", 3,  0, 0, 0)
-				ground xyz (4,   w2, -h2, 0f)  uv(4, 1f,   0f)     user("moving", 4,  0, 0, 0)
-				ground xyz (5,   w2,  0f, 0f)  uv(5, 1f,   0.5f)   user("moving", 5,  0, 0, 0)
+				ground  xyz(3,   0f, -h2, 0f)   uv(3, u1, v0)   user("moving", 3,  0, 0, 0)
+				ground  xyz(4,   w2, -h2, 0f)   uv(4, u2, v0)   user("moving", 4,  0, 0, 0)
+				ground  xyz(5,   w2,  0f, 0f)   uv(5, u2, v1)   user("moving", 5,  0, 0, 0)
 				// Triangle 2
-				ground xyz (6,  -w2,  0f, 0f)  uv(6, 0f,   0.5f)   user("moving", 6,  0, 0, 0)
-				ground xyz (7,   0f,  h2, 0f)  uv(7, 0.5f, 1f)     user("moving", 7,  0, 0, 0)
-				ground xyz (8,  -w2,  h2, 0f)  uv(8, 0f,   1f)     user("moving", 8,  0, 0, 0)
+				ground  xyz(6,  -w2,  0f, 0f)   uv(6, u0, v1)   user("moving", 6,  0, 0, 0)
+				ground  xyz(7,   0f,  h2, 0f)   uv(7, u1, v2)   user("moving", 7,  0, 0, 0)
+				ground  xyz(8,  -w2,  h2, 0f)   uv(8, u0, v2)   user("moving", 8,  0, 0, 0)
 				// Triangle 3
-				ground xyz (9,   w2,  0f, 0f) uv(9,  1f,   0.5f)   user("moving", 9,  0, 0, 0)
-				ground xyz (10,  w2,  h2, 0f) uv(10, 1f,   1f)     user("moving", 10, 0, 0, 0)
-				ground xyz (11,  0f,  h2, 0f) uv(11, 0.5f, 1f)     user("moving", 11, 0, 0, 0)
+				ground  xyz(9,   w2,  0f, 0f)  uv(9,  u2, v1)   user("moving", 9,  0, 0, 0)
+				ground  xyz(10,  w2,  h2, 0f)  uv(10, u2, v2)   user("moving", 10, 0, 0, 0)
+				ground  xyz(11,  0f,  h2, 0f)  uv(11, u1, v2)   user("moving", 11, 0, 0, 0)
 				// Triangle 4
-				ground xyz (12,  0f, -h2, 0f) uv(12, 0.5f, 0f)     user("moving", 12, 1, 0, 0)
-				ground xyz (13,  0f,  h2, 0f) uv(13, 0.5f, 1f)     user("moving", 13, 1, 0, 0)
-				ground xyz (14, -w2,  0f, 0f) uv(14, 0f,   0.5f)   user("moving", 14, 1, 0, 0)
+				ground  xyz(12,  0f, -h2, 0f)  uv(12, u1, v0)   user("moving", 12, 1, 0, 0)
+				ground  xyz(13,  0f,  h2, 0f)  uv(13, u1, v2)   user("moving", 13, 1, 0, 0)
+				ground  xyz(14, -w2,  0f, 0f)  uv(14, u0, v1)   user("moving", 14, 1, 0, 0)
 				// Triangle 5
-				ground xyz (15,  0f, -h2, 0f) uv(15, 0.5f, 0f)     user("moving", 15, 1, 0, 0)
-				ground xyz (16,  w2,  0f, 0f) uv(16, 1f,   0.5f)   user("moving", 16, 1, 0, 0)
-				ground xyz (17,  0f,  h2, 0f) uv(17, 0.5f, 1f)     user("moving", 17, 1, 0, 0)
+				ground  xyz(15,  0f, -h2, 0f)  uv(15, u1, v0)   user("moving", 15, 1, 0, 0)
+				ground  xyz(16,  w2,  0f, 0f)  uv(16, u2, v1)   user("moving", 16, 1, 0, 0)
+				ground  xyz(17,  0f,  h2, 0f)  uv(17, u1, v2)   user("moving", 17, 1, 0, 0)
 
 				ground triangle (0, 0, 1, 2)
 				ground triangle (1, 3, 4, 5)

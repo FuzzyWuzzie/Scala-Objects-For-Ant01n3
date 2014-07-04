@@ -10,20 +10,18 @@ import org.sofa.nio.{IntBuffer, FloatBuffer}
   *
   * There are `size` triangles at max in the mesh. */
 class TrianglesMesh(val size:Int) extends Mesh {
-	
-	// TODO remove this awful list of attributes using the MeshAttribute interface in Mesh.
 
 	/** The mutable set of coordinates. */
-	protected[this] lazy val V:FloatBuffer = FloatBuffer(size*3*3)
+	protected[this] lazy val V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)
 	
 	/** The mutable set of colors. */
-	protected[this] lazy val C:FloatBuffer = FloatBuffer(size*4*3)
+	protected[this] lazy val C:MeshAttribute = addMeshAttribute(VertexAttribute.Color, 4) //FloatBuffer = FloatBuffer(size*4*3)
 	
 	/** The mutable set of normals, changes with the triangles. */
-	protected[this] lazy val N:FloatBuffer = FloatBuffer(size*3*3)
+	protected[this] lazy val N:MeshAttribute = addMeshAttribute(VertexAttribute.Normal, 3) //FloatBuffer = FloatBuffer(size*3*3)
 
 	/** The mutable set of texture coordinates, changes with the triangles. */
-	protected[this] lazy val T:FloatBuffer = FloatBuffer(size*2*3)
+	protected[this] lazy val T:MeshAttribute = addMeshAttribute(VertexAttribute.TexCoord, 2) //FloatBuffer(size*2*3)
 	
 	/** The mutable set of elements to draw. */
 	protected[this] lazy val I:IntBuffer = IntBuffer(size*3)
@@ -33,149 +31,112 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	
 	/** End position of the last modification inside the index array. */
 	protected[this] var iend = 0
-	
-    /** Start position of the last modification inside the coordinates array. */
-    protected[this] var vbeg = size
-    
-    /** End position of the last modification inside the coordinates array. */
-    protected[this] var vend = 0
-    
-    /** Start position of the last modification inside the normal array. */
-    protected[this] var nbeg = size
-    
-    /** End position of the last modification inside the normal array. */
-    protected[this] var nend = 0
-    
-    /** Start position of the last modification inside the texcoords array. */
-    protected[this] var tbeg = size
-    
-    /** End position of the last modification inside the texcoords array. */
-    protected[this] var tend = 0
-    
-    /** Start position of the last modification inside the color array. */
-    protected[this] var cbeg = size
-    
-    /** End position of the last modification inside the color array. */
-    protected[this] var cend = 0
     	
 	// -- Mesh interface -----------------------------------------------------
 
 	def vertexCount:Int = size * 3
 
-	override def attribute(name:String):FloatBuffer = try {
-		VertexAttribute.withName(name) match {
-			case VertexAttribute.Vertex   => V
-			case VertexAttribute.Normal   => N
-			case VertexAttribute.TexCoord => T
-			case VertexAttribute.Color    => C
-		}
-	} catch {
-		case _:NoSuchElementException => super.attribute(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
-	}
+	def drawAs(gl:SGL):Int = gl.TRIANGLES
 
 	override def indices:IntBuffer = I
 
-	override def attributeCount():Int = super.attributeCount + 4
-
-	override def attributes():Array[String] = Array[String](
-				VertexAttribute.Vertex.toString,
-				VertexAttribute.Normal.toString,
-				VertexAttribute.TexCoord.toString,
-				VertexAttribute.Color.toString) ++ super.attributes
-	
-	override def components(name:String):Int = try {
-		VertexAttribute.withName(name) match {
-			case VertexAttribute.Vertex   => 3
-			case VertexAttribute.Normal   => 3
-			case VertexAttribute.TexCoord => 2
-			case VertexAttribute.Color    => 4
-		}
-	} catch {
-		case _:NoSuchElementException => super.components(name) //throw new RuntimeException("this mesh has no attribute %s".format(name))
-	}
-
-	override def has(name:String):Boolean = try {
-		VertexAttribute.withName(name) match {
-			case VertexAttribute.Vertex   => true
-			case VertexAttribute.Normal   => true
-			case VertexAttribute.TexCoord => true
-			case VertexAttribute.Color    => true
-		}
-	} catch {
-			case _:NoSuchElementException => super.has(name)		
-	}
-
     override def hasIndices():Boolean = true
-
-	def drawAs(gl:SGL):Int = gl.TRIANGLES
 
 	// -- Constructive interface ---------------------------------------------------
 	
-	def xyz (i:Int, x:Float, y:Float, z:Float):TrianglesMesh = setPoint(i,x,y,z)
-	def uv (i:Int, u:Float, v:Float):TrianglesMesh = setPointTexCoord(i,u,v)
-	def rgb (i:Int, r:Float, g:Float, b:Float) = setPointColor(i,r,g,b,1f)
-	def rgba (i:Int, r:Float, g:Float, b:Float, a:Float) = setPointColor(i,r,g,b,a)
-	def nnn (i:Int, x:Float, y:Float, z:Float) = setPointNormal(i,x,y,z)
-	def user (name:String, i:Int, values:Float*) = setAttribute(name, i, values:_*)
-	def triangle (i:Int, p0:Int, p1:Int, p2:Int) = setTriangle(i, p0, p1, p2)
-
-	def setPoint(i:Int, p:NumberSeq3):TrianglesMesh = setPoint(i, p.x.toFloat, p.y.toFloat, p.z.toFloat)
-
-	def setPoint(i:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
-		val p = i*3
-		
-		V(p)   = x
-		V(p+1) = y
-		V(p+2) = z
-		
-		if(i < vbeg) vbeg = i
-		if(i+1 > vend) vend = i+1
-
-		this
-//Console.err.println("setPoint(%d -> %d)".format(vbeg, vend))
-	}
+	/** Set the `vertex` position (`x`, `y`, `z`). */
+	def xyz(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = setPoint(vertex,x,y,z)
 	
-	def setPointColor(i:Int, c:Rgba):TrianglesMesh = setPointColor(i, c.red.toFloat, c.green.toFloat, c.blue.toFloat, c.alpha.toFloat)
+	/** Set the `vertex` texture coordinates (`u`, `v`). */
+	def uv(vertex:Int, u:Float, v:Float):TrianglesMesh = setPointTexCoord(vertex,u,v)
 	
-	def setPointColor(i:Int, red:Float, green:Float, blue:Float, alpha:Float):TrianglesMesh = {
-		val p = i*4
-		
-		C(p  ) = red
-		C(p+1) = green
-		C(p+2) = blue
-		C(p+3) = alpha
-		
-		if(i < cbeg) cbeg = i
-		if(i+1 > cend) cend = i + 1
+	/** Set the `vertex` color (`r`, `g`, `b`). */
+	def rgb(vertex:Int, r:Float, g:Float, b:Float) = setPointColor(vertex,r,g,b,1f)
+	
+	/** Set the `vertex` color (`r`, `g`, `b`, `a`). */
+	def rgba(vertex:Int, r:Float, g:Float, b:Float, a:Float) = setPointColor(vertex,r,g,b,a)
+	
+	/** Set the `vertex` normal (`x`, `y`, `z`). */
+	def nnn(vertex:Int, x:Float, y:Float, z:Float) = setPointNormal(vertex,x,y,z)
+	
+	/** Set the `values` for `vertex` attribute `name`. */
+	def user(name:String, vertex:Int, values:Float*) = setAttribute(name, vertex, values:_*)
+	
+	/** Set the `i`-th triangle as composed of vertices `v0`, `v1` and `v2` in this order. */
+	def triangle(i:Int, v0:Int, v1:Int, v2:Int) = setTriangle(i, v0, v1, v2)
 
-		this
-	}
+	/** The i-th point in the position vertex attribute. */
+	def point(vertex:Int):Point3 = getPoint(vertex)
+
+	/** The i-th point in the texture coordinates attribute. */
+	def texCoord(vertex:Int):(Float,Float) = getPointTexCoord(vertex)
 	
-	def setPointNormal(i:Int, n:NumberSeq3):TrianglesMesh = setPointNormal(i, n.x.toFloat, n.y.toFloat, n.z.toFloat)
-	
-	def setPointNormal(i:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
-		val p = i*3
+	/** The i-th triangle in the index array. The returned tuple contains the three indices of
+	  * points in the position vertex array. See getPoint(Int)`. */
+	def triangle(i:Int):(Int,Int,Int) = getTriangle(i)
+
+	// -- Old Constructive interface -----------------------------------------------
+
+	def setPoint(vertex:Int, p:NumberSeq3):TrianglesMesh = setPoint(vertex, p.x.toFloat, p.y.toFloat, p.z.toFloat)
+
+	def setPoint(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
+		val i = vertex * V.components
+		val data = V.theData
+
+		data(i+0) = x
+		data(i+1) = y
+		data(i+2) = z
 		
-		N(p)   = x
-		N(p+1) = y
-		N(p+2) = z
-		
-		if(i < nbeg) nbeg = i
-		if(i+1 > nend) nend = i+1
+		if(vertex   < V.beg) V.beg = vertex
+		if(vertex+1 > V.end) V.end = vertex + 1
 
 		this
 	}
+	
+	def setPointColor(vertex:Int, c:Rgba):TrianglesMesh = setPointColor(vertex, c.red.toFloat, c.green.toFloat, c.blue.toFloat, c.alpha.toFloat)
+	
+	def setPointColor(vertex:Int, red:Float, green:Float, blue:Float, alpha:Float):TrianglesMesh = {
+		val i = vertex * C.components
+		val data = C.theData
+		
+		data(i  ) = red
+		data(i+1) = green
+		data(i+2) = blue
+		data(i+3) = alpha
+		
+		if(vertex   < C.beg) C.beg = vertex
+		if(vertex+1 > C.end) C.end = vertex + 1
 
-	def setPointTexCoord(i:Int, uv:NumberSeq2):TrianglesMesh = setPointTexCoord(i, uv.x.toFloat, uv.y.toFloat)
+		this
+	}
+	
+	def setPointNormal(vertex:Int, n:NumberSeq3):TrianglesMesh = setPointNormal(vertex, n.x.toFloat, n.y.toFloat, n.z.toFloat)
+	
+	def setPointNormal(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
+		val i = vertex * N.components
+		val data = N.theData
+		
+		data(i)   = x
+		data(i+1) = y
+		data(i+2) = z
+		
+		if(vertex   < N.beg) N.beg = vertex
+		if(vertex+1 > N.end) N.end = vertex + 1
 
-	def setPointTexCoord(i:Int, u:Float, v:Float):TrianglesMesh = {
-		val p = i*2
+		this
+	}
 
-		T(p)   = u
-		T(p+1) = v
+	def setPointTexCoord(vertex:Int, uv:NumberSeq2):TrianglesMesh = setPointTexCoord(vertex, uv.x.toFloat, uv.y.toFloat)
 
-		if(i < tbeg) tbeg = i
-		if(i+1 > tend) tend = i+1
+	def setPointTexCoord(vertex:Int, u:Float, v:Float):TrianglesMesh = {
+		val i = vertex * T.components
+		val data = T.theData
+
+		data(i)   = u
+		data(i+1) = v
+
+		if(vertex   < T.beg) T.beg = vertex
+		if(vertex+1 > T.end) T.end = vertex+1
 
 		this
 	}
@@ -193,15 +154,17 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	}
 	
 	/** The i-th point in the position vertex attribute. */
-	def getPoint(i:Int):Point3 = {
-		val p = i*3
-		Point3(V(p), V(p+1), V(p+2))
+	def getPoint(vertex:Int):Point3 = {
+		val i = vertex * V.components
+		val data = V.theData
+		Point3(data(i), data(i+1), data(i+2))
 	}
 
 	/** The i-th point in the texture coordinates attribute. */
-	def getPointTexCoord(i:Int):(Float,Float) = {
-		val p = i*2
-		(T(p), T(p+1))
+	def getPointTexCoord(vertex:Int):(Float,Float) = {
+		val i = vertex * T.components
+		val data = T.theData
+		(data(i), data(i+1))
 	}
 	
 	/** The i-th triangle in the index array. The returned tuple contains the three indices of
@@ -214,40 +177,26 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	// -- Dynamic updating -------------------------------------------
 	
     override def beforeNewVertexArray() {
-		cbeg = size; cend = 0; vbeg = size; vend = 0; tbeg = size; tend = 0; ibeg = size; iend = 0
+		if(has(VertexAttribute.Color))    C.resetMarkers
+		if(has(VertexAttribute.Vertex))   V.resetMarkers
+		if(has(VertexAttribute.TexCoord)) T.resetMarkers
+		if(has(VertexAttribute.Normal))   N.resetMarkers
+		ibeg = size; iend = 0
     }
 
 	/** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
 	  * avoid moving data between the CPU and GPU. */
-    def updateVertexArray(gl:SGL) {
-    	updateVertexArray(gl, true, true, true, true)
-    }
+    def updateVertexArray(gl:SGL) { updateVertexArray(gl, true, true, true, true) }
 
 	/** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
 	  * avoid moving data between the CPU and GPU. You may give a boolean for each buffer in the vertex array
 	  * that you want to update or not. */
 	def updateVertexArray(gl:SGL, updateVertices:Boolean=false, updateColors:Boolean=false, updateNormals:Boolean=false, updateTexCoords:Boolean=false) {
 		if(va ne null) {
-			if(updateVertices && vend > vbeg) {
-				va.buffer(VertexAttribute.Vertex.toString).update(vbeg, vend, V)
-				vbeg = size
-				vend = 0
-			}
-			if(updateNormals && (nend > nbeg)) {
-				va.buffer(VertexAttribute.Normal.toString).update(nbeg, nend, N)
-				nbeg = size
-				nend = 0
-			}
-			if(updateColors && (cend > cbeg)) {
-				va.buffer(VertexAttribute.Color.toString).update(cbeg, cend, C)
-				cbeg = size
-				cend = 0
-			}
-			if(updateTexCoords && (tend > tbeg)) {
-				va.buffer(VertexAttribute.TexCoord.toString).update(tbeg, tend, T)
-				tbeg = size
-				tend = 0
-			}
+			if(updateVertices) V.update(va)
+			if(updateNormals) N.update(va)
+			if(updateColors) C.update(va)
+			if(updateTexCoords) T.update(va)
 			if(iend > ibeg) {
 				va.indices.update(ibeg, iend, I)
 				ibeg = size
@@ -255,216 +204,19 @@ class TrianglesMesh(val size:Int) extends Mesh {
 			}
 		}
 	}
-}
-
-
-// -------------------------------------------------------------------------------
-
-
-/** Like a [[TriangleMesh]] but without an index. */
-class UnindexedTrianglesMesh(val size:Int) extends Mesh {
-
-	/** The mutable set of coordinates. */
-	protected lazy val V:FloatBuffer = FloatBuffer(size*3*3)
-
-	/** The mutable set of colors. */
-	protected lazy val C:FloatBuffer = FloatBuffer(size*4*3)
-
-	/** The mutable set of normals, changes with the triangles. */
-	protected lazy val N:FloatBuffer = FloatBuffer(size*3*3)
-
-    /** Start position of the last modification inside the coordinates array. */
-    protected var vbeg = 0
-    
-    /** End position of the last modification inside the coordinates array. */
-    protected var vend = size
-    
-    /** Start position of the last modification inside the color array. */
-    protected var cbeg = 0
-    
-    /** End position of the last modification inside the color array. */
-    protected var cend = size
-
-    // -- Mesh interface ---------------------------------------
-
-    def vertexCount:Int = size * 3
-
-    override def attribute(name:String):FloatBuffer = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex => V
-    		case VertexAttribute.Normal => N
-    		case VertexAttribute.Color  => C
-    		case _                      => super.attribute(name) //throw new RuntimeException("this mesh has no %s attribute".format(name))
-    	}
-    }
-
-    override def attributeCount():Int = 3 + super.attributeCount
-
-    override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString, VertexAttribute.Color.toString) ++ super.attributes
-    
-    override def components(name:String):Int = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex => 3
-    		case VertexAttribute.Normal => 3
-    		case VertexAttribute.Color  => 4
-    		case _                      => super.components(name) //throw new RuntimeException("this mesh has no %s attribute".format(name))
-    	}
-
-    }
-
-    override def has(name:String):Boolean = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex => true
-    		case VertexAttribute.Normal => true
-    		case VertexAttribute.Color  => true
-    		case _                      =>  super.has(name) //false
-    	}    	
-    }
-
-	def drawAs(gl:SGL):Int = gl.TRIANGLES
-
-    // -- Editing ----------------------------------------------------------------
-
-	def setTriangle(i:Int, p0:Point3, p1:Point3, p2:Point3) {
-		setTriangle(i, p0.x.toFloat, p0.y.toFloat, p0.z.toFloat,
-		               p1.x.toFloat, p1.y.toFloat, p1.z.toFloat,
-		               p2.x.toFloat, p2.y.toFloat, p2.z.toFloat)
-	}	
-
-	def setTriangle(i:Int, t:Triangle) { setTriangle(i, t.p0, t.p1, t.p2) }
-
-	def setTriangle(i:Int, x0:Float, y0:Float, z0:Float, x1:Float, y1:Float, z1:Float, x2:Float, y2:Float, z2:Float) {
-		val p = i*3*3
-
-		V(p)   = x0
-		V(p+1) = y0
-		V(p+2) = z0
-
-		V(p+3) = x1
-		V(p+4) = y1
-		V(p+5) = z1
-
-		V(p+6) = x2
-		V(p+7) = y2
-		V(p+8) = z2		
-
-		if(i < vbeg) vbeg = i
-		if(i+1 > vend) vend = i+1
-	}
-
-	def setColor(i:Int, c:Rgba) { setColor(i, c, c, c) }
-
-	def setColor(i:Int, c0:Rgba, c1:Rgba, c2:Rgba) {
-		val p = i*4*3
-
-		C(p   ) = c0.red.toFloat
-		C(p+ 1) = c0.green.toFloat
-		C(p+ 2) = c0.blue.toFloat
-		C(p+ 3) = c0.alpha.toFloat
-
-		C(p+ 4) = c1.red.toFloat
-		C(p+ 5) = c1.green.toFloat
-		C(p+ 6) = c1.blue.toFloat
-		C(p+ 7) = c1.alpha.toFloat
-
-		C(p+ 8) = c2.red.toFloat
-		C(p+ 9) = c2.green.toFloat
-		C(p+10) = c2.blue.toFloat
-		C(p+11) = c2.alpha.toFloat
-
-		if(i < cbeg) cbeg = i
-		if(i+1 > cend) cend = i + 1
-	}
-
-	def autoComputeNormal(i:Int) {
-		val (p0, p1, p2) = getTriangle(i)
-		autoComputeNormal(i, p0, p1, p2)
-	}
-
-	def autoComputeNormal(i:Int, p0:Point3, p1:Point3, p2:Point3) {
-		val v0 = Vector3(p0, p1)
-		val v1 = Vector3(p0, p2)
-		val n = v1 X v0
-		n.normalize
-		setNormal(i, n)
-	}
-
-	def setNormal(i:Int, n:Vector3) { setNormal(i, n.x.toFloat, n.y.toFloat, n.z.toFloat) }
-
-	def setNormal(i:Int, x:Float, y:Float, z:Float) { setNormal(i, x, y, z, x, y, z, x, y, z) }
-
-	def setNormal(i:Int, n0:Vector3, n1:Vector3, n2:Vector3) {
-		setNormal(i,
-			n0.x.toFloat, n0.y.toFloat, n0.z.toFloat,
-			n1.x.toFloat, n1.y.toFloat, n1.z.toFloat,
-			n2.x.toFloat, n2.y.toFloat, n2.z.toFloat)
-	}
-
-	def setNormal(i:Int, x0:Float, y0:Float, z0:Float, x1:Float, y1:Float, z1:Float, x2:Float, y2:Float, z2:Float) {
-		val p = i*3*3
-
-		N(p)   = x0
-		N(p+1) = y0
-		N(p+2) = z0
-
-		N(p+3) = x1
-		N(p+4) = y1
-		N(p+5) = z1
-
-		N(p+6) = x2
-		N(p+7) = y2
-		N(p+8) = z2		
-
-		if(i < vbeg) vbeg = i
-		if(i+1 > vend) vend = i+1		
-	}
-
-	def getTriangle(i:Int):(Point3,Point3,Point3) = {
-		val p = i*3*3
-		(Point3(V(p)  , V(p+1), V(p+2)),
-		 Point3(V(p+3), V(p+4), V(p+5)),
-		 Point3(V(p+6), V(p+7), V(p+8)))
-	}
-
-	// -- Dynamic -----------------------------------------------
-
-    override def beforeNewVertexArray() {
-		cbeg = size; cend = 0; vbeg = size; vend = 0
-	}
 
 	/** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
-	  * avoid moving data between the CPU and GPU. */
-	def updateVertexArray(gl:SGL) { updateVertexArray(gl, true, true, true) }
-
-	/** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
-	  * avoid moving data between the CPU and GPU. */
-	def updateVertexArray(gl:SGL, updateVertices:Boolean, updateColors:Boolean, updateNormals:Boolean) {
+	  * avoid moving data between the CPU and GPU. You may give a boolean for each buffer in the vertex array
+	  * that you want to update or not. */
+	def updateVertexArray(gl:SGL, attributes:String*) {
 		if(va ne null) {
-			if(updateVertices && vend > vbeg) {
-				if(vbeg == 0 && vend == size) {
-					va.buffer(VertexAttribute.Vertex.toString).update(V)
-					if(updateNormals)
-						va.buffer(VertexAttribute.Normal.toString).update(N)
-				} else {
-					va.buffer(VertexAttribute.Vertex.toString).update(vbeg*3, vend*3, V)
-					if(updateNormals)
-						va.buffer(VertexAttribute.Normal.toString).update(vbeg*3, vend*3, N)
-				}
-
-				vbeg = size
-				vend = 0
+			if(iend > ibeg) {
+				va.indices.update(ibeg, iend, I)
+				ibeg = size
+				iend = 0
 			}
-			if(updateColors && cend > cbeg) {
-				if(cbeg == 0 && cend == size) {
-					va.buffer(VertexAttribute.Color.toString).update(C)
-				} else {
-					va.buffer(VertexAttribute.Color.toString).update(cbeg*3, cend*3, C)
-				}
 
-
-				cbeg = size
-				cend = 0
-			}
+			attributes.foreach { meshAttribute(_).update(va) }
 		}
 	}
 }
