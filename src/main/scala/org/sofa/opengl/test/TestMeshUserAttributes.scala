@@ -27,17 +27,18 @@ import org.sofa.opengl.actor.renderer.avatar.ui.{ UIAvatarFactory, UIPaint, UIPe
 
 object TestMeshUserAttributes extends App {
 	final val Title = "MeshUserAttributes"
-
 	SurfaceExecutorService.configure
-
 	val system = ActorSystem(Title)
-
 	val test = system.actorOf(Props[TestMeshUserAttributes], name = Title)
-
 	test ! "start"
 }
 
 
+/** How to add specific attributes used by a shader here to select which vertices
+  * will animated a texture.
+  *
+  * This is also a demonstration of a test using actors and the new Renderer/Avatar
+  * system. */
 class TestMeshUserAttributes extends Actor {
 	import RendererActor._
 
@@ -80,18 +81,14 @@ class TestMeshUserAttributes extends Actor {
 		renderer ! AddAvatar("ui.perspective", persp)
 		renderer ! AddAvatar("ui.mesh-user-attributes", ground)
 
-		renderer ! ChangeAvatar(ground, MeshUserAttributesAvatar.Configure("ground-shader", "ground-color"))
+		renderer ! ChangeAvatar(ground, MeshUserAttributesAvatar.Configure())
 		renderer ! ChangeAvatar(persp, UIPerspectiveStates.Focus(Vector3(0, 0, 0)))
 		renderer ! ChangeAvatar(persp, UIPerspectiveStates.Orbit(Vector3(Pi/2, Pi/2, 3)))
 	}
 
-	protected def stopTest() {
-		sys.exit
-	}
+	protected def stopTest() { sys.exit }
 
-	protected def controlTest() {
-
-	}
+	protected def controlTest() {}
 }
 
 
@@ -106,7 +103,7 @@ class TestMeshUserAttributesAvatarFactory extends DefaultAvatarFactory {
 
 
 object MeshUserAttributesAvatar {
-	case class Configure(shader:String, textureColor:String) extends AvatarRenderState {}
+	case class Configure() extends AvatarRenderState {}
 }
 
 
@@ -136,7 +133,7 @@ class MeshUserAttributesAvatar(name:AvatarName, screen:Screen) extends UIPaint(n
 
 	override def changeRender(newState:AvatarRenderState) {
 		newState match {
-			case MeshUserAttributesAvatar.Configure(shaderId, colorId) ⇒ {
+			case MeshUserAttributesAvatar.Configure() ⇒ {
 				val screen = self.screen
 				val gl = screen.gl
 
@@ -155,8 +152,8 @@ class MeshUserAttributesAvatar(name:AvatarName, screen:Screen) extends UIPaint(n
 
 				axis         = new AxisMesh(2)
 				ground       = new TrianglesMesh(6)
-				groundShader = screen.libraries.shaders.get(gl, shaderId)
-				groundColor  = screen.libraries.textures.get(gl, colorId)
+				groundShader = screen.libraries.shaders.get(gl, "ground-shader")
+				groundColor  = screen.libraries.textures.get(gl, "ground-color")
 				colorShader  = screen.libraries.shaders.get(gl, "color-shader")
 
 				val w2 = sqrt(3).toFloat
@@ -171,30 +168,24 @@ class MeshUserAttributesAvatar(name:AvatarName, screen:Screen) extends UIPaint(n
 
 				ground.addAttribute("moving", 3)
 
-				// Triangle 0
-				ground  xyz(0,  -w2, -h2, 0f)   uv(0, u0, v0)  user("moving", 0,  0, 0, 0)
-				ground  xyz(1,   0f, -h2, 0f)   uv(1, u1, v0)  user("moving", 1,  0, 0, 0)
-				ground  xyz(2,  -w2,  0f, 0f)   uv(2, u0, v1)  user("moving", 2,  0, 0, 0)
-				// Triangle 1
-				ground  xyz(3,   0f, -h2, 0f)   uv(3, u1, v0)   user("moving", 3,  0, 0, 0)
-				ground  xyz(4,   w2, -h2, 0f)   uv(4, u2, v0)   user("moving", 4,  0, 0, 0)
-				ground  xyz(5,   w2,  0f, 0f)   uv(5, u2, v1)   user("moving", 5,  0, 0, 0)
-				// Triangle 2
-				ground  xyz(6,  -w2,  0f, 0f)   uv(6, u0, v1)   user("moving", 6,  0, 0, 0)
-				ground  xyz(7,   0f,  h2, 0f)   uv(7, u1, v2)   user("moving", 7,  0, 0, 0)
-				ground  xyz(8,  -w2,  h2, 0f)   uv(8, u0, v2)   user("moving", 8,  0, 0, 0)
-				// Triangle 3
-				ground  xyz(9,   w2,  0f, 0f)  uv(9,  u2, v1)   user("moving", 9,  0, 0, 0)
-				ground  xyz(10,  w2,  h2, 0f)  uv(10, u2, v2)   user("moving", 10, 0, 0, 0)
-				ground  xyz(11,  0f,  h2, 0f)  uv(11, u1, v2)   user("moving", 11, 0, 0, 0)
-				// Triangle 4
-				ground  xyz(12,  0f, -h2, 0f)  uv(12, u1, v0)   user("moving", 12, 1, 0, 0)
-				ground  xyz(13,  0f,  h2, 0f)  uv(13, u1, v2)   user("moving", 13, 1, 0, 0)
-				ground  xyz(14, -w2,  0f, 0f)  uv(14, u0, v1)   user("moving", 14, 1, 0, 0)
-				// Triangle 5
-				ground  xyz(15,  0f, -h2, 0f)  uv(15, u1, v0)   user("moving", 15, 1, 0, 0)
-				ground  xyz(16,  w2,  0f, 0f)  uv(16, u2, v1)   user("moving", 16, 1, 0, 0)
-				ground  xyz(17,  0f,  h2, 0f)  uv(17, u1, v2)   user("moving", 17, 1, 0, 0)
+				ground v( 0)  xyz(-w2, -h2, 0f)  uv(u0, v0)  user("moving", 0, 0, 0)	// Triangle 0
+				ground v( 1)  xyz( 0f, -h2, 0f)  uv(u1, v0)  user("moving", 0, 0, 0)
+				ground v( 2)  xyz(-w2,  0f, 0f)  uv(u0, v1)  user("moving", 0, 0, 0)
+				ground v( 3)  xyz( 0f, -h2, 0f)  uv(u1, v0)  user("moving", 0, 0, 0)	// Triangle 1
+				ground v( 4)  xyz( w2, -h2, 0f)  uv(u2, v0)  user("moving", 0, 0, 0)
+				ground v( 5)  xyz( w2,  0f, 0f)  uv(u2, v1)  user("moving", 0, 0, 0)
+				ground v( 6)  xyz(-w2,  0f, 0f)  uv(u0, v1)  user("moving", 0, 0, 0)	// Triangle 2
+				ground v( 7)  xyz( 0f,  h2, 0f)  uv(u1, v2)  user("moving", 0, 0, 0)
+				ground v( 8)  xyz(-w2,  h2, 0f)  uv(u0, v2)  user("moving", 0, 0, 0)
+				ground v( 9)  xyz( w2,  0f, 0f)  uv(u2, v1)  user("moving",  0, 0, 0)	// Triangle 3
+				ground v(10)  xyz( w2,  h2, 0f)  uv(u2, v2)  user("moving", 0, 0, 0)
+				ground v(11)  xyz( 0f,  h2, 0f)  uv(u1, v2)  user("moving", 0, 0, 0)
+				ground v(12)  xyz( 0f, -h2, 0f)  uv(u1, v0)  user("moving", 1, 0, 0)	// Triangle 4
+				ground v(13)  xyz( 0f,  h2, 0f)  uv(u1, v2)  user("moving", 1, 0, 0)
+				ground v(14)  xyz(-w2,  0f, 0f)  uv(u0, v1)  user("moving", 1, 0, 0)
+				ground v(15)  xyz( 0f, -h2, 0f)  uv(u1, v0)  user("moving", 1, 0, 0)	// Triangle 5
+				ground v(16)  xyz( w2,  0f, 0f)  uv(u2, v1)  user("moving", 1, 0, 0)
+				ground v(17)  xyz( 0f,  h2, 0f)  uv(u1, v2)  user("moving", 1, 0, 0)
 
 				ground triangle (0, 0, 1, 2)
 				ground triangle (1, 3, 4, 5)

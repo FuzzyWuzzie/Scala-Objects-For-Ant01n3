@@ -16,14 +16,9 @@ import org.sofa.opengl.actor.renderer.avatar.game.{IsoWorldAvatarFactory, IsoCel
 
 object TestIsoGame extends App {
 	final val Title = "IsoGame"
-	
 	SurfaceExecutorService.configure
-	// IsoGameActor(ActorSystem(title), title, 800, 600, 30)
-
 	val system = ActorSystem(Title)
-
 	val isoGame = system.actorOf(Props[IsoGame], name=Title)
-
 	isoGame ! "start"
 }
 
@@ -35,7 +30,8 @@ class IsoGame extends Actor {
 
 	def receive = {
 		case "start" => {
-			RendererActor(context, self, Renderer(new IsoWorldAvatarFactory()), TestIsoGame.Title, 800, 600, 50, true, false, 4)
+			RendererActor(context, self, 
+				Renderer(new IsoWorldAvatarFactory()), TestIsoGame.Title, 800, 600, 50, true, false, 4)
 		}
 		case RendererController.Start(renderer) => {
 			this.renderer = renderer
@@ -94,17 +90,17 @@ class IsoGame extends Actor {
 		renderer ! AddAvatar("iso-cell-grid", cellgrid0)
 
 		var relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 1) }
-		val shape  = IsoCellGridShape(1f+(1f/8f), 0, -1f/16f)
-		val shade  = IsoCellGridShade("iso-shader2", "ground-color-1", "ground-mask-1", 0.433f, 0.281f, 
+		val shape  = IsoCellGridShape(0, 0)
+		val shade  = IsoCellGridShade("iso-cell-grid-shader", "ground-color-1", "ground-mask-1", 0.433f, 0.281f-0.031f, 
 							Array[Float](0.027f, 0.514f),
-							Array[Float](0.046f, 0.359f, 0.671f))
+							Array[Float](0.078f, 0.390f, 0.703f))
 
 		relief(1)(1) = IsoCellGridRelief(0, 0, 1)
 		relief(1)(2) = IsoCellGridRelief(0, 0, 1)
 
 		renderer ! ChangeAvatar(cellgrid0, IsoCellGridConfig(shade, shape, relief))
 
-		relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 2) }
+		relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 2, true) }
 		relief(1)(1) = IsoCellGridRelief(0.1f, 1, 0)
 		relief(1)(2) = IsoCellGridRelief(0.15f,  1, 0)
 		relief(2)(1) = IsoCellGridRelief(0.05f, 1, 0)

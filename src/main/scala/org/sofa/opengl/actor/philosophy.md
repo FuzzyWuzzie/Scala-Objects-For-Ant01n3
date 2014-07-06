@@ -22,11 +22,11 @@ Therefore, the simulation logic is implemented in terms of actors. The rendering
 
 ## Model
 
-The model is in fact a world actor. There is no central repository of the what we could qualify of "state of the simulation" since each actor also stores its state and in some way a part of the model. It is largely unspecified, some tools are provided to help use it and make the bridge with the screens used as visual models and spaces.
+The model represents the state of things of the simulation. There will exist several such models, for each elements of the simulation. These models will be tied to one or more avatars (or avatar hierarchies) and will allow to drive one or more of their features.
 
 ## Controller
 
-The controller is a set of actors that implement the logic of the simulation. They are completely free and unspecified.
+The controller is a set of actors that implement the logic of the simulation. They are completely free and unspecified. They use models to know the state of the simulation and change it and receive messages from the model.
 
 ## Renderer
 

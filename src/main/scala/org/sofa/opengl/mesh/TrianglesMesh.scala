@@ -42,6 +42,24 @@ class TrianglesMesh(val size:Int) extends Mesh {
     override def hasIndices():Boolean = true
 
 	// -- Constructive interface ---------------------------------------------------
+
+	class Vx(var vertex:Int) {
+		def xyz(x:Float, y:Float, z:Float):Vx = { setPoint(vertex,x,y,z); this }
+		
+		def uv(u:Float, v:Float):Vx = { setPointTexCoord(vertex,u,v); this }
+		
+		def rgb(r:Float, g:Float, b:Float):Vx = { setPointColor(vertex,r,g,b,1f); this }
+		
+		def rgba(r:Float, g:Float, b:Float, a:Float):Vx = { setPointColor(vertex,r,g,b,a); this }
+		
+		def nnn(x:Float, y:Float, z:Float):Vx = { setPointNormal(vertex,x,y,z); this }
+		
+		def user(name:String, values:Float*):Vx = { setAttribute(name, vertex, values:_*); this }
+	}
+
+	protected[this] val vx = new Vx(-1)
+
+	def v(vertex:Int):Vx = { vx.vertex = vertex; vx }
 	
 	/** Set the `vertex` position (`x`, `y`, `z`). */
 	def xyz(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = setPoint(vertex,x,y,z)

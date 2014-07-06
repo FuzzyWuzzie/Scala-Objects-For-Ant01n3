@@ -11,25 +11,91 @@ import org.sofa.opengl.{SGL, ShaderProgram}//, Camera, VertexArray, Texture, Hem
 import org.sofa.opengl.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh, HexaTilesMesh}//, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 
 
+case class IsoWorldZoom(amount:Double) extends AvatarSpaceState {}
+
+
+object IsoWorld {
+	/** Name of uniform variable containing the sun light direction. */
+	final val SunDir = "sunDir"
+
+	/** Name of the uniform variable containing the texture actual offset. For
+	  * example used for sea offset. */
+	final val TexOffset = "texOffset"
+
+	final val Sqrt3 = scala.math.sqrt(3).toFloat
+}
+
+
+class IsoWorld(name:AvatarName, screen:Screen)
+	extends IsoAvatar(name, screen) {
+
+	var space = new IsoWorldSpace(this)
+
+	var renderer = new IsoWorldRender(this)
+
+	protected[this] var prevMotionEvent:AvatarMotionEvent = null
+
+	def consumeEvent(event:AvatarEvent):Boolean = {
+		//println("%s ignore event %s".format(name, event))
+
+		event match {
+			case e:AvatarMotionEvent => {
+				if(e.isEnd) {
+					prevMotionEvent = null
+				} else {
+					if(prevMotionEvent ne null) {
+						space.changeSpace(AvatarBaseStates.Move(prevMotionEvent.position --> e.position))
+					}
+					prevMotionEvent = e
+				}
+				true
+			}
+			case e:AvatarZoomEvent => {
+				space.changeSpace(IsoWorldZoom(e.amount))
+				true
+			}
+			case _ => {
+				false
+			}
+		}
+	}
+}
+
+
 // == Renders ====================================================================
 
 
 class IsoWorldRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils {
+	import IsoWorld._
+
+	val sunDir = Vector3(1, 1.1, 0)
+
+	val seaOffset = Vector3(0, 0, 0)
 	
-	val lightDir = Vector3(1, 1.1, 0)
-	
-	protected[this] var dir = 0.005
+	protected[this] var sunInc = 0.005
+
+	protected[this] var seaInc = 0.0001
 
 	override def animateRender() {
-		lightDir.x = lightDir.x + dir
-		lightDir.z = lightDir.z - dir
+		animateSun
+		animateSea
+	}
 
-		if     (lightDir.x >= 1) { lightDir.x = 1; dir = -dir }
-		else if(lightDir.x <= 0) { lightDir.x = 0; dir = -dir }
-		if     (lightDir.z >= 1) { lightDir.z = 1 }
-		else if(lightDir.z <= 0) { lightDir.z = 0 }
+	protected def animateSun() {
+		sunDir.x += sunInc
+		sunDir.z -= sunInc
 
-		//println(s"lightdir = ${lightDir}")
+		if     (sunDir.x >= 1) { sunDir.x = 1; sunInc = -sunInc }
+		else if(sunDir.x <= 0) { sunDir.x = 0; sunInc = -sunInc }
+		if     (sunDir.z >= 1) { sunDir.z = 1 }
+		else if(sunDir.z <= 0) { sunDir.z = 0 }
+	}
+
+	protected def animateSea() {
+		seaOffset.x += Sqrt3*seaInc
+		seaOffset.y += seaInc
+
+		if(seaOffset.x > 0.027) { seaOffset.x = 0; seaOffset.y = 0 }
 	}
 
 	override def render() {
@@ -113,46 +179,4 @@ class IsoWorldSpace(avatar:Avatar) extends IsoSpace(avatar) {
 
  	protected def layoutSubs() {
  	}
-}
-
-
-// == Avatars ====================================================================
-
-
-case class IsoWorldZoom(amount:Double) extends AvatarSpaceState {}
-
-
-class IsoWorld(name:AvatarName, screen:Screen)
-	extends IsoAvatar(name, screen) {
-
-	var space = new IsoWorldSpace(this)
-
-	var renderer = new IsoWorldRender(this)
-
-	protected[this] var prevMotionEvent:AvatarMotionEvent = null
-
-	def consumeEvent(event:AvatarEvent):Boolean = {
-		//println("%s ignore event %s".format(name, event))
-
-		event match {
-			case e:AvatarMotionEvent => {
-				if(e.isEnd) {
-					prevMotionEvent = null
-				} else {
-					if(prevMotionEvent ne null) {
-						space.changeSpace(AvatarBaseStates.Move(prevMotionEvent.position --> e.position))
-					}
-					prevMotionEvent = e
-				}
-				true
-			}
-			case e:AvatarZoomEvent => {
-				space.changeSpace(IsoWorldZoom(e.amount))
-				true
-			}
-			case _ => {
-				false
-			}
-		}
-	}
 }

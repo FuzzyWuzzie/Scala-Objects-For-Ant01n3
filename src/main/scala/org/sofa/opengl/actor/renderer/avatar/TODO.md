@@ -1,19 +1,26 @@
 TODO
 ====
 
+Priority list:
+1 finish animated textures (sea).
+2 add ordered rendering in AvatarContainer.
+3 add selective rendering
+4 picking
+
 Avatars
 -------
 
 * Handle ordered rendering in AvatarContainer.
 * Handle selective rendering, based on a visibility function (use a SpaceHash ?)
+* Handle picking -> allow avatars to register in a spaceHash ? 
+    - a general one ? one per sub-avatar ? one in a specific avatar ?
+    - When several avatars are picked, how to sort them ?
 
 Mesh
 ----
 
-* Update mesh and meshes to be generic on attributes.
+* Update mesh and meshes to be generic on attributes -> example in TrianglesMesh.
     - update the updateVertexArray() methods to take VertexAttributes or Strings as parameters for attribute names.
-* Try "animated" textures, with a single vector offset given to the shader and specific vertex attributes that tell what is animated.
-
 
 Behaviors/Armature
 ------------------

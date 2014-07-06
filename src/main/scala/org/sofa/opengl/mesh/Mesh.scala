@@ -82,7 +82,7 @@ class InvalidVertexComponentException(msg:String) extends Exception(msg)
 class InvalidPrimitiveException(msg:String) extends Exception(msg)
 
 /** Thrown when a primitive vertex index is out of bounds. */
-class InvalidPrimitiveVertexException(msg:String) extend Exception(msg)
+class InvalidPrimitiveVertexException(msg:String) extends Exception(msg)
 
 
 object Mesh {

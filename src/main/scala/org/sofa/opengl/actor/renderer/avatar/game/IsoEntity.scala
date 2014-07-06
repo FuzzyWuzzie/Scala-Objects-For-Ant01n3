@@ -82,7 +82,7 @@ class IsoEntityRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUti
 
 		space.pushSubSpace
 			if(armature ne null) {
-				val lightDir = world.renderer.asInstanceOf[IsoWorldRender].lightDir
+				val sunDir = world.renderer.asInstanceOf[IsoWorldRender].sunDir
 //				fillAvatarBox
 
 				gl.enable(gl.BLEND)
@@ -90,7 +90,7 @@ class IsoEntityRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUti
 				gl.disable(gl.DEPTH_TEST)
 				gl.disable(gl.CULL_FACE)
 				shader.use
-				shader.uniform("lightDir", lightDir)
+				shader.uniform(IsoWorld.SunDir, sunDir)
 				texColor.bindUniform(gl.TEXTURE0, shader, "texColor")
 				texMask.bindUniform(gl.TEXTURE1, shader, "texMask")
 				armature.displayArmature(gl, screen.space)

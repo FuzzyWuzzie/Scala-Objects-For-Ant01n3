@@ -6,14 +6,14 @@ varying vec2 X;
 
 uniform sampler2D texColor;
 uniform sampler2D texMask;
-uniform vec3 lightDir;
+uniform vec3 sunDir;
 
 void main(void) {
 	float diffuse   = 0.5;
 	float shininess = 1.0;
 	float specular  = 1.0;
 	float ambient   = 1.0 -  diffuse;
-	vec3  l         = normalize(lightDir);
+	vec3  l         = normalize(sunDir);
 
 	vec4  c = texture2D(texColor, X.st);											// Base color.
 	vec3  n = texture2D(texMask, X.st).xyz;											// Normal from mask.

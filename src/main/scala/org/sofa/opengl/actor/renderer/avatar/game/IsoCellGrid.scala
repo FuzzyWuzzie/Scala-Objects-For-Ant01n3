@@ -19,8 +19,9 @@ import org.sofa.opengl.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh, He
   * @param relief Offset of the whole cell in Y axis (game coordinates).
   * @param texx index in X of a texture patch inside the texture config.
   * @param texy index in Y of a texture patch inside the texture config.
+  * @param texOffsetMarker If true, vertices are marked as being modified by texture offset.
   */
-case class IsoCellGridRelief(relief:Float, texx:Int, texy:Int)
+case class IsoCellGridRelief(relief:Float, texx:Int, texy:Int, texOffsetMarker:Boolean=false)
 
 
 /** Configure the shape of cells.
@@ -29,11 +30,10 @@ case class IsoCellGridRelief(relief:Float, texx:Int, texy:Int)
   * and width is always Sqrt(3). The rectangle origin can be offset from its
   * center. 
   *
-  * @param height Height of the rectangle.
   * @param offsetx X offset of the origin from the rectangle center.
   * @param offsety Y offset of the origin from the rectangle center.
   */
-case class IsoCellGridShape(height:Float, offsetx:Float, offsety:Float)
+case class IsoCellGridShape(offsetx:Float, offsety:Float)
 
 
 /** Configure the shader and textures to use for the cell.
@@ -46,7 +46,8 @@ case class IsoCellGridShape(height:Float, offsetx:Float, offsety:Float)
   * @param x The set of u coordinates (in UV) for patches.
   * @param y The set of v coordinates (in UV) for patches.
   */
-case class IsoCellGridShade(shader:String, color:String, mask:String, w:Float, h:Float, x:Array[Float], y:Array[Float])
+case class IsoCellGridShade(shader:String, color:String, mask:String,
+				w:Float, h:Float, x:Array[Float], y:Array[Float])
 
 
 /** Express how to create and render the iso-cell grid.
@@ -56,16 +57,25 @@ case class IsoCellGridShade(shader:String, color:String, mask:String, w:Float, h
   * @param relief A 2D array of [[IsoCellGridRelief]] that describes the elevation and texture to use for each cell, the
   *               size of the array gives the number of cells.
   */
-case class IsoCellGridConfig(shade:IsoCellGridShade, shape:IsoCellGridShape, relief:Array[Array[IsoCellGridRelief]]) extends AvatarRenderState with AvatarSpaceState {}
+case class IsoCellGridConfig(shade:IsoCellGridShade, shape:IsoCellGridShape,
+				relief:Array[Array[IsoCellGridRelief]]) 
+					extends AvatarRenderState with AvatarSpaceState {}
 
 
 object IsoCellGrid {
 	/** Shortcut to the value of sqrt(3). */
 	final val Sqrt3 = math.sqrt(3).toFloat
+
+	/** Name of user-defined attribute for the triangles mesh of the ground.
+	  * This attribute allows to specify a displacement of the texture on some
+	  * vertices only. If the x of this attribute is not zero, the vertice must
+	  * move. The y and z are reserved for future usage. */
+	final val UserAttr = "user"
 }
 
 
 class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils {
+	import IsoCellGrid._
 
 	fillColor = Rgba.White
 
@@ -91,71 +101,107 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 
 	protected def init(shade:IsoCellGridShade, shape:IsoCellGridShape, relief:Array[Array[IsoCellGridRelief]]) {
 		import VertexAttribute._
-		import IsoCellGrid._
 
 		val gl = self.screen.gl
-		val gh = relief.length
-		val gw = if(gh > 0) relief(0).length else 0
+		val gh = relief.length							// Number of cells Y
+		val gw = if(gh > 0) relief(0).length else 0		// Number of cells X
 
-		if(gh > 0 || gw > 0) {
+		if(gh > 0 && gw > 0) {
 			if(mesh ne null) mesh.dispose
 		
-			mesh = new TrianglesMesh(2 * gw * gh)
+			mesh = new TrianglesMesh(6 * gw * gh)		// 6 triangles per cell.
+
+			mesh.addAttribute(UserAttr, 3)
 
 			shader = screen.libraries.shaders.get(gl, shade.shader)
 			color  = screen.libraries.textures.get(gl, shade.color)
 			mask   = screen.libraries.textures.get(gl, shade.mask)
 			
-			// 2+    2+----+3
-			//  |\     \   |
-			//  | \     \ B|
-			//  | A\     \ |
-			//  |   \     \|
-			// 0+----+1    +1
+			//                      +---+        +---+  The 6 triangles,
+			//     +---+---+  0.5   |  /   +  +   \  |  the 18 points.
+			//     |4 /|\ 5|        | /   /|  |\   \ |     <--+
+			//     | / | \ |        |/   / |  | \   \|        |  CCW
+			//     |/  |  \|        +   /  |  |  \   +    |   | 
+			//     + 0 | 1 +           +   |  |   +       +---+
+			//     |\  |  /|        +   \  |  |  /   +
+			//     | \ | / |        |\   \ |  | /   /|
+			//     | 2\|/3 |        | \   \|  |/   / |
+			//     +---+---+ -0.5   |  \   +  +   /  |
+			// -Sqrt3/2  +Sqrt3/2   +---+        +---+
 
-			var x  = 0  					// Center of cell X.
-			var y  = 0 						// Center of cell Y.
-			var p  = 0 						// Current point (4 per cell).
+			var x  = 0  					// X coordinate in the iso-cells space.
+			var y  = 0 						// Y coordinate in the iso-cells space.
+			var p  = 0 						// Current point (8 per cell).
 			var t  = 0 						// Current triangle (2 per cell).
 			val uw = shade.w 				// Width in UV of a texture patch.
 			val vh = shade.h 				// Height in UV of a texture patch.
-			val w2 = Sqrt3 / 2				// Half-width of a cell plus offset x.
-			val h2 = shape.height / 2		// Half-height of a cell plus offset y.
+			val w2 = Sqrt3 / 2f				// Half-width of a cell plus offset x.
+			val h2 = 0.5f 					// Half-height of a cell plus offset y.
 
 			while(y < gh) {
 				x = 0
 				while(x < gw) {
-					val xx = shape.offsetx -(y * Sqrt3 * 0.5f) + (x * Sqrt3 * 0.5f)
-					val yy = shape.offsety -(y * 0.5f) - (x * 0.5f) + relief(y)(x).relief
-					val uu = shade.x(relief(y)(x).texx)
-					val vv = shade.y(relief(y)(x).texy)
+					val xx = shape.offsetx - offX(x, y)		// Real position X
+					val yy = shape.offsety - offY(x, y)		// Real position Y
+					val uu = shade.x(relief(y)(x).texx)		// Lower left tex U
+					val vv = shade.y(relief(y)(x).texy)		// Lower left tex V
+					val texOff = if(relief(y)(x).texOffsetMarker) 1 else 0
 
-					mesh.setPoint(p+0, xx-w2, yy-h2, 0) 
-					mesh.setPoint(p+1, xx+w2, yy-h2, 0)
-					mesh.setPoint(p+2, xx-w2, yy+h2, 0)
-					mesh.setPoint(p+3, xx+w2, yy+h2, 0)
+					// Triangle 0
+					mesh v(p+0) xyz(xx,    yy-h2, 0) uv(uu+uw/2, vv)       user(UserAttr, texOff, 0, 0)
+					mesh v(p+1) xyz(xx,    yy+h2, 0) uv(uu+uw/2, vv+vh)    user(UserAttr, texOff, 0, 0)
+					mesh v(p+2) xyz(xx-w2, yy,    0) uv(uu,      vv+vh/2)  user(UserAttr, texOff, 0, 0)
+					mesh triangle(t+0, p+0, p+1, p+2)
 
-					mesh.setPointTexCoord(p+0, uu, vv)
-					mesh.setPointTexCoord(p+1, uu+uw, vv)
-					mesh.setPointTexCoord(p+2, uu, vv+vh)
-					mesh.setPointTexCoord(p+3, uu+uw, vv+vh)
+					// Triangle 1
+					mesh v(p+3) xyz(xx,    yy-h2, 0) uv(uu+uw/2, vv)       user(UserAttr, texOff, 0, 0)
+					mesh v(p+4) xyz(xx,    yy+h2, 0) uv(uu+uw/2, vv+vh)    user(UserAttr, texOff, 0, 0)
+					mesh v(p+5) xyz(xx+w2, yy,    0) uv(uu+uw,   vv+vh/2)  user(UserAttr, texOff, 0, 0)
+					mesh triangle(t+1, p+3, p+4, p+5)
 
-					mesh.setTriangle(t+0, p+0, p+1, p+2)
-					mesh.setTriangle(t+1, p+1, p+3, p+2)
+					// Triangle 2
+					mesh v(p+6) xyz(xx-w2, yy-h2, 0)  uv(uu,       vv)       user(UserAttr, 0, 0, 0)
+					mesh v(p+7) xyz(xx,    yy-h2, 0)  uv(uu+0.01f, vv)       user(UserAttr, 0, 0, 0)
+					mesh v(p+8) xyz(xx-w2, yy,    0)  uv(uu,       vv+0.01f) user(UserAttr, 0, 0, 0)
+					mesh triangle(t+2, p+6, p+7, p+8)
 
-					p += 4
-					t += 2
+					// Triangle 3
+					mesh v(p+ 9) xyz(xx,    yy-h2, 0) uv(uu,       vv)       user(UserAttr, 0, 0, 0)
+					mesh v(p+10) xyz(xx+w2, yy-h2, 0) uv(uu+0.01f, vv)       user(UserAttr, 0, 0, 0)
+					mesh v(p+11) xyz(xx+w2, yy,    0) uv(uu+0.01f, vv+0.01f) user(UserAttr, 0, 0, 0)
+					mesh triangle(t+3, p+9, p+10, p+11)
+
+					// Triangle 4
+					mesh v(p+12) xyz(xx+w2, yy,    0) uv(uu,       vv)       user(UserAttr, 0, 0, 0)
+					mesh v(p+13) xyz(xx+w2, yy+h2, 0) uv(uu+0.01f, vv+0.01f) user(UserAttr, 0, 0, 0)
+					mesh v(p+14) xyz(xx,    yy+h2, 0) uv(uu,       vv+0.01f) user(UserAttr, 0, 0, 0)
+					mesh triangle(t+4, p+12, p+13, p+14)
+
+					// Triangle 5
+					mesh v(p+15) xyz(xx-w2, yy,    0) uv(uu+0.01f, vv)       user(UserAttr, 0, 0, 0)
+					mesh v(p+16) xyz(xx,    yy+h2, 0) uv(uu+0.01f, vv+0.01f) user(UserAttr, 0, 0, 0)
+					mesh v(p+17) xyz(xx-w2, yy+h2, 0) uv(uu,       vv+0.01f) user(UserAttr, 0, 0, 0)
+					mesh triangle(t+5, p+15, p+16, p+17)
+
+					p += 18
+					t += 6
 					x += 1
 				}
 
 				y += 1
 			}
 
-			mesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords")
+			mesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords", UserAttr -> UserAttr)
 	
 			world = screen.avatar(AvatarName("root.world")).getOrElse(throw new RuntimeException("no world avatar ??"))
 		}
 	}
+
+	/** Convert a position (x,y) in cell space to real space absissa. */
+	protected def offX(x:Int, y:Int):Float = (y * Sqrt3 * 0.5f) + (x * Sqrt3 * 0.5f)
+
+	/** Convert a position (x,y) in cell space to real space ordinate. */
+	protected def offY(x:Int, y:Int):Float = (y * 0.5f) - (x * 0.5f)
 
 	override def render() {
 		val gl    = self.screen.gl
@@ -165,7 +211,9 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 		space.pushSubSpace
 		
 			if(mesh ne null) {
-				val lightDir = world.renderer.asInstanceOf[IsoWorldRender].lightDir
+				val worldr = world.renderer.asInstanceOf[IsoWorldRender]
+				val sunDir = worldr.sunDir
+				val seaOff = worldr.seaOffset
 
 				screen.space.pushpop {
 					gl.enable(gl.BLEND)
@@ -173,7 +221,8 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 					shader.use
 					color.bindUniform(gl.TEXTURE0, shader, "texColor")
 					mask.bindUniform(gl.TEXTURE1, shader, "texMask")
-					shader.uniform("lightDir", lightDir)
+					shader.uniform(IsoWorld.SunDir, sunDir)
+					shader.uniform(IsoWorld.TexOffset, seaOff)
 					screen.space.uniformMVP(shader)
 					mesh.draw(gl)
 		   	    	gl.disable(gl.BLEND)
