@@ -35,7 +35,4 @@ void main(void) {
 	if(t.a > 0.95) 	// We consider a specular always white, so just add 's'. But only for non transparent pixels.
 	     gl_FragColor = vec4(c.r * d + s, c.g * d + s, c.b * d + s, c.a);
 	else gl_FragColor = vec4(c.r * d,     c.g * d,     c.b * d,     c.a);
-	// if(t.a > 0.95) 	// We consider a specular always white, so just add 's'. But only for non transparent pixels.
-	//      gl_FragColor = vec4(1 + s, c.g * d + s, c.b * d + s, 0.5);
-	// else gl_FragColor = vec4(1,     c.g * d,     c.b * d,     0.5);
 }

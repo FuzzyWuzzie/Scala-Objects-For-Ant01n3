@@ -148,9 +148,9 @@ class IsoGame extends Actor {
 		renderer ! AddAvatar("iso-entity", bolok1)
 		renderer ! ChangeAvatar(bolok1, bolok1Config)
 
-		renderer ! AddAvatar("iso-entity", bolok2)
-		renderer ! ChangeAvatar(bolok2, bolok1Config)
-		renderer ! ChangeAvatar(bolok2, AvatarBaseStates.MoveAt(Point3(-1,0,0)))
+		//renderer ! AddAvatar("iso-entity", bolok2)
+		//renderer ! ChangeAvatar(bolok2, bolok1Config)
+		//renderer ! ChangeAvatar(bolok2, AvatarBaseStates.MoveAt(Point3(-1,0,0)))
 
 		renderer ! AddAvatar("iso-entity", dock1)
 		renderer ! ChangeAvatar(dock1, dock1Config)

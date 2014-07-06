@@ -141,10 +141,10 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 			while(y < gh) {
 				x = 0
 				while(x < gw) {
-					val xx = shape.offsetx - offX(x, y)		// Real position X
-					val yy = shape.offsety - offY(x, y)		// Real position Y
-					val uu = shade.x(relief(y)(x).texx)		// Lower left tex U
-					val vv = shade.y(relief(y)(x).texy)		// Lower left tex V
+					val xx = shape.offsetx + offX(x, y)								// Real position X
+					val yy = shape.offsety + offY(x, y) + relief(y)(x).relief		// Real position Y
+					val uu = shade.x(relief(y)(x).texx)								// Lower left tex U
+					val vv = shade.y(relief(y)(x).texy)								// Lower left tex V
 					val texOff = if(relief(y)(x).texOffsetMarker) 1 else 0
 
 					// Triangle 0
@@ -198,10 +198,10 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 	}
 
 	/** Convert a position (x,y) in cell space to real space absissa. */
-	protected def offX(x:Int, y:Int):Float = (y * Sqrt3 * 0.5f) + (x * Sqrt3 * 0.5f)
+	protected def offX(x:Int, y:Int):Float = -(y * Sqrt3 * 0.5f) + (x * Sqrt3 * 0.5f)
 
 	/** Convert a position (x,y) in cell space to real space ordinate. */
-	protected def offY(x:Int, y:Int):Float = (y * 0.5f) - (x * 0.5f)
+	protected def offY(x:Int, y:Int):Float = -(y * 0.5f) - (x * 0.5f)
 
 	override def render() {
 		val gl    = self.screen.gl
