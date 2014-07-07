@@ -44,43 +44,47 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	// -- Constructive interface ---------------------------------------------------
 
 	class Vx(var vertex:Int) {
+	/** Set the `vertex` position (`x`, `y`, `z`). */
 		def xyz(x:Float, y:Float, z:Float):Vx = { setPoint(vertex,x,y,z); this }
 		
+	/** Set the `vertex` texture coordinates (`u`, `v`). */
 		def uv(u:Float, v:Float):Vx = { setPointTexCoord(vertex,u,v); this }
 		
+	/** Set the `vertex` color (`r`, `g`, `b`). */
 		def rgb(r:Float, g:Float, b:Float):Vx = { setPointColor(vertex,r,g,b,1f); this }
 		
+	/** Set the `vertex` color (`r`, `g`, `b`, `a`). */
 		def rgba(r:Float, g:Float, b:Float, a:Float):Vx = { setPointColor(vertex,r,g,b,a); this }
 		
+	/** Set the `vertex` normal (`x`, `y`, `z`). */
 		def nnn(x:Float, y:Float, z:Float):Vx = { setPointNormal(vertex,x,y,z); this }
 		
+	/** Set the `values` for `vertex` attribute `name`. */
 		def user(name:String, values:Float*):Vx = { setAttribute(name, vertex, values:_*); this }
 	}
 
 	protected[this] val vx = new Vx(-1)
 
+	/** Access to a `vertex` by its index. You can then use the obtained vertex
+	  * to change its position, color, tex coords, and any vertex attribute. Be
+	  * careful, the returned vertex cannot be stored, its only a pointer in
+	  * the mesh and its reference may change at each call to this method.
+	  *
+	  * Intended use, for example, is:
+	  *
+	  * mesh.vertex(232).xyz(1,2,3).uv(0,1).rgb(1,0,0)
+	  *
+	  */
+	def vertex(vertex:Int):Vx = { vx.vertex = vertex; vx }
+
+	/** Synonym of `vertex()`. */
 	def v(vertex:Int):Vx = { vx.vertex = vertex; vx }
-	
-	/** Set the `vertex` position (`x`, `y`, `z`). */
-	def xyz(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = setPoint(vertex,x,y,z)
-	
-	/** Set the `vertex` texture coordinates (`u`, `v`). */
-	def uv(vertex:Int, u:Float, v:Float):TrianglesMesh = setPointTexCoord(vertex,u,v)
-	
-	/** Set the `vertex` color (`r`, `g`, `b`). */
-	def rgb(vertex:Int, r:Float, g:Float, b:Float) = setPointColor(vertex,r,g,b,1f)
-	
-	/** Set the `vertex` color (`r`, `g`, `b`, `a`). */
-	def rgba(vertex:Int, r:Float, g:Float, b:Float, a:Float) = setPointColor(vertex,r,g,b,a)
-	
-	/** Set the `vertex` normal (`x`, `y`, `z`). */
-	def nnn(vertex:Int, x:Float, y:Float, z:Float) = setPointNormal(vertex,x,y,z)
-	
-	/** Set the `values` for `vertex` attribute `name`. */
-	def user(name:String, vertex:Int, values:Float*) = setAttribute(name, vertex, values:_*)
 	
 	/** Set the `i`-th triangle as composed of vertices `v0`, `v1` and `v2` in this order. */
 	def triangle(i:Int, v0:Int, v1:Int, v2:Int) = setTriangle(i, v0, v1, v2)
+
+	/** Synonym of `triangle()`. */
+	def t(i:Int, v0:Int, v1:Int, v2:Int) = triangle(i, v0, v1, v2)
 
 	/** The i-th point in the position vertex attribute. */
 	def point(vertex:Int):Point3 = getPoint(vertex)

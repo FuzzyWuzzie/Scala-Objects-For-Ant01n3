@@ -1,11 +1,15 @@
 TODO
 ====
 
-Priority list:
-1 finish animated textures (sea).
-2 add ordered rendering in AvatarContainer.
-3 add selective rendering
-4 picking
+Priority list and roadmap:
+
+1 Displacement on the map
+    - On the model side.
+    - On the avatar side, we provides simple ways to displace avatars.
+2 Add ordered rendering in AvatarContainer.
+3 Add selective rendering
+4 Picking
+5 Test on Android
 
 Avatars
 -------

@@ -17,11 +17,12 @@ import org.sofa.opengl.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh, He
 /** Configure one cell of a grid.
   *
   * @param relief Offset of the whole cell in Y axis (game coordinates).
-  * @param texx index in X of a texture patch inside the texture config.
-  * @param texy index in Y of a texture patch inside the texture config.
+  * @param groundTex index of the ground texture patch inside the texture config.
+  * @param undegroundTex index of the underground texture patch inside the texture config.
   * @param texOffsetMarker If true, vertices are marked as being modified by texture offset.
+  * @param height The height of the underground, if zero, no underground is drawn
   */
-case class IsoCellGridRelief(relief:Float, texx:Int, texy:Int, texOffsetMarker:Boolean=false)
+case class IsoCellGridRelief(relief:Float, groundTex:Int, undergroundTex:Int, texOffsetMarker:Boolean=false)
 
 
 /** Configure the shape of cells.
@@ -41,13 +42,19 @@ case class IsoCellGridShape(offsetx:Float, offsety:Float)
   * @param shader Identifier of the shader to use in the library.
   * @param color Identifier of the color texture in the library.
   * @param mask Identifier of the mask texture in the library.
+  * @param ground The texture cells description for the top of the cell.
+  * @param underground The texture cells description for the underground walls of the cell.
+  */
+case class IsoCellGridShade(shader:String, color:String, mask:String, ground:IsoCellGridTex, underground:IsoCellGridTex)
+
+/** Represent the cells of a texture. 
+  *
   * @param w The width of a rectangle patch in the texture in UV coordinates.
   * @param h The height of a rectangle patch in the texture in UV coordinates.
-  * @param x The set of u coordinates (in UV) for patches.
-  * @param y The set of v coordinates (in UV) for patches.
+  * @param x The set of u coordinates (in UV) for patches, the number of patches is the size of the array.
+  * @param y The set of v coordinates (in UV) for patches, the number of patches is the size of the array.
   */
-case class IsoCellGridShade(shader:String, color:String, mask:String,
-				w:Float, h:Float, x:Array[Float], y:Array[Float])
+case class IsoCellGridTex(w:Float, h:Float, x:Array[Float], y:Array[Float])
 
 
 /** Express how to create and render the iso-cell grid.
@@ -117,75 +124,103 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 			color  = screen.libraries.textures.get(gl, shade.color)
 			mask   = screen.libraries.textures.get(gl, shade.mask)
 			
-			//                      +---+        +---+  The 6 triangles,
-			//     +---+---+  0.5   |  /   +  +   \  |  the 18 points.
-			//     |4 /|\ 5|        | /   /|  |\   \ |     <--+
-			//     | / | \ |        |/   / |  | \   \|        |  CCW
-			//     |/  |  \|        +   /  |  |  \   +    |   | 
-			//     + 0 | 1 +           +   |  |   +       +---+
-			//     |\  |  /|        +   \  |  |  /   +
-			//     | \ | / |        |\   \ |  | /   /|
-			//     | 2\|/3 |        | \   \|  |/   / |
-			//     +---+---+ -0.5   |  \   +  +   /  |
-			// -Sqrt3/2  +Sqrt3/2   +---+        +---+
+			//    Sqrt3   Sqrt3
+			//  - -----   -----        
+			//      2   0   2
+			//          +     0.5    6 Triangles, 2 ground (0 and 1) and 4 underground.
+			//         /|\           18 Points.
+			//        / | \ 
+			//       /  |  \ 
+			//      + 0 | 1 +  0.0      <--+
+			//      |\  |  /|         |    |  CCW
+			//      | \ | / |         +----+
+			//      |  \|/  |  
+			//      | 2 + 3 | -0.5 
+			//      |  /|\  |
+			//      | / | \ |
+			//      |/  |  \|
+			//      + 4 | 5 + -1.0
+			//       \  |  /
+			//        \ | /
+			//         \|/
+			//          +     -1.5
 
 			var x  = 0  					// X coordinate in the iso-cells space.
 			var y  = 0 						// Y coordinate in the iso-cells space.
 			var p  = 0 						// Current point (8 per cell).
 			var t  = 0 						// Current triangle (2 per cell).
-			val uw = shade.w 				// Width in UV of a texture patch.
-			val vh = shade.h 				// Height in UV of a texture patch.
 			val w2 = Sqrt3 / 2f				// Half-width of a cell plus offset x.
 			val h2 = 0.5f 					// Half-height of a cell plus offset y.
 
 			while(y < gh) {
 				x = 0
 				while(x < gw) {
-					val xx = shape.offsetx + offX(x, y)								// Real position X
-					val yy = shape.offsety + offY(x, y) + relief(y)(x).relief		// Real position Y
-					val uu = shade.x(relief(y)(x).texx)								// Lower left tex U
-					val vv = shade.y(relief(y)(x).texy)								// Lower left tex V
-					val texOff = if(relief(y)(x).texOffsetMarker) 1 else 0
+					val re = relief(y)(x)
+					val xx = shape.offsetx + offX(x, y)					// Real position X
+					val yy = shape.offsety + offY(x, y) + re.relief		// Real position Y
+					val of = if(re.texOffsetMarker) 1 else 0
+					
+					// - Ground --
 
-					// Triangle 0
-					mesh v(p+0) xyz(xx,    yy-h2, 0) uv(uu+uw/2, vv)       user(UserAttr, texOff, 0, 0)
-					mesh v(p+1) xyz(xx,    yy+h2, 0) uv(uu+uw/2, vv+vh)    user(UserAttr, texOff, 0, 0)
-					mesh v(p+2) xyz(xx-w2, yy,    0) uv(uu,      vv+vh/2)  user(UserAttr, texOff, 0, 0)
+					var uw = shade.ground.w 							// Width in UV of a texture patch.
+					var vh = shade.ground.h 							// Height in UV of a texture patch.
+					var uu = shade.ground.x(re.groundTex)				// Lower left tex U
+					var vv = shade.ground.y(re.groundTex)				// Lower left tex V
+
+					// Triangle 0 Ground
+					mesh v(p+0) xyz(xx,    yy-h2, 0) uv(uu+uw/2, vv)       user(UserAttr, of, 0, 0)
+					mesh v(p+1) xyz(xx,    yy+h2, 0) uv(uu+uw/2, vv+vh)    user(UserAttr, of, 0, 0)
+					mesh v(p+2) xyz(xx-w2, yy,    0) uv(uu,      vv+vh/2)  user(UserAttr, of, 0, 0)
 					mesh triangle(t+0, p+0, p+1, p+2)
 
-					// Triangle 1
-					mesh v(p+3) xyz(xx,    yy-h2, 0) uv(uu+uw/2, vv)       user(UserAttr, texOff, 0, 0)
-					mesh v(p+4) xyz(xx,    yy+h2, 0) uv(uu+uw/2, vv+vh)    user(UserAttr, texOff, 0, 0)
-					mesh v(p+5) xyz(xx+w2, yy,    0) uv(uu+uw,   vv+vh/2)  user(UserAttr, texOff, 0, 0)
+					// Triangle 1 Ground
+					mesh v(p+3) xyz(xx,    yy-h2, 0) uv(uu+uw/2, vv)       user(UserAttr, of, 0, 0)
+					mesh v(p+4) xyz(xx,    yy+h2, 0) uv(uu+uw/2, vv+vh)    user(UserAttr, of, 0, 0)
+					mesh v(p+5) xyz(xx+w2, yy,    0) uv(uu+uw,   vv+vh/2)  user(UserAttr, of, 0, 0)
 					mesh triangle(t+1, p+3, p+4, p+5)
 
-					// Triangle 2
-					mesh v(p+6) xyz(xx-w2, yy-h2, 0)  uv(uu,       vv)       user(UserAttr, 0, 0, 0)
-					mesh v(p+7) xyz(xx,    yy-h2, 0)  uv(uu+0.01f, vv)       user(UserAttr, 0, 0, 0)
-					mesh v(p+8) xyz(xx-w2, yy,    0)  uv(uu,       vv+0.01f) user(UserAttr, 0, 0, 0)
-					mesh triangle(t+2, p+6, p+7, p+8)
+					// - Underground --
 
-					// Triangle 3
-					mesh v(p+ 9) xyz(xx,    yy-h2, 0) uv(uu,       vv)       user(UserAttr, 0, 0, 0)
-					mesh v(p+10) xyz(xx+w2, yy-h2, 0) uv(uu+0.01f, vv)       user(UserAttr, 0, 0, 0)
-					mesh v(p+11) xyz(xx+w2, yy,    0) uv(uu+0.01f, vv+0.01f) user(UserAttr, 0, 0, 0)
-					mesh triangle(t+3, p+9, p+10, p+11)
+					if(re.undergroundTex >= 0 && re.undergroundTex < shade.underground.x.length) {
+						uw = shade.underground.w
+						vh = shade.underground.h
+						uu = shade.underground.x(re.undergroundTex)
+						vv = shade.underground.y(re.undergroundTex)
 
-					// Triangle 4
-					mesh v(p+12) xyz(xx+w2, yy,    0) uv(uu,       vv)       user(UserAttr, 0, 0, 0)
-					mesh v(p+13) xyz(xx+w2, yy+h2, 0) uv(uu+0.01f, vv+0.01f) user(UserAttr, 0, 0, 0)
-					mesh v(p+14) xyz(xx,    yy+h2, 0) uv(uu,       vv+0.01f) user(UserAttr, 0, 0, 0)
-					mesh triangle(t+4, p+12, p+13, p+14)
+						//println(s"uw=${uw} vh=${vh},  uu=${uu} vv=${vv}")
 
-					// Triangle 5
-					mesh v(p+15) xyz(xx-w2, yy,    0) uv(uu+0.01f, vv)       user(UserAttr, 0, 0, 0)
-					mesh v(p+16) xyz(xx,    yy+h2, 0) uv(uu+0.01f, vv+0.01f) user(UserAttr, 0, 0, 0)
-					mesh v(p+17) xyz(xx-w2, yy+h2, 0) uv(uu,       vv+0.01f) user(UserAttr, 0, 0, 0)
-					mesh triangle(t+5, p+15, p+16, p+17)
+						// Triangle 2 Underground
+						mesh v(p+6) xyz(xx-w2, yy-2*h2, 0)  uv(uu,      vv+vh/3)     user(UserAttr, 0, 0, 0)
+						mesh v(p+7) xyz(xx,    yy-h2,   0)  uv(uu+uw/2, vv+2*(vh/3)) user(UserAttr, 0, 0, 0)
+						mesh v(p+8) xyz(xx-w2, yy,      0)  uv(uu,      vv+vh)       user(UserAttr, 0, 0, 0)
+						mesh triangle(t+2, p+6, p+7, p+8)
 
-					p += 18
-					t += 6
-					x += 1
+						// Triangle 3 Underground
+						mesh v(p+ 9) xyz(xx+w2, yy-2*h2, 0) uv(uu+uw,   vv+vh/3)     user(UserAttr, 0, 0, 0)
+						mesh v(p+10) xyz(xx+w2, yy,      0) uv(uu+uw,   vv+vh)       user(UserAttr, 0, 0, 0)
+						mesh v(p+11) xyz(xx,    yy-h2,   0) uv(uu+uw/2, vv+2*(vh/3)) user(UserAttr, 0, 0, 0)
+						mesh triangle(t+3, p+9, p+10, p+11)
+
+						// Triangle 4 Underground
+						mesh v(p+12) xyz(xx,    yy-3*h2, 0) uv(uu+uw/2, vv)          user(UserAttr, 0, 0, 0)
+						mesh v(p+13) xyz(xx,    yy-h2,   0) uv(uu+uw/2, vv+2*(vh/3)) user(UserAttr, 0, 0, 0)
+						mesh v(p+14) xyz(xx-w2, yy-2*h2, 0) uv(uu,      vv+vh/3)     user(UserAttr, 0, 0, 0)
+						mesh triangle(t+4, p+12, p+13, p+14)
+
+						// Triangle 5 Underground
+						mesh v(p+15) xyz(xx,    yy-3*h2, 0) uv(uu+uw/2, vv)          user(UserAttr, 0, 0, 0)
+						mesh v(p+16) xyz(xx+w2, yy-2*h2, 0) uv(uu+uw,   vv+vh/3)     user(UserAttr, 0, 0, 0)
+						mesh v(p+17) xyz(xx,    yy-h2,   0) uv(uu+uw/2, vv+2*(vh/3)) user(UserAttr, 0, 0, 0)
+						mesh triangle(t+5, p+15, p+16, p+17)
+
+						p += 18
+						t += 6
+						x += 1
+					} else {
+						p += 6
+						t += 2
+						x += 1
+					}
 				}
 
 				y += 1

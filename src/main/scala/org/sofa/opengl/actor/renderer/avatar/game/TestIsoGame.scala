@@ -11,7 +11,7 @@ import org.sofa.math.{Point3, Vector3, Matrix4}
 import org.sofa.opengl.akka.SurfaceExecutorService
 import org.sofa.opengl.actor.renderer.{Renderer, Screen, AvatarName, AvatarBaseStates, RendererActor, RendererController}
 import org.sofa.opengl.actor.renderer.backend.RendererNewt
-import org.sofa.opengl.actor.renderer.avatar.game.{IsoWorldAvatarFactory, IsoCellGridConfig, IsoCellGridRelief, IsoCellGridShape, IsoCellGridShade, IsoEntityConfig}
+import org.sofa.opengl.actor.renderer.avatar.game.{IsoWorldAvatarFactory, IsoCellGridConfig, IsoCellGridRelief, IsoCellGridShape, IsoCellGridShade, IsoEntityConfig, IsoCellGridTex}
 
 
 object TestIsoGame extends App {
@@ -89,34 +89,38 @@ class IsoGame extends Actor {
 		renderer ! AddAvatar("iso-cell-grid", cellgrid1)
 		renderer ! AddAvatar("iso-cell-grid", cellgrid0)
 
-		var relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 1) }
+		var relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 0) }
 		val shape  = IsoCellGridShape(0, 0)
-		val shade  = IsoCellGridShade("iso-cell-grid-shader", "ground-color-1", "ground-mask-1", 0.433f, 0.281f-0.031f, 
+		val shade  = IsoCellGridShade("iso-cell-grid-shader", "ground-color-1", "ground-mask-1",
+			IsoCellGridTex(0.433f, 0.250f, 
+							Array[Float](0.027f, 0.514f, 0.270f, 0.027f, 0.514f, 0.270f),
+							Array[Float](0.296f, 0.296f, 0.437f, 0.578f, 0.578f, 0.718f)),
+			IsoCellGridTex(0.433f, 0.375f,
 							Array[Float](0.027f, 0.514f),
-							Array[Float](0.078f, 0.390f, 0.703f))
+							Array[Float](0.015f, 0.015f)))
 
-		relief(1)(1) = IsoCellGridRelief(0, 0, 1)
-		relief(1)(2) = IsoCellGridRelief(0, 0, 1)
+		//relief(1)(1) = IsoCellGridRelief(0, 0, 1)
+		//relief(1)(2) = IsoCellGridRelief(0, 0, 1)
 
 		renderer ! ChangeAvatar(cellgrid0, IsoCellGridConfig(shade, shape, relief))
 
-		relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 2, true) }
-		relief(1)(1) = IsoCellGridRelief(0.1f, 1, 0)
-		relief(1)(2) = IsoCellGridRelief(0.15f,  1, 0)
+		relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 3, -1, true) }
+		relief(1)(1) = IsoCellGridRelief(0.1f,  1, 0)
+		relief(1)(2) = IsoCellGridRelief(0.15f, 1, 0)
 		relief(2)(1) = IsoCellGridRelief(0.05f, 1, 0)
 		relief(2)(2) = IsoCellGridRelief(0.0f,  1, 0)
 
 		renderer ! ChangeAvatar(cellgrid1, IsoCellGridConfig(shade, shape, relief))
 
-		relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 1) }
-		relief(1)(1) = IsoCellGridRelief(0, 1, 2)
-		relief(1)(2) = IsoCellGridRelief(0, 0, 0)
+		relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 0) }
+		relief(1)(1) = IsoCellGridRelief(0, 5, 0)
+		relief(1)(2) = IsoCellGridRelief(0, 4, 0)
 
 		renderer ! ChangeAvatar(cellgrid2, IsoCellGridConfig(shade, shape, relief))
 
-		relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 1) }
-		relief(1)(1) = IsoCellGridRelief(0, 1, 2)
-		relief(1)(2) = IsoCellGridRelief(0, 0, 0)
+		relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 0, 0) }
+		relief(1)(1) = IsoCellGridRelief(0, 2, 0)
+		relief(1)(2) = IsoCellGridRelief(0, 2, 0)
 
 		renderer ! ChangeAvatar(cellgrid3, IsoCellGridConfig(shade, shape, relief))
 
