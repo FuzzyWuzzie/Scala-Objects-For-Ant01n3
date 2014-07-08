@@ -82,12 +82,12 @@ class TestTextLayer extends SurfaceRenderer {
 	var wcube:WireCubeMesh = null
 	val cube = new CubeMesh(1)
 	
-	val camera = new Camera()
-	val ctrl:BasicCameraController = new MyCameraController(camera, light1)
-	
 	val clearColor = Rgba.Grey20
 	val planeColor = Rgba.Grey80
 	val light1 = Vector4(2, 2, 2, 1)
+	
+	val camera = new Camera()
+	val ctrl:BasicCameraController = new MyCameraController(camera, light1)
 	
 	val random = new scala.util.Random()
 

@@ -31,7 +31,7 @@ class IsoGame extends Actor {
 	def receive = {
 		case "start" => {
 			RendererActor(context, self, 
-				Renderer(new IsoWorldAvatarFactory()), TestIsoGame.Title, 800, 600, 50, true, false, 4)
+				Renderer(new IsoWorldAvatarFactory()), TestIsoGame.Title, 800, 600, 30, true, false, 4)
 		}
 		case RendererController.Start(renderer) => {
 			this.renderer = renderer
@@ -105,10 +105,10 @@ class IsoGame extends Actor {
 		renderer ! ChangeAvatar(cellgrid0, IsoCellGridConfig(shade, shape, relief))
 
 		relief = Array.fill[IsoCellGridRelief](4,4) { IsoCellGridRelief(0, 3, -1, true) }
-		relief(1)(1) = IsoCellGridRelief(0.1f,  1, 0)
-		relief(1)(2) = IsoCellGridRelief(0.15f, 1, 0)
-		relief(2)(1) = IsoCellGridRelief(0.05f, 1, 0)
-		relief(2)(2) = IsoCellGridRelief(0.0f,  1, 0)
+		relief(1)(1) = IsoCellGridRelief(0.1f,  1, 1)
+		relief(1)(2) = IsoCellGridRelief(0.15f, 1, 1)
+		relief(2)(1) = IsoCellGridRelief(0.05f, 1, 1)
+		relief(2)(2) = IsoCellGridRelief(0.0f,  1, 1)
 
 		renderer ! ChangeAvatar(cellgrid1, IsoCellGridConfig(shade, shape, relief))
 

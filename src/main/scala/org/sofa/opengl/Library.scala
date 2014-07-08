@@ -516,13 +516,23 @@ object ArmatureResource {
 	}
 }
 
-class ArmatureResource(name:String, texRes:String, shaderRes:String, fileName:String, armatureId:String, val libraries:Libraries, private var data:Armature, scale:Double=1.0) extends ResourceDescriptor[Armature](name) {
+class ArmatureResource(
+			name:String,
+			texRes:String,
+			shaderRes:String,
+			fileName:String,
+			armatureId:String,
+			val libraries:Libraries,
+			private var data:Armature,
+			scale:Double=1.0) extends ResourceDescriptor[Armature](name) {
 
-	def this(name:String, texRes:String, shaderRes:String, fileName:String, armatureId:String, libraries:Libraries, scale:Double=1.0) {
+	def this(name:String,
+			 texRes:String,
+			 shaderRes:String, fileName:String, armatureId:String, libraries:Libraries, scale:Double) {
 		this(name, texRes, shaderRes, fileName, armatureId, libraries, null, scale)
 	}
 
-	def this(name:String, armature:Armature, libraries:Libraries, scale:Double=1.0) {
+	def this(name:String, armature:Armature, libraries:Libraries, scale:Double) {
 		this(name, armature.texResource, armature.shaderResource, "Armature", null, libraries, armature, scale)
 	}
 

@@ -149,7 +149,8 @@ class IsoRootRender(avatar:Avatar) extends IsoRender(avatar) {
 	override def render() {
 		val gl = screen.gl
 
-		gl.clearColor(Rgba.Grey50)
+		//gl.clearColor(Rgba.Grey50)
+		gl.clearColor(Rgba.Black)
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		gl.lineWidth(1f)

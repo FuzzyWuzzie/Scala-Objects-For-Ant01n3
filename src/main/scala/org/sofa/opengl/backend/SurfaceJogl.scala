@@ -216,7 +216,7 @@ class SurfaceNewt(
 
 	/** Synchronized queue for events coming from the EDT (event dispatching thread), as
 	  * with NEWT, events are handled in a distinct thread from rendering. */
-	private[this] val eventQueue = new SynchronizedQueue[Event]
+	private[this] val eventQueue = new java.util.concurrent.ConcurrentLinkedQueue[Event]()// new SynchronizedQueue[Event]
 
 	/** NEWT window. */
     protected var win:GLWindow = null
@@ -323,7 +323,7 @@ class SurfaceNewt(
    	/** Process all pending events in the event queue. */
    	protected def processEvents() {
    		while(! eventQueue.isEmpty) {
-   			eventQueue.dequeue match {
+   			eventQueue.poll match {
    				case e:KeyEvent       => { if(renderer.key       ne null) renderer.key(this, e) }
    				case e:ActionEvent    => { if(renderer.action    ne null) renderer.action(this, e) }
 				case e:ConfigureEvent => { if(renderer.configure ne null) renderer.configure(this, e) }
@@ -347,7 +347,7 @@ class SurfaceNewt(
 
    	// -- GUI Events --------------------------------------------------------------
    	//
-   	// All events enqueue to the event queue and are processed by processEvents() when
+   	// All events add to the event queue and are processed by processEvents() when
    	// the surface display() method is called.
 
     def windowDestroyNotify(ev:JoglWindowEvent) {}
@@ -359,13 +359,13 @@ class SurfaceNewt(
     def windowResized(e:JoglWindowEvent) {/*Console.err.println("resized w=%d h=%d".format(win.getWidth, win.getHeight))*/} 
     
 	def keyPressed(e:JoglKeyEvent) {} 
-	def keyReleased(e:JoglKeyEvent) { eventQueue.enqueue(new KeyEventJogl(e)) }
+	def keyReleased(e:JoglKeyEvent) { eventQueue.add(new KeyEventJogl(e)) }
 	def keyTyped(e:JoglKeyEvent) {}
     
     def mouseClicked(e:JoglMouseEvent) {
         e.getButton match {
-            case 1 => { eventQueue.enqueue(new ActionEvent()) }
-            case 3 => { eventQueue.enqueue(new ConfigureEvent()) }
+            case 1 => { eventQueue.add(new ActionEvent()) }
+            case 3 => { eventQueue.add(new ConfigureEvent()) }
             case _ => {}
         }
     }
@@ -377,28 +377,28 @@ class SurfaceNewt(
     	// Ensure we receive a motion end when the mouse leave the window.
     	// (Two case, when the mouse is released out of the window or when coming back in it).
     	if(inMotion) {
-    		eventQueue.enqueue(new MotionEventJogl(e, false, true))
+    		eventQueue.add(new MotionEventJogl(e, false, true))
     		inMotion = false 
     	}
     }
     def mouseMoved(e:JoglMouseEvent) {}
     def mousePressed(e:JoglMouseEvent) {
     	inMotion = true;
-    	eventQueue.enqueue(new MotionEventJogl(e, true, false)) 
+    	eventQueue.add(new MotionEventJogl(e, true, false)) 
    	}
     def mouseDragged(e:JoglMouseEvent) { 
     	if(inMotion) {
-    		eventQueue.enqueue(new MotionEventJogl(e, false, false)) 
+    		eventQueue.add(new MotionEventJogl(e, false, false)) 
     	}
    	}
     def mouseReleased(e:JoglMouseEvent) {
     	if(inMotion) {
     		inMotion = false
-    		eventQueue.enqueue(new MotionEventJogl(e, false, true)) 
+    		eventQueue.add(new MotionEventJogl(e, false, true)) 
     	}
     }
     def mouseWheelMoved(e:JoglMouseEvent) {
-    	eventQueue.enqueue(new ScrollEventJogl(e)) 
+    	eventQueue.add(new ScrollEventJogl(e)) 
     }
 
     def printCaps() {

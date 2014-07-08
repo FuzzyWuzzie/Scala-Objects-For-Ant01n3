@@ -13,7 +13,7 @@ trait State {
 }
 
 /** A basic state class that you can edit. */
-class EditableState(initialTransitions:Pair[AnyRef,State]*) extends State {
+class EditableState(initialTransitions:(AnyRef,State)*) extends State {
 	/** Set of defined transitions. */
 	protected val transitions = new HashMap[AnyRef,State]()
 
