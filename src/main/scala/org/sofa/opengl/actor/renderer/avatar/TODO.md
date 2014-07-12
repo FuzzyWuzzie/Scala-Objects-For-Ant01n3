@@ -41,6 +41,7 @@
 
 * Allow the Library to be actor based, loading elements in the background ? Return a Future instead of an item ? How to handle the fact OpenGL is not thread safe ?
 * Allow to save texture images in a format that is correctly oriented and with premultiplied alpha to avoid doing this at runtime.
+* Allow to forget texture resources after they are uploaded to OpenGL to save memory.
 
 ## Game
 

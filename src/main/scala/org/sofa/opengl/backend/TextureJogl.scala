@@ -1,11 +1,12 @@
 package org.sofa.opengl.backend
 
+import org.sofa.Timer
 import org.sofa.nio._
 import java.awt.image.{BufferedImage, DataBufferByte}
 import javax.imageio.ImageIO
 import java.io.{File, IOException}
 import scala.collection.mutable.{ArrayBuffer=>ScalaArrayBuffer}
-import org.sofa.opengl.{SGL, TextureImage, TexParams, TexMipMap, ImageFormat, TexAlpha}
+import org.sofa.opengl.{SGL, TextureImage, TexParams, TexMipMap, ImageFormat, TexAlpha, Libraries, TextureIOException}
 
 object TextureImageAwt {
 	protected def read(fileName:String, params:TexParams):ScalaArrayBuffer[BufferedImage] = {
@@ -28,7 +29,7 @@ object TextureImageAwt {
     			}
 
 				if(images.size <= 0)
-					throw new RuntimeException("cannot load any mipmap level for %s (at least %s_%d.%s)".format(fileName, res, i, ext))
+					throw new TextureIOException("cannot load any mipmap level for %s (at least %s_%d.%s)".format(fileName, res, i, ext))
 			}
 			case _    => {
 				images += ImageIO.read(new File(fileName))
@@ -72,7 +73,7 @@ class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexPa
 
        		val (format, internalFormat, theType, bytes) = imageFormatAndType(gl, data(level))
 
-	    	gl.texImage2D(mode, level, format, data(level).getWidth, data(level).getHeight, 0, internalFormat, theType, bytes)
+	    	gl.texImage2D(mode, level, internalFormat, data(level).getWidth, data(level).getHeight, 0, format, theType, bytes)
 	    	gl.checkErrors
 
     		level += 1
@@ -100,10 +101,12 @@ class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexPa
     }
     
     protected def imageDataRGBA(image:BufferedImage, align:Int, premultAlpha:Boolean):ByteBuffer = {
+    	var buf:ByteBuffer = null
+    	Timer.timer.measure("TextureImageAWT.imageDataRGBA()") {
         val width  = image.getWidth
         val height = image.getHeight
         
-        val buf = ByteBuffer(width * height * 4, true)
+        buf = ByteBuffer(width * height * 4, true)
         
         // Very inefficient.
         
@@ -144,6 +147,7 @@ class TextureImageAwt(val data:ScalaArrayBuffer[BufferedImage], val params:TexPa
             y -= 1
         }
         
+    	}
         buf
     }
     

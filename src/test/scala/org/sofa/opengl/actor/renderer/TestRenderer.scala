@@ -25,35 +25,35 @@ class TestRenderer extends FlatSpec {
 		while(! renderer.isInitialized) {
 			Thread.sleep(1)
 			counter += 1
-			assert(counter < 480)	// should suffice ?
+			assertResult(true) { counter < 480 }	// should suffice ?
 		}
 
-		assert(renderer.surface ne null, "renderer surface is ok")
-		assert(renderer.gl ne null, "renderer GL is ok")
+		assertResult(true, "renderer surface is ok") { renderer.surface ne null }
+		assertResult(true, "renderer GL is ok") { renderer.gl ne null }
 		assertResult(0, "renderer has no screen") { renderer.screenCount }
-		assert(! renderer.hasCurrentScreen, "renderer has no current screen")
+		assertResult(false, "renderer has no current screen") { renderer.hasCurrentScreen }
 	}
 
 	it should "allow to add basic screen at least" in {
 		renderer.addScreen("default-screen") 
 
-		assert(! renderer.hasCurrentScreen, "current screen is not set")
+		assertResult(false, "current screen is not set") {  renderer.hasCurrentScreen }
 		assertResult(1, "only one screen") { renderer.screenCount }
 		renderer.switchToScreen("default-screen")
-		assert(renderer.hasCurrentScreen, "renderer has a current screen")
+		assertResult(true, "renderer has a current screen") { renderer.hasCurrentScreen }
 		renderer.switchToScreen("unknown")
-		assert(! renderer.hasCurrentScreen, "no more current screen")
+		assertResult(false, "no more current screen") { renderer.hasCurrentScreen }
 		renderer.switchToScreen("default-screen")
-		assert(renderer.hasCurrentScreen, "renderer has anew a current screen")
+		assertResult(true, "renderer has anew a current screen") { renderer.hasCurrentScreen }
 	}
 
 	it should "exit gracefully" in {
 		renderer.destroy
 
 		assertResult(0, "rendere has no more screens") { renderer.screenCount }
-		assert(! renderer.hasCurrentScreen, "no current screen")
-		assert(! renderer.isInitialized, "no more usable")
-		assert(renderer.surface eq null, "surface should be freed")
-		assert(renderer.gl eq null, "GL should be freed")
+		assertResult(false, "no current screen") { renderer.hasCurrentScreen }
+		assertResult(false, "no more usable") { renderer.isInitialized }
+		assertResult(null, "surface should be freed") { renderer.surface }
+		assertResult(null, "GL should be freed") { renderer.gl }
 	}
 }

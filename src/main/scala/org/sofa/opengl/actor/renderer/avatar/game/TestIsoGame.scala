@@ -8,6 +8,7 @@ import akka.actor.{ActorSystem, Actor, ActorRef, Props, ReceiveTimeout}
 
 import org.sofa.math.{Point3, Vector3, Matrix4}
 
+import org.sofa.Timer
 import org.sofa.opengl.akka.SurfaceExecutorService
 import org.sofa.opengl.actor.renderer.{Renderer, Screen, AvatarName, AvatarBaseStates, RendererActor, RendererController}
 import org.sofa.opengl.actor.renderer.backend.RendererNewt
@@ -171,7 +172,6 @@ class IsoGame extends Actor {
 		renderer ! AddAvatar("iso-entity", somadrop1)
 		renderer ! ChangeAvatar(somadrop1, somadrop1Config)
 		renderer ! ChangeAvatar(somadrop1, AvatarBaseStates.MoveAt(Point3(-1,1,0)))
-
 	}
 
 	protected def stopGame() {
@@ -179,6 +179,6 @@ class IsoGame extends Actor {
 	}
 
 	protected def controlGame() {
-
+		Timer.timer.printAvgs("TestIsoGame")
 	}
 }

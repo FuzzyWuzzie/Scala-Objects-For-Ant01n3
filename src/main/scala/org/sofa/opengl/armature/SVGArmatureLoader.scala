@@ -6,6 +6,7 @@ import scala.xml._
 import scala.math._
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 
+import org.sofa.Timer
 import org.sofa.math.{Rgba, Point2, Point3, Matrix3}
 //import org.sofa.simu.oberon.renderer._
 
@@ -108,12 +109,6 @@ object SVGArmatureLoader {
 }
 
 
-// TODO
-// Allow several armatures in one file, with multiple Armature layers.
-// Specify the armature layer name in the loader.
-// Find a way to avoid reloading the SVG file for multiple armatures.
-
-
 /** Load an Armature from a prepared SVG file. 
   *
   * This class allows to transform a SVG file into an armature, with its hierachy,
@@ -203,6 +198,8 @@ class SVGArmatureLoader {
 	  * @param shaderRes Name of a shader in the resource [[Libraries]].
 	  * @param stream A stream pointing at the SVG data to load and use. */
 	def load(name:String, texRes:String, shaderRes:String, stream:InputStream, armatureId:String, scale:Double):Armature = {
+var armature:Armature = null
+Timer.timer.measure("SVGArmatureLoader.load()") {
 		val root      = XML.load(stream)
 		pagew         = (root \ "@width").text.toDouble
 		pageh         = (root \ "@height").text.toDouble
@@ -237,7 +234,7 @@ class SVGArmatureLoader {
 //println("found %d areas =====".format(areas.size))
 //areas.foreach { area => println("area %s".format(area)) }
 
-		val armature = buildArmature(name, texRes, shaderRes, scale)
+		armature = buildArmature(name, texRes, shaderRes, scale)
 
 		areas.clear
 		joints.clear
@@ -245,7 +242,7 @@ class SVGArmatureLoader {
 		armatureDecl = null
 		pagew        = 0.0
 		pageh        = 0.0
-
+}
 		armature
 	}
 

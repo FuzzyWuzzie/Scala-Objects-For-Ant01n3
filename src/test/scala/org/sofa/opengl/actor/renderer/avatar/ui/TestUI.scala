@@ -13,7 +13,7 @@ import org.sofa.opengl.text.GLFont
 class TestUI extends FlatSpec {
 
 	// The renderer to test.
-	val renderer = new RendererNewt(null, new UIAvatarFactory())//actorSystem.deadLetters)
+	val renderer = new RendererNewt(new UIAvatarFactory())//actorSystem.deadLetters)
 
 	"A UI" should "allow adding a root" in {
 		renderer.start("title", initialWidth=320, initialHeight=240, fps=24, decorated=false, fullscreen=false, overSample=4)
@@ -28,14 +28,14 @@ class TestUI extends FlatSpec {
 		while(! renderer.isInitialized) {
 			Thread.sleep(1)
 			counter += 1
-			assert(counter < 480)	// should suffice ?
+			assertResult(true) {counter < 480}	// should suffice ?
 		}
 
 		renderer.addScreen("default-screen")
 		assertResult(1, "only one screen") { renderer.screenCount }
 		
 		renderer.switchToScreen("default-screen")
-		assert(renderer.hasCurrentScreen, "renderer has a current screen")
+		assertResult(true, "renderer has a current screen") {renderer.hasCurrentScreen}
 		
 		renderer.currentScreen.addAvatar(AvatarName("root"), "ui.root")
 		assertResult(1, "only one avatar") { renderer.currentScreen.subCount }

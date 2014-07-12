@@ -99,7 +99,7 @@ object NioBuffer {
 trait NioBufferFactory {
 	def newByteBuffer(capacity:Int, direct:Boolean):ByteBuffer
 	def newByteBuffer(capacity:Int, direct:Boolean, data:Array[Byte]):ByteBuffer
-	
+
 	def newIntBuffer(capacity:Int, direct:Boolean):IntBuffer
 	def newIntBuffer(from:ByteBuffer):IntBuffer
 	
@@ -172,8 +172,8 @@ object DoubleBuffer {
 // ---------------------------------------------------------
 
 
-class ByteBufferJava(var capacity:Int, direct:Boolean, data:Array[Byte]) extends ByteBuffer {
-	var buf:java.nio.ByteBuffer = if(direct) {
+class ByteBufferJava(var capacity:Int, direct:Boolean, data:Array[Byte], existingBuffer:java.nio.ByteBuffer=null) extends ByteBuffer {
+	var buf:java.nio.ByteBuffer = if(existingBuffer ne null) existingBuffer else if(direct) {
 			var n = if((data ne null) && (capacity < data.length)) data.length else capacity
             val b = java.nio.ByteBuffer.allocateDirect(n)
             if(data ne null) copy(data)
@@ -186,6 +186,7 @@ class ByteBufferJava(var capacity:Int, direct:Boolean, data:Array[Byte]) extends
             }
         }
 	nativeOrder
+	def this(existingBuffer:java.nio.ByteBuffer) { this(existingBuffer.capacity, true, null, existingBuffer) }
 	def this(data:Array[Byte], direct:Boolean) { this(data.size, direct, data) }
     def this(capacity:Int, direct:Boolean) { this(capacity, direct, null) }
 	def bitSize:Int = 8
@@ -236,6 +237,11 @@ class IntBufferJava(var capacity:Int, direct:Boolean=true) extends IntBuffer {
 				throw new RuntimeException("non compatible buffer %s expecting ByteBufferJava".format(from.getClass.getName))
 			}
 		}
+	}
+	def this(from:java.nio.ByteBuffer) {
+		this(0)
+		buf = from.order(java.nio.ByteOrder.nativeOrder).asIntBuffer
+		capacity = from.capacity / 4
 	}
 	def bitSize:Int = 32
 	def update(i:Int, value:Int):Unit = buf.put(i, value)

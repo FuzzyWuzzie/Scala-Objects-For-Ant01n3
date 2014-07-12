@@ -2,12 +2,13 @@ name := "SOFA"
 
 version := "0.1"
 
-//scalaVersion := "2.10.3"
 scalaVersion := "2.11.0"
 
 scalacOptions += "-deprecation"
 
-scalacOptions += "-feature"
+scalacOptions += "-feature" 
+
+scalacOptions += "-Ydelambdafy:method"
 
 fork := true
 
@@ -23,7 +24,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.4"
 
 libraryDependencies += "com.typesafe" % "config" % "1.2.1"
 
-libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.0" % "test"
+libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test"
 
 // I found no way to only use the "classifier" to force ivy to download the native elements.
 // However when using only the classifier "native...", the builder seems to ignore the main jar and compile

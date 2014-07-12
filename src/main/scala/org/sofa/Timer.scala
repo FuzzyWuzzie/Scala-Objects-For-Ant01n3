@@ -10,32 +10,36 @@ import java.lang.System
 object Timer {
 	def apply():Timer = new Timer()
 	def apply(out:PrintStream):Timer = Timer(out)
+
+	/** Global shared timer. */
+	val timer = new Timer()
 }
 
 
 /** Timer allowing to measure the duration of a code block. */
 class Timer(val out:PrintStream = Console.out) {
 	/** The set of measures, identified by names. */
-	val measures = new HashMap[String,Measures]()
-
-	var T1 = 0L
+	protected[this] val measures = new HashMap[String,Measures]()
 
 	/** Measure a code block execution time. The name gives the code block name, allowing to take
 	  * several measures of the same block and compute average times. */
 	def measure(name:String)(code: => Unit) {
 		val measure = measures.get(name).getOrElse({val m = new Measures(name); measures += ((name,m)); m})
-		T1 = System.nanoTime
+		measure.T1 = System.nanoTime
 		code
-		measure.addMeasure(System.nanoTime - T1)
+		measure.addMeasure(System.nanoTime - measure.T1)
 		//measure.printLast(out)
 	}
 
-	def measureStart() { T1 = System.nanoTime }
+	def measureStart(name:String) {
+		val measure = measures.get(name).getOrElse({val m = new Measures(name); measures += ((name,m)); m})
+		measure.T1 = System.nanoTime
+	}
 
 	def measureEnd(name:String) {
 		val T2 = System.nanoTime
-		val measure = measures.get(name).getOrElse({val m = new Measures(name); measures += ((name,m)); m})
-		measure.addMeasure(T2 - T1)
+		val measure = measures.get(name).getOrElse(throw new RuntimeException("reset() called between measures ?"))
+		measure.addMeasure(T2 - measure.T1)
 	}
 
 	/** Print all the average times of all measures. The header is a string to print before all the measures. */
@@ -48,30 +52,35 @@ class Timer(val out:PrintStream = Console.out) {
 		out.println("  total: %.2f msecs".format(sum/100000.0))
 	}
 
-	def reset() {
-		measures.clear
-		
-	}
+	/** Reset all measures. */
+	def reset() { measures.clear }
 }
+
 
 /** A set of measures for the same part of code.
   *
   * The name arguement allows to identify to measured thing. */
 class Measures(val name:String) {
+	/** Used during the measure to store the start time.
+	  * A start time is stored in each measure, although not
+	  * useful for the measure itself, it allows the timer to
+	  * nest measures. */
+	var T1 = 0L
+
 	/** The number of measures. */
-	var count = 0
+	protected[this] var count = 0
 
 	/** The sum of all measures. */
-	var sum = 0L
+	protected[this] var sum = 0L
 
 	/** The last measure. */
-	var last = 0L
+	protected[this] var last = 0L
 
 	/** The maximum measure. */
-	var max = 0L
+	protected[this] var max = 0L
 
 	/** The minimum measure. */
-	var min = Long.MaxValue
+	protected[this] var min = Long.MaxValue
 
 	/** Add a measure. */
 	def addMeasure(value:Long) {
@@ -89,7 +98,7 @@ class Measures(val name:String) {
 	/** Print the average measure to the given output stream. */
 	def printAvg(out:PrintStream):Double = {
 		val avg = average
-		out.println("    %s: ~ %.2f msecs (%d measures) (last %.2f, max %.2f, min %.2f)".format(name, avg/100000.0, count, last/100000.0, max/100000.0, min/100000.0))
+		out.println("    %32s: ~%8.2f msecs | %d samples || last %8.2f | max %8.2f | min %8.2f | sum %8.2f |".format(name, avg/100000.0, count, last/100000.0, max/100000.0, min/100000.0, sum/100000.0))
 		avg
 	}
 }

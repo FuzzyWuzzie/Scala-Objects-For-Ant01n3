@@ -39,11 +39,11 @@ class TestAvatarName extends FlatSpec {
 		val n2 = AvatarName("a.b.c")
 		val n3 = AvatarName("a.b.c.d")
 
-		assert(n1 == n2, "equality")
-		assert(n2 != n3, "inequality 1")
-		assert(n1 != n3, "inequality 2")
-		assert(n1.hashCode == n2.hashCode, "equality of hash codes for same pathes")
-		assert(n1.hashCode != n3.hashCode, "inequality of hash codes for distinct pathes")
+		assertResult(true, "equality") { n1 == n2 }
+		assertResult(true, "inequality 1") { n2 != n3 }
+		assertResult(true, "inequality 2") { n1 != n3 }
+		assertResult(true, "equality of hash codes for same pathes") { n1.hashCode == n2.hashCode }
+		assertResult(true, "inequality of hash codes for distinct pathes") { n1.hashCode != n3.hashCode }
 	}
 
 	it should "allow to retrieve prefix and suffix" in {

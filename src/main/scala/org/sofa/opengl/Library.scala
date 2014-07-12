@@ -4,7 +4,7 @@ import java.io.IOException
 
 import scala.collection.mutable.HashMap
 
-import org.sofa.FileLoader
+import org.sofa.{FileLoader, Timer}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.armature.{Armature, Joint}
@@ -198,11 +198,13 @@ class Libraries(gl:SGL) {
 	  *
 	  * See the [[TexParams]] class for an explanation of the attributes of tex elements. */
 	def addResources(xml:Elem) {
-		parsePathes(   xml \\ "pathes")
-		parseShaders(  xml \\ "shaders")
-		parseTexs(     xml \\ "texs")
-		parseArmatures(xml \\ "armatures")
-		parseBehaviors(xml \\ "behaviors")
+		Timer.timer.measure("Library: addResources()") {
+			parsePathes(   xml \\ "pathes")
+			parseShaders(  xml \\ "shaders")
+			parseTexs(     xml \\ "texs")
+			parseArmatures(xml \\ "armatures")
+			parseBehaviors(xml \\ "behaviors")
+		}
 	}
 
 	protected def parsePathes(nodes:NodeSeq) {

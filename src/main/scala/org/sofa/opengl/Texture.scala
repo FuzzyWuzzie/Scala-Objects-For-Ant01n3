@@ -3,8 +3,9 @@ package org.sofa.opengl
 import org.sofa.nio._
 import java.io.{File, IOException}
 import scala.collection.mutable.{ArrayBuffer=>ScalaArrayBuffer}
-import org.sofa.opengl.backend.TextureImageAwt
+import org.sofa.opengl.backend.{TextureImageAwt, TextureImageTEX}
 import org.sofa.FileLoader
+
 
 /** The image formats supported by the texture system actually. */
 object ImageFormat extends Enumeration {
@@ -45,6 +46,10 @@ trait TextureImage {
 }
 
 
+/** Thrown when a texture cannot be loaded. */
+class TextureIOException(msg:String) extends Exception(msg)
+
+
 // -- Texture Loader --------------------------------------------------------------------------
 
 
@@ -71,18 +76,19 @@ trait TextureLoader extends FileLoader {
     def open(resource:String, params:TexParams):TextureImage
 }
 
+
 /** Default texture loader that uses files in the local file system
   * and [[backend.TextureImageAwt]]. */
 class DefaultTextureLoader extends TextureLoader {
 	def open(resource:String, params:TexParams):TextureImage = {
 		import TexMipMap._
 
+		val pos  = resource.lastIndexOf('.')
+		val res  = if(pos>0) resource.substring(0, pos) else resource
+    	val ext  = if(pos>0) resource.substring(pos+1, resource.length) else ""
+
 		var name = params.mipMap match {
-			case Load => { 
-				val pos  = resource.lastIndexOf('.')
-		    	val res  = if(pos>0) resource.substring(0, pos) else resource
-    			val ext  = if(pos>0) resource.substring(pos+1, resource.length) else ""
-    			
+			case Load => { 		
     			"%s_0.%s".format(res, ext)
 			}
 			case _ => {  resource }
@@ -90,7 +96,9 @@ class DefaultTextureLoader extends TextureLoader {
 
 		findPath(name, Texture.path) match {
 			case null     => throw new IOException("cannot locate texture %s (path %s)".format(name, Texture.path.mkString(":")))
-			case x:String => new TextureImageAwt(x, params)
+			case x:String => if(ext == "tex") 
+							      new TextureImageTEX(x, params)
+							 else new TextureImageAwt(x, params)
 		}
 	}
 }
@@ -98,7 +106,9 @@ class DefaultTextureLoader extends TextureLoader {
 
 // -- Texture ----------------------------------------------------------------------------------------------
 
+
 trait TexParam
+
 
 /** How to handle mip-maps when loading image data into the texture. */
 object TexMipMap extends Enumeration with TexParam {
@@ -119,6 +129,7 @@ object TexMipMap extends Enumeration with TexParam {
 	/** Enumeration type. */
 	type TexMipMap = Value
 }
+
 
 /** How to setup the min filter for the texture when loading it. */
 object TexMin extends Enumeration with TexParam {
@@ -144,6 +155,7 @@ object TexMin extends Enumeration with TexParam {
 	type TexMin = Value
 }
 
+
 /** How to setup the mag filter for the texture when loading it. */
 object TexMag extends Enumeration with TexParam {
 	/** The nearest texel. */
@@ -156,6 +168,7 @@ object TexMag extends Enumeration with TexParam {
 	type TexMag = Value
 }
 
+
 /** How to handle alpha valuers when loading the image. */
 object TexAlpha extends Enumeration with TexParam {
 	/** Do nothing. */
@@ -167,6 +180,7 @@ object TexAlpha extends Enumeration with TexParam {
 	/** Enumeration type. */
 	type TexAlpha = Value
 }
+
 
 object TexWrap extends Enumeration with TexParam {
 	/** No repetition. */
@@ -181,6 +195,7 @@ object TexWrap extends Enumeration with TexParam {
 	/** Enumeration type. */
 	type TexWrap = Value
 }
+
 
 /** Main parameters driving the way a texture is built. */
 case class TexParams(
@@ -198,6 +213,7 @@ case class TexParams(
 	// }
 }
 
+
 /** Companion object for Texture.
   *
   * This object allows to define a loader a thing that loads images and transform them
@@ -211,6 +227,7 @@ object Texture {
       * and transform an image into an input stream. */
     var loader:TextureLoader = new DefaultTextureLoader()
 }
+
 
 /** Define a new 1D, 2D or 3D texture.
   * 
