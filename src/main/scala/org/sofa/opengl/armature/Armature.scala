@@ -28,10 +28,17 @@ trait ArmatureLoader extends FileLoader {
   * found, tries to find it in each of the pathes provided by the include
   * path. If not found it throws an IOException. */
 class DefaultArmatureLoader extends ArmatureLoader {
-	private[this] val SVGLoader = new SVGArmatureLoader
+	private[this] lazy val SVGLoader = new SVGArmatureLoader
+	private[this] lazy val ARMLoader = new ARMArmatureLoader
 
-    def open(name:String, texRes:String, shaderRes:String, resource:String, armatureId:String="Armature", scale:Double = 1.0):Armature =
-        SVGLoader.load(name, texRes, shaderRes, findPath(resource, Armature.path), armatureId, scale)
+    def open(name:String, texRes:String, shaderRes:String,
+    		 resource:String, armatureId:String="Armature", scale:Double = 1.0):Armature = {
+        if(resource.endsWith(".arm")) {
+        	ARMLoader.load(name, texRes, shaderRes, findPath(resource, Armature.path), armatureId, scale)
+        } else {
+        	SVGLoader.load(name, texRes, shaderRes, findPath(resource, Armature.path), armatureId, scale)
+        }
+    }
 }
 
 

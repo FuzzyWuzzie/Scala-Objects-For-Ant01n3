@@ -1,23 +1,14 @@
 package org.sofa.opengl.armature
 
-import java.io.{File, InputStream, FileInputStream}
+import java.util.Locale
+import java.io.{File, InputStream, FileInputStream, PrintStream}
 
 import scala.xml._
 import scala.math._
-import scala.collection.mutable.{ArrayBuffer, HashMap}
+import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
 import org.sofa.Timer
 import org.sofa.math.{Rgba, Point2, Point3, Matrix3}
-//import org.sofa.simu.oberon.renderer._
-
-
-// TODO : this thing is horribly slow. 
-//
-// Make it faster, and create an intermediary format for armatures:
-//   -> Still read armatures from SVG since it is easy to edit by hand.
-//   -> Still transform SVG to an armatures.
-//   -> Allow the armature to write an intermediary format (say .arm).
-//   -> Create a loader for intermediary formats.
 
 
 // -- Exceptions ----------------------------------------------------------------------------------------------
@@ -114,6 +105,8 @@ object SVGArmatureLoader {
   * This class allows to transform a SVG file into an armature, with its hierachy,
   * joints, anchors, pivot points, Z-levels, etc.
   *
+  * # SVG file format
+  *
   * The SVG file must be prepared with Inkscape with the following particularities:
   *   - The document units must be PX.
   *   - The size of the page is the global size of the drawing.
@@ -149,27 +142,52 @@ object SVGArmatureLoader {
   *
   * There must always be a joint named 'root' that will be at the root of the armature hierarchy.
   *
+  * # basic usage
+  *
   * Only the armature is extracted, the SVG does not need to contain the image of the texture that
   * will be used by the joints. The texture can be done with another software than Inkscape. We use
   * The Inkscape format since it uses layers, not plain SVG.
+  *
+  * The basic usage of the class is to instantiate it and use either one of the `load()` methods
+  * to directly extract an armature (with the given `armatureId`) of an SVG file or to use the
+  * `convertToARM()` method to produce an ARM file from the SVG.
+  *
+  * The ARM file format is a basic text formated file that stores the armature and is faster
+  * to use than the SVG from a program. However the SVG is easier to use to produce armature art.
+  * Therefore the better way to work is to create armatures art using Inkscape, convert it to ARM,
+  * then use ARM inside programs.
+  *
+  * # ARM file format
+  *
+  * The format is a simple text file. It always begins with "ARM001" this is the magic number
+  * and also indicates the version of the format.
+  *
+  * Then follow a set of "joint" lines of the form:
+  *
+  *     J["<name>", <z>, (<fromx>, <fromy>, <sizex>, <sizey>), (), (), <visibility>, {<under>}, {<above>}]
+  *
+  * The joints are always given in an order that gives joints lower in the hierarhy first. This 
+  * could potentially allow to build the joints as soon as encoutered in the file, since sub-joints
+  * will already have been declared. This is true even for armatures that reference the same joint
+  * several times. The format support this and the shared joint is declared only once in the file,
+  * before it is first needed.
+  *
+  * Finally the file ends with an "armature" line of the form:
+  * 
+  *     A["<name>", (<pagew>, <pageh>), <scale>]
+  *
+  * The fact the armature comes last allow to build the armature from all the previous joints when
+  * encountered in the file, at the end.
+  *
+  * # Notes
+  *
+  * The loader is reusable to load or convert several armatures.
+  * The same armature joint can be referenced at several places in the same armature.
   */
 class SVGArmatureLoader {
 	import SVGArmatureLoader._
 
-	/** The page width in pixels. */
-	protected var pagew = 0.0
-
-	/** The page height in pixels. */
-	protected var pageh = 0.0
-
-	/** Description of all the areas found in the SVG. */
-	protected val areas = new HashMap[String,Area]()
-
-	/** The armature hierarchy declaration. */
-	protected var armatureDecl:String = null
-
-	/** The set of [[Armature]] [[Joint]]s built fromt the armature declaration. */
-	protected val joints = new HashMap[String,Joint]
+// == Public API =====================
 
 	/** Load an [[Armature]] from a SVG file.
 	  *
@@ -191,6 +209,20 @@ class SVGArmatureLoader {
 		load(name, texRes, shaderRes, new FileInputStream(file), armatureId, scale)
 	}
 
+	/** Like `load()` but instead of creating an [[Armature]], write an ARM file to `outputFileName`.
+	  * 
+	  * The ARM format is more compact format avoiding to use SVG and XML to fasten armature loading. */
+	def convertToARM(name:String, fileName:String, armatureId:String, scale:Double, outputFileName:String) {
+		convertToARM(name, new FileInputStream(fileName), armatureId, scale, outputFileName)
+	}
+
+	/** Like `load()` but instead of creating an [[Armature]], write an ARM file to `outputFileName`.
+	  * 
+	  * The ARM format is more compact format avoiding to use SVG and XML to fasten armature loading. */
+	def convertToARM(name:String, file:File, armatureId:String, scale:Double, outputFileName:String) {
+		convertToARM(name, new FileInputStream(file), armatureId, scale, outputFileName)
+	}
+
 	/** Load an [[Armature]] from a SVG file.
 	  *
 	  * @param name Name of the armature.
@@ -198,13 +230,78 @@ class SVGArmatureLoader {
 	  * @param shaderRes Name of a shader in the resource [[Libraries]].
 	  * @param stream A stream pointing at the SVG data to load and use. */
 	def load(name:String, texRes:String, shaderRes:String, stream:InputStream, armatureId:String, scale:Double):Armature = {
-var armature:Armature = null
-Timer.timer.measure("SVGArmatureLoader.load()") {
+		var armature:Armature = null
+
+		Timer.timer.measure("SVGArmatureLoader.load()") {
+			parseArmature(stream, armatureId)
+			buildArmature
+
+			val root = getRootJoint
+
+			armature = Armature(name, scale, Point2(pagew, pageh), texRes, shaderRes, root)
+
+			clear
+		}
+		
+		armature
+	}
+
+	/** Like `load()` but instead of creating an [[Armature]], write an ARM file to `outputFileName`.
+	  * 
+	  * The ARM format is more compact format avoiding to use SVG and XML to fasten armature loading. */
+	def convertToARM(name:String, stream:InputStream, armatureId:String, scale:Double, outputFileName:String) {
+		parseArmature(stream, armatureId)
+		buildArmature
+
+		val out  = new PrintStream(outputFileName)
+		val root = getRootJoint// joints.get("root").getOrElse(throw new ArmatureParseException("no 'root' joint found"))
+		val unicity = new HashSet[String]()
+
+		toARMHeader(out)
+		toARMJointsDict(out, root, unicity)
+		toARMFooter(out, armatureId, scale)
+
+		clear
+	}
+
+	/** Try to find a root joint for the loaded armature after the two passes. */
+	protected def getRootJoint():Joint = joints.get("root").getOrElse(throw new ArmatureParseException("no 'root' joint found"))
+
+	/** Clear data stored by the `parseArmature()` and `buildArmature()` passes. The loader is free to
+	  * load another armature after this. */
+	protected def clear() {
+		areas.clear
+		joints.clear
+
+		armatureDecl = null
+		pagew        = 0.0
+		pageh        = 0.0
+	}
+
+// == 1st Pass : Armature Parsing ================================
+
+	/** The page width in pixels. */
+	protected[this] var pagew = 0.0
+
+	/** The page height in pixels. */
+	protected[this] var pageh = 0.0
+
+	/** Description of all the areas found in the SVG. */
+	protected[this] val areas = new HashMap[String,Area]()
+
+	/** The armature hierarchy declaration. */
+	protected[this] var armatureDecl:String = null
+
+	/** The set of [[Armature]] [[Joint]]s built fromt the armature declaration. */
+	protected[this] val joints = new HashMap[String,Joint]
+
+	/** First pass to read an build an armature, read the XML and declare all areas, joints,
+	  * and anchors. The second pass is in `buildArmature()`. */
+	protected def parseArmature(stream:InputStream, armatureId:String) {
 		val root      = XML.load(stream)
 		pagew         = (root \ "@width").text.toDouble
 		pageh         = (root \ "@height").text.toDouble
 		val namedview = (root \ "namedview")
-
 		if(namedview.size < 1) 
 			throw ArmatureParseException("no 'namedview' element, this program works only with Inkscape.")
 
@@ -230,24 +327,10 @@ Timer.timer.measure("SVGArmatureLoader.load()") {
 
 		if(armatureDecl eq null)
 			throw new ArmatureParseException(s"no armature layer named `${armatureId}` found")
-
-//println("found %d areas =====".format(areas.size))
-//areas.foreach { area => println("area %s".format(area)) }
-
-		armature = buildArmature(name, texRes, shaderRes, scale)
-
-		areas.clear
-		joints.clear
-
-		armatureDecl = null
-		pagew        = 0.0
-		pageh        = 0.0
-}
-		armature
 	}
 
 	/** Parse an area (rectangle) of the SVG file and its pivot and anchor points. */
-	def parseArea(name:String, area:Node):Area = {
+	protected def parseArea(name:String, area:Node):Area = {
 		val globalTr = getTransform(area)
 		val rect     = (area \ "rect")
 
@@ -290,7 +373,7 @@ Timer.timer.measure("SVGArmatureLoader.load()") {
 	}
 
 	/** Parse an arc (a SVG path) that define a pivot or anchor point. */
-	def parseArc(arc:Node, globalTr:Transform):Point2 = {
+	protected def parseArc(arc:Node, globalTr:Transform):Point2 = {
 		var c  = Point2(doubleAttr(Sodipodi, arc, "cx"), doubleAttr(Sodipodi, arc, "cy"))
 		var tr = getTransform(arc)
 
@@ -305,12 +388,12 @@ Timer.timer.measure("SVGArmatureLoader.load()") {
 	}
 
 	/** Retrieve a double value from an attribute in a node of the SVG file. */
-	def doubleAttr(url:String, node:Node, attribute:String):Double = {
+	protected def doubleAttr(url:String, node:Node, attribute:String):Double = {
 		node.attribute(url, attribute) match { case Some(x) => x.text.toDouble; case _ => 0.0 }
 	}
 
 	/** Retrieve the translation of a SVG node. */
-	def getTransform(node:Node):Transform = {
+	protected def getTransform(node:Node):Transform = {
 		node.attribute("transform") match {
 			case Some(x) => {
 				x.text match {
@@ -325,7 +408,7 @@ Timer.timer.measure("SVGArmatureLoader.load()") {
 
 	/** Retrieve the fill value of the 'style' attribute of a SVG node and return the values for red and green,
 	  * used to give a type and identifier of a pivot or anchor point. */
-	def getFill(node:Node):(Int,Int) = {
+	protected def getFill(node:Node):(Int,Int) = {
 		val style   = (node \ "@style").text
 		val value   = SVGFillExp.findFirstIn(style).getOrElse(throw ArmatureParseException("no fill on marker, need color to know marker type"))
 
@@ -335,8 +418,13 @@ Timer.timer.measure("SVGArmatureLoader.load()") {
 		}
 	}
 
-	/** Build an Armature from the parsed [[areas]] and the [[armatureDecl]]. */
-	def buildArmature(name:String, texRes:String, shaderRes:String, scale:Double):Armature = {
+// == 2nd Pass : Armature building ======================================
+
+	/** Build an Armature from the parsed [[areas]] and the [[armatureDecl]]. See the first
+	  * pass in `parseArmature()`. After this second pass,
+	  * joints are organized in a hierarchy. Their values are still in absolute pixels. You
+	  * need to create the [[Armature]] by retrieving the root joint. */
+	protected def buildArmature() {
 		armatureDecl.split(';').foreach { areaDecl =>
 			val parts = areaDecl.trim.split('=')
 
@@ -353,16 +441,11 @@ Timer.timer.measure("SVGArmatureLoader.load()") {
 			if(joint._2.fromUV eq null) // not initialized ?
 				throw new ArmatureParseException(s"a joint `${joint._2.name} is used in the armature but never defined")
 		}
-
-		val root = joints.get("root").getOrElse(throw new ArmatureParseException("no 'root' joint found"))
-
-		//Armature(name, 1.0/max(pagew,pageh), Point2(pagew, pageh), texRes, shaderRes, root)
-		Armature(name, scale, Point2(pagew, pageh), texRes, shaderRes, root)
 	}
 
 	/** Parse a joint declaration and fill the joint with the corresponding area information.
 	  * Setup the children joints if indicated. */
-	def parseJointDeclaration(joint:Joint, declaration:String) {
+	protected def parseJointDeclaration(joint:Joint, declaration:String) {
 		declaration match {
 			case JointDeclarationExp(part, subs) => {
 				var sub = if(subs ne null) subs.substring(1,subs.length-1).split(",") else Array[String]()
@@ -412,6 +495,36 @@ Timer.timer.measure("SVGArmatureLoader.load()") {
 			joints += (name -> j)
 			
 			j
+		}
+	}
+
+// == ARM format =============================================
+
+	protected def toARMHeader(out:PrintStream) {
+		out.print("ARM001%n".formatLocal(Locale.US))
+	}
+
+	protected def toARMFooter(out:PrintStream, armatureId:String, scale:Double) {
+		out.print("A[\"%s\", (%f, %f), %f]%n".formatLocal(Locale.US, armatureId, pagew, pageh, scale))
+	}
+
+	protected def toARMJointsDict(out:PrintStream, joint:Joint, unicity:HashSet[String]) {
+		if(joint.subUnder ne null) joint.subUnder.foreach { toARMJointsDict(out, _, unicity) }
+		if(joint.subAbove ne null) joint.subAbove.foreach { toARMJointsDict(out, _, unicity) }
+
+		if(!unicity.contains(joint.name)) {
+			//       name    z   area              pivot     anchor    vis    
+			out.print("J[\"%s\", %s, (%f, %f, %f, %f), (%f, %f), (%f, %f), %d,".formatLocal(Locale.US,
+				joint.name, joint.z, joint.fromUV.x, joint.fromUV.y, joint.sizeUV.x, joint.sizeUV.y,
+				joint.pivotGU.x, joint.pivotGU.y, joint.anchorGU.x, joint.anchorGU.y, 
+				if(joint.visible) 1 else 0)
+			)
+			
+			out.print(" {%s},".formatLocal(Locale.US, if(joint.subUnder ne null) joint.subUnder.map(_.name).mkString(", ") else ""))
+			out.print(" {%s}".formatLocal(Locale.US, if(joint.subAbove ne null) joint.subAbove.map(_.name).mkString(", ") else ""))
+			out.print("]%n".formatLocal(Locale.US))
+
+			unicity += joint.name
 		}
 	}
 }

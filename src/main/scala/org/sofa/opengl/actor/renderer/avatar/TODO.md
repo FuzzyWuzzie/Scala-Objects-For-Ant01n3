@@ -32,15 +32,11 @@
     The current way is to put a "InParallel" in a "Loop", but this forces to wait for the end
     of the longest behavior in the "InParallel" behavior.
 * Add "FromVariable" behavior that scale a value (scale, translation, angle) to an external variable. Question : how to specify how to reach/read the variable. (via an interface on objects that can be named in the library ? --> AnimatedValues ?)
-* Add a better Armature loader from a specific format. The format could be created from the old SVG format into a more compact and much faster simple text format. A possible format for a joint
-
-    // id   z   area           pivot  anchor  visible sub-joints
-    ["name", 0, (x1,y1,x2,y2), (x,y), (x,y),  true,   {[..], [..], ..}]
+* Change the loadresources of Libraries, the XML lib of Scala is very slow. A dedicated format ? JSON ??
 
 ## Library/Resources
 
 * Allow the Library to be actor based, loading elements in the background ? Return a Future instead of an item ? How to handle the fact OpenGL is not thread safe ?
-* Allow to save texture images in a format that is correctly oriented and with premultiplied alpha to avoid doing this at runtime.
 * Allow to forget texture resources after they are uploaded to OpenGL to save memory.
 
 ## Game

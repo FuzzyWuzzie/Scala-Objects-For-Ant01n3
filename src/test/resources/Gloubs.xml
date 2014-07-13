@@ -31,11 +31,16 @@
 	</texs>
 	<armatures>
 		<!--armature id="gloub-armature"    tex="gloub-color"    shader="armature-shader"  svg="Gloubs.svg"   armatureid="ArmatureGloub" scale="0.0025"/-->
-		<armature id="habitat1-armature" tex="habitat1-color" shader="armature-shader"  svg="Habitats.svg" armatureid="Habitat1" scale="0.0025"/>
+		<!--armature id="habitat1-armature" tex="habitat1-color" shader="armature-shader"  svg="Habitats.svg" armatureid="Habitat1" scale="0.0025"/>
 		<armature id="bolok-armature"    tex="bolok-color"    shader="armature-shader"  svg="Boloks.svg"   armatureid="Bolok1" scale="0.0025"/>
 		<armature id="dock-armature"     tex="bolok-color"    shader="armature-shader"  svg="Boloks.svg"   armatureid="Dock1" scale="0.0025"/>
 		<armature id="somadrop-armature" tex="habitat1-color" shader="armature-shader"  svg="Habitats.svg" armatureid="SomaDrop" scale="0.0025"/>
-		<armature id="dock2-armature"    tex="bolok-color"    shader="armature-shader2" svg="Boloks.svg"   armatureid="Dock2" scale="0.0025"/>
+		<armature id="dock2-armature"    tex="bolok-color"    shader="armature-shader2" svg="Boloks.svg"   armatureid="Dock2" scale="0.0025"/-->
+		<armature id="habitat1-armature" tex="habitat1-color" shader="armature-shader"  svg="Habitats_Habitat1.arm" armatureid="Habitat1"  scale="0.0025"/>
+		<armature id="bolok-armature"    tex="bolok-color"    shader="armature-shader"  svg="Boloks_Bolok1.arm"     armatureid="Bolok1"    scale="0.0025"/>
+		<armature id="dock-armature"     tex="bolok-color"    shader="armature-shader"  svg="Boloks_Dock1.arm"      armatureid="Dock1"     scale="0.0025"/>
+		<armature id="somadrop-armature" tex="habitat1-color" shader="armature-shader"  svg="Habitats_SomaDrop.arm" armatureid="SomaDrop"  scale="0.0025"/>
+		<armature id="dock2-armature"    tex="bolok-color"    shader="armature-shader2" svg="Boloks_Dock2.arm"      armatureid="Dock2"     scale="0.0025"/>
 	</armatures>
 	<behaviors>
 		<!--lerp-to-position arm="gloub-armature" joint="eye" id="gloub-eye-to-left" value="(-0.02,0)" duration="1000"/>
