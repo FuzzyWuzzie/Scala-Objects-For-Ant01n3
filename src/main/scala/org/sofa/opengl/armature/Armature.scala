@@ -34,7 +34,7 @@ class DefaultArmatureLoader extends ArmatureLoader {
     def open(name:String, texRes:String, shaderRes:String,
     		 resource:String, armatureId:String="Armature", scale:Double = 1.0):Armature = {
         if(resource.endsWith(".arm")) {
-        	ARMLoader.load(name, texRes, shaderRes, findPath(resource, Armature.path), armatureId, scale)
+        	ARMLoader.load(findPath(resource, Armature.path), texRes, shaderRes, scale)
         } else {
         	SVGLoader.load(name, texRes, shaderRes, findPath(resource, Armature.path), armatureId, scale)
         }

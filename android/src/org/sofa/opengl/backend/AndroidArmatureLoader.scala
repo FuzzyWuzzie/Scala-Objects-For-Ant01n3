@@ -11,7 +11,8 @@ import org.sofa.opengl.armature.{Armature, ArmatureLoader, SVGArmatureLoader}
 class AndroidArmatureLoader(val resources:Resources) extends AndroidLoader with ArmatureLoader {
 	private[this] val SVGLoader = new SVGArmatureLoader()
 
-    def open(name:String, texRes:String, shaderRes:String, resource:String):Armature = {
-        SVGLoader.load(name, texRes, shaderRes, resources.getAssets.open(searchInAssets(resource, Armature.path)))
+    def open(name:String, texRes:String, shaderRes:String,
+    		 resource:String, armatureId:String="Armature", scale:Double = 1.0):Armature = {
+        SVGLoader.load(name, texRes, shaderRes, resources.getAssets.open(searchInAssets(resource, Armature.path)), armatureId, scale)
     }
 }

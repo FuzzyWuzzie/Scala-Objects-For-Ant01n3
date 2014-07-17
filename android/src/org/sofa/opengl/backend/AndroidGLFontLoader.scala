@@ -11,7 +11,8 @@ import scala.math._
 
 /** Font loader for Android using the bitmap and canvas method to retrieve the font texture. */
 class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with AndroidLoader {
-	def load(gl:SGL, resource:String, size:Int, font:GLFont) {
+	def load(gl:SGL, resource:String, size:Int, font:GLFont, mipmaps:Boolean, rasterizeMipMaps:Boolean, optimizeFor3D:Boolean) {
+	//def load(gl:SGL, resource:String, size:Int, font:GLFont) {
 		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
 
 		font.isAlphaPremultiplied = false

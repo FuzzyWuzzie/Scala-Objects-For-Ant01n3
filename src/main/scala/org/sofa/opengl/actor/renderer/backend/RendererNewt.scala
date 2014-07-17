@@ -42,107 +42,107 @@ class RendererNewt(factory:AvatarFactory=null) extends Renderer(factory) {
 	    		fps, decorated, fullscreen)
 	}
 
-	def onScroll(surface:Surface, e:ScrollEvent) {
-		if(screen ne null) {
-			screen.propagateEvent(NewtAvatarZoomEvent(e))
-		}
-	}
+	// def onScroll(surface:Surface, e:ScrollEvent) {
+	// 	if(screen ne null) {
+	// 		screen.propagateEvent(NewtAvatarZoomEvent(e))
+	// 	}
+	// }
 
-	def onKey(surface:Surface, e:KeyEvent) {
-		if(screen ne null) {
-			screen.propagateEvent(NewtAvatarKeyEvent(e))
-		}
-	}
+	// def onKey(surface:Surface, e:KeyEvent) {
+	// 	if(screen ne null) {
+	// 		screen.propagateEvent(NewtAvatarKeyEvent(e))
+	// 	}
+	// }
 
-	protected var prevMotionEvent:MotionEvent = null
+	// protected var prevMotionEvent:MotionEvent = null
 
-	protected var prevMotionEventTime:Long = 0L
+	// protected var prevMotionEventTime:Long = 0L
 
-	def onMotion(surface:Surface, e:MotionEvent) {
-		if(screen ne null) {
-			// We used isStart/isEnd to track motion
-			// click and long clicks.
+	// def onMotion(surface:Surface, e:MotionEvent) {
+	// 	if(screen ne null) {
+	// 		// We used isStart/isEnd to track motion
+	// 		// click and long clicks.
 
-			if(prevMotionEvent eq null) {
-				assert(e.isStart)
-				prevMotionEvent = e
-				prevMotionEventTime = System.currentTimeMillis
-			} else {
-				if(e.isEnd) {
-					if(prevMotionEvent.isStart) {
-						val deltaTime = System.currentTimeMillis - prevMotionEventTime
-						if(deltaTime >= 1000) {
-							// Long click.
-							//println("@@ long click")
-							screen.propagateEvent(NewtAvatarLongClickEvent(e))
-						} else {
-							// Click
-							//println("@@ click")
-							screen.propagateEvent(NewtAvatarClickEvent(e))
-						}
-					} else {
-						// Send end motion
-						screen.propagateEvent(NewtAvatarMotionEvent(e))
-						//println("@@ motion end")
+	// 		if(prevMotionEvent eq null) {
+	// 			assert(e.isStart)
+	// 			prevMotionEvent = e
+	// 			prevMotionEventTime = System.currentTimeMillis
+	// 		} else {
+	// 			if(e.isEnd) {
+	// 				if(prevMotionEvent.isStart) {
+	// 					val deltaTime = System.currentTimeMillis - prevMotionEventTime
+	// 					if(deltaTime >= 1000) {
+	// 						// Long click.
+	// 						//println("@@ long click")
+	// 						screen.propagateEvent(NewtAvatarLongClickEvent(e))
+	// 					} else {
+	// 						// Click
+	// 						//println("@@ click")
+	// 						screen.propagateEvent(NewtAvatarClickEvent(e))
+	// 					}
+	// 				} else {
+	// 					// Send end motion
+	// 					screen.propagateEvent(NewtAvatarMotionEvent(e))
+	// 					//println("@@ motion end")
 
-					}
-					prevMotionEvent = null
-				} else {
-					prevMotionEvent = e
-					// Send motion
-					//println("@@ motion")
-					screen.propagateEvent(NewtAvatarMotionEvent(e))
-				}
-			}
-		}
-	}
+	// 				}
+	// 				prevMotionEvent = null
+	// 			} else {
+	// 				prevMotionEvent = e
+	// 				// Send motion
+	// 				//println("@@ motion")
+	// 				screen.propagateEvent(NewtAvatarMotionEvent(e))
+	// 			}
+	// 		}
+	// 	}
+	// }
 }
 
 
-object NewtAvatarClickEvent { def apply(source:MotionEvent) = new NewtAvatarClickEvent(source) }
-class NewtAvatarClickEvent(val source:MotionEvent) extends AvatarClickEvent {
-	def position:Point3 = Point3(source.x, source.y, 0)
-}
+// object NewtAvatarClickEvent { def apply(source:MotionEvent) = new NewtAvatarClickEvent(source) }
+// class NewtAvatarClickEvent(val source:MotionEvent) extends AvatarClickEvent {
+// 	def position:Point3 = Point3(source.x, source.y, 0)
+// }
 
 
-object NewtAvatarLongClickEvent { def apply(source:MotionEvent) = new NewtAvatarLongClickEvent(source) }
-class NewtAvatarLongClickEvent(val source:MotionEvent) extends AvatarLongClickEvent {
-	def position:Point3 = Point3(source.x, source.y, 0)
-}
+// object NewtAvatarLongClickEvent { def apply(source:MotionEvent) = new NewtAvatarLongClickEvent(source) }
+// class NewtAvatarLongClickEvent(val source:MotionEvent) extends AvatarLongClickEvent {
+// 	def position:Point3 = Point3(source.x, source.y, 0)
+// }
 
 
-object NewtAvatarMotionEvent { def apply(source:MotionEvent) = new NewtAvatarMotionEvent(source) }
-class NewtAvatarMotionEvent(val source:MotionEvent) extends AvatarMotionEvent {
-	def position:Point3 = Point3(source.x, source.y, 0)
+// object NewtAvatarMotionEvent { def apply(source:MotionEvent) = new NewtAvatarMotionEvent(source) }
+// class NewtAvatarMotionEvent(val source:MotionEvent) extends AvatarMotionEvent {
+// 	def position:Point3 = Point3(source.x, source.y, 0)
 
-	def pointerCount:Int = source.pointerCount
+// 	def pointerCount:Int = source.pointerCount
 
-	def position(i:Int):Point3 = Point3(source.x(i), source.y(i), 0)
+// 	def position(i:Int):Point3 = Point3(source.x(i), source.y(i), 0)
 
-	def isStart:Boolean = source.isStart
+// 	def isStart:Boolean = source.isStart
 
-	def isEnd:Boolean = source.isEnd
+// 	def isEnd:Boolean = source.isEnd
 
-	def pressure:Double = source.pressure
+// 	def pressure:Double = source.pressure
 
-	def pressure(i:Int):Double = source.pressure(i)
+// 	def pressure(i:Int):Double = source.pressure(i)
 
-}
+// }
 
-object NewtAvatarZoomEvent { def apply(source:ScrollEvent) = new NewtAvatarZoomEvent(source) }
-class NewtAvatarZoomEvent(val source:ScrollEvent) extends AvatarZoomEvent {
-	// TODO probably add a factor...
-	def amount:Double = source.amount
-}
+// object NewtAvatarZoomEvent { def apply(source:ScrollEvent) = new NewtAvatarZoomEvent(source) }
+// class NewtAvatarZoomEvent(val source:ScrollEvent) extends AvatarZoomEvent {
+// 	// TODO probably add a factor...
+// 	def amount:Double = source.amount
+// }
 
 
-object NewtAvatarKeyEvent { def apply(source:KeyEvent) = new NewtAvatarKeyEvent(source) }
-class NewtAvatarKeyEvent(val source:KeyEvent) extends AvatarKeyEvent {
-	def actionChar:org.sofa.opengl.surface.ActionChar.Value = source.actionChar
-	def unicodeChar:Char = source.unicodeChar
-	def isControlDown:Boolean = source.isControlDown
-    def isAltDown:Boolean = source.isAltDown
-    def isAltGrDown:Boolean = source.isAltGrDown
-    def isShiftDown:Boolean = source.isShiftDown
-    def isMetaDown:Boolean = source.isMetaDown
-}
+// object NewtAvatarKeyEvent { def apply(source:KeyEvent) = new NewtAvatarKeyEvent(source) }
+// class NewtAvatarKeyEvent(val source:KeyEvent) extends AvatarKeyEvent {
+// 	def actionChar:org.sofa.opengl.surface.ActionChar.Value = source.actionChar
+// 	def unicodeChar:Char = source.unicodeChar
+// 	def isControlDown:Boolean = source.isControlDown
+//     def isAltDown:Boolean = source.isAltDown
+//     def isAltGrDown:Boolean = source.isAltGrDown
+//     def isShiftDown:Boolean = source.isShiftDown
+//     def isMetaDown:Boolean = source.isMetaDown
+// }

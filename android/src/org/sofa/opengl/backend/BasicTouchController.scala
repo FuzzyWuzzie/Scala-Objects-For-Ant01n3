@@ -13,13 +13,13 @@ class BasicTouchController(camera:Camera) extends BasicCameraController(camera) 
 		} else if(event.isEnd) {
 			vector.set(event.x-oldPos.x, event.y-oldPos.y, 0)
 			oldPos.set(event.x, event.y, event.pressure)
-			camera.rotateViewHorizontal(vector.x*0.005)
-			camera.rotateViewVertical(-vector.y*0.005)
+			camera.rotateEyeHorizontal(vector.x*0.005)
+			camera.rotateEyeVertical(-vector.y*0.005)
 		} else {
 			vector.set(event.x-oldPos.x, event.y-oldPos.y, 0)
 			oldPos.set(event.x, event.y, event.pressure)
-			camera.rotateViewHorizontal(vector.x*0.005)
-			camera.rotateViewVertical(-vector.y*0.005)
+			camera.rotateEyeHorizontal(vector.x*0.005)
+			camera.rotateEyeVertical(-vector.y*0.005)
 		}
 	}
 }

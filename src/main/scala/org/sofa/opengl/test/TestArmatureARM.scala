@@ -21,7 +21,7 @@ class TestArmatureARM {
 			SVGLoader.convertToARM("robot", ArmatureSVGFile, "Armature", 1.0, ArmatureARMFile)
 		}
 		Timer.timer.measure("ARM load") {
-			ARMLoader.load("robot", "", "", ArmatureARMFile, "Armature", 1.0)
+			ARMLoader.load(ArmatureARMFile, "", "", 1.0)
 		}
 		Timer.timer.printAvgs("SVG -> ARM")
 	}

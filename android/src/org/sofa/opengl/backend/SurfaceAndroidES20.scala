@@ -1,21 +1,30 @@
 package org.sofa.opengl.backend
 
+import org.sofa.backend.SOFALog
 import org.sofa.opengl._
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer}
+
 import android.opengl.GLSurfaceView
 import android.content.Context
 import android.app.Activity
+
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+
 
 /** A surface that is suitable for an Android application.
   *
   * The constructor of this class must be (Context,AttributeSet), this is
   * required to instantiate it automatically. Therefore, you must call
-  * explicitely the buil(SurfaceRenderer,Activity) method to finish the
-  * construction phase. */
+  * explicitely the `build(SurfaceRenderer,Activity)` method to finish the
+  * construction phase. 
+  *
+  * Be careful that the surface renderer will run in a dedicated thread
+  * for this surface.
+  *
+  * By default the surface is created in 32bits RGBA with a 16bits depth buffer. */
 class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
-	extends GLSurfaceView(context, attrs) with Surface with GLSurfaceView.Renderer {
+	extends GLSurfaceView(context, attrs) with Surface with GLSurfaceView.Renderer with SOFALog {
 
 	/** Gl Context. */
     protected var sgl:SGL = null
@@ -27,7 +36,7 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     protected var h:Int = 0
 
     /** Requested frames per second. */
-    protected var fps:Int = 25
+    protected var fps:Int = 30
 
     /** Used to compute fps. */
     protected var endTime:Long = 0
@@ -47,11 +56,16 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     //build
 
     def build(renderer:SurfaceRenderer, activity:Activity) {
+    	build(renderer, activity, 30)
+    }
+
+    def build(renderer:SurfaceRenderer, activity:Activity, fps:Int) {
         setEGLContextClientVersion(2)
         setEGLConfigChooser(8,8,8,8,16,0)
 
         this.renderer = renderer
         this.activity = activity
+        this.fps      = fps
     
         if(created) {
             if(renderer.initSurface ne null) renderer.initSurface(gl, this)
@@ -60,7 +74,7 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
         setRenderer(this)
     }
     
-    def gl:SGL = { if(sgl eq null) sgl = new SGLAndroidES20(); sgl }
+    def gl:SGL = { if(sgl eq null) sgl = new SGLAndroidES20("110"); sgl }
     def width:Int = w
     def height:Int = h
     def swapBuffers():Unit = {}	// Implicit with Android.
@@ -147,9 +161,24 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     	// XXX 
     }
 
-    def invoke(code:(Surface)=>Boolean) { val me=this; activity.runOnUiThread(new Runnable() { override def run() { code(me) } } ) }
+    def invoke(code:(Surface)=>Boolean) {
+    	val me = this
+    	//activity.runOnUiThread(new Runnable() { override def run() { code(me) } } ) 
+    	queueEvent(
+    		new Runnable() { override def run() { code(me) } }
+    	)
+    }
 
-    def invoke(runnable:Runnable) { activity.runOnUiThread(runnable) }
+    def invoke(runnable:Runnable) { 
+    	//activity.runOnUiThread(runnable)
+    	queueEvent(runnable)
+    }
+
+    def destroy() {
+    	// TODO ? HOW ?
+    }
+
+	def fullscreen(on: Boolean) { /* TODO ? HOW ? */ }
 }
 
 class ScrollEventAndroid(val source:android.view.MotionEvent) extends org.sofa.opengl.surface.ScrollEvent {

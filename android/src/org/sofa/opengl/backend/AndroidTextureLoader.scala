@@ -126,7 +126,7 @@ class TextureImageAndroid(val data:ScalaArrayBuffer[Bitmap], val params:TexParam
     protected def imageDataRgba(image:Bitmap, premultiplyAlpha:Boolean):ByteBuffer = {
     	val width  = image.getWidth
     	val height = image.getHeight
-    	val bytes  = new ByteBuffer(width*height*4, true)
+    	val bytes  = ByteBuffer(width*height*4, true)
 
     	// Very very inefficient.
 
@@ -165,7 +165,7 @@ class TextureImageAndroid(val data:ScalaArrayBuffer[Bitmap], val params:TexParam
         val width  = image.getWidth
         val height = image.getHeight
         val pad    = (align - (width % align)) % align
-        val buf    = new ByteBuffer((width + pad) * height, true)   // Take care to pad data on 4 bytes.
+        val buf    = ByteBuffer((width + pad) * height, true)   // Take care to pad data on 4 bytes.
         
         // Very, but very, inefficient. All this to add padding.
         // I have to do test to assert this will bring a a real
@@ -174,8 +174,8 @@ class TextureImageAndroid(val data:ScalaArrayBuffer[Bitmap], val params:TexParam
         // on Android, where 8 bit grey bitmaps getPixel or
         // getPixels always return black... No luck.
 Console.err.println("## Be careful very slow texImage2D for grey bitmap with unpack align != 4")
-        val bytes = new ByteBuffer(width*height, true)
-        image.copyPixelsToBuffer(bytes.buffer) 
+        val bytes = ByteBuffer(width*height, true)
+        image.copyPixelsToBuffer(bytes.buffer.asInstanceOf[java.nio.ByteBuffer]) 
 
 		var y = 0        
 		var x = 0

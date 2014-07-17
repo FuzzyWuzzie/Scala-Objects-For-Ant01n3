@@ -2,13 +2,18 @@
 
 ## Priority list and roadmap:
 
-1. Displacement on the map
+0. Test on Android.
+1. Creation and representation of the map in the model.
+    - a format to store it on disk.
+    - a way to represent it on memory.
+    - a way to communicate with entities actors ? (constraints, events...)
+2. Displacement on the map
     - On the model side.
     - On the avatar side, we provides simple ways to displace avatars.
-2. Add ordered rendering in AvatarContainer.
-3. Add selective rendering
-4. Picking
-5. Test on Android
+3. Add a more efficient ordered rendering in AvatarContainer.
+4. Add selective rendering.
+5. Picking.
+6. Test on Android.
 
 ## Avatars
 
@@ -25,23 +30,32 @@
 
 ## Behaviors/Armature
 
+* Extend behavior to Avatars in order to move/scale/rotate them ?
 * Handle animation of particles in behaviors ?
     - Allow a part of an armature to be instanced multiple times for particles ?
+    - Already possible with almost no change in the Armature.
 * Add "Composition" behavior to activate several behaviors at will.
- Add "InParallelLoop" that runs several behaviors in parallel repeating them as fast as possible.
+* Add "InParallelLoop" that runs several behaviors in parallel repeating them as fast as possible.
     The current way is to put a "InParallel" in a "Loop", but this forces to wait for the end
     of the longest behavior in the "InParallel" behavior.
 * Add "FromVariable" behavior that scale a value (scale, translation, angle) to an external variable. Question : how to specify how to reach/read the variable. (via an interface on objects that can be named in the library ? --> AnimatedValues ?)
-* Change the loadresources of Libraries, the XML lib of Scala is very slow. A dedicated format ? JSON ??
 
 ## Library/Resources
 
 * Allow the Library to be actor based, loading elements in the background ? Return a Future instead of an item ? How to handle the fact OpenGL is not thread safe ?
-* Allow to forget texture resources after they are uploaded to OpenGL to save memory.
+* Allow to forget texture resources after they are uploaded to OpenGL to save memory !
+* Change the loadresources of Libraries, the XML lib of Scala is very slow. A dedicated format ? JSON ??
 
 ## Game
 
 * Handle paths inside each cell of the cell grids, allowing Entities to follow these paths. Use a graph ? Use only "sub-cells" ?
+    - This could be only a hash-space based set of obstacles, and a grid space ?
+    - However how do we do our A* on this ?
+    - Avatar could be equiped to move linearly between two points at a given speed.
+    - The model is where the complex calculus of displacement takes place.
+    - Events are exchanged between avatars and the model to tell when the avatar reached its position ?
+        + The other way to do it is to tell the avatar that at the given time it must be at a given point.
+        + The avatar computes the displacement based on the frame time.
 * A *level file* with the right reader to load levels. An ASCII map ?
 
 ## CSS

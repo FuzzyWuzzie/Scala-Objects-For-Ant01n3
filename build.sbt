@@ -10,6 +10,8 @@ scalacOptions += "-feature"
 
 scalacOptions += "-Ydelambdafy:method"
 
+scalacOptions += "-target:jvm-1.7"
+
 fork := true
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"

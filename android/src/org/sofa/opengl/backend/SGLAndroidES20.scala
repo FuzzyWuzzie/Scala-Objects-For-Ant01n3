@@ -8,8 +8,16 @@ import android.opengl.{GLES20, GLU}
 import android.util.Log
 import android.graphics.BitmapFactory
 
+import scala.language.implicitConversions
+
+
 class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     private[this] val ib1 = NioIntBuffer.allocate(1)
+
+    implicit def FBtoJFB(from:FloatBuffer):NioFloatBuffer = from.buffer.asInstanceOf[NioFloatBuffer]
+    implicit def BBtoJBB(from:ByteBuffer):NioByteBuffer = from.buffer.asInstanceOf[NioByteBuffer]
+    implicit def IBtoJIB(from:IntBuffer):NioIntBuffer = from.buffer.asInstanceOf[NioIntBuffer]
+    implicit def DBtoJDB(from:DoubleBuffer):NioDoubleBuffer = from.buffer.asInstanceOf[NioDoubleBuffer]
 
 // Awful constants
 	
@@ -178,27 +186,27 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	}
 
 	def bufferData(target:Int, data:DoubleBuffer, mode:Int) {
-	    GLES20.glBufferData(target, data.size*8, data.buffer, mode)
+	    GLES20.glBufferData(target, data.size*8, data, mode)
 	}
 	
 	def bufferData(target:Int, data:Array[Double], mode:Int) {
-	    bufferData(target, new DoubleBuffer(data), mode)
+	    bufferData(target, DoubleBuffer(data), mode)
 	}
 
 	def bufferData(target:Int, data:FloatBuffer, mode:Int) {
-	    GLES20.glBufferData(target, data.size*4, data.buffer, mode)
+	    GLES20.glBufferData(target, data.size*4, data, mode)
 	}
 	
 	def bufferData(target:Int, data:Array[Float], mode:Int) {
-	    bufferData(target, new FloatBuffer(data), mode)
+	    bufferData(target, FloatBuffer(data), mode)
 	}
 
 	def bufferData(target:Int, data:IntBuffer, mode:Int) {
-	    GLES20.glBufferData(target, data.size*4, data.buffer, mode)
+	    GLES20.glBufferData(target, data.size*4, data, mode)
 	}
 	
 	def bufferData(target:Int, data:Array[Int], mode:Int) {
-	    bufferData(target, new IntBuffer(data), mode)
+	    bufferData(target, IntBuffer(data), mode)
 	}
 
 	def bufferData(target:Int, data:NioBuffer, mode:Int) {
@@ -288,9 +296,9 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     def useProgram(id:AnyRef) = GLES20.glUseProgram(if(id eq null) 0 else id.asInstanceOf[Integer].toInt)
     def deleteProgram(id:AnyRef) = GLES20.glDeleteProgram(id.asInstanceOf[Integer].toInt)
     
-    def getAttribLocation(programId:AnyRef, attribute:String):Int = GLES20.glGetAttribLocation(id.asInstanceOf[Integer].toInt, attribute)
+    def getAttribLocation(programId:AnyRef, attribute:String):Int = GLES20.glGetAttribLocation(programId.asInstanceOf[Integer].toInt, attribute)
     def getUniformLocation(programId:AnyRef, variable:String):AnyRef = {
-    	val l = GLES20.glGetUniformLocation(id.asInstanceOf[Integer].toInt, variable).asInstanceOf[Integer]
+    	val l = GLES20.glGetUniformLocation(programId.asInstanceOf[Integer].toInt, variable).asInstanceOf[Integer]
     	if(l < 0) null else l
     } 
 
@@ -307,9 +315,9 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     def uniform(loc:AnyRef, i:Double, j:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
     def uniform(loc:AnyRef, i:Double, j:Double, k:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
     def uniform(loc:AnyRef, i:Double, j:Double, k:Double, l:Double) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
-    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer) = GLES20.glUniformMatrix3fv(loc.asInstanceOf[Integer].toInt, i, b, buffer.buffer)
+    def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer) = GLES20.glUniformMatrix3fv(loc.asInstanceOf[Integer].toInt, i, b, buffer)
     def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
-    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer) = GLES20.glUniformMatrix4fv(loc.asInstanceOf[Integer].toInt, i, b, buffer.buffer)
+    def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:FloatBuffer) = GLES20.glUniformMatrix4fv(loc.asInstanceOf[Integer].toInt, i, b, buffer)
     def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:DoubleBuffer) = throw new RuntimeException("too bad no double for shaders in GL ES 2.0")
     def uniformMatrix3(loc:AnyRef, i:Int, b:Boolean, buffer:Array[Float]) = GLES20.glUniformMatrix3fv(loc.asInstanceOf[Integer].toInt, i, b, buffer, 0)
     def uniformMatrix4(loc:AnyRef, i:Int, b:Boolean, buffer:Array[Float]) = GLES20.glUniformMatrix4fv(loc.asInstanceOf[Integer].toInt, i, b, buffer, 0)

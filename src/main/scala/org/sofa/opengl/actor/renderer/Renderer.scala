@@ -20,10 +20,12 @@ import scala.concurrent.duration._
 import org.sofa.opengl.akka.SurfaceExecutorService
 
 
+/** Base exception for errors when executing a renderer. */
 case class RendererException(msg:String) extends Exception(msg)
 
 
-/** Renderer companion object. */
+/** Renderer companion object. Creates renderers for desktop systems.
+  * Override for other kinds or renderers. */
 object Renderer {
 	def apply(factory:AvatarFactory=null):Renderer = new backend.RendererNewt(factory) 
 }
@@ -31,32 +33,36 @@ object Renderer {
 
 /** A rendering service.
   *
-  * This manages the communication with the OpenGL surface and renders each
-  * screen and their set of avatars and animate them. This starts the rendering
-  * process and controls the whole rendering system.
+  * This manages the communication with the OpenGL surface, renders each
+  * screen and their set of avatars and animate them. This starts the
+  * rendering process and controls the whole rendering system.
   *
-  * This renderer is maintained by a `RendererActor`. However, it
-  * can be used without it.
+  * This renderer is maintained by a `RendererActor`. However, it can be used
+  * without it.
   *
   * The `controler` is an actor that will receive events from the renderer and
-  * renderer actor. The events are defined in the [[RendererControler]] object.
+  * renderer actor. The events are defined in the [[RendererControler]]
+  * object.
   *
-  * A renderer can be seen as a set of screens. It has one current screen (or none),
-  * and can switch between them. Only one screen is visible at a time. Then recursively,
-  * screens can be seen as a set of avatars. See [[Screen]] and [[Avatar]].
+  * A renderer can be seen as a set of screens. It has one current screen (or
+  * none), and can switch between them. Only one screen is visible at a time.
+  * Then recursively, screens can be seen as a set of avatars. See [[Screen]]
+  * and [[Avatar]].
   *
-  * This renderer class is abstract, since it depends on a kind of surface. The
-  * only methods to implement are `newSurface()` which will create a surface depending
-  * on the type of underlying system, and [[org.sofa.opengl.surface.Surface]] event
-  * callbacks `onKey()`, `onMotion()` and `onScroll()`.
+  * This renderer class is abstract, since it depends on a kind of surface and
+  * can adapt to various platforms. The only methods to implement are
+  * `newSurface()` which will create a surface depending on the type of
+  * underlying system, and [[org.sofa.opengl.surface.Surface]] event callbacks
+  * `onKey()`, `onMotion()` and `onScroll()`.
   *
-  * Be very careful. Excepted the creation phase and the `start()` method, the renderer
-  * is made to run in the same thread as its surface. Methods are not synchronized for
-  * efficiency reasons, but you should call them only from the surface thread
-  * (see the [[Surface]] `invoke()` methods). Most of the time you must use the
-  * Controler actor to run the renderer, this actor using a scheduler that uses the
-  * surface thread. However you can also pass code to the `start()` method that will be
-  * run by the renderer just after its initialization, this is the `runAtInit` parameter:
+  * Be very careful. Excepted the creation phase and the `start()` method, the
+  * renderer is made to run in the same thread as its surface. Methods are not
+  * synchronized for efficiency reasons, but you should call them only from
+  * the surface thread (see the [[Surface]] `invoke()` methods). Most of the
+  * time you must use the Controler actor to run the renderer, this actor
+  * using a scheduler that uses the surface thread. However you can also pass
+  * code to the `start()` method that will be run by the renderer just after
+  * its initialization, this is the `runAtInit` parameter:
   *
   *   renderer.start("title", 640, 480, runAtInit = { () =>
   *       // your code here.
@@ -176,11 +182,60 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 		destroy
 	}
 
-	def onScroll(surface:Surface, e:ScrollEvent)
+	def onScroll(surface:Surface, e:ScrollEvent) {
+		if(screen ne null) {
+			screen.propagateEvent(NewtAvatarZoomEvent(e))
+		}
+	}
 
-	def onKey(surface:Surface, e:KeyEvent)
+	def onKey(surface:Surface, e:KeyEvent) {
+		if(screen ne null) {
+			screen.propagateEvent(NewtAvatarKeyEvent(e))
+		}
+	}
 
-	def onMotion(surface:Surface, e:MotionEvent)
+	protected var prevMotionEvent:MotionEvent = null
+
+	protected var prevMotionEventTime:Long = 0L
+
+	def onMotion(surface:Surface, e:MotionEvent) {
+		if(screen ne null) {
+			// We used isStart/isEnd to track motion
+			// click and long clicks.
+
+			if(prevMotionEvent eq null) {
+				assert(e.isStart)
+				prevMotionEvent = e
+				prevMotionEventTime = System.currentTimeMillis
+			} else {
+				if(e.isEnd) {
+					if(prevMotionEvent.isStart) {
+						val deltaTime = System.currentTimeMillis - prevMotionEventTime
+						if(deltaTime >= 1000) {
+							// Long click.
+							//println("@@ long click")
+							screen.propagateEvent(NewtAvatarLongClickEvent(e))
+						} else {
+							// Click
+							//println("@@ click")
+							screen.propagateEvent(NewtAvatarClickEvent(e))
+						}
+					} else {
+						// Send end motion
+						screen.propagateEvent(NewtAvatarMotionEvent(e))
+						//println("@@ motion end")
+
+					}
+					prevMotionEvent = null
+				} else {
+					prevMotionEvent = e
+					// Send motion
+					//println("@@ motion")
+					screen.propagateEvent(NewtAvatarMotionEvent(e))
+				}
+			}
+		}
+	}
 
 // == Rendering ================================
     
@@ -279,4 +334,53 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 
 		result.toString
 	}
+}
+
+
+object NewtAvatarClickEvent { def apply(source:MotionEvent) = new NewtAvatarClickEvent(source) }
+class NewtAvatarClickEvent(val source:MotionEvent) extends AvatarClickEvent {
+	def position:Point3 = Point3(source.x, source.y, 0)
+}
+
+
+object NewtAvatarLongClickEvent { def apply(source:MotionEvent) = new NewtAvatarLongClickEvent(source) }
+class NewtAvatarLongClickEvent(val source:MotionEvent) extends AvatarLongClickEvent {
+	def position:Point3 = Point3(source.x, source.y, 0)
+}
+
+
+object NewtAvatarMotionEvent { def apply(source:MotionEvent) = new NewtAvatarMotionEvent(source) }
+class NewtAvatarMotionEvent(val source:MotionEvent) extends AvatarMotionEvent {
+	def position:Point3 = Point3(source.x, source.y, 0)
+
+	def pointerCount:Int = source.pointerCount
+
+	def position(i:Int):Point3 = Point3(source.x(i), source.y(i), 0)
+
+	def isStart:Boolean = source.isStart
+
+	def isEnd:Boolean = source.isEnd
+
+	def pressure:Double = source.pressure
+
+	def pressure(i:Int):Double = source.pressure(i)
+
+}
+
+object NewtAvatarZoomEvent { def apply(source:ScrollEvent) = new NewtAvatarZoomEvent(source) }
+class NewtAvatarZoomEvent(val source:ScrollEvent) extends AvatarZoomEvent {
+	// TODO probably add a factor...
+	def amount:Double = source.amount
+}
+
+
+object NewtAvatarKeyEvent { def apply(source:KeyEvent) = new NewtAvatarKeyEvent(source) }
+class NewtAvatarKeyEvent(val source:KeyEvent) extends AvatarKeyEvent {
+	def actionChar:org.sofa.opengl.surface.ActionChar.Value = source.actionChar
+	def unicodeChar:Char = source.unicodeChar
+	def isControlDown:Boolean = source.isControlDown
+    def isAltDown:Boolean = source.isAltDown
+    def isAltGrDown:Boolean = source.isAltGrDown
+    def isShiftDown:Boolean = source.isShiftDown
+    def isMetaDown:Boolean = source.isMetaDown
 }

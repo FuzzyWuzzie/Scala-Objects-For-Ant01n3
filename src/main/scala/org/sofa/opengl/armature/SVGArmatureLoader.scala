@@ -157,32 +157,14 @@ object SVGArmatureLoader {
   * Therefore the better way to work is to create armatures art using Inkscape, convert it to ARM,
   * then use ARM inside programs.
   *
-  * # ARM file format
-  *
-  * The format is a simple text file. It always begins with "ARM001" this is the magic number
-  * and also indicates the version of the format.
-  *
-  * Then follow a set of "joint" lines of the form:
-  *
-  *     J["<name>", <z>, (<fromx>, <fromy>, <sizex>, <sizey>), (), (), <visibility>, {<under>}, {<above>}]
-  *
-  * The joints are always given in an order that gives joints lower in the hierarhy first. This 
-  * could potentially allow to build the joints as soon as encoutered in the file, since sub-joints
-  * will already have been declared. This is true even for armatures that reference the same joint
-  * several times. The format support this and the shared joint is declared only once in the file,
-  * before it is first needed.
-  *
-  * Finally the file ends with an "armature" line of the form:
-  * 
-  *     A["<name>", (<pagew>, <pageh>), <scale>]
-  *
-  * The fact the armature comes last allow to build the armature from all the previous joints when
-  * encountered in the file, at the end.
+  * See the ARM format description in the [[ARMArmatureLoader]] class.
   *
   * # Notes
   *
   * The loader is reusable to load or convert several armatures.
+  *
   * The same armature joint can be referenced at several places in the same armature.
+  * However circular dependancies are not possible (no cycles).
   */
 class SVGArmatureLoader {
 	import SVGArmatureLoader._
@@ -259,7 +241,7 @@ class SVGArmatureLoader {
 
 		toARMHeader(out)
 		toARMJointsDict(out, root, unicity)
-		toARMFooter(out, armatureId, scale)
+		toARMFooter(out, armatureId)
 
 		clear
 	}
@@ -504,8 +486,8 @@ class SVGArmatureLoader {
 		out.print("ARM001%n".formatLocal(Locale.US))
 	}
 
-	protected def toARMFooter(out:PrintStream, armatureId:String, scale:Double) {
-		out.print("A[\"%s\", (%f, %f), %f]%n".formatLocal(Locale.US, armatureId, pagew, pageh, scale))
+	protected def toARMFooter(out:PrintStream, armatureId:String) {
+		out.print("A[\"%s\", (%f, %f)]%n".formatLocal(Locale.US, armatureId, pagew, pageh))
 	}
 
 	protected def toARMJointsDict(out:PrintStream, joint:Joint, unicity:HashSet[String]) {
