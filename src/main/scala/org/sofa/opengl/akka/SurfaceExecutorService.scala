@@ -55,6 +55,9 @@ object SurfaceExecutorService extends AbstractExecutorService {
 	/** The actual surface used for rendering. */
 	private[this] var surface:Surface = null
 
+	/** The surface, if set, else null. */
+	def getSurface:Surface = surface
+
 	/** The actual surface used for rendering. There can be only one such surface
 	  * at a time. It is used to execute actions in the thread managing the surface.
 	  * This is a field that is set at runtime for the only actor that will

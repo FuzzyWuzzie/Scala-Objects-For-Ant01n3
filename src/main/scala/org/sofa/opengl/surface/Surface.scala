@@ -46,6 +46,7 @@ abstract trait Surface {
     def destroy()
 }
 
+
 /** Rendering and event managing class associated to a rendering surface.
   * 
   * In the model used by SGL, each rendering surface has a renderer associated to it.

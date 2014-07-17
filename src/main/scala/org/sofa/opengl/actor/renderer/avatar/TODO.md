@@ -46,6 +46,12 @@
 * Allow to forget texture resources after they are uploaded to OpenGL to save memory !
 * Change the loadresources of Libraries, the XML lib of Scala is very slow. A dedicated format ? JSON ??
 
+## Surface
+
+* Rething events to better adapt to both tactile and mouse driven interfaces.
+    - Lot of work !!
+* Also may allow to avoid a convertion between Surface events and Renderer events.
+
 ## Game
 
 * Handle paths inside each cell of the cell grids, allowing Entities to follow these paths. Use a graph ? Use only "sub-cells" ?

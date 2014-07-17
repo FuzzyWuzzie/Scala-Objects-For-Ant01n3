@@ -24,10 +24,19 @@ import org.sofa.opengl.akka.SurfaceExecutorService
 case class RendererException(msg:String) extends Exception(msg)
 
 
-/** Renderer companion object. Creates renderers for desktop systems.
-  * Override for other kinds or renderers. */
+trait RendererFactory {
+	/** Create a new renderer. */
+	def newRenderer(avatarFactory:AvatarFactory):Renderer
+}
+
+
+/** Renderer companion object. By default, creates renderers for desktop systems.
+  * Override for other kinds or renderers. Change the `factory` field to create
+  * renderers for other systems. */
 object Renderer {
-	def apply(factory:AvatarFactory=null):Renderer = new backend.RendererNewt(factory) 
+	var factory:RendererFactory = new org.sofa.opengl.actor.renderer.backend.RendererFactoryNewt()
+
+	def apply(avatarFactory:AvatarFactory=null):Renderer = factory.newRenderer(avatarFactory)
 }
 
 

@@ -20,7 +20,9 @@ object TestIsoGame extends App {
 	SurfaceExecutorService.configure
 	val system = ActorSystem(Title)
 	val isoGame = system.actorOf(Props[IsoGame], name=Title)
-	isoGame ! "start"
+
+	RendererActor(system, isoGame, 
+		Renderer(new IsoWorldAvatarFactory()), TestIsoGame.Title, 800, 600, 30, true, false, 4)
 }
 
 
@@ -30,10 +32,6 @@ class IsoGame extends Actor {
 	protected[this] var renderer:ActorRef = null
 
 	def receive = {
-		case "start" => {
-			RendererActor(context, self, 
-				Renderer(new IsoWorldAvatarFactory()), TestIsoGame.Title, 800, 600, 30, true, false, 4)
-		}
 		case RendererController.Start(renderer) => {
 			this.renderer = renderer
 			initGame

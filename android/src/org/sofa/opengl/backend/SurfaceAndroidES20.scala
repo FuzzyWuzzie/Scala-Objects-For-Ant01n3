@@ -72,6 +72,7 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
         }
     
         setRenderer(this)
+        debug(">> GLSurface built waiting creation....")
     }
     
     def gl:SGL = { if(sgl eq null) sgl = new SGLAndroidES20("110"); sgl }
@@ -91,6 +92,7 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     
     def onSurfaceCreated(unused:GL10, config:EGLConfig) {
         created = true
+      	debug(">> GLSurface created !")
     	if((renderer ne null) && (renderer.initSurface ne null)) renderer.initSurface(gl, this)
     }
     
