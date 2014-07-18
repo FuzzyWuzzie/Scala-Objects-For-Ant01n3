@@ -34,7 +34,7 @@ class RendererAndroidES20(activity:Activity, factory:AvatarFactory=null) extends
 	protected def newSurface(renderer:SurfaceRenderer, width:Int, height:Int,
 		title:String, fps:Int, decorated:Boolean, fullscreen:Boolean, overSample:Int):Surface = {	    
 		debug(">>>> RendererAndroidES20.newSurface")		
-		val surface = new SurfaceAndroidES20(activity, null/*Theme.obtainStyledAttributes()*/)
+		val surface = new SurfaceAndroidES20(activity, null/*Theme.obtainStyledAttributes()*/, fps)
 		surface.build(this, activity)
 		surface
 	}

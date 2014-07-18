@@ -32,14 +32,23 @@ abstract trait Surface {
     /** Try to switch the fullscreen mode. */
     def fullscreen(on:Boolean)
 
-    /** Invoke some code to be executed while the OpenGL context is current,
-      * after a call to the SurfaceRenderer.display() method. The given code
-      * must return true if the code does not changed the framebuffer. */
+    /** Invoke some code to be executed while the OpenGL context is current, 
+      * insie the thread used by the surface to do rendering. The code is
+      * executed just after a call to the SurfaceRenderer.display() method.
+      * The given code must return true if the code does not changed the
+      * framebuffer. */
     def invoke(code:(Surface)=>Boolean)
 
-    /** Invoke some code to be executed while the OpenGL context is current,
-      * after a call to the SurfaceRenderer.display() method. */
+    /** Like `invoke(code:(Surface=>Boolean))` but with a `Runnable`. */
     def invoke(runnable:Runnable)
+
+    /** Pause or restart animation. By default animation
+      * is started when the surface is built. Animation calls 
+      * `frame` callback of the surface at a given FPS. If disabled,
+      * the callback is called only when the surface contents may have
+      * been erased.
+      * @param on if false animation is paused. */
+    def animation(on:Boolean)
 
     /** Stop the animation, remove the surface, and free resources. The
       * surface cannot be reused after this. */

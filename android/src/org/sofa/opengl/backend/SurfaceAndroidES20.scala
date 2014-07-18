@@ -23,37 +23,42 @@ import javax.microedition.khronos.opengles.GL10
   * for this surface.
   *
   * By default the surface is created in 32bits RGBA with a 16bits depth buffer. */
-class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
-	extends GLSurfaceView(context, attrs) with Surface with GLSurfaceView.Renderer with SOFALog {
+class SurfaceAndroidES20(
+		context:Context,
+		attrs:android.util.AttributeSet,
+    	/** Requested frames per second. */
+		protected[this] var fps:Int = 30,
+	) extends
+		GLSurfaceView(context, attrs)
+		with Surface
+		with GLSurfaceView.Renderer
+		with SOFALog {
 
 	/** Gl Context. */
-    protected var sgl:SGL = null
+    protected[this] var sgl:SGL = null
 
     /** Width of the surface. */
-    protected var w:Int = 0
+    protected[this] var w:Int = 0
 
     /** Height of the surface. */
-    protected var h:Int = 0
-
-    /** Requested frames per second. */
-    protected var fps:Int = 30
+    protected[this] var h:Int = 0
 
     /** Used to compute fps. */
-    protected var endTime:Long = 0
+    protected[this] var endTime:Long = 0
 
     /** Used to compute fps. */
-    protected var startTime:Long = 0
+    protected[this] var startTime:Long = 0
 
     /** True once the surface is created. */
-    protected var created = false
+    protected[this] var created = false
 
     /** The renderer. */
-    protected var renderer:SurfaceRenderer = null
+    protected[this] var renderer:SurfaceRenderer = null
 
     /** The activity owning this surface (to call code on the UI thread). */
-    protected var activity:Activity = null
+    protected[this] var activity:Activity = null
     
-    //build
+// -- Build --------------------
 
     def build(renderer:SurfaceRenderer, activity:Activity) {
     	build(renderer, activity, 30)
@@ -80,13 +85,21 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     def height:Int = h
     def swapBuffers():Unit = {}	// Implicit with Android.
     
+    def animation(on:Boolean) {
+    	if(on)
+		     surface.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY)
+    	else surface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY)
+    }
+
     override def onPause() {
         super.onPause
+       	animation(false)	// Not really needed, the rendering thread restarts.
         if(created && (renderer ne null) && (renderer.pause ne null)) renderer.pause(this)
     }
     
     override def onResume() {
         super.onResume
+       	animation(true)		// Not really needed, the rendering thread pauses.
         if(created && (renderer ne null) && (renderer.resume ne null)) renderer.resume(this)
     }
     
@@ -97,9 +110,11 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     }
     
     def onDrawFrame(unused:GL10) {
-    	// XXX
-    	// TODO find how to trigger timed redrawing in Android
-    	// XXX
+    	// It seems there is actually no better way to do FPS rendering than what
+    	// follows. After all it is not really a problem, since the thread doing
+    	// rendering is dedicated to this.
+    	//
+    	// See: http://stackoverflow.com/questions/4772693/how-to-limit-framerate-when-using-androids-glsurfaceview-rendermode-continuousl
 
     	endTime = System.currentTimeMillis();
     	
@@ -109,6 +124,9 @@ class SurfaceAndroidES20(context:Context, attrs:android.util.AttributeSet)
     		Thread.sleep((1000/fps) - dt);
 
     	startTime = System.currentTimeMillis();
+
+    	// We mesure time between calls to this in order to consider the buffer swap time.
+    	// Real rendering occurs here :
 
         if(renderer.frame ne null) renderer.frame(this)
     }
