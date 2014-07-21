@@ -20,6 +20,8 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
 
+libraryDependencies += "com.fasterxml.jackson.module" % "jackson-module-scala_2.11" % "2.4.1"
+
 libraryDependencies += "junit" % "junit" % "4.10"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.4"

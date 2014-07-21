@@ -27,7 +27,7 @@ class SurfaceAndroidES20(
 		context:Context,
 		attrs:android.util.AttributeSet,
     	/** Requested frames per second. */
-		protected[this] var fps:Int = 30,
+		protected[this] var fps:Int = 30
 	) extends
 		GLSurfaceView(context, attrs)
 		with Surface
@@ -87,8 +87,8 @@ class SurfaceAndroidES20(
     
     def animation(on:Boolean) {
     	if(on)
-		     surface.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY)
-    	else surface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY)
+		     setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY)
+    	else setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY)
     }
 
     override def onPause() {

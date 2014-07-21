@@ -17,7 +17,8 @@ import org.sofa.math.{Rgba, Point2, Point3, Vector3, Vector4, Axes, AxisRange}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap, TexAlpha, Libraries, ShaderResource, TextureResource, ArmatureResource}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.armature.{Armature, Joint}
-import org.sofa.opengl.armature.behavior.{ArmatureBehavior, ArmatureBehaviorLoader, LerpKeyArmature, Switch, Loop}
+import org.sofa.behavior.{Behavior, Loop}
+import org.sofa.opengl.armature.behavior.{ArmatureBehavior, ArmatureBehaviorLoader, LerpKeyArmature, Switch}
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, ScrollEvent, MotionEvent, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
@@ -174,7 +175,7 @@ class ArmatureKeyAnimator extends SurfaceRenderer {
 	}
 
 	protected def initArmatures(armatureFileName:String) {
-		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, "Armature", libraries, 0.001)
+		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, "Armature", 0.001, libraries)
 	}
 	
 	protected def initGeometry() {
@@ -325,11 +326,11 @@ class RobotZazou2(val armature:Armature) {
 
 	var endTime = 0L
 
-	var walkBehavior:ArmatureBehavior = new LerpKeyArmature("walk", armature, "Robot3.sifz", 0.05)
+	var walkBehavior:Behavior = new LerpKeyArmature("walk", armature, "Robot3.sifz", 0.05)
 
-	var mouthBehavior:ArmatureBehavior = Loop("mouth", 0, Switch("mouth", 500, armature \\ "mouthgrin", armature \\ "mouthoh"))
+	var mouthBehavior:Behavior = Loop("mouth", 0, Switch("mouth", 500, armature \\ "mouthgrin", armature \\ "mouthoh"))
 
-	var bipbipBehavior:ArmatureBehavior = Loop("bibbip", 0, Switch("bipbip", 300, armature \\ "bipbip1", armature \\ "bipbip2"))
+	var bipbipBehavior:Behavior = Loop("bibbip", 0, Switch("bipbip", 300, armature \\ "bipbip1", armature \\ "bipbip2"))
 
 	def start() {
 		val t = Platform.currentTime

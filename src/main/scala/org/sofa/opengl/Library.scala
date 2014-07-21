@@ -8,9 +8,15 @@ import org.sofa.{FileLoader, Timer}
 import org.sofa.opengl.text.{GLFont, GLString}
 import org.sofa.opengl.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
 import org.sofa.opengl.armature.{Armature, Joint}
-import org.sofa.opengl.armature.behavior.{ArmatureBehavior, Wait, LerpToAngle, LerpToPosition, LerpToScale, LerpMove, InParallel, InSequence, Loop, Switch, LerpKeyArmature}
+import org.sofa.behavior.{Behavior, Wait, InParallel, InSequence, Loop}
+import org.sofa.opengl.armature.behavior.{ArmatureBehavior, LerpToAngle, LerpToPosition, LerpToScale, LerpMove, Switch, LerpKeyArmature}
 
 import scala.xml.{XML, Elem, Node, NodeSeq}
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
+import java.io.File
 
 
 /** When a resource cannot be loaded. */
@@ -22,24 +28,27 @@ case class ResourcesParseException(msg:String,nested:Throwable=null) extends Exc
 
 
 /** A resource. */
-abstract class ResourceDescriptor[+T](val name:String) {
+abstract class ResourceDescriptor[+T](val id:String) {
 	/** The resource (lazily load it when needed). Throws NoSuchResourceException
 	  * if the resource cannot be loaded. */
 	def value(gl:SGL):T
+
+	/** To ensure dealocation of NIO parts. Called automatically. By default does nothing. */
+	def forget(gl:SGL) {}
 }
 
 
 /** A set of resources of a given type. */
 abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescriptor[T])] {
 	/** Set of loaded resources. */
-	protected val library = new HashMap[String,ResourceDescriptor[T]]
+	protected[this] val library = new HashMap[String,ResourceDescriptor[T]]
 
 	/** True if the library contains a resource by the given `name`. */
 	def contains(name:String):Boolean = library.contains(name)
 
 	/** Add a new resource to the library. If `load` is true, the resource is 
 	  * loaded when added, else it is loaded lazily at first access to its value. */
-	def add(newResource:ResourceDescriptor[T], load:Boolean = false) { library += (newResource.name -> newResource); if(load) newResource.value(gl) }
+	def add(newResource:ResourceDescriptor[T], load:Boolean = false) { library += (newResource.id -> newResource); if(load) newResource.value(gl) }
 
 	/** Add a new resource to the library. If `load` is true, the resource is 
 	  * loaded when added, else it is loaded lazily at first access to its value. */
@@ -59,7 +68,7 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 		else code
 	}
 
-	/** Retrieve a resource if it already exists, else add it via a descript and return it. */
+	/** Retrieve a resource if it already exists, else add it via a description and return it. */
 	def addAndGet(gl:SGL, name:String, newResource:ResourceDescriptor[T]):T = library.get(name) match {
 		case Some(res) => res.value(gl)
 		case None => {
@@ -85,8 +94,18 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 		}
 	}
 
-	/** Remove an free a previously loaded resource. */
-	def forget(name:String) { library -= name }
+	/** Remove and free a previously loaded resource. */
+	def forget(gl:SGL, name:String) {
+		library.get(name) match {
+			case Some(res) => {
+				res.forget(gl)					
+				library -= name
+			}
+			case None => {
+				throw new NoSuchResourceException("resource '%s' unknown, or cannot load it.".format(name))
+			}
+		}
+	}
 
 	def iterator = new Iterator[(String,ResourceDescriptor[T])] {
 		var i = library.iterator
@@ -147,17 +166,22 @@ class Libraries(gl:SGL) {
 	/** Add a new resource in the corresponding library. */
 	def +=(res:ResourceDescriptor[AnyRef]) { addResource(res) }
 
-	/** Add resources and pathes under the form of an XML file.
+	/** Add resources and pathes under the form of an XML file or JSON file.
 	  * The file is searched in the classpath using the class loader
 	  * resources. For example if it is at the root of the class path,
-	  * put a / in front of the file name. */
+	  * put a / in front of the file name. The file must end with `.xml`
+	  * or `.json` to be loaded. */
 	def addResources(fileName:String) { 
 		val res = getClass.getResource(fileName)
 
 		if(res eq null)
 			throw new IOException("cannot find resource %s".format(fileName))
 
-		addResources(XML.load(res))
+		if(fileName.endsWith(".xml"))
+			addResources(XML.load(res))
+		else if(fileName.endsWith(".json"))
+			addResourcesJSON(fileName)
+		else throw new ResourcesParseException(s"don't know how to process file ${fileName}, use '.xml' or '.json' extension to indicate format.")
 	}
 
 	/** Add resources and pathes under the form of an XML file.
@@ -199,11 +223,11 @@ class Libraries(gl:SGL) {
 	  * See the [[TexParams]] class for an explanation of the attributes of tex elements. */
 	def addResources(xml:Elem) {
 		Timer.timer.measure("Library: addResources()") {
-			parsePathes(   xml \\ "pathes")
-			parseShaders(  xml \\ "shaders")
-			parseTexs(     xml \\ "texs")
-			parseArmatures(xml \\ "armatures")
-			parseBehaviors(xml \\ "behaviors")
+			Timer.timer.measure("Library: path ") { parsePathes(   xml \\ "pathes") }
+			Timer.timer.measure("Library: shad ") { parseShaders(  xml \\ "shaders") }
+			Timer.timer.measure("Library: texs ") { parseTexs(     xml \\ "texs") }
+			Timer.timer.measure("Library: arms ") { parseArmatures(xml \\ "armatures") }
+			Timer.timer.measure("Library: beha ") { parseBehaviors(xml \\ "behaviors") }
 		}
 	}
 
@@ -269,12 +293,11 @@ class Libraries(gl:SGL) {
 				(armature \\ "@shader").text,
 				(armature \\ "@svg").text,
 				(armature \\ "@armatureid").text,
-				this,
 				(armature \\ "@scale").text match {
 					case DoubleExpression(dbl)    => dbl.toDouble
 //					case PositiveIntExpression(i) => i.toInt
 					case _                        => 1.0
-				}))
+				}, this, null))
 		}
 	}
 
@@ -291,48 +314,41 @@ class Libraries(gl:SGL) {
 					  		val name     = (elem \\ "@id").text
 					  		
 					  		elem match {
-					  			case node:Node if node.label == "in-parallel" => {
-					  				behaviors += BehaviorResource(name, InParallel(
-					  					name, parseArray((node \\ "@behaviors").text):_*))
-					  			}
-					  			case node:Node if node.label == "in-sequence" => {
-					  				behaviors += BehaviorResource(name, InSequence(
-					  					name, parseArray((node \\ "@behaviors").text):_*))
-					  			}
-					  			case node:Node if node.label == "loop" => {
-					  				behaviors += BehaviorResource(name, Loop(
-					  					name, optInt((node \\ "@limit").text), parseArray((node \\ "@behaviors").text):_*))
-					  			}
-					  			case node:Node if node.label == "switch" => {
-					  				behaviors += BehaviorResource(name, Switch(
-					  					name, (node \\ "@duration").text.toLong, parseJoints(armature, (node \\ "@joints").text):_*))
-					  			}
-					  			case node:Node if node.label == "lerp-to-angle" => {
-					  				behaviors += BehaviorResource(name, LerpToAngle(
-					  					name, armature \\ (node \\ "@joint").text,
-					  					(node \\ "@value").text.toDouble, (node \\ "@duration").text.toLong))
-					  			}
-					  			case node:Node if node.label == "lerp-to-position" => {
-					  				behaviors += BehaviorResource(name, LerpToPosition(
-					  					name, armature \\ (node \\ "@joint").text,
-					  					parseVector2((node \\ "@value").text), (node \\ "@duration").text.toLong))
-					  			}
-					  			case node:Node if node.label == "lerp-to-scale" => {
-					  				behaviors += BehaviorResource(name, LerpToScale(
-					  					name, armature \\ (node \\ "@joint").text,
-					  					parseVector2((node \\ "@value").text), (node \\ "@duration").text.toLong))
-					  			}
-					  			case node:Node if node.label == "lerp-move" => {
-					  				behaviors += BehaviorResource(name, LerpMove(
-					  					name, armature \\ (node \\ "@joint").text,
-					  					parseVector2((node \\ "@value").text), (node \\ "@duration").text.toLong))
-					  			}
-					  			case node:Node if node.label == "lerp-keys" => {
-					  				behaviors += BehaviorResource(name, LerpKeyArmature(
-					  					name, armature, (node \\ "@filename").text, (node \\ "@scale").text.toDouble))
-					  			}
-					  			case node:Node if node.label == "wait" => {
-					  				behaviors += BehaviorResource(name, Wait(name, (node \\ "@duration").text.toLong))
+					  			case node:Node => {
+					  				if(node.label == "in-parallel") {
+					  					behaviors += BehaviorResource(name, InParallel(
+					  						name, parseArray((node \\ "@behaviors").text):_*))
+					  				} else if(node.label == "in-sequence") {
+					  					behaviors += BehaviorResource(name, InSequence(
+					  						name, parseArray((node \\ "@behaviors").text):_*))
+					  				} else if(node.label == "loop") {
+					  					behaviors += BehaviorResource(name, Loop(
+					  						name, optInt((node \\ "@limit").text), parseArray((node \\ "@behaviors").text):_*))
+					  				} else if(node.label == "switch") {
+					  					behaviors += BehaviorResource(name, Switch(
+					  						name, (node \\ "@duration").text.toLong, parseJoints(armature, (node \\ "@joints").text):_*))
+					  				} else if(node.label == "lerp-to-angle") {
+					  					behaviors += BehaviorResource(name, LerpToAngle(
+					  						name, armature \\ (node \\ "@joint").text,
+					  						(node \\ "@value").text.toDouble, (node \\ "@duration").text.toLong))
+					  				} else if(node.label == "lerp-to-position") {
+					  					behaviors += BehaviorResource(name, LerpToPosition(
+					  						name, armature \\ (node \\ "@joint").text,
+					  							parseVector2((node \\ "@value").text), (node \\ "@duration").text.toLong))
+					  				} else if(node.label == "lerp-to-scale") {
+					  					behaviors += BehaviorResource(name, LerpToScale(
+					  						name, armature \\ (node \\ "@joint").text,
+					  							parseVector2((node \\ "@value").text), (node \\ "@duration").text.toLong))
+					  				} else if(node.label == "lerp-move") {
+					  					behaviors += BehaviorResource(name, LerpMove(
+					  						name, armature \\ (node \\ "@joint").text,
+					  							parseVector2((node \\ "@value").text), (node \\ "@duration").text.toLong))
+					  				} else if(node.label == "lerp-keys") {
+					  					behaviors += BehaviorResource(name, LerpKeyArmature(
+					  						name, armature, (node \\ "@filename").text, (node \\ "@scale").text.toDouble))
+					  				} else if(node.label == "wait") {
+					  					behaviors += BehaviorResource(name, Wait(name, (node \\ "@duration").text.toLong))
+					  				}
 					  			}
 					  			case _ => throw new RuntimeException("unknown behavior %s".format(node.label))
 				  			}
@@ -361,7 +377,7 @@ class Libraries(gl:SGL) {
 	}
 
 	/** Parse an array of behavior names separated by commas. */
-	protected def parseArray(behaviorList:String):Array[ArmatureBehavior] = behaviorList.split(",").map { s =>
+	protected def parseArray(behaviorList:String):Array[Behavior] = behaviorList.split(",").map { s =>
 	 	s match {
 	 		case WaitExpression(duration) => {
 	 			val id = s"wait(${duration})"
@@ -392,21 +408,103 @@ class Libraries(gl:SGL) {
 
 		result.toString
 	}
+
+// -- Parsing JSON ---------------------------------------
+
+	protected[this] var jsonMapper:ObjectMapper = null
+
+	/**
+	  *{
+	  *	"pathes": {	
+	  *		"shader":   [ "S", "S" ],
+	  *		"texture":  [ "S", "S" ],
+	  *		"armature": [ "S", "S" ],
+	  *		"behavior": [ "S", "S" ]
+	  *	},
+	  *	"shaders": [
+	  *		{ "id": "S", "vert": "S", "frag": "S" }
+	  *	],
+	  *	"textures": [
+	  *		{ "id": "S", "res": "S", "mipmap": "S", "minfilter": "S", "magfilter": "S", "alpha": "S", "wrap": "S" }
+	  *	],
+	  *	"armatures": [
+	  *		{ "id": "S", "tex": "S", "shader": "S", "src": "S", "scale": "0.0" }
+	  *	],
+	  *	"behaviors": {
+	  *		"in_parallel":      [ { "id": "S", "arm": "S", "behaviors": [ "S" ,"S" ] } ],
+	  *		"in_sequence":      [ { "id": "S", "arm": "S", "behaviors": [ "S", "S" ]  } ],
+	  *		"loop":             [ { "id": "S", "arm": "S", "limit": "0",	"behaviors": [ "S", "S" ] } ],
+	  *		"switch":           [ { "id": "S", "arm": "S", "joints": [ "S", "S" ], "duration": "0" } ],
+	  *		"lerp_to_angle":    [ { "id": "S", "arm": "S", "joint": "S", "value": "0.0", "duration": "0" } ],
+	  *		"lerp_to_position": [ { "id": "S", "arm": "S", "joint": "S", "value": [ "0.0", "0.0" ], "duration": "0" } ],
+	  *		"lerp_to_scale":    [ { "id": "S", "arm": "S", "joint": "S", "value": [ "0.0", "0.0" ], "duration": "0" } ],
+	  *		"lerp_move":        [ { "id": "S", "arm": "S", "joint": "S", "value": [ "0.0", "0.0" ], "duration": "0" } ],
+	  *		"lerp_keys":        [ { "id": "S", "arm": "S", "src": "S", "scale": "0.0" } ],
+	  *		"waits":             [ { "id": "S", "arm": "S", "duration": "0" } ]
+	  *   }
+	  * }
+	  */
+	def addResourcesJSON(jsonString:String) {
+		if(jsonMapper eq null) {
+			jsonMapper = new ObjectMapper() with ScalaObjectMapper
+
+			jsonMapper.registerModule(DefaultScalaModule)
+			// jsonMapper.registerSubtypes(classOf[Pathes], classOf[Shader],
+			// 	classOf[Armature], classOf[Texture], classOf[Behaviors],
+			// 	classOf[InParallel], classOf[InSequence], classOf[Loop],
+			// 	classOf[Switch], classOf[LerpToAngle], classOf[LerpToPosition],
+			// 	classOf[LerpToScale], classOf[LerpMove], classOf[LerpKeys],
+			// 	classOf[Wait])
+
+		}
+		
+//		val conf:SOFAConf = jsonMapper.readValue(new File(JsonFile), classOf[SOFAConf])
+	}
+
+	/** Pathes in a JSON config. */
+	case class Pathes(
+		shader:Array[String],
+		texture:Array[String],
+		armature:Array[String],
+		behavior:Array[String]) {}
+
+	case class SOFAConf(
+		pathes:Pathes,
+		shaders:Array[ShaderResource],
+		textures:Array[TextureResource],
+		armatures:Array[ArmatureResource]) {}
+		//behaviors:Behaviors) {}
+
+	// case class Behaviors(
+	// 	in_parallel:Array[InParallel],
+	// 	in_sequence:Array[InSequence],
+	// 	loop:Array[Loop],
+	// 	switch:Array[Switch],
+	// 	lerp_to_angle:Array[LerpToAngle],
+	// 	lerp_to_position:Array[LerpToPosition],
+	// 	lerp_to_scale:Array[LerpToScale],
+	// 	lerp_move:Array[LerpMove],
+	// 	lerp_keys:Array[LerpKeys],
+	// 	waits:Array[Wait]
+	// ) {}
 }
+
+
 
 
 // == Shaders ============================================
 
 
-object ShaderResource { def apply(name:String, vertex:String, fragment:String):ShaderResource = new ShaderResource(name, vertex, fragment) }
+//object ShaderResource { def apply(id:String, vertex:String, fragment:String):ShaderResource = new ShaderResource(name, vertex, fragment) }
 
-class ShaderResource(name:String, val vertex:String, val fragment:String) extends ResourceDescriptor[ShaderProgram](name) {
+case class ShaderResource(override val id:String, vertex:String, fragment:String) extends ResourceDescriptor[ShaderProgram](id) {
+
 	private[this] var data:ShaderProgram = null
 
 	def value(gl:SGL):ShaderProgram = {
 		if(data eq null) {
 			try {
-				data = ShaderProgram(gl, name, vertex, fragment)
+				data = ShaderProgram(gl, id, vertex, fragment)
 			} catch {
 				case e:Exception ⇒ throw NoSuchResourceException(e.getMessage, e)
 			}
@@ -424,17 +522,13 @@ class ShaderLibrary(gl:SGL) extends Library[ShaderProgram](gl)
 // == Textures ============================================
 
 
-object TextureResource { def apply(name:String,fileName:String,params:TexParams):TextureResource = new TextureResource(name, fileName, params) }
+//object TextureResource { def apply(id:String,fileName:String,params:TexParams):TextureResource = new TextureResource(id, fileName, params) }
 
-class TextureResource(
-	name:String,
-	val fileName:String,
-	val params:TexParams)
-		extends ResourceDescriptor[Texture](name) {
+case class TextureResource(override val id:String, fileName:String, params:TexParams) extends ResourceDescriptor[Texture](id) {
 	
 	private[this] var data:Texture = null
 
-	def this(name:String, fileName:String) { this(name, fileName, TexParams()) }
+	def this(id:String, fileName:String) { this(id, fileName, TexParams()) }
 
 	def value(gl:SGL):Texture = {
 		if(data eq null) {
@@ -447,6 +541,13 @@ class TextureResource(
 
 		data
 	}
+
+	override def forget(gl:SGL) {
+		if(data ne null) {
+			data.dispose
+			data = null
+		}
+	}
 }
 
 object TextureLibrary { def apply(gl:SGL):TextureLibrary = new TextureLibrary(gl) }
@@ -458,19 +559,19 @@ class TextureLibrary(gl:SGL) extends Library[Texture](gl)
 
 
 object ModelResource {
-	def apply(name:String, fileName:String, geometry:String):ModelResource = new ModelResource(name,fileName, geometry)
-	def apply(name:String, mesh:Mesh):ModelResource = new ModelResource(name, mesh)
+	def apply(id:String, fileName:String, geometry:String):ModelResource = new ModelResource(id,fileName, geometry)
+	def apply(id:String, mesh:Mesh):ModelResource = new ModelResource(id, mesh)
 }
 
-class ModelResource(name:String, mesh:Mesh, aFileName:String = "", aGeometry:String = "") extends ResourceDescriptor[Mesh](name) {
+class ModelResource(id:String, mesh:Mesh, aFileName:String = "", aGeometry:String = "") extends ResourceDescriptor[Mesh](id) {
 	private[this] var data:Mesh = mesh
 
 	private[this] var fileName = aFileName
 
 	private[this] var geometry = aGeometry
 
-	def this(name:String, fileName:String, geometry:String) {
-		this(name, null, fileName, geometry)
+	def this(id:String, fileName:String, geometry:String) {
+		this(id, null, fileName, geometry)
 	}
 
 	def value(gl:SGL):Mesh = {
@@ -494,9 +595,9 @@ class ModelLibrary(gl:SGL) extends Library[Mesh](gl)
 // == Fonts ============================================
 
 
-object FontResource { def apply(name:String,fontName:String,size:Int):FontResource = new FontResource(name,fontName,size) }
+object FontResource { def apply(id:String,fontName:String,size:Int):FontResource = new FontResource(id,fontName,size) }
 
-class FontResource(name:String, val fontName:String, val size:Int) extends ResourceDescriptor[GLFont](name) {
+class FontResource(id:String, val fontName:String, val size:Int) extends ResourceDescriptor[GLFont](id) {
 	private[this] var data:GLFont = null
 
 	def value(gl:SGL):GLFont = {
@@ -512,36 +613,36 @@ class FontLibrary(gl:SGL) extends Library[GLFont](gl)
 // == Armatures ========================================
 
 
-object ArmatureResource {
-	def apply(name:String, texRes:String, shaderRes:String, fileName:String, armatureId:String, libraries:Libraries, scale:Double=1.0):ArmatureResource = {
-		new ArmatureResource(name, texRes, shaderRes, fileName, armatureId, libraries, scale)
-	}
-}
+// object ArmatureResource {
+// 	def apply(id:String, texRes:String, shaderRes:String, fileName:String, armatureId:String, libraries:Libraries, scale:Double=1.0):ArmatureResource = {
+// 		new ArmatureResource(id, texRes, shaderRes, fileName, armatureId, libraries, scale)
+// 	}
+// }
 
-class ArmatureResource(
-			name:String,
+case class ArmatureResource(
+			override val id:String,
 			texRes:String,
 			shaderRes:String,
 			fileName:String,
 			armatureId:String,
+			scale:Double,
 			val libraries:Libraries,
-			private var data:Armature,
-			scale:Double=1.0) extends ResourceDescriptor[Armature](name) {
+			var data:Armature = null)
+	extends ResourceDescriptor[Armature](id) {
 
-	def this(name:String,
-			 texRes:String,
-			 shaderRes:String, fileName:String, armatureId:String, libraries:Libraries, scale:Double) {
-		this(name, texRes, shaderRes, fileName, armatureId, libraries, null, scale)
+	def this(id:String, texRes:String, shaderRes:String, fileName:String,
+			 armatureId:String, libraries:Libraries, scale:Double) {
+		this(id, texRes, shaderRes, fileName, armatureId, scale, libraries, null)
 	}
 
-	def this(name:String, armature:Armature, libraries:Libraries, scale:Double) {
-		this(name, armature.texResource, armature.shaderResource, "Armature", null, libraries, armature, scale)
+	def this(id:String, armature:Armature, libraries:Libraries, scale:Double) {
+		this(id, armature.texResource, armature.shaderResource, null, "Armature", scale, libraries, armature)
 	}
 
 	def value(gl:SGL):Armature = {
 		if(data eq null) {
 			try {
-				data = Armature.loader.open(name, texRes, shaderRes, fileName, armatureId, scale)
+				data = Armature.loader.open(id, texRes, shaderRes, fileName, armatureId, scale)
 				data.init(gl, libraries)
 			} catch {
 				case e:IOException => throw NoSuchResourceException(e.getMessage, e)
@@ -560,17 +661,17 @@ class ArmatureLibrary(gl:SGL) extends Library[Armature](gl)
 // == Behaviors ========================================
 
 
-object BehaviorResource {
-	def apply(name:String, behavior:ArmatureBehavior):BehaviorResource = {
-		new BehaviorResource(name, behavior)
-	}
-}
+// object BehaviorResource {
+// 	def apply(id:String, behavior:ArmatureBehavior):BehaviorResource = {
+// 		new BehaviorResource(id, behavior)
+// 	}
+// }
 
-class BehaviorResource(name:String, val data:ArmatureBehavior) extends ResourceDescriptor[ArmatureBehavior](name) {
-	def value(gl:SGL):ArmatureBehavior = data
+case class BehaviorResource(override val id:String, data:Behavior) extends ResourceDescriptor[Behavior](id) {
+	def value(gl:SGL):Behavior = data
 }
 
 object BehaviorLibrary { def apply(gl:SGL):BehaviorLibrary = new BehaviorLibrary(gl) }
 
-class BehaviorLibrary(gl:SGL) extends Library[ArmatureBehavior](gl)
+class BehaviorLibrary(gl:SGL) extends Library[Behavior](gl)
 

@@ -17,6 +17,7 @@ import org.sofa.math.{Rgba, Point2, Point3, Vector3, Vector4, Axes, AxisRange}
 import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, TexParams, TexMin, TexMag, TexMipMap, TexAlpha, Libraries, ShaderResource, TextureResource, ArmatureResource}
 import org.sofa.opengl.io.collada.{ColladaFile}
 import org.sofa.opengl.armature.{Armature, Joint}
+import org.sofa.behavior._
 import org.sofa.opengl.armature.behavior._
 import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController, ScrollEvent, MotionEvent, KeyEvent}
 import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
@@ -213,7 +214,7 @@ class TestRobot extends SurfaceRenderer {
 	}
 
 	protected def initArmatures(armatureFileName:String) {
-		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, "Armature", libraries, 0.001)
+		libraries.armatures += ArmatureResource("armature-test", "armature-texture", "armature-shader", armatureFileName, "Armature", 0.001, libraries)
 	}
 	
 	protected def initGeometry() {
@@ -282,7 +283,7 @@ class TestRobot extends SurfaceRenderer {
 
 
 class RobotBehavior(val armature:Armature) {
-	var behavior:ArmatureBehavior = null
+	var behavior:Behavior = null
 
 	init
 

@@ -5,6 +5,7 @@ import scala.compat.Platform
 import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default, Box3Sized}
 import org.sofa.opengl.{Texture, ShaderResource, ModelResource, TextureResource, TexParams}
 import org.sofa.opengl.armature.{Armature}
+import org.sofa.behavior.{Behavior}
 import org.sofa.opengl.armature.behavior.{ArmatureBehavior}
 import org.sofa.opengl.actor.renderer.{Screen}
 import org.sofa.opengl.actor.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarRenderState, AvatarBaseStates}
@@ -41,7 +42,7 @@ class IsoEntityRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUti
 
 	protected[this] var texMask:Texture = null
 
-	protected[this] var behavior:ArmatureBehavior = null
+	protected[this] var behavior:Behavior = null
 
 	protected[this] var world:Avatar = null
 
