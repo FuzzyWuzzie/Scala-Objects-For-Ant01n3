@@ -140,6 +140,11 @@ class Armature(val name:String,
 	/** Obtain the joint corresponding to the given name or throw a [[NoSuchJointException]] exception. */
 	def \\ (jointName:String):Joint = apply(jointName)
 
+	/** Take a coma separated list of joint names and return an array of joints. */
+	def jointArray(jointList:Array[String]):Array[Joint] = {
+		jointList.map { j => jointMap.get(j.trim).getOrElse(throw new RuntimeException(s"cannot find joint ${j.trim} in armature ${name}")) }
+	}
+
 	override def toString():String = "Armature(%s, [%s], {%s})".format(name, area, root)
 
 	/** Representation of the armature including newlines for better lisibility. */

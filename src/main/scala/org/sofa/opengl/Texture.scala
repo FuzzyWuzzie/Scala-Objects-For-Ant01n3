@@ -128,6 +128,16 @@ object TexMipMap extends Enumeration with TexParam {
 
 	/** Enumeration type. */
 	type TexMipMap = Value
+
+	/** Convert a string to the corresponding value. The string must match
+	  * the value name (but case is ignored). */
+	def fromString(value:String):TexMipMap = {
+		value.toLowerCase match {
+			case "generate" => Generate
+			case "load" => Load
+			case _ => No
+		}
+	}
 }
 
 
@@ -153,6 +163,19 @@ object TexMin extends Enumeration with TexParam {
 	
 	/** Enumeration type. */
 	type TexMin = Value
+
+	/** Convert a string to the corresponding value. The string must match
+	  * the value name (but case is ignored). */
+	def fromString(value:String):TexMin = {
+		value.toLowerCase match {
+			case "linear" => Linear
+			case "nearestandmipmapnearest" => NearestAndMipMapNearest
+			case "linearandmipmapnearest" => LinearAndMipMapNearest
+			case "nearestandmipmaplinear" => NearestAndMipMapLinear
+			case "linearandmipmaplinear" => LinearAndMipMapLinear
+			case _ => Nearest
+		}
+	}
 }
 
 
@@ -166,6 +189,15 @@ object TexMag extends Enumeration with TexParam {
 	
 	/** Enumeration type. */
 	type TexMag = Value
+
+	/** Convert a string to the corresponding value. The string must match
+	  * the value name (but case is ignored). */
+	def fromString(value:String):TexMag = {
+		value.toLowerCase match {
+			case "linear" => Linear
+			case _ => Nearest
+		}
+	}
 }
 
 
@@ -179,6 +211,15 @@ object TexAlpha extends Enumeration with TexParam {
 
 	/** Enumeration type. */
 	type TexAlpha = Value
+
+	/** Convert a string to the corresponding value. The string must match
+	  * the value name (but case is ignored). */
+	def fromString(value:String):TexAlpha = {
+		value.toLowerCase match {
+			case "premultiply" => Premultiply
+			case _ => Nop
+		}
+	}
 }
 
 
@@ -194,6 +235,16 @@ object TexWrap extends Enumeration with TexParam {
 
 	/** Enumeration type. */
 	type TexWrap = Value
+
+	/** Convert a string to the corresponding value. The string must match
+	  * the value name (but case is ignored). */
+	def fromString(value:String):TexWrap = {
+		value.toLowerCase match {
+			case "clamp" => Clamp
+			case "mirroredrepeat" => MirroredRepeat
+			case _ => Repeat
+		}
+	}
 }
 
 
@@ -204,13 +255,6 @@ case class TexParams(
 		val magFilter:TexMag.Value = TexMag.Linear,
 		val mipMap:TexMipMap.Value = TexMipMap.No,
 		val wrap:TexWrap.Value     = TexWrap.Repeat) {
-	// def this(params:TexParam*) {
-	// 	this(alpha     = params.find(_.isInstanceOf[TexAlpha.Value]).asInstanceOf[TexAlpha.Value],
-	// 		 minFilter = params.find(_.isInstanceOf[TexMin.Value]).asInstanceOf[TexMin.Value],
-	// 		 magFilter = params.find(_.isInstanceOf[TexMag.Value]).asInstanceOf[TexMag.Value],
-	// 		 mipmap    = params.find(_.isInstanceOf[TexMipMap.Value]).asInstanceOf[TexMipMap.Value],
-	// 		 wrap      = params.find(_.isInstanceOf[TexWrap.Value]).asInstanceOf[TexWrap.Value])
-	// }
 }
 
 
