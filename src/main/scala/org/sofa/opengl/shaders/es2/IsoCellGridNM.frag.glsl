@@ -9,12 +9,12 @@ uniform sampler2D texMask;
 uniform vec3 sunDir;
 
 
-uniform float diffuse   = 0.5;
-uniform float shininess = 2.0;
-uniform float specular  = 0.0;
-uniform float ambient   = 0.5;
-uniform vec3 viewer = vec3(0.57735, 0.57735, 0.57735);
-uniform mat3 rotn   = mat3(
+const float diffuse   = 0.5;
+const float shininess = 2.0;
+const float specular  = 0.0;
+const float ambient   = 0.5;
+const vec3 viewer = vec3(0.57735, 0.57735, 0.57735);
+const mat3 rotn   = mat3(
          0.707, -0.408, 0.577,
          0.000,  0.816, 0.577,
         -0.707, -0.408, 0.577);

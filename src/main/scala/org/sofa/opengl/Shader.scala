@@ -245,7 +245,7 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
     }
 
     protected def printErrorHeader(count:Int) {
-    	Console.err.println("Found %d errors in shader '%s':".format(count, name))
+    	Console.err.println("Found %d errors in shader '%s' (%s):".format(count, name, shaderType))
     }
 
     protected def printError(col:Int, line:Int, msg:String) {

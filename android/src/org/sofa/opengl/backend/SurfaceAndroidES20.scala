@@ -80,7 +80,7 @@ class SurfaceAndroidES20(
         debug(">> GLSurface built waiting creation....")
     }
     
-    def gl:SGL = { if(sgl eq null) sgl = new SGLAndroidES20("110"); sgl }
+    def gl:SGL = { if(sgl eq null) sgl = new SGLAndroidES20("#version 110"); sgl }
     def width:Int = w
     def height:Int = h
     def swapBuffers():Unit = {}	// Implicit with Android.

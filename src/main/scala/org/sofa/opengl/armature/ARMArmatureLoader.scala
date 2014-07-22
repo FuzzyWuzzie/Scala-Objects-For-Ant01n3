@@ -1,5 +1,7 @@
 package org.sofa.opengl.armature
 
+import java.io.{InputStream, FileInputStream}
+
 import scala.io.Source
 import scala.collection.mutable.HashMap
 
@@ -65,13 +67,18 @@ class ARMArmatureLoader {
 
 	/** Load an ARM file from `fileName`, an build an [[Armature]] at `scale` from it with the given
 	  * `texture`  and `shader` from the [[Libraries]]. */
-	def load(fileName:String, texture:String, shader:String, scale:Double):Armature = {
+	def load(fileName:String, texture:String, shader:String, scale:Double):Armature =
+		load(new FileInputStream(fileName), fileName, texture, shader, scale)
+
+	/** Load an ARM file from an input `stream`, an build an [[Armature]] at `scale` from it with the given
+	  * `texture`  and `shader` from the [[Libraries]]. `fileName` is only used in case of error to report the problem. */
+	def load(stream:InputStream, fileName:String, texture:String, shader:String, scale:Double):Armature = {
 		var lineNo = 0
 		var armature:Armature = null
 
 		Timer.timer.measure("ARMArmatureLoader.load()") {
 
-			Source.fromFile(fileName).getLines.foreach { line =>
+			Source.fromInputStream(stream).getLines.foreach { line =>
 				if(lineNo == 0) {
 					if(line != "ARM001") throw new ARMArmatureIOException(s"invalid ARM file format, or wrong version of the file (${fileName})")
 				} else {

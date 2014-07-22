@@ -176,7 +176,10 @@ class IsoGame extends Actor {
 		sys.exit
 	}
 
+	protected[this] var step = 0
 	protected def controlGame() {
-		Timer.timer.printAvgs("TestIsoGame")
+		if(step % 10 == 0)
+			Timer.timer.printAvgs("TestIsoGame")
+		step += 1
 	}
 }

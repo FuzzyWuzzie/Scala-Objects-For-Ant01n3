@@ -24,6 +24,7 @@ import java.io.File
 // == Shaders ============================================
 
 
+/** Resource descriptor for shaders. */
 case class ShaderResource(override val id:String, vertex:String, fragment:String) extends ResourceDescriptor[ShaderProgram](id) {
 
 	private[this] var data:ShaderProgram = null
@@ -43,12 +44,14 @@ case class ShaderResource(override val id:String, vertex:String, fragment:String
 
 object ShaderLibrary { def apply(gl:SGL):ShaderLibrary = new ShaderLibrary(gl) }
 
+/** A set of shaders. */
 class ShaderLibrary(gl:SGL) extends Library[ShaderProgram](gl)
 
 
 // == Textures ============================================
 
 
+/** Resource descriptor for textures. */
 case class TextureResource(override val id:String, fileName:String, params:TexParams) extends ResourceDescriptor[Texture](id) {
 	
 	private[this] var data:Texture = null
@@ -77,6 +80,7 @@ case class TextureResource(override val id:String, fileName:String, params:TexPa
 
 object TextureLibrary { def apply(gl:SGL):TextureLibrary = new TextureLibrary(gl) }
 
+/** A set of textures. */
 class TextureLibrary(gl:SGL) extends Library[Texture](gl)
 
 
@@ -88,6 +92,7 @@ object ModelResource {
 	def apply(id:String, mesh:Mesh):ModelResource = new ModelResource(id, mesh)
 }
 
+/** A resource descriptor for mesh models. */
 class ModelResource(id:String, mesh:Mesh, aFileName:String = "", aGeometry:String = "") extends ResourceDescriptor[Mesh](id) {
 	private[this] var data:Mesh = mesh
 
@@ -114,14 +119,14 @@ class ModelResource(id:String, mesh:Mesh, aFileName:String = "", aGeometry:Strin
 
 object ModelLibrary { def apply(gl:SGL):ModelLibrary = new ModelLibrary(gl) }
 
+/** A set of models. */
 class ModelLibrary(gl:SGL) extends Library[Mesh](gl)
 
 
 // == Fonts ============================================
 
 
-//object FontResource { def apply(id:String,fontName:String,size:Int):FontResource = new FontResource(id,fontName,size) }
-
+/** A resource descriptor for fonts. */
 case class FontResource(override val id:String, fontName:String, size:Int) extends ResourceDescriptor[GLFont](id) {
 	private[this] var data:GLFont = null
 
@@ -132,12 +137,14 @@ case class FontResource(override val id:String, fontName:String, size:Int) exten
 
 object FontLibrary { def apply(gl:SGL):FontLibrary = new FontLibrary(gl) }
 
+/** A set of fonts. */
 class FontLibrary(gl:SGL) extends Library[GLFont](gl)
 
 
 // == Armatures ========================================
 
 
+/** A resource descriptor for armatures. */
 case class ArmatureResource(
 			override val id:String,
 			texRes:String,
@@ -173,12 +180,14 @@ case class ArmatureResource(
 
 object ArmatureLibrary { def apply(gl:SGL):ArmatureLibrary = new ArmatureLibrary(gl) }
 
+/** A set of armatures. */
 class ArmatureLibrary(gl:SGL) extends Library[Armature](gl)
 
 
 // == Behaviors ========================================
 
 
+/** Base behavior descriptor. */
 abstract class BehaviorDesc(val id:String) { def get(gl:SGL, libraries:Libraries):Behavior }
 
 case class InParallelDesc(override val id:String, behaviors:Array[String]) extends BehaviorDesc(id) {
@@ -239,6 +248,10 @@ case class LerpKeysDesc(override val id:String, arm:String, src:String, scale:Do
 }
 
 
+/** A resource descriptor for behaviors. 
+  * As there can exist a lot of descriptors, and to support automatic instantiation,
+  * The real descriptors are descendants of the class [[BehaviorDesc]]. Each
+  * descriptor is able to instantiate a behavior of its kind. */
 case class BehaviorResource(override val id:String, desc:BehaviorDesc, libraries:Libraries) extends ResourceDescriptor[Behavior](id) {
 	protected[this] var data:Behavior = null
 	def value(gl:SGL):Behavior = {
@@ -256,6 +269,7 @@ object BehaviorLibrary {
 	def apply(gl:SGL):BehaviorLibrary = new BehaviorLibrary(gl) 
 }
 
+/** A set of behaviors */
 class BehaviorLibrary(gl:SGL) extends Library[Behavior](gl) {
 	/** From an array of behavior ids, return an array of behaviors. */
 	def behaviorArray(libraries:Libraries, list:Array[String]):Array[Behavior] =

@@ -1,36 +1,147 @@
 package org.sofa.opengl.backend
 
-import org.sofa.nio.ByteBuffer
-import org.sofa.opengl.{SGL, Texture, TextureLoader, TextureImage, ImageFormat, TexParams, TexMipMap, TexAlpha}
-import java.io.{InputStream, IOException}
-import android.content.res.Resources
+
+import java.io.{InputStream, FileInputStream, IOException}
+import java.nio.channels.FileChannel
+
+import android.content.res.{Resources, AssetFileDescriptor}
 import android.opengl.{GLUtils, GLES20}
 import android.graphics.{Bitmap, BitmapFactory, Color}
+
+import org.sofa.Timer
+import org.sofa.nio.{ByteBuffer, IntBufferJava, ByteBufferJava}
+import org.sofa.opengl.{SGL, Texture, TextureLoader, TextureImage, ImageFormat, TexParams, TexMipMap, TexAlpha}
 import org.sofa.backend.AndroidLoader
+
 import scala.collection.mutable.{ArrayBuffer => ScalaArrayBuffer}
+
 
 class AndroidTextureLoader(val resources:Resources) extends TextureLoader with AndroidLoader {
 	def open(resource:String, params:TexParams):TextureImage = {
-		//new TextureImageAndroid(BitmapFactory.decodeStream(resources.getAssets.open(searchInAssets(resource, Texture.path))))
-
 		import TexMipMap._
 
+		val pos  = resource.lastIndexOf('.')
+    	val res  = if(pos>0) resource.substring(0, pos) else resource
+		val ext  = if(pos>0) resource.substring(pos+1, resource.length) else ""
 		var name = params.mipMap match {
-			case Load => {
-				val pos  = resource.lastIndexOf('.')
-		    	val res  = if(pos>0) resource.substring(0, pos) else resource
-    			val ext  = if(pos>0) resource.substring(pos+1, resource.length) else ""
-    			"%s_0.%s".format(res, ext)
-			}
-			case _ => { resource }
+			case Load => "%s_0.%s".format(res, ext)
+			case _    => resource
 		}
-		
+
 		searchInAssets(name,Texture.path) match {
 			case null     => throw new IOException("cannot locate texture %s (path %s)".format(name, Texture.path.mkString(":")))
-			case x:String => new TextureImageAndroid(x, params)
+			case x:String => if(ext == "tex") 
+							      new TextureImageTEX(x, params)
+							 else new TextureImageAndroid(x, params)
 		}
 	}
 }
+
+
+class AndroidImageTEXLoader(val texLoader:AndroidTextureLoader) extends ImageTEXLoader {
+
+	def load(fileName:String):ImageTEX = load(texLoader.resources.getAssets.open(fileName))
+
+	def load(fileName:String, params:TexParams):Array[ImageTEX] = {
+		import TexMipMap._
+
+		val images = new ScalaArrayBuffer[ImageTEX]
+
+Timer.timer.measure("ImageTEX.load()") {
+
+		params.mipMap match {
+			case Load => {
+				var i    = 0
+				val pos  = fileName.lastIndexOf('_')
+				val res  = if(pos > 0) fileName.substring(0, pos) else fileName
+				val ext  = if(pos > 0) fileName.substring(pos+3, fileName.length) else ""
+				var name = "%s_%d.%s".format(res, i, ext)
+
+				while(texLoader.exists(name)) {
+					images += load(texLoader.resources.getAssets.open(name))
+					i += 1
+					name = "%s_%d.%s".format(res, i, ext)
+				}
+
+				if(images.size <= 0)
+					throw new RuntimeException("cannot load any mipmap level for %s (at least %s_%d.%s)".format(fileName, res, i, ext))
+			}
+			case _ => {
+				images += load(fileName)
+			}
+		}
+}
+		images.toArray
+	}
+
+	/** TEX format image loader for Android from an input stream. 
+  	  *
+  	  * This loader will work everywhere but is far slower than the NIO one with a file input stream. */
+	def load(stream:InputStream):ImageTEX = {
+		//
+		// !!!!!!!!!!!!!!!!!!
+		//
+		// TODO this loader is **FAR** less efficient than the mapped channel version.
+		// However due to the way Android compress assets, we almost always cannot load
+		// TEX files by mapping them into memory directly in byte buffers. One option is
+		// to tell aapt not to compress TEX resource (but how to do this with sbt-android?
+		// with the -0 tex option. Another option would be to use the raw resources in res.
+		// This could be done with Resources.openRawResourceFd(int) however we have to map
+		// the name of the resource to the R.raw.<filename> -> with Resources.getIdentifier()
+		// probably.
+		//
+		// !!!!!!!!!!!!!!!!!!
+		//
+
+		val ibuffer  = new Array[Byte](3*4); stream.read(ibuffer)
+		val header   = new IntBufferJava(new ByteBufferJava(ibuffer, false))
+
+		if(header(0) == 0x7E01) {
+			val width    = header(1)
+			val height   = header(2)
+			val fileSize = width * height * 4
+			val bbuffer  = new Array[Byte](fileSize); stream.read(bbuffer)
+			val data     = new ByteBufferJava(bbuffer, false)
+
+			stream.close
+
+			ImageTEX(width, height, data)
+
+		} else {
+			throw new ImageTEXIOException("ImageTEX.load() invalid header 0x`%X`. Is `%s` in TEX format ?".format(header(0), stream))
+			stream.close
+			null
+		}
+	}
+
+	/** TEX format image loader for Android. 
+  	  *
+  	  * This loader and saver will work only where NIO is available (this means no JavaScript backend).
+  	  * Throws a [[ImageTEXIOException]] for any loading I/O error. */
+	def load(stream:FileInputStream):ImageTEX = {
+		val channel  = stream.getChannel
+		val header   = new IntBufferJava(stream.getChannel.map(FileChannel.MapMode.READ_ONLY, 0, 3*4))
+
+		if(header(0) == 0x7E01) {
+			val width  = header(1)
+			val height = header(2)
+			val fileSize = width * height * 4
+			val data   = new ByteBufferJava(stream.getChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize))
+
+			channel.close
+			stream.close
+
+			ImageTEX(width, height, data)
+
+		} else {
+			throw new ImageTEXIOException("ImageTEX.load() invalid header 0x`%X`. Is `%s` in TEX format ?".format(header(0), stream))
+			channel.close
+			stream.close
+			null
+		}
+	}
+}
+
 
 object TextureImageAndroid {
 	protected def read(fileName:String, params:TexParams):ScalaArrayBuffer[Bitmap] = {
@@ -65,6 +176,7 @@ object TextureImageAndroid {
 	}
 }
 
+
 /** A texture image class for Android. */
 class TextureImageAndroid(val data:ScalaArrayBuffer[Bitmap], val params:TexParams) extends TextureImage {
 	def this(fileName:String, params:TexParams) { this(TextureImageAndroid.read(fileName, params), params) }
@@ -83,8 +195,6 @@ class TextureImageAndroid(val data:ScalaArrayBuffer[Bitmap], val params:TexParam
 	}
 
     def texImage2D(gl:SGL, mode:Int) {
-// TODO XXX premultiplied alpha !
-
     	var level = 0
     	val maxLevels = data.length
 

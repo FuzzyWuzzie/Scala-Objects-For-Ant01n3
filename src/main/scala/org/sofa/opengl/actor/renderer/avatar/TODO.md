@@ -3,6 +3,9 @@
 ## Priority list and roadmap:
 
 0. Test on Android.
+    - almost done, debug events.
+    - finish resource loading.
+    - do time tests.
 1. Creation and representation of the map in the model.
     - a format to store it on disk.
     - a way to represent it on memory.
@@ -18,6 +21,7 @@
 ## Avatars
 
 * Handle *ordered rendering* in AvatarContainer.
+    - It is handled, but probably not efficient : a Z-sort (indeed Y here) before each frame.
 * Handle *selective rendering*, based on a visibility function (use a SpaceHash ?)
 * Handle *picking -> allow avatars to register in a spaceHash ? 
     - a general one ? one per sub-avatar ? one in a specific avatar ?
@@ -31,6 +35,7 @@
 ## Behaviors/Armature
 
 * Extend behavior to Avatars in order to move/scale/rotate them ?
+    - Started : the generic behaviors have been put in a dedicated library.
 * Handle animation of particles in behaviors ?
     - Allow a part of an armature to be instanced multiple times for particles ?
     - Already possible with almost no change in the Armature.
@@ -43,8 +48,8 @@
 ## Library/Resources
 
 * Allow the Library to be actor based, loading elements in the background ? Return a Future instead of an item ? How to handle the fact OpenGL is not thread safe ?
-* Allow to forget texture resources after they are uploaded to OpenGL to save memory !
 * Change the loadresources of Libraries, the XML lib of Scala is very slow. A dedicated format ? JSON ??
+    - JSON done but loading is still very slow -> use a dedicated parser done with Jackson.
 
 ## Surface
 
@@ -67,3 +72,10 @@
 ## CSS
 
 * Add a CSS style sheet system on the avatar hierarchy.
+
+## Android
+
+* Modify the TextureLoader (or others ?) to handle both resources in assets but maybe also in res/raw.
+    - This would allow fast load of textures from AssetFileDescriptor with NIO instead of using the InputStream byte read.s
+    - See the TODO in AndroidImageTEXLoader.
+* Debug events in Android surface.

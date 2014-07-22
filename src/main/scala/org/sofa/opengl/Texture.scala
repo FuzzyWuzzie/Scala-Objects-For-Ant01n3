@@ -86,12 +86,9 @@ class DefaultTextureLoader extends TextureLoader {
 		val pos  = resource.lastIndexOf('.')
 		val res  = if(pos>0) resource.substring(0, pos) else resource
     	val ext  = if(pos>0) resource.substring(pos+1, resource.length) else ""
-
 		var name = params.mipMap match {
-			case Load => { 		
-    			"%s_0.%s".format(res, ext)
-			}
-			case _ => {  resource }
+			case Load => "%s_0.%s".format(res, ext)
+			case _    => resource
 		}
 
 		findPath(name, Texture.path) match {

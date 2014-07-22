@@ -1,7 +1,7 @@
 package org.sofa.opengl.backend
 
 
-import java.io.{File, FileInputStream, FileOutputStream, IOException}
+import java.io.{File, InputStream, FileInputStream, FileOutputStream, IOException}
 import java.nio.channels.{FileChannel}
 import javax.imageio.ImageIO
 
@@ -16,12 +16,55 @@ import org.sofa.opengl.{SGL, Texture, TextureImage, TexParams, TexMipMap, ImageF
 class ImageTEXIOException(msg:String, cause:Throwable=null) extends Exception(msg, cause)
 
 
-/** TEX format image loader for Java. 
-  *
-  * This loader and saver will work only where NIO is available (this means no JavaScript backend). */
-object ImageTEX {
+/** Loader for the TEX format. */
+trait ImageTEXLoader {
 	/** Try to load an image in TEX format from the given `fileName`. Return null if no image was loaded. */
+	def load(fileName:String):ImageTEX	
+
+	/** Try to load one or several images from the `fileName` and texture `params`.
+	  * Either one image is loaded or a pyramid of mipmaps is loaded. The mipmaps
+	  * must be nammed using the `fileName` with a `_number` appended before the
+	  * extension. For example when loading image `foo.png` the mipmaps will be
+	  * nammed `foo_0.png`, `foo_1.png`, etc. */
+	def load(fileName:String, params:TexParams):Array[ImageTEX]
+}
+
+
+object ImageTEXLoaderDefault extends ImageTEXLoader {
+
 	def load(fileName:String):ImageTEX = load(new File(fileName))
+
+	def load(fileName:String, params:TexParams):Array[ImageTEX] = {
+		import TexMipMap._
+
+		val images = new ScalaArrayBuffer[ImageTEX]
+
+Timer.timer.measure("ImageTEX.load()") {
+
+		params.mipMap match {
+			case Load => {
+				var i    = 0
+				val pos  = fileName.lastIndexOf('_')
+				val res  = if(pos > 0) fileName.substring(0, pos) else fileName
+				val ext  = if(pos > 0) fileName.substring(pos+3, fileName.length) else ""
+				var file = new File("%s_%d.%s".format(res, i, ext))
+
+				while(file.exists) {
+					images += load(file)
+					i += 1
+					file = new File("%s_%d.%s".format(res, i, ext))
+				}
+
+				if(images.size <= 0)
+					throw new RuntimeException("cannot load any mipmap level for %s (at least %s_%d.%s)".format(fileName, res, i, ext))
+			}
+			case _ => {
+				images += load(fileName)
+			}
+		}
+}
+		images.toArray
+	}
 
 	/** TEX format image loader for Java. 
   	  *
@@ -29,32 +72,50 @@ object ImageTEX {
   	  * Throws a [[ImageTEXIOException]] for any loading I/O error. */
 	def load(file:File):ImageTEX = {
 		if(file.exists) {	
-			val fileSize = file.length
-			val stream   = new FileInputStream(file)
-			val channel  = stream.getChannel
-			val header   = new IntBufferJava(stream.getChannel.map(FileChannel.MapMode.READ_ONLY, 0, 3*4))
-
-			if(header(0) == 0x7E01) {
-				val width  = header(1)
-				val height = header(2)
-				val data   = new ByteBufferJava(stream.getChannel.map(FileChannel.MapMode.READ_ONLY, 3*4, fileSize-3*4))
-
-				channel.close
-				stream.close
-
-				ImageTEX(width, height, data)
-
-			} else {
-				throw new ImageTEXIOException("ImageTEX.load() invalid header 0x`%X`. Is `%s` in TEX format ?".format(header(0), file.getPath))
-				channel.close
-				stream.close
-				null
-			}
-		} else {
+			load(new FileInputStream(file))
+		}  else {
 			throw new ImageTEXIOException(s"file `${file.getPath()}` not found")
 			null
 		}
 	}
+
+	def load(stream:FileInputStream):ImageTEX = {
+		val channel  = stream.getChannel
+		val header   = new IntBufferJava(channel.map(FileChannel.MapMode.READ_ONLY, 0, 3*4))
+
+		if(header(0) == 0x7E01) {
+			val width    = header(1)
+			val height   = header(2)
+			val fileSize = width * height * 4
+			val data     = new ByteBufferJava(channel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize))
+
+			channel.close
+			stream.close
+
+			ImageTEX(width, height, data)
+
+		} else {
+			throw new ImageTEXIOException("ImageTEX.load() invalid header 0x`%X`. Is `%s` in TEX format ?".format(header(0), stream))
+			channel.close
+			stream.close
+			null
+		}
+	}
+}
+
+
+/** TEX format image loader for Java. 
+  *
+  * This loader and saver will work only where NIO is available (this means no JavaScript backend). */
+object ImageTEX {
+	/** The interchangeable loader for the TEX format. */
+	var loader:ImageTEXLoader = ImageTEXLoaderDefault
+
+	/** TEX format image loader. */
+	def load(fileName:String):ImageTEX = loader.load(fileName)
+
+	/** TEX format image loader. */
+	def load(fileName:String, params:TexParams):Array[ImageTEX] = loader.load(fileName, params)
 
 	/** Try to save an `image` at `fileName` in TEX format. */
 	def save(fileName:String, image:ImageTEX) {
@@ -145,52 +206,11 @@ class ImageTEX(val width:Int, val height:Int, val data:ByteBuffer)  {
 }
 
 
-/** ImageTEX texture companion object. */
-object TextureImageTEX {
-	/** Try to load one or several images from the `fileName` and texture `params`.
-	  * Either one image is loaded or a pyramid of mipmaps is loaded. The mipmaps
-	  * must be nammed using the `fileName` with a `_number` appended before the
-	  * extension. For example when loading image `foo.png` the mipmaps will be
-	  * nammed `foo_0.png`, `foo_1.png`, etc. */
-	def load(fileName:String, params:TexParams):Array[ImageTEX] = {
-		import TexMipMap._
-
-		val images = new ScalaArrayBuffer[ImageTEX]
-
-Timer.timer.measure("ImageTEX.load()") {
-
-		params.mipMap match {
-			case Load => {
-				var i    = 0
-				val pos  = fileName.lastIndexOf('_')
-				val res  = if(pos > 0) fileName.substring(0, pos) else fileName
-				val ext  = if(pos > 0) fileName.substring(pos+3, fileName.length) else ""
-				var file = new File("%s_%d.%s".format(res, i, ext))
-
-				while(file.exists) {
-					images += ImageTEX.load(file)
-					i += 1
-					file = new File("%s_%d.%s".format(res, i, ext))
-				}
-
-				if(images.size <= 0)
-					throw new RuntimeException("cannot load any mipmap level for %s (at least %s_%d.%s)".format(fileName, res, i, ext))
-			}
-			case _ => {
-				images += ImageTEX.load(fileName)
-			}
-		}
-}
-		images.toArray
-	}
-}
-
-
 /** A [[TextureImage]] adapted to the [[ImageTEX]] format. */
 class TextureImageTEX(val images:Array[ImageTEX], val params:TexParams) extends TextureImage {
 	import ImageFormat._
 
-	def this(fileName:String, params:TexParams) { this(TextureImageTEX.load(fileName, params), params) }
+	def this(fileName:String, params:TexParams) { this(ImageTEX.load(fileName, params), params) }
 
 	def this(image:ImageTEX, params:TexParams) { this(Array[ImageTEX](image), params) }
 

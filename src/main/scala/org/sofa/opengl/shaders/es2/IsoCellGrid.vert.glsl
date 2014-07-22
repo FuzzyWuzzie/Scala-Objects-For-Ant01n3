@@ -10,7 +10,7 @@ uniform vec3 texOffset;
 varying vec2 vTexCoords;
 
 void main(void) {
-	if(user.x != 0)
+	if(user.x != 0.0)
 	     vTexCoords = texCoords - texOffset.xy;
 	else vTexCoords = texCoords;
 

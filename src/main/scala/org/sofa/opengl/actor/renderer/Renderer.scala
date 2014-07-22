@@ -213,7 +213,7 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 			// click and long clicks.
 
 			if(prevMotionEvent eq null) {
-				assert(e.isStart)
+				//assert(e.isStart)
 				prevMotionEvent = e
 				prevMotionEventTime = System.currentTimeMillis
 			} else {
