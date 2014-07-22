@@ -132,11 +132,13 @@ object TexMipMap extends Enumeration with TexParam {
 	/** Convert a string to the corresponding value. The string must match
 	  * the value name (but case is ignored). */
 	def fromString(value:String):TexMipMap = {
-		value.toLowerCase match {
-			case "generate" => Generate
-			case "load" => Load
-			case _ => No
-		}
+		if(value ne null)
+			value.toLowerCase match {
+				case "generate" => Generate
+				case "load" => Load
+				case _ => No
+			}
+		else No
 	}
 }
 
@@ -167,14 +169,16 @@ object TexMin extends Enumeration with TexParam {
 	/** Convert a string to the corresponding value. The string must match
 	  * the value name (but case is ignored). */
 	def fromString(value:String):TexMin = {
-		value.toLowerCase match {
-			case "linear" => Linear
-			case "nearestandmipmapnearest" => NearestAndMipMapNearest
-			case "linearandmipmapnearest" => LinearAndMipMapNearest
-			case "nearestandmipmaplinear" => NearestAndMipMapLinear
-			case "linearandmipmaplinear" => LinearAndMipMapLinear
-			case _ => Nearest
-		}
+		if(value ne null)
+			value.toLowerCase match {
+				case "linear" => Linear
+				case "nearestandmipmapnearest" => NearestAndMipMapNearest
+				case "linearandmipmapnearest" => LinearAndMipMapNearest
+				case "nearestandmipmaplinear" => NearestAndMipMapLinear
+				case "linearandmipmaplinear" => LinearAndMipMapLinear
+				case _ => Nearest
+			}
+		else Nearest
 	}
 }
 
@@ -193,10 +197,12 @@ object TexMag extends Enumeration with TexParam {
 	/** Convert a string to the corresponding value. The string must match
 	  * the value name (but case is ignored). */
 	def fromString(value:String):TexMag = {
-		value.toLowerCase match {
-			case "linear" => Linear
-			case _ => Nearest
-		}
+		if(value ne null)
+			value.toLowerCase match {
+				case "linear" => Linear
+				case _ => Nearest
+			}
+		else Nearest
 	}
 }
 
@@ -215,10 +221,12 @@ object TexAlpha extends Enumeration with TexParam {
 	/** Convert a string to the corresponding value. The string must match
 	  * the value name (but case is ignored). */
 	def fromString(value:String):TexAlpha = {
-		value.toLowerCase match {
-			case "premultiply" => Premultiply
-			case _ => Nop
-		}
+		if(value ne null)
+			value.toLowerCase match {
+				case "premultiply" => Premultiply
+				case _ => Nop
+			}
+		else Nop
 	}
 }
 
@@ -239,11 +247,13 @@ object TexWrap extends Enumeration with TexParam {
 	/** Convert a string to the corresponding value. The string must match
 	  * the value name (but case is ignored). */
 	def fromString(value:String):TexWrap = {
-		value.toLowerCase match {
-			case "clamp" => Clamp
-			case "mirroredrepeat" => MirroredRepeat
-			case _ => Repeat
-		}
+		if(value ne null )
+			value.toLowerCase match {
+				case "clamp" => Clamp
+				case "mirroredrepeat" => MirroredRepeat
+				case _ => Repeat
+			}
+		else Repeat
 	}
 }
 

@@ -46,8 +46,9 @@ object RendererActor {
 	/** Define a new resource in the renderer. */
 	case class AddResource(res:ResourceDescriptor[AnyRef])
 
-	/** Setup pathes and resources from an XML configuration file. */
-	case class AddResources(xmlFileName:String)
+	/** Setup pathes and resources from an XML or JSON configuration file.
+	  * The file must end with ".xml" or ".json". */
+	case class AddResources(fileName:String)
 
 	/** Add a new screen. The name of the screen is free. */
 	case class AddScreen(name:String, screenType:String = "default")
@@ -144,7 +145,7 @@ class RendererActor(val renderer:Renderer) extends Actor {
 
 	def receive() = {
 		case Start                                    ⇒ renderer.onStart(self)
-		case AddScreen(name, screenType)              ⇒ {println("adding screen");renderer.addScreen(name, screenType)}
+		case AddScreen(name, screenType)              ⇒ renderer.addScreen(name, screenType)
 		case RemoveScreen(name)                       ⇒ renderer.removeScreen(name)
 		case SwitchScreen(name)                       ⇒ renderer.switchToScreen(name)
 		case AddAvatar(atype, name)                   ⇒ renderer.currentScreen.addAvatar(name, atype)
@@ -153,7 +154,7 @@ class RendererActor(val renderer:Renderer) extends Actor {
 		case ChangeAvatar(name, state)                ⇒ renderer.currentScreen.changeAvatar(name, state)
 		case AddAvatarAcquaintance(name, acqaintance) ⇒ renderer.currentScreen.addAvatarAcquaintance(name, acqaintance)
 		case AddResource(res)                         ⇒ renderer.libraries.addResource(res)
-		case AddResources(xmlFileName)                ⇒ {println("adding resources ${xmlFileName}"); renderer.libraries.addResources(xmlFileName)}
+		case AddResources(fileName)                   ⇒ renderer.libraries.addResources(fileName)
 		case PrintStatus                              ⇒ println(renderer)
 		case x                                        ⇒ println(s"RendererActor unknown message ${x}")
 	}

@@ -1,0 +1,59 @@
+{
+	"pathes": {
+		"shader"   : [ "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2", "shaders" ],
+		"texture"  : [ "/Users/antoine/Documents/Art/Images/HexaLife", "/Users/antoine/Documents/Art/Images", "textures" ],
+		"armature" : [ "/Users/antoine/Documents/Art/Images/HexaLife", "svg" ],
+		"behavior" : []
+	},
+	"shaders": [
+		{ "id": "image-shader"         ,"vertex": "image_shader.vert.glsl" ,"fragment": "image_shader.frag.glsl"  },
+		{ "id": "iso-shader"           ,"vertex": "IsoCellGrid.vert.glsl"  ,"fragment": "IsoCellGrid.frag.glsl"   },
+		{ "id": "iso-cell-grid-shader" ,"vertex": "IsoCellGrid.vert.glsl"  ,"fragment": "IsoCellGridNM.frag.glsl" },
+		{ "id": "armature-shader"      ,"vertex": "IsoArmature.vert.glsl"  ,"fragment": "IsoArmature.frag.glsl"   },
+		{ "id": "armature-shader2"     ,"vertex": "IsoArmature.vert.glsl"  ,"fragment": "IsoArmatureNM.frag.glsl" }
+	],
+	"textures": [
+		{ "id": "ground-color-1"       ,"res": "Ground_Color.tex"    ,"alpha": "premultiply", "mipMap": "generate", "minFilter": "linearandmipmaplinear", "magFilter": "linear" },
+		{ "id": "habitat1-color"       ,"res": "Habitat_Color.tex"   ,"alpha": "premultiply", "mipMap": "generate", "minFilter": "linearandmipmaplinear", "magFilter": "linear" },
+		{ "id": "bolok-color"          ,"res": "Bolok_Color.tex"     ,"alpha": "premultiply", "mipMap": "generate", "minFilter": "linearandmipmaplinear", "magFilter": "linear" },
+		
+		{ "id": "ground-mask-1"        ,"res": "Ground_Mask.tex"     ,"alpha": "premultiply", "mipMap": "generate", "minFilter": "linearandmipmaplinear", "magFilter": "linear" },
+		{ "id": "habitat1-mask"        ,"res": "Habitat_Mask.tex"    ,"alpha": "premultiply", "mipMap": "generate", "minFilter": "linearandmipmaplinear", "magFilter": "linear" },
+		{ "id": "bolok-mask"           ,"res": "Bolok_Mask.tex"      ,"alpha": "premultiply", "mipMap": "generate", "minFilter": "linearandmipmaplinear", "magFilter": "linear" }
+	],
+	"armatures": [
+		{ "id": "habitat1-armature" ,"tex": "habitat1-color" ,"shader": "armature-shader"  ,"src": "Habitats_Habitat1.arm" ,"armatureid": "Habitat1"  ,"scale": 0.0025 },
+		{ "id": "bolok-armature"    ,"tex": "bolok-color"    ,"shader": "armature-shader"  ,"src": "Boloks_Bolok1.arm"     ,"armatureid": "Bolok1"    ,"scale": 0.0025 },
+		{ "id": "dock-armature"     ,"tex": "bolok-color"    ,"shader": "armature-shader"  ,"src": "Boloks_Dock1.arm"      ,"armatureid": "Dock1"     ,"scale": 0.0025 },
+		{ "id": "somadrop-armature" ,"tex": "habitat1-color" ,"shader": "armature-shader"  ,"src": "Habitats_SomaDrop.arm" ,"armatureid": "SomaDrop"  ,"scale": 0.0025 },
+		{ "id": "dock2-armature"    ,"tex": "bolok-color"    ,"shader": "armature-shader2" ,"src": "Boloks_Dock2.arm"      ,"armatureid": "Dock2"     ,"scale": 0.0025 }
+	],
+	"behaviors": {
+		"in_parallel": [
+			{ "id": "bolok-close-eye", "behaviors": [ "bolok-close-uplid", "bolok-close-downlid" ] },
+			{ "id": "bolok-open-eye",  "behaviors": [ "bolok-open-uplid", "bolok-open-downlid" ] },
+			{ "id": "bolok-eye",       "behaviors": [ "bolok-eye-seq", "bolok-blink" ] }
+		],
+		"in_sequence": [
+			{ "id": "bolok-blink",      "behaviors": [ "bolok-close-eye", "bolok-open-eye", "wait(2000)" ] },
+			{ "id": "bolok-eye-seq",    "behaviors": [ "bolok-eye-to-left", "bolok-eye-to-right" ] },
+			{ "id": "dock-grow-shrink", "behaviors": [ "dock-grow", "dock-shrink" ] }
+		],
+		"loop": [
+			{ "id": "bolok-eye-loop",        "behaviors": [ "bolok-eye" ] },
+			{ "id": "dock-grow-shrink-loop", "behaviors": [ "dock-grow-shrink" ] }
+		],
+		"lerp_to_position": [
+			{ "arm": "bolok-armature" ,"joint": "iris"    ,"id": "bolok-eye-to-left"   ,"value": [-0.02, 0.0 ],   "duration": 1250 },
+			{ "arm": "bolok-armature" ,"joint": "iris"    ,"id": "bolok-eye-to-right"  ,"value": [ 0.02, 0.0 ],   "duration": 1250 },
+			{ "arm": "bolok-armature" ,"joint": "uplid"   ,"id": "bolok-close-uplid"   ,"value": [ 0.0, -0.038 ], "duration": 300 },
+			{ "arm": "bolok-armature" ,"joint": "uplid"   ,"id": "bolok-open-uplid"    ,"value": [ 0.0,  0.0 ],   "duration": 200 },
+			{ "arm": "bolok-armature" ,"joint": "downlid" ,"id": "bolok-close-downlid" ,"value": [ 0.0,  0.038 ], "duration": 300 },
+			{ "arm": "bolok-armature" ,"joint": "downlid" ,"id": "bolok-open-downlid"  ,"value": [ 0.0,  0.0 ],   "duration": 200 }
+		],
+		"lerp_to_scale": [
+			{ "arm": "dock-armature", "joint": "root", "id": "dock-grow"   ,"value": [ 1.15, 1.0 ] ,"duration": 1200},
+			{ "arm": "dock-armature", "joint": "root", "id": "dock-shrink" ,"value": [ 1.0,  1.0 ]  ,"duration": 400}
+		]
+	}
+}
