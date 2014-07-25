@@ -435,7 +435,10 @@ class JuiceScene(val camera:Camera) extends SurfaceRenderer {
 		biroute = birouteMesh.newVertexArray(gl, nmapShad, Vertex -> "position", Normal -> "normal", Tangent -> "tangent", TexCoord -> "texCoords")
 
 		// Phong shader
-		
+
+		isoSurfaceMesh v(0) xyz(0,0,0) rgba(0,0,0,0) nnn(0,0,0)		
+		isoPlaneMesh v(0) xyz(0,0,0) rgba(0,0,0,0) nnn(0,0,0)
+
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 		isoPlane   = isoPlaneMesh.newVertexArray(  gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 		obstacles  = obstaclesMesh.newVertexArray( gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
@@ -1095,57 +1098,58 @@ triangleCount = 0
 
 /** A simple mouse/key controller for the camera and simulation. */
 class JuiceInteractions(camera:Camera, val scene:JuiceScene) extends BasicCameraController(camera) {
-    override def actionKey(surface:Surface, keyEvent:ActionKeyEvent) {
-println("TODO JuiceInteractions.actionKey")
-      //   import org.sofa.gfx.surface.ActionChar._
-      //   if(keyEvent.isPrintable) {
-      //   	keyEvent.unicodeChar match {
-      //       	case ' ' => { scene.pausePlay }
-      //       	case 'p' => { scene.drawParticlesFlag  = !scene.drawParticlesFlag  }
-      //       	case 'P' => { scene.drawIsoPlaneFlag   = !scene.drawIsoPlaneFlag   }
-      //       	case 's' => { scene.drawIsoSurfaceFlag = !scene.drawIsoSurfaceFlag }
-      //       	case 'O' => { scene.drawIsoContourFlag = !scene.drawIsoContourFlag }
-      //       	case 'i' => { scene.drawSpringsFlag    = !scene.drawSpringsFlag    }
-      //       	case 'q' => { sys.exit(0) }
-      //       	case '1' => { scene.player1.velocity.y -= 0.5 }
-      //       	case '7' => { scene.player1.velocity.y += 0.5 }
-      //       	case '3' => { scene.player2.velocity.y -= 0.5 }
-      //       	case '9' => { scene.player2.velocity.y += 0.5 }
-      //       	case 'H' => {
-      //       		println("Keys:")
-      //       		println("    <space>  pause/play the simulation.")
-      //       		println("    p        toggle draw particles.")
-      //       		println("    P        toggle draw the iso plane.")
-      //       		println("    s        toggle draw the iso surface.")
-      //       		println("    O        toggle draw the iso contour.")
-      //       		println("    i        toogle draw the springs.")
-      //       		println("    q        quit (no questions, it quits!).")
-      //       	}
-      //       	case _ => { super.key(surface, keyEvent) }
-      //       }
-      //   } else {
-	    	// keyEvent.actionChar match {
-		    // 	case PageUp   => { camera.eyeTraveling(-step) } 
-		    // 	case PageDown => { camera.eyeTraveling(step) }
-		    // 	case Up       => { camera.rotateEyeVertical(step) }
-		    // 	case Down     => { camera.rotateEyeVertical(-step) }
-		    // 	case Left     => { camera.rotateEyeHorizontal(-step) }
-		    // 	case Right    => { camera.rotateEyeHorizontal(step) }
-		    // 	case _        => { super.key(surface, keyEvent) }
-	    	// }
+    override def unicode(surface:Surface, e:UnicodeEvent) {
+    	e.unicode match {
+        	case ' ' => { scene.pausePlay }
+        	case 'p' => { scene.drawParticlesFlag  = !scene.drawParticlesFlag  }
+        	case 'P' => { scene.drawIsoPlaneFlag   = !scene.drawIsoPlaneFlag   }
+        	case 's' => { scene.drawIsoSurfaceFlag = !scene.drawIsoSurfaceFlag }
+        	case 'O' => { scene.drawIsoContourFlag = !scene.drawIsoContourFlag }
+        	case 'i' => { scene.drawSpringsFlag    = !scene.drawSpringsFlag    }
+        	case 'q' => { sys.exit(0) }
+        	case '1' => { scene.player1.velocity.y -= 0.5 }
+        	case '7' => { scene.player1.velocity.y += 0.5 }
+        	case '3' => { scene.player2.velocity.y -= 0.5 }
+        	case '9' => { scene.player2.velocity.y += 0.5 }
+        	case 'H' => {
+        		println("Keys:")
+        		println("    <space>  pause/play the simulation.")
+        		println("    p        toggle draw particles.")
+        		println("    P        toggle draw the iso plane.")
+        		println("    s        toggle draw the iso surface.")
+        		println("    O        toggle draw the iso contour.")
+        		println("    i        toogle draw the springs.")
+        		println("    q        quit (no questions, it quits!).")
+        	}
+        	case _ => { super.unicode(surface, e) }
+        }
 
-      //       super.key(surface, keyEvent)
-      //   }
+    }
+
+    override def actionKey(surface:Surface, e:ActionKeyEvent) {
+        import org.sofa.gfx.surface.event.ActionKey._
+    	
+    	e.key match {
+	    	case PageUp   => { camera.eyeTraveling(-step) } 
+	    	case PageDown => { camera.eyeTraveling(step) }
+	    	case Up       => { camera.rotateEyeVertical(step) }
+	    	case Down     => { camera.rotateEyeVertical(-step) }
+	    	case Left     => { camera.rotateEyeHorizontal(-step) }
+	    	case Right    => { camera.rotateEyeHorizontal(step) }
+	    	case _        => { super.actionKey(surface, e) }
+    	}
     }
 	
 	override def gesture(surface:Surface, e:GestureEvent) {
-println("TODO JuiceInteractions.gesture")
-	    // camera.radius = camera.radius + e.amount * step
-	    // if(camera.radius < 30) camera.radius = 30
-	    // else if(camera.radius > 50) camera.radius = 50
+		e match {
+			case scale:ScaleEvent => {
+				camera.radius = camera.radius + scale.delta * step
+			    if(camera.radius < 30) camera.radius = 30
+	    		else if(camera.radius > 50) camera.radius = 50
+			}
+			case _ => {
+				super.gesture(surface, e)
+			}
+		}
 	} 	
-	
-	override def motion(surface:Surface, e:MotionEvent) {
-//		super.motion(surface, e)
-	}
 }

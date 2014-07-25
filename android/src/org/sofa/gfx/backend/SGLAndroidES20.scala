@@ -1,8 +1,8 @@
-package org.sofa.opengl.backend
+package org.sofa.gfx.backend
 
 import java.nio.{Buffer,IntBuffer=>NioIntBuffer,FloatBuffer=>NioFloatBuffer,DoubleBuffer=>NioDoubleBuffer,ByteBuffer=>NioByteBuffer}
 import org.sofa.nio._
-import org.sofa.opengl._
+import org.sofa.gfx._
 import org.sofa.math._
 import android.opengl.{GLES20, GLU}
 import android.util.Log

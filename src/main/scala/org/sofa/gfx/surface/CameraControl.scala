@@ -8,28 +8,37 @@ import org.sofa.gfx.surface.event._
 
 class BasicCameraController(val camera:Camera) {
 	
-	protected var step = 0.1
+	protected[this] var step = 0.1
 	
 	def gesture(surface:Surface, e:GestureEvent) {
-		println("TODO BasicCameraController.gesture (scroll)")
-	//    camera.rotateEyeHorizontal(e.amount * step * 0.05)
+		e match {
+			case scroll:ScrollEvent => {
+				camera.rotateEyeHorizontal(scroll.delta.x * step * 0.05)
+				camera.rotateEyeVertical(scroll.delta.y * step * 0.05)
+			}
+			case scale:ScaleEvent => {
+				camera.eyeTraveling(scale.delta * 0.05)
+			}
+			case _ => {}
+		}
 	} 
 	
 	def actionKey(surface:Surface, e:ActionKeyEvent) {
-	println("TODO BasicCameraController.actionKey")
-	    // import org.sofa.gfx.surface.ActionChar._
-	    // if(! e.isPrintable) {
-	    // 	e.actionChar match {
-		   //  	case PageUp   => { camera.eyeTraveling(-step) } 
-		   //  	case PageDown => { camera.eyeTraveling(step) }
-		   //  	case Up       => { camera.rotateEyeVertical(step) }
-		   //  	case Down     => { camera.rotateEyeVertical(-step) }
-		   //  	case Left     => { camera.rotateEyeHorizontal(-step) }
-		   //  	case Right    => { camera.rotateEyeHorizontal(step) }
-		   //  	case _        => {}
-	    // 	}
-	    // }
-	}       
+	    import org.sofa.gfx.surface.event.ActionKey._
+
+		e.key match {
+	    	case PageUp   => camera.eyeTraveling(-step)
+	    	case PageDown => camera.eyeTraveling(step)
+	    	case Up       => camera.rotateEyeVertical(step)
+	    	case Down     => camera.rotateEyeVertical(-step)
+	    	case Left     => camera.rotateEyeHorizontal(-step)
+	    	case Right    => camera.rotateEyeHorizontal(step)
+	    	case _        => {}
+		}
+	} 
+
+	def unicode(surface:Surface, e:UnicodeEvent) {
+	}  
 	
 	def motion(surface:Surface, e:MotionEvent) {
 	}

@@ -185,23 +185,29 @@ class NormalMap extends SurfaceRenderer {
 }
 
 class MyCameraController(camera:Camera, light:Vector4) extends BasicCameraController(camera) {
+
+	protected[this] var shift:Boolean = false
+
     override def actionKey(surface:Surface, keyEvent:ActionKeyEvent) {
-println("TODO MyCameraController.actionKey (NormalMap)")
-        // import org.sofa.gfx.surface.event.ActionKey._
-        // if(keyEvent.isShiftDown) {
-        //     if(! keyEvent.isPrintable) {
-        //         keyEvent.actionChar match {
-        //             case Up       => { light.x -= 0.1 }
-        //             case Down     => { light.x += 0.1 }
-        //             case Right    => { light.z -= 0.1 }
-        //             case Left     => { light.z += 0.1 }
-        //             case PageUp   => { light.y += 0.1 }
-        //             case PageDown => { light.y -= 0.1 }
-        //             case _ => {}
-        //         }
-        //     }
-        // } else {
-        //     super.key(surface, keyEvent)
-        // }
+        import org.sofa.gfx.surface.event.ActionKey._
+		
+		keyEvent.key match {
+			case Shift => { shift = keyEvent.isStart }
+			case _ => {
+				if(shift) {
+					keyEvent.key match {
+		    	        case Up       => { light.x -= 0.1 }
+		        	    case Down     => { light.x += 0.1 }
+		            	case Right    => { light.z -= 0.1 }
+		            	case Left     => { light.z += 0.1 }
+		            	case PageUp   => { light.y += 0.1 }
+		            	case PageDown => { light.y -= 0.1 }
+		            	case _ => super.actionKey(surface, keyEvent)
+		            }
+		        } else {
+		        	super.actionKey(surface, keyEvent)
+		        }
+			}
+		}
     }
 }

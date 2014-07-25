@@ -137,6 +137,7 @@ class TestMetaBalls extends SurfaceRenderer {
 		frame          = display
 		surfaceChanged = reshape
 		actionKey      = ctrl.actionKey
+		unicode        = ctrl.unicode
 		motion         = ctrl.motion
 		gesture        = ctrl.gesture
 		close          = { surface => sys.exit }
@@ -187,6 +188,7 @@ class TestMetaBalls extends SurfaceRenderer {
 
 		initBalls(metaBallCount)
 
+		isoSurfaceMesh v(0) xyz(0,0,0) rgba(0,0,0,0) nnn(0,0,0)
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 		
 		wcubeMesh = new WireCubeMesh(bucketSize.toFloat)
@@ -439,19 +441,16 @@ class TestMetaBalls extends SurfaceRenderer {
 }
 
 class MetaBallsCameraController(camera:Camera, val mb:TestMetaBalls) extends BasicCameraController(camera) {
-    override def actionKey(surface:Surface, keyEvent:ActionKeyEvent) {
-println("TODO MetaBallsCameraController.actionKey")
-        // import org.sofa.gfx.surface.ActionChar._
-        // if(keyEvent.isPrintable) {
-        // 	keyEvent.unicodeChar match {
-        //     	case ' ' => { mb.pausePlay }
-        //     	case 'p' => { mb.showParticles = !mb.showParticles }
-        //     	case 's' => { mb.showSpaceHash = !mb.showSpaceHash }
-        //     	case 'c' => { mb.showIsoCubes = !mb.showIsoCubes }
-        //     	case _ => super.key(surface, keyEvent)
-        //     }
-        // } else {
-        //     super.key(surface, keyEvent)
-        // }
+    override def unicode(surface:Surface, e:UnicodeEvent) {
+    	if(e.isEnd) {
+	    	e.unicode match {
+        		case ' ' => { mb.pausePlay }
+	        	case 'p' => { mb.showParticles = !mb.showParticles }
+    	    	case 's' => { mb.showSpaceHash = !mb.showSpaceHash }
+        		case 'c' => { mb.showIsoCubes = !mb.showIsoCubes }
+        		case 'h' => { println("p = pause, s = space hash, c = iso cubes") }
+	        	case _ => super.unicode(surface, e)
+    	    }
+    	}
     }
 }

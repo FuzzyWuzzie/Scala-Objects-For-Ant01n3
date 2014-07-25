@@ -346,49 +346,26 @@ class RobotBehavior(val armature:Armature) {
 
 
 class RobotInteraction(camera:Camera, val renderer:TestRobot) extends BasicCameraController(camera) {
-	val oldPos = Point3(0,0,0)
-	
-	val vector = Vector3()
-
-	override def actionKey(surface:Surface, e:ActionKeyEvent) {
-println("TODO RobotInteraction.actionKey")
-	    // import org.sofa.gfx.surface.ActionChar._
-	 
-	    // if(! e.isPrintable) {
-	    // 	e.actionChar match {
-		   //  	case Escape   => { renderer.zoom = 1.0; renderer.resetCameraProjection }
-		   //  	case Space    => { renderer.zoom = 1.0; renderer.resetCameraProjection }
-		   //  	case _        => {}
-	    // 	}
-	    // }
-	}       
-	
 	override def gesture(surface:Surface, e:GestureEvent) {
-println("TODO RobotInteraction.gesture")
-//		zoom(e.amount * step * 0.05)
+		e match {
+			case scroll:ScrollEvent => {}
+			case scale:ScaleEvent => {
+				renderer.zoom += (scale.delta * 0.005)
+				if(renderer.zoom < 0.5) renderer.zoom = 0.5
+				renderer.resetCameraProjection
+			}
+			case _ => super.gesture(surface, e)
+		}
 	} 
 
-	override def motion(surface:Surface, event:MotionEvent) {
-println("TODO RobotInteraction.motion")
-		// if(event.isStart) {
-		// 	oldPos.set(event.x, event.y, event.pressure)
-		// } else if(event.isEnd) {
-		// 	vector.set(event.x-oldPos.x, event.y-oldPos.y, 0)
-		// 	oldPos.set(event.x, event.y, event.pressure)
-		// 	zoom(vector.y*0.005)
-		// } else {
-		// 	vector.set(event.x-oldPos.x, event.y-oldPos.y, 0)
-		// 	oldPos.set(event.x, event.y, event.pressure)
-		// 	zoom(vector.y*0.005)
-		// }
-	}
 
-	// protected def zoom(amount:Double) {
-	// 	renderer.zoom += amount
-
-	// 	if(renderer.zoom < 0.1) renderer.zoom = 0.1
-	//     else if(renderer.zoom > 100) renderer.zoom = 100.0
-	    
-	//     renderer.resetCameraProjection
-	// }
+	override def actionKey(surface:Surface, e:ActionKeyEvent) {
+	    import org.sofa.gfx.surface.event.ActionKey._
+	 
+    	e.key match {
+	    	case Escape   => { renderer.zoom = 1.0; renderer.resetCameraProjection }
+	    	//case Space    => { renderer.zoom = 1.0; renderer.resetCameraProjection }
+	    	case _        => {}
+    	}
+	}       
 }

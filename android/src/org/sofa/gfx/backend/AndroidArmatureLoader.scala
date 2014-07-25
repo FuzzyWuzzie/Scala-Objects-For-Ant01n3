@@ -1,8 +1,8 @@
-package org.sofa.opengl.backend
+package org.sofa.gfx.backend
 
 import android.content.res.Resources
 import org.sofa.backend.AndroidLoader
-import org.sofa.opengl.armature.{Armature, ArmatureLoader, SVGArmatureLoader, ARMArmatureLoader}
+import org.sofa.gfx.armature.{Armature, ArmatureLoader, SVGArmatureLoader, ARMArmatureLoader}
 
 /** Default loader for shaders, based on files and the include path.
   * This loader tries to open the given resource directly, then if not

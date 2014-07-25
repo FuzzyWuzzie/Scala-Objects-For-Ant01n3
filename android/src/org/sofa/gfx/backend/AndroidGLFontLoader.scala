@@ -1,11 +1,11 @@
-package org.sofa.opengl.backend
+package org.sofa.gfx.backend
 
 import org.sofa.Timer
-import org.sofa.opengl.{SGL, Texture, TexParams}
+import org.sofa.gfx.{SGL, Texture, TexParams}
 import org.sofa.backend.AndroidLoader
 import android.content.res.Resources
 import android.graphics.{Bitmap, Canvas, Paint, Typeface}
-import org.sofa.opengl.text.{GLFont, GLFontLoader, TextureRegion}
+import org.sofa.gfx.text.{GLFont, GLFontLoader, TextureRegion}
 
 import scala.math._
 

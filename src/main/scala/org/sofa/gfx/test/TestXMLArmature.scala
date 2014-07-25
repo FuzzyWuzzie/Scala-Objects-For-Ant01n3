@@ -278,34 +278,25 @@ class TestXMLArmature extends SurfaceRenderer {
 
 class TestXMLArmatureCameraController(camera:Camera, val app:TestXMLArmature) extends BasicCameraController(camera) {
 	override def gesture(surface:Surface, e:GestureEvent) {
-println("TODO TestXMLArmature.gesture")
-	    // app.zoom += (e.amount * step * 0.05)
-	    
-	    // if(app.zoom < 0.1) app.zoom = 0.1
-	    // else if(app.zoom > 100) app.zoom = 100.0
-	    
-	    // app.resetCameraProjection
+		e match {
+			case scroll:ScrollEvent => {}
+			case scale:ScaleEvent => {
+				app.zoom += (scale.delta * 0.005)
+				if(app.zoom < 0.5) app.zoom = 0.5
+				app.resetCameraProjection
+			}
+			case _ => super.gesture(surface, e)
+		}
 	} 
-	
+
+
 	override def actionKey(surface:Surface, e:ActionKeyEvent) {
-println("TODO TestXMLArmature.actionKey")
-	    // import org.sofa.gfx.surface.ActionChar._
+	    import org.sofa.gfx.surface.event.ActionKey._
 	 
-	    // if(! e.isPrintable) {
-	    // 	e.actionChar match {
-		   //  	// case PageUp   => { camera.zoomView(-step) } 
-		   //  	// case PageDown => { camera.zoomView(step) }
-		   //  	// case Up       => { camera.rotateViewVertical(step) }
-		   //  	// case Down     => { camera.rotateViewVertical(-step) }
-		   //  	// case Left     => { camera.rotateViewHorizontal(-step) }
-		   //  	// case Right    => { camera.rotateViewHorizontal(step) }
-		   //  	case Escape   => { app.zoom = 1.0; app.resetCameraProjection }
-		   //  	case Space    => { app.zoom = 1.0; app.resetCameraProjection }
-		   //  	case _        => {}
-	    // 	}
-	    // }
+    	e.key match {
+	    	case Escape   => { app.zoom = 1.0; app.resetCameraProjection }
+	    	//case Space    => { app.zoom = 1.0; app.resetCameraProjection }
+	    	case _        => {}
+    	}
 	}       
-	
-	override def motion(surface:Surface, e:MotionEvent) {
-	}
 }

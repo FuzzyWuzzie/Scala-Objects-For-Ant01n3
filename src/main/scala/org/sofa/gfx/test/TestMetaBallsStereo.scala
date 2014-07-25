@@ -121,6 +121,7 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 		frame          = display
 		surfaceChanged = reshape
 		actionKey      = ctrl.actionKey
+		unicode        = ctrl.unicode
 		motion         = ctrl.motion
 		gesture        = ctrl.gesture
 		close          = { surface => sys.exit }
@@ -171,6 +172,7 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 
 		initBalls(metaBallCount)
 
+		isoSurfaceMesh v(0) xyz(0,0,0) rgba(0,0,0,0) nnn(0,0,0)
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 		
 		wcubeMesh = new WireCubeMesh(bucketSize.toFloat)
@@ -452,31 +454,21 @@ class TestMetaBallsStereo extends SurfaceRenderer {
 }
 
 class MetaBallsCameraControllerStereo(camera:Camera, val mb:TestMetaBallsStereo) extends BasicCameraController(camera) {
-    override def actionKey(surface:Surface, keyEvent:ActionKeyEvent) {
-println("TODO MetaBallsCameraControllerStereo.actionKey")
-      //   import org.sofa.gfx.surface.ActionChar._
-      //   if(keyEvent.isPrintable) {
-      //   	keyEvent.unicodeChar match {
-      //       	case ' ' => { mb.pausePlay }
-      //       	case 'p' => { mb.showParticles = !mb.showParticles }
-      //       	case 's' => { mb.showSpaceHash = !mb.showSpaceHash }
-      //       	case 'c' => { mb.showIsoCubes  = !mb.showIsoCubes }
-      //       	case 'w' => { mb.eyeAngle += 0.01 }
-      //       	case 'x' => { mb.eyeAngle -= 0.01 }
-      //       	case 'b' => { mb.near += 0.1; if(mb.near > 10) mb.near = 10 }
-      //       	case 'n' => { mb.near -= 0.1; if(mb.near < 0.1) mb.near = 0.1 }
-      //       	case _ => super.key(surface, keyEvent)
-      //       }
-      //   } else {
-      //   	keyEvent.actionChar match {
-		    // 	case PageUp   => { camera.eyeTraveling(-step) } 
-		    // 	case PageDown => { camera.eyeTraveling(step) }
-		    // 	case Up       => { camera.rotateEyeVertical(step) }
-		    // 	case Down     => { camera.rotateEyeVertical(-step) }
-		    // 	case Left     => { camera.rotateEyeHorizontal(-step) }
-		    // 	case Right    => { camera.rotateEyeHorizontal(step) }
-		    // 	case _        => super.key(surface, keyEvent)
-	    	// }
-      //   }
+    
+    override def unicode(surface:Surface, e:UnicodeEvent) {
+    	if(e.isEnd) {
+	    	e.unicode match {
+        		case 'h' => { println("p = pause, s = space hash, c = iso cubes, w/x = eye angle, b/n = near plane") }
+            	case ' ' => { mb.pausePlay }
+            	case 'p' => { mb.showParticles = !mb.showParticles }
+            	case 's' => { mb.showSpaceHash = !mb.showSpaceHash }
+            	case 'c' => { mb.showIsoCubes  = !mb.showIsoCubes }
+            	case 'w' => { mb.eyeAngle += 0.01 }
+            	case 'x' => { mb.eyeAngle -= 0.01 }
+            	case 'b' => { mb.near += 0.1; if(mb.near > 10) mb.near = 10 }
+            	case 'n' => { mb.near -= 0.1; if(mb.near < 0.1) mb.near = 0.1 }
+	        	case _ => super.unicode(surface, e)
+    	    }
+    	}
     }
 }

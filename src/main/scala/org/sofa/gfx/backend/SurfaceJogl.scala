@@ -109,6 +109,10 @@ class SurfaceNewt(
       * is used only in the EDT thread. */
     protected[this] var sendNoButMotionEvents:Boolean = false
 
+    /** If true the mouse scroll wheel event is transformed to a [[ScaleEventJogl]],
+      * else a [[ScrollEventJogl]] with a delta y is sent. */
+    protected[this] var mouseWheelSendsScale:Boolean = true
+
     build(backend)
     
     protected def build(backend:SurfaceNewtGLBackend) {
@@ -378,8 +382,14 @@ class SurfaceNewt(
     }
  
     def mouseWheelMoved(e:JoglMouseEvent) {
-    	if(hlEvents)
-			eventQueue.add(ScaleEventJogl(e)) 
+    	if(hlEvents) {
+    		if(mouseWheelSendsScale) {
+				eventQueue.add(ScaleEventJogl(e, 0))
+			} else {
+				val a = e.getRotation
+				eventQueue.add(ScrollEventJogl(e, 0, Vector3(0, a(1), 0)))
+			}
+    	}
     }
 
 // -- Utility ---------------------

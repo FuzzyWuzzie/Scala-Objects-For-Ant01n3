@@ -1,6 +1,6 @@
-package org.sofa.opengl.backend
+package org.sofa.gfx.backend
 
-import org.sofa.opengl.io.collada.{ColladaLoader,ColladaFile}
+import org.sofa.gfx.io.collada.{ColladaLoader,ColladaFile}
 import scala.xml.{XML, NodeSeq}
 import android.content.res.Resources
 import org.sofa.backend.AndroidLoader

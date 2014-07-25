@@ -1,4 +1,4 @@
-package org.sofa.opengl.actor.renderer.backend
+package org.sofa.gfx.actor.renderer.backend
 
 import android.app.Activity
 import android.opengl.GLSurfaceView
@@ -6,11 +6,11 @@ import android.opengl.GLSurfaceView
 
 import org.sofa.backend.SOFALog
 import org.sofa.math.Point3
-import org.sofa.opengl.actor.renderer.{Renderer, RendererFactory, AvatarFactory}
-import org.sofa.opengl.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarMotionEvent, AvatarKeyEvent, AvatarZoomEvent}
-import org.sofa.opengl.surface.{Surface, SurfaceRenderer, MotionEvent, KeyEvent, ScrollEvent}
+import org.sofa.gfx.actor.renderer.{Renderer, RendererFactory, AvatarFactory}
+import org.sofa.gfx.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarMotionEvent, AvatarKeyEvent, AvatarZoomEvent}
+import org.sofa.gfx.surface.{Surface, SurfaceRenderer, MotionEvent, KeyEvent, ScrollEvent}
 
-import org.sofa.opengl.backend.{SurfaceAndroidES20}
+import org.sofa.gfx.backend.{SurfaceAndroidES20}
 
 import akka.actor.{ActorRef}
 

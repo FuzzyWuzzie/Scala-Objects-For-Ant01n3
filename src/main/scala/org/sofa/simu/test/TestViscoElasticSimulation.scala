@@ -37,6 +37,7 @@ import org.sofa.simu.ViscoElasticSimulation
 import org.sofa.simu.Particle
 import org.sofa.simu.QuadWall
 import org.sofa.Environment
+import org.sofa.gfx.surface.event._
 
 object TestViscoElasticSimulation {
 	def main(args:Array[String]) = (new TestViscoElasticSimulation).test
@@ -146,7 +147,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		initSurface    = initializeSurface
 		frame          = display
 		surfaceChanged = reshape
-		actionKey      = ctrl.actionKey
+		unicode        = ctrl.unicode
 		motion         = ctrl.motion
 		gesture        = ctrl.gesture
 		close          = { surface => sys.exit }
@@ -209,6 +210,8 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 
 		// Phong shader
 				
+		isoSurfaceMesh v(0) xyz(0,0,0) rgba(0,0,0,0) nnn(0,0,0)
+
 		plane      = planeMesh.newVertexArray(     gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 		isoSurface = isoSurfaceMesh.newVertexArray(gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
 		obstacles  = obstaclesMesh.newVertexArray( gl, phongShad, Vertex -> "position", Color -> "color", Normal -> "normal")
@@ -514,21 +517,17 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 
 /** A simple mouse/key controller for the camera and simulation. */
 class TVESCameraController(camera:Camera, val ves:TestViscoElasticSimulation) extends BasicCameraController(camera) {
-    override def actionKey(surface:Surface, keyEvent:ActionKeyEvent) {
-println("TODO TVESCameraController.actionKey")
-        // import org.sofa.gfx.surface.ActionChar._
-        // if(keyEvent.isPrintable) {
-        // 	keyEvent.unicodeChar match {
-        //     	case ' ' => { ves.pausePlay }
-        //     	case 'p' => { ves.drawParticlesFlag = !ves.drawParticlesFlag }
-        //     	case 'h' => { ves.drawSpaceHashFlag = !ves.drawSpaceHashFlag }
-        //     	case 'c' => { ves.drawIsoCubesFlag = !ves.drawIsoCubesFlag }
-        //     	case 's' => { ves.drawIsoSurfaceFlag = !ves.drawIsoSurfaceFlag }
-        //     	case 'q' => { sys.exit(0) }
-        //     	case _ => super.key(surface, keyEvent)
-        //     }
-        // } else {
-        //     super.key(surface, keyEvent)
-        // }
+    override def unicode(surface:Surface, keyEvent:UnicodeEvent) {
+    	if(keyEvent.isEnd) {
+	    	keyEvent.unicode match {
+	        	case ' ' => { ves.pausePlay }
+	        	case 'p' => { ves.drawParticlesFlag = !ves.drawParticlesFlag }
+	        	case 'h' => { ves.drawSpaceHashFlag = !ves.drawSpaceHashFlag }
+	        	case 'c' => { ves.drawIsoCubesFlag = !ves.drawIsoCubesFlag }
+	        	case 's' => { ves.drawIsoSurfaceFlag = !ves.drawIsoSurfaceFlag }
+	        	case 'q' => { sys.exit(0) }
+	        	case _ => super.unicode(surface, keyEvent)
+	        }
+	    }
     }
 }

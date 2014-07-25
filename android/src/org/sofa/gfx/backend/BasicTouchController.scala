@@ -1,9 +1,9 @@
-package org.sofa.opengl.backend
+package org.sofa.gfx.backend
 
 import org.sofa.math.{Vector3, Point3}
-import org.sofa.opengl.Camera
-import org.sofa.opengl.surface.{Surface, BasicCameraController}
-import org.sofa.opengl.surface.event.MotionEvent
+import org.sofa.gfx.Camera
+import org.sofa.gfx.surface.{Surface, BasicCameraController}
+import org.sofa.gfx.surface.event.MotionEvent
 
 class BasicTouchController(camera:Camera) extends BasicCameraController(camera) {
 	val oldPos = Point3(0,0,0)

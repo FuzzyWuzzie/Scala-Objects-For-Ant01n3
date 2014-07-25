@@ -1,4 +1,4 @@
-package org.sofa.opengl.backend
+package org.sofa.gfx.backend
 
 
 import java.io.{InputStream, FileInputStream, IOException}
@@ -10,7 +10,7 @@ import android.graphics.{Bitmap, BitmapFactory, Color}
 
 import org.sofa.Timer
 import org.sofa.nio.{ByteBuffer, IntBufferJava, ByteBufferJava}
-import org.sofa.opengl.{SGL, Texture, TextureLoader, TextureImage, ImageFormat, TexParams, TexMipMap, TexAlpha}
+import org.sofa.gfx.{SGL, Texture, TextureLoader, TextureImage, ImageFormat, TexParams, TexMipMap, TexAlpha}
 import org.sofa.backend.AndroidLoader
 
 import scala.collection.mutable.{ArrayBuffer => ScalaArrayBuffer}

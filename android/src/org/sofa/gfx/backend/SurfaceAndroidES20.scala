@@ -1,8 +1,8 @@
-package org.sofa.opengl.backend
+package org.sofa.gfx.backend
 
 import org.sofa.backend.SOFALog
-import org.sofa.opengl._
-import org.sofa.opengl.surface.{Surface, SurfaceRenderer}
+import org.sofa.gfx._
+import org.sofa.gfx.surface.{Surface, SurfaceRenderer}
 
 import android.opengl.GLSurfaceView
 import android.content.Context
@@ -254,12 +254,12 @@ debug(s"** onSurfaceChanged(${Thread.currentThread.getName})")
 
 
 
-class ScrollEventAndroid(val source:android.view.MotionEvent) extends org.sofa.opengl.surface.ScrollEvent {
+class ScrollEventAndroid(val source:android.view.MotionEvent) extends org.sofa.gfx.surface.ScrollEvent {
     // Not supported in > 10 (> android 2.3)
     def amount:Double = 0//source.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL).toInt
 }
 
-class MotionEventAndroid(val source:android.view.MotionEvent) extends org.sofa.opengl.surface.MotionEvent {
+class MotionEventAndroid(val source:android.view.MotionEvent) extends org.sofa.gfx.surface.MotionEvent {
 /* On android 4 only
     def deviceType:DeviceType.Value = { source.getToolType(0) match {
         	case android.view.MotionEvent.TOOL_TYPE_ERASER => DeviceType.Eraser

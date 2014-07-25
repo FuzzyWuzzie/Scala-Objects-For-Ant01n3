@@ -1,6 +1,6 @@
-package org.sofa.opengl.backend
+package org.sofa.gfx.backend
 
-import org.sofa.opengl.{Shader, ShaderLoader}
+import org.sofa.gfx.{Shader, ShaderLoader}
 import java.io.{InputStream, IOException}
 import android.content.res.Resources
 import org.sofa.backend.AndroidLoader
