@@ -1,4 +1,4 @@
-package org.sofa.opengl.actor.renderer
+package org.sofa.gfx.actor.renderer
 
 import org.scalatest.FlatSpec
 

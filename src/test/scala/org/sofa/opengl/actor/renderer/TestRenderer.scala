@@ -1,9 +1,9 @@
-package org.sofa.opengl.actor.renderer
+package org.sofa.gfx.actor.renderer
 
 import org.scalatest.FlatSpec
 
 import akka.actor.ActorSystem
-import org.sofa.opengl.actor.renderer.backend.RendererNewt
+import org.sofa.gfx.actor.renderer.backend.RendererNewt
 
 
 class TestRenderer extends FlatSpec {

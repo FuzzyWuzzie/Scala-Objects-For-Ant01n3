@@ -11,15 +11,15 @@ import com.jogamp.newt.opengl._
 
 import org.sofa.nio._
 import org.sofa.math.{Rgba, Vector3, Vector4}
-import org.sofa.opengl.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight}
-import org.sofa.opengl.io.collada.{ColladaFile}
-import org.sofa.opengl.surface.{Surface, SurfaceRenderer, BasicCameraController}
-import org.sofa.opengl.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute}
-import org.sofa.opengl.mesh.skeleton.{Bone => SkelBone}
+import org.sofa.gfx.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight}
+import org.sofa.gfx.io.collada.{ColladaFile}
+import org.sofa.gfx.surface.{Surface, SurfaceRenderer, BasicCameraController}
+import org.sofa.gfx.mesh.{PlaneMesh, Mesh, BoneMesh, EditableMesh, VertexAttribute}
+import org.sofa.gfx.mesh.skeleton.{Bone => SkelBone}
 
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
 import scala.concurrent.duration._
-import org.sofa.opengl.akka.SurfaceExecutorService
+import org.sofa.gfx.akka.SurfaceExecutorService
 
 
 // This small test runs an actor "SurfaceRendererActor" that drives a surface and runs all its
@@ -129,12 +129,12 @@ class TestSurfaceActor extends SurfaceRenderer {
 	    frame          = display
 	    surfaceChanged = reshape
 	    close          = { surface => sys.exit }
-	    key            = ctrl.key
+	    actionKey      = ctrl.actionKey
 	    motion         = ctrl.motion
-	    scroll         = ctrl.scroll
-	    surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
+	    gesture        = ctrl.gesture
+	    surface        = new org.sofa.gfx.backend.SurfaceNewt(this,
 	    					camera, "Skinning", caps,
-	    					org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2, 30 /* fps */)
+	    					org.sofa.gfx.backend.SurfaceNewtGLBackend.GL2ES2, 30 /* fps */)
 
 	    actorSystem    = ActorSystem("test")
 		surfaceActor   = SurfaceRendererActor(actorSystem, this)
@@ -145,7 +145,7 @@ class TestSurfaceActor extends SurfaceRenderer {
 // Rendering
     
 	def initializeSurface(gl:SGL, surface:Surface) {
-	    Shader.path      += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+	    Shader.path      += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/gfx/shaders/"
 	    Shader.path      += "shaders/"
 	    Texture.path     += "/Users/antoine/Documents/Programs/SOFA/textures"
 	    Texture.path     += "textures/"
@@ -245,7 +245,7 @@ class TestSurfaceActor extends SurfaceRenderer {
 
 	    // Ok
 
-	    surface.swapBuffers
+	    //surface.swapBuffers
 	    gl.checkErrors
 	}
 

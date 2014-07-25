@@ -1,10 +1,10 @@
-package org.sofa.opengl.backend
+package org.sofa.gfx.backend
 
 import org.scalatest.FlatSpec
 
 import org.sofa._
-import org.sofa.opengl._
-import org.sofa.opengl.backend._
+import org.sofa.gfx._
+import org.sofa.gfx.backend._
 
 
 class TestImageTEX extends FlatSpec {

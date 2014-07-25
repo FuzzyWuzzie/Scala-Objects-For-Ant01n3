@@ -5,9 +5,10 @@ import org.sofa.simu.{ViscoElasticSimulation, Particle, QuadWall}
 import org.sofa.math.{Rgba, Matrix4, Vector4, Vector3, Point3, IsoSurface, IsoSurfaceSimple, IsoContour}
 import org.sofa.collection.{SpatialPoint, SpatialCube, SpatialHash}
 
-import org.sofa.opengl.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture, TexParams, TexMipMap}
-import org.sofa.opengl.mesh.{PlaneMesh, CubeMesh, PointsMesh, WireCubeMesh, LinesMesh, AxisMesh, TrianglesMesh, CylinderMesh, UnindexedTrianglesMesh, VertexAttribute}
-import org.sofa.opengl.surface.{SurfaceRenderer, BasicCameraController, Surface, KeyEvent}
+import org.sofa.gfx.{SGL, MatrixStack, Shader, ShaderProgram, VertexArray, Camera, Texture, TexParams, TexMipMap}
+import org.sofa.gfx.mesh.{PlaneMesh, CubeMesh, PointsMesh, WireCubeMesh, LinesMesh, AxisMesh, TrianglesMesh, CylinderMesh, UnindexedTrianglesMesh, VertexAttribute}
+import org.sofa.gfx.surface.{SurfaceRenderer, BasicCameraController, Surface}
+import org.sofa.gfx.surface.event._
 
 import javax.media.opengl.{GLProfile, GLCapabilities}
 
@@ -44,13 +45,13 @@ class TestViscoElasticSimulation2D {
 		simu.initSurface    = simu.initializeSurface
 		simu.frame          = simu.display
 		simu.surfaceChanged = simu.reshape
-		simu.key            = ctrl.key
+		simu.actionKey      = ctrl.actionKey
 		simu.motion         = ctrl.motion
-		simu.scroll         = ctrl.scroll
+		simu.gesture        = ctrl.gesture
 		simu.close          = { surface => sys.exit }
-		surface             = new org.sofa.opengl.backend.SurfaceNewt(simu,
+		surface             = new org.sofa.gfx.backend.SurfaceNewt(simu,
 							camera, "P'tit jet !", caps,
-							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
+							org.sofa.gfx.backend.SurfaceNewtGLBackend.GL2ES2)	
 	}
 }
 
@@ -187,7 +188,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 	// Init.
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/gfx/shaders/"
 		Shader.path += "src/com/chouquette/tests"
 		Texture.path += "/Users/antoine/Documents/Programs/SOFA/textures"
 			
@@ -344,7 +345,7 @@ class ViscoElasticSimulationViewer2D(val camera:Camera) extends SurfaceRenderer 
 		drawParticlesQuads
 		drawIsoContour
 		
-		surface.swapBuffers
+		//surface.swapBuffers
 		gl.checkErrors
 		
 		if(running) {
@@ -826,39 +827,40 @@ triangleCount = 0
 
 /** A simple mouse/key controller for the camera and simulation. */
 class TVESCameraController2D(camera:Camera, val ves:ViscoElasticSimulationViewer2D) extends BasicCameraController(camera) {
-    override def key(surface:Surface, keyEvent:KeyEvent) {
-        import org.sofa.opengl.surface.ActionChar._
-        if(keyEvent.isPrintable) {
-        	Console.err.println("KEY=%c".format(keyEvent.unicodeChar))
-        	keyEvent.unicodeChar match {
-            	case ' ' => { ves.pausePlay }
-            	case 'p' => { ves.drawParticlesFlag = !ves.drawParticlesFlag }
-            	case 'P' => { ves.drawIsoPlaneFlag = !ves.drawIsoPlaneFlag }
-            	case 'h' => { ves.drawSpaceHashFlag = !ves.drawSpaceHashFlag }
-            	case 'c' => { ves.drawIsoCubesFlag = !ves.drawIsoCubesFlag }
-            	case 's' => { ves.drawIsoSurfaceFlag = !ves.drawIsoSurfaceFlag }
-            	case 'O' => { ves.drawIsoContourFlag = !ves.drawIsoContourFlag }
-            	case 'S' => { ves.drawIsoSquaresFlag = !ves.drawIsoSquaresFlag }
-            	case 'i' => { ves.drawSpringsFlag = !ves.drawSpringsFlag }
-            	case 'q' => { sys.exit(0) }
-            	case 'H' => {
-            		println("Keys:")
-            		println("    <space>  pause/play the simulation.")
-            		println("    p        toggle draw particles.")
-            		println("    P        toggle draw the iso plane.")
-            		println("    h        toggle draw the space hash.")
-            		println("    c        toggle draw the iso surface cubes.")
-            		println("    s        toggle draw the iso surface.")
-            		println("    O        toggle draw the iso contour.")
-            		println("    S        toogle draw the iso squares.")
-            		println("    i        toogle draw the springs.")
-            		println("    q        quit (no questions, it quits!).")
-            	}
-            	case _ => { super.key(surface, keyEvent) }
-            }
-        } else {
-        	//Console.err.println("KEYCODE=%d".format(keyEvent.key))
-            super.key(surface, keyEvent)
-        }
+    override def actionKey(surface:Surface, keyEvent:ActionKeyEvent) {
+println("TVESCameraController2D.actionKey")
+        // import org.sofa.gfx.surface.ActionChar._
+        // if(keyEvent.isPrintable) {
+        // 	Console.err.println("KEY=%c".format(keyEvent.unicodeChar))
+        // 	keyEvent.unicodeChar match {
+        //     	case ' ' => { ves.pausePlay }
+        //     	case 'p' => { ves.drawParticlesFlag = !ves.drawParticlesFlag }
+        //     	case 'P' => { ves.drawIsoPlaneFlag = !ves.drawIsoPlaneFlag }
+        //     	case 'h' => { ves.drawSpaceHashFlag = !ves.drawSpaceHashFlag }
+        //     	case 'c' => { ves.drawIsoCubesFlag = !ves.drawIsoCubesFlag }
+        //     	case 's' => { ves.drawIsoSurfaceFlag = !ves.drawIsoSurfaceFlag }
+        //     	case 'O' => { ves.drawIsoContourFlag = !ves.drawIsoContourFlag }
+        //     	case 'S' => { ves.drawIsoSquaresFlag = !ves.drawIsoSquaresFlag }
+        //     	case 'i' => { ves.drawSpringsFlag = !ves.drawSpringsFlag }
+        //     	case 'q' => { sys.exit(0) }
+        //     	case 'H' => {
+        //     		println("Keys:")
+        //     		println("    <space>  pause/play the simulation.")
+        //     		println("    p        toggle draw particles.")
+        //     		println("    P        toggle draw the iso plane.")
+        //     		println("    h        toggle draw the space hash.")
+        //     		println("    c        toggle draw the iso surface cubes.")
+        //     		println("    s        toggle draw the iso surface.")
+        //     		println("    O        toggle draw the iso contour.")
+        //     		println("    S        toogle draw the iso squares.")
+        //     		println("    i        toogle draw the springs.")
+        //     		println("    q        quit (no questions, it quits!).")
+        //     	}
+        //     	case _ => { super.key(surface, keyEvent) }
+        //     }
+        // } else {
+        // 	//Console.err.println("KEYCODE=%d".format(keyEvent.key))
+        //     super.key(surface, keyEvent)
+        // }
     }
 }

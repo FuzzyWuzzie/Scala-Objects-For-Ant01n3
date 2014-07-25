@@ -1,6 +1,6 @@
 {
 	"pathes": {
-		"shader"   : [ "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2", "shaders" ],
+		"shader"   : [ "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/gfx/shaders/es2", "shaders" ],
 		"texture"  : [ "/Users/antoine/Documents/Art/Images/HexaLife", "/Users/antoine/Documents/Art/Images", "textures" ],
 		"armature" : [ "/Users/antoine/Documents/Art/Images/HexaLife", "svg" ],
 		"behavior" : []

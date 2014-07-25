@@ -1,6 +1,6 @@
 <resources>
 	<pathes>
-		<shader>/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2</shader>
+		<shader>/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/gfx/shaders/es2</shader>
 		<shader>shaders</shader>
 		<tex>/Users/antoine/Documents/Art/Images/HexaLife</tex>
 		<tex>/Users/antoine/Documents/Art/Images</tex>

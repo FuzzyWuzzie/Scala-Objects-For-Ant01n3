@@ -1,13 +1,13 @@
-package org.sofa.opengl.actor.renderer.avatar.ui
+package org.sofa.gfx.actor.renderer.avatar.ui
 
 import org.scalatest.FlatSpec
 
 import akka.actor.ActorSystem
 
-import org.sofa.opengl.{Shader}
-import org.sofa.opengl.actor.renderer.{AvatarName}
-import org.sofa.opengl.actor.renderer.backend.RendererNewt
-import org.sofa.opengl.text.GLFont
+import org.sofa.gfx.{Shader}
+import org.sofa.gfx.actor.renderer.{AvatarName}
+import org.sofa.gfx.actor.renderer.backend.RendererNewt
+import org.sofa.gfx.text.GLFont
 
 
 class TestUI extends FlatSpec {
@@ -18,7 +18,7 @@ class TestUI extends FlatSpec {
 	"A UI" should "allow adding a root" in {
 		renderer.start("title", initialWidth=320, initialHeight=240, fps=24, decorated=false, fullscreen=false, overSample=4)
 
-		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/es2"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/gfx/shaders/es2"
 		Shader.path += "shaders"
 		GLFont.path += "/Users/antoine/Library/Fonts"
 		GLFont.path += "Fonts"

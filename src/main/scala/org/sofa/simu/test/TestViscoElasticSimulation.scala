@@ -1,38 +1,38 @@
-package org.sofa.opengl.test
+package org.sofa.gfx.test
 
-import org.sofa.opengl.surface.SurfaceRenderer
-import org.sofa.opengl.SGL
-import org.sofa.opengl.surface.Surface
+import org.sofa.gfx.surface.SurfaceRenderer
+import org.sofa.gfx.SGL
+import org.sofa.gfx.surface.Surface
 import org.sofa.math.Matrix4
-import org.sofa.opengl.MatrixStack
-import org.sofa.opengl.ShaderProgram
-import org.sofa.opengl.mesh.PlaneMesh
-import org.sofa.opengl.VertexArray
-import org.sofa.opengl.Camera
-import org.sofa.opengl.surface.BasicCameraController
+import org.sofa.gfx.MatrixStack
+import org.sofa.gfx.ShaderProgram
+import org.sofa.gfx.mesh.PlaneMesh
+import org.sofa.gfx.VertexArray
+import org.sofa.gfx.Camera
+import org.sofa.gfx.surface.BasicCameraController
 import org.sofa.math.Rgba
 import org.sofa.math.Vector4
 import javax.media.opengl.GLCapabilities
 import javax.media.opengl.GLProfile
 import org.sofa.math.Vector3
-import org.sofa.opengl.Shader
-import org.sofa.opengl.mesh.PointsMesh
+import org.sofa.gfx.Shader
+import org.sofa.gfx.mesh.PointsMesh
 import scala.collection.mutable.ArrayBuffer
 import org.sofa.math.Point3
-import org.sofa.opengl.mesh.CubeMesh
-import org.sofa.opengl.mesh.WireCubeMesh
-import org.sofa.opengl.mesh.LinesMesh
-import org.sofa.opengl.mesh.AxisMesh
+import org.sofa.gfx.mesh.CubeMesh
+import org.sofa.gfx.mesh.WireCubeMesh
+import org.sofa.gfx.mesh.LinesMesh
+import org.sofa.gfx.mesh.AxisMesh
 import org.sofa.collection.SpatialPoint
 import org.sofa.collection.SpatialCube
 import org.sofa.collection.SpatialHash
-import org.sofa.opengl.Texture
+import org.sofa.gfx.Texture
 import org.sofa.math.IsoSurfaceSimple
-import org.sofa.opengl.mesh.TrianglesMesh
-import org.sofa.opengl.mesh.UnindexedTrianglesMesh
-import org.sofa.opengl.surface.KeyEvent
+import org.sofa.gfx.mesh.TrianglesMesh
+import org.sofa.gfx.mesh.UnindexedTrianglesMesh
+import org.sofa.gfx.surface.event.ActionKeyEvent
 import org.sofa.math.IsoSurface
-import org.sofa.opengl.mesh.{TrianglesMesh, VertexAttribute}
+import org.sofa.gfx.mesh.{TrianglesMesh, VertexAttribute}
 import org.sofa.simu.ViscoElasticSimulation
 import org.sofa.simu.Particle
 import org.sofa.simu.QuadWall
@@ -146,17 +146,17 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		initSurface    = initializeSurface
 		frame          = display
 		surfaceChanged = reshape
-		key            = ctrl.key
+		actionKey      = ctrl.actionKey
 		motion         = ctrl.motion
-		scroll         = ctrl.scroll
+		gesture        = ctrl.gesture
 		close          = { surface => sys.exit }
-		surface        = new org.sofa.opengl.backend.SurfaceNewt(this,
+		surface        = new org.sofa.gfx.backend.SurfaceNewt(this,
 							camera, "P'tit jet !", caps,
-							org.sofa.opengl.backend.SurfaceNewtGLBackend.GL2ES2)	
+							org.sofa.gfx.backend.SurfaceNewtGLBackend.GL2ES2)	
 	}
 	
 	def initializeSurface(sgl:SGL, surface:Surface) {
-		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/opengl/shaders/"
+		Shader.path += "/Users/antoine/Documents/Programs/SOFA/src/main/scala/org/sofa/gfx/shaders/"
 		Shader.path += "src/com/chouquette/tests"
 			
 		initSimuParams
@@ -282,7 +282,7 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 		drawSprings
 		drawParticles
 		
-		surface.swapBuffers
+		//surface.swapBuffers
 		gl.checkErrors
 		
 		if(running) {
@@ -514,20 +514,21 @@ class TestViscoElasticSimulation extends SurfaceRenderer {
 
 /** A simple mouse/key controller for the camera and simulation. */
 class TVESCameraController(camera:Camera, val ves:TestViscoElasticSimulation) extends BasicCameraController(camera) {
-    override def key(surface:Surface, keyEvent:KeyEvent) {
-        import org.sofa.opengl.surface.ActionChar._
-        if(keyEvent.isPrintable) {
-        	keyEvent.unicodeChar match {
-            	case ' ' => { ves.pausePlay }
-            	case 'p' => { ves.drawParticlesFlag = !ves.drawParticlesFlag }
-            	case 'h' => { ves.drawSpaceHashFlag = !ves.drawSpaceHashFlag }
-            	case 'c' => { ves.drawIsoCubesFlag = !ves.drawIsoCubesFlag }
-            	case 's' => { ves.drawIsoSurfaceFlag = !ves.drawIsoSurfaceFlag }
-            	case 'q' => { sys.exit(0) }
-            	case _ => super.key(surface, keyEvent)
-            }
-        } else {
-            super.key(surface, keyEvent)
-        }
+    override def actionKey(surface:Surface, keyEvent:ActionKeyEvent) {
+println("TODO TVESCameraController.actionKey")
+        // import org.sofa.gfx.surface.ActionChar._
+        // if(keyEvent.isPrintable) {
+        // 	keyEvent.unicodeChar match {
+        //     	case ' ' => { ves.pausePlay }
+        //     	case 'p' => { ves.drawParticlesFlag = !ves.drawParticlesFlag }
+        //     	case 'h' => { ves.drawSpaceHashFlag = !ves.drawSpaceHashFlag }
+        //     	case 'c' => { ves.drawIsoCubesFlag = !ves.drawIsoCubesFlag }
+        //     	case 's' => { ves.drawIsoSurfaceFlag = !ves.drawIsoSurfaceFlag }
+        //     	case 'q' => { sys.exit(0) }
+        //     	case _ => super.key(surface, keyEvent)
+        //     }
+        // } else {
+        //     super.key(surface, keyEvent)
+        // }
     }
 }
