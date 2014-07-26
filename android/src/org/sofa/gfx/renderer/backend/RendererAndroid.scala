@@ -7,8 +7,7 @@ import android.opengl.GLSurfaceView
 import org.sofa.backend.SOFALog
 import org.sofa.math.Point3
 import org.sofa.gfx.actor.renderer.{Renderer, RendererFactory, AvatarFactory}
-import org.sofa.gfx.actor.renderer.{AvatarEvent, AvatarSpatialEvent, AvatarClickEvent, AvatarLongClickEvent, AvatarMotionEvent, AvatarKeyEvent, AvatarZoomEvent}
-import org.sofa.gfx.surface.{Surface, SurfaceRenderer, MotionEvent, KeyEvent, ScrollEvent}
+import org.sofa.gfx.surface.{Surface, SurfaceRenderer}
 
 import org.sofa.gfx.backend.{SurfaceAndroidES20}
 

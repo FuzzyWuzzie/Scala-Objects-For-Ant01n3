@@ -55,6 +55,14 @@
 
 * Allow the renderer to choose if base/high-level events are sent, as in surfaces.
 
+## Events
+
+* Shortcuts
+* Define units in Scale and Scroll to better interpret moves
+    - Use percents of the screen ?
+    - Use pixels (depend on resolution) ?
+    - Other ?
+
 ## Game
 
 * Handle paths inside each cell of the cell grids, allowing Entities to follow these paths. Use a graph ? Use only "sub-cells" ?

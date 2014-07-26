@@ -107,7 +107,7 @@ class SurfaceNewt(
 
     /** Send motion events for the mouse even when no button is pressed ? This field
       * is used only in the EDT thread. */
-    protected[this] var sendNoButMotionEvents:Boolean = false
+    protected[this] var noButtonMotionEvents:Boolean = false
 
     /** If true the mouse scroll wheel event is transformed to a [[ScaleEventJogl]],
       * else a [[ScrollEventJogl]] with a delta y is sent. */
@@ -243,7 +243,7 @@ class SurfaceNewt(
 
     /** Send motion events even when no mouse button is pressed ? */
     def sendNoButtonMotionEvents(on:Boolean) {
-    	sendNoButMotionEvents = on
+    	noButtonMotionEvents = on
     }
 
     def animation(on:Boolean) {
@@ -321,7 +321,7 @@ class SurfaceNewt(
     }
  
     def mouseMoved(e:JoglMouseEvent) {
-    	if(sendNoButMotionEvents)
+    	if(noButtonMotionEvents)
 			eventQueue.add(MotionEventJogl(e, 0))
     }
  

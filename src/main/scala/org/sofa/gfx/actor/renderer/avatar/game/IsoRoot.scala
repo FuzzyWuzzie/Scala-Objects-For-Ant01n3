@@ -266,4 +266,9 @@ class IsoRoot(name:AvatarName, screen:Screen)
 	var renderer = new IsoRootRender(this)	
 
 	def consumeEvent(event:Event):Boolean = false
+
+	// def consumeEvent(event:Event):Boolean = {
+	// 	println("IsoRoot event: %s".format(event))
+	// 	true
+	// }
 }

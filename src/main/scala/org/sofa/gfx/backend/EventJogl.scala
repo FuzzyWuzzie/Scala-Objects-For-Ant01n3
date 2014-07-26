@@ -1,14 +1,15 @@
 package org.sofa.gfx.backend
 
 import org.sofa.math.{Vector3, Point3}
-import org.sofa.gfx.{SGL, Camera}
+import org.sofa.gfx.SGL
 import org.sofa.gfx.surface._
+import org.sofa.gfx.surface.event._
 
 import java.awt.event.{MouseListener=>AWTMouseListener,KeyListener=>AWTKeyListener,WindowListener=>AWTWindowListener, KeyEvent=>AWTKeyEvent, MouseEvent=>AWTMouseEvent, WindowEvent=>AWTWindowEvent, MouseWheelListener=>AWTMouseWheelListener, MouseWheelEvent=>AWTMouseWheelEvent}
 
 import com.jogamp.newt.opengl.GLWindow
 import com.jogamp.newt.event.{NEWTEvent=>JoglEvent, KeyEvent=>JoglKeyEvent, MouseEvent=>JoglMouseEvent, MouseListener=>JoglMouseListener, WindowListener=>JoglWindowListener, KeyListener=>JoglKeyListener, WindowEvent=>JoglWindowEvent, WindowUpdateEvent=>JoglWindowUpdateEvent}
-import org.sofa.gfx.surface.event._
+
 
 /** Base utility class for jogl event implementations. */
 abstract class EventJogl(val time:Int = 0) {

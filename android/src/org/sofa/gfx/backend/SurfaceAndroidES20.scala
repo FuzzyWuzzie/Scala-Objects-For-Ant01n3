@@ -1,13 +1,15 @@
 package org.sofa.gfx.backend
 
+import org.sofa.math.{Vector3, Point3}
 import org.sofa.backend.SOFALog
 import org.sofa.gfx._
 import org.sofa.gfx.surface.{Surface, SurfaceRenderer}
+import org.sofa.gfx.surface.event._
 
 import android.opengl.GLSurfaceView
 import android.content.Context
 import android.app.Activity
-import android.view.{GestureDetector, ScaleGestureDetector, MotionEvent}
+import android.view.{GestureDetector, ScaleGestureDetector, MotionEvent=>AndroidMotionEvent}
 import android.support.v4.view.GestureDetectorCompat
 
 import javax.microedition.khronos.egl.EGLConfig
@@ -24,12 +26,19 @@ import javax.microedition.khronos.opengles.GL10
   * Be careful that the surface renderer will run in a dedicated thread
   * for this surface.
   *
-  * By default the surface is created in 32bits RGBA with a 16bits depth buffer. */
+  * By default the surface is created in 32bits RGBA with a 16bits depth buffer.
+  *
+  * Implementation detail: the surface is used by two threads:
+  *   - The rendering thread,
+  *   - The activity UI thread for events.
+  *
+  * Some fields are managed by the UI thread, others by the rendering 
+  * thread, as indicated in comments. */
 class SurfaceAndroidES20(
 		context:Context,
 		attrs:android.util.AttributeSet,
     	/** Requested frames per second. */
-		protected[this] var fps:Int = 30
+		protected[this] var expectedFps:Int = 30
 	) extends
 		GLSurfaceView(context, attrs)
 		with Surface
@@ -69,19 +78,28 @@ class SurfaceAndroidES20(
     /** The scale gesture detector. */
     protected[this] var scaleGestures:ScaleGestureDetector = null
 
+    /** Send the base motion events ? */
+    protected[this] var motionEvents = true
+
+    /** Send high-level events ? */
+    protected[this] var hlEvents = true
+
+    /** Send motion events even when no button is pressed (only mouse or pen, touch requires... a touch). */
+    protected[this] var noButtonMotionEvents = false
+
 // -- Build --------------------
 
     def build(renderer:SurfaceRenderer, activity:Activity) {
     	build(renderer, activity, 30)
     }
 
-    def build(renderer:SurfaceRenderer, activity:Activity, fps:Int) {
+    def build(renderer:SurfaceRenderer, activity:Activity, expectedFps:Int) {
         setEGLContextClientVersion(2)
         setEGLConfigChooser(8,8,8,8,16,0)
 
         this.renderer = renderer
         this.activity = activity
-        this.fps      = fps
+        this.expectedFps      = expectedFps
     
         if(created) {
             if(renderer.initSurface ne null) renderer.initSurface(gl, this)
@@ -92,14 +110,21 @@ class SurfaceAndroidES20(
         gestures      = new GestureDetectorCompat(activity, this)
         scaleGestures = new ScaleGestureDetector(activity, this)
 
-        debug(">> GLSurface built waiting creation....")
+//debug(">> GLSurface built waiting creation....")
     }
     
     def gl:SGL = { if(sgl eq null) sgl = new SGLAndroidES20("#version 110"); sgl }
     def width:Int = w
     def height:Int = h
+    def fps:Int = expectedFps
     def swapBuffers():Unit = {}	// Implicit with Android.
     
+    def fps(newFps:Int) { expectedFps = newFps }
+
+    def sendMotionEvents(on:Boolean) { motionEvents = on }
+
+    def sendHighLevelEvents(on:Boolean) { hlEvents = on }
+
     def animation(on:Boolean) {
     	if(on)
 		     setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY)
@@ -121,7 +146,7 @@ class SurfaceAndroidES20(
     def onSurfaceCreated(unused:GL10, config:EGLConfig) {
 //debug(s"** onSurfaceCreated(${Thread.currentThread.getName})")
         created = true
-      	debug(">> GLSurface created !")
+//debug(">> GLSurface created !")
     	if((renderer ne null) && (renderer.initSurface ne null)) renderer.initSurface(gl, this)
     }
     
@@ -137,8 +162,8 @@ class SurfaceAndroidES20(
     	
     	val dt = endTime - startTime;
 
-    	if (dt < (1000/fps))
-    		Thread.sleep((1000/fps) - dt);
+    	if (dt < (1000/expectedFps))
+    		Thread.sleep((1000/expectedFps) - dt);
 
     	startTime = System.currentTimeMillis();
 
@@ -149,18 +174,12 @@ class SurfaceAndroidES20(
     }
     
     def onSurfaceChanged(unused:GL10, width:Int, height:Int) {
-debug(s"** onSurfaceChanged(${Thread.currentThread.getName})")
+//debug(s"** onSurfaceChanged(${Thread.currentThread.getName})")
         w = width
         h = height
         if(created && (renderer ne null) && (renderer.surfaceChanged ne null)) {
             renderer.surfaceChanged(this)
         }
-    }
-
-    override def onTouchEvent(e:MotionEvent):Boolean = {
-		gestures.onTouchEvent(e)
-		scaleGestures.onTouchEvent(e)
-		true//super.onTouchEvent(e)
     }
 
     def resize(newWidth:Int, newHeight:Int) {
@@ -170,6 +189,23 @@ debug(s"** onSurfaceChanged(${Thread.currentThread.getName})")
 
     /** Process something inside the surface. */
     def queueEvent(code: =>Unit) { queueEvent(new Runnable { def run() { code } } ) }
+
+    /** Send an event to the renderer as soon as possible inside the rendering thread. */
+    def queueEvent(event:Event) {
+    	val self = this
+    	queueEvent(new Runnable {
+    		def run() {
+    			event match {
+    				case e:UnicodeEvent   => { if(renderer.unicode   ne null) renderer.unicode(  self, e) }
+    				case e:ActionKeyEvent => { if(renderer.actionKey ne null) renderer.actionKey(self, e) }
+    				case e:MotionEvent    => { if(renderer.motion    ne null) renderer.motion(   self, e) }
+    				case e:GestureEvent   => { if(renderer.gesture   ne null) renderer.gesture(  self, e) }
+    				case e:ShortCutEvent  => { if(renderer.shortCut  ne null) renderer.shortCut( self, e) }
+    				case _ => throw new RuntimeException("unexpected event type")
+    			}
+    		}
+    	})
+    }
 
     def invoke(code:(Surface)=>Boolean) {
     	val me = this
@@ -190,120 +226,96 @@ debug(s"** onSurfaceChanged(${Thread.currentThread.getName})")
 
 // -- Gesture events --------------------------------
 
-	def onDown(event:MotionEvent):Boolean = { 
-		debug("@@@ onDown")
+	/** Used to track the scaling gesture and avoid sending scroll events during this gesture. */
+	protected[this] var scaling = false
+
+    override def onTouchEvent(e:AndroidMotionEvent):Boolean = {
+    	import AndroidMotionEvent._
+
+    	// Base events
+
+    	val action = e.getActionMasked
+
+    	if(action == ACTION_HOVER_MOVE  ||
+    	   action == ACTION_HOVER_ENTER ||
+    	   action == ACTION_HOVER_EXIT) {
+    		if(noButtonMotionEvents) queueEvent(MotionEventAndroid(e))
+    	} else {
+    		if(motionEvents) queueEvent(MotionEventAndroid(e))
+    	}
+
+    	// Process Hi-Level events
+
+		if(hlEvents) {		
+			scaleGestures.onTouchEvent(e)
+			gestures.onTouchEvent(e)
+		}
+		
+		true//super.onTouchEvent(e)
+    }
+
+	def onDown(event:AndroidMotionEvent):Boolean = { 
+//		debug("@@@ onDown")
         true
     }
 
-    def onFling(event1:MotionEvent, event2:MotionEvent, velocityX:Float, velocityY:Float):Boolean = {
-		debug("@@@ onFling")
+    def onFling(event1:AndroidMotionEvent, event2:AndroidMotionEvent, velocityX:Float, velocityY:Float):Boolean = {
+		queueEvent(FlingEventAndroid(event2, Vector3(velocityX, velocityY, 0)))
         true
     }
 
-    def onLongPress(event:MotionEvent) {
-    	debug("@@@ onLongPress")
+    def onLongPress(event:AndroidMotionEvent) {
+    	queueEvent(LongPressEventAndroid(event))
     }
 
-    def onScroll(event1:MotionEvent, event2:MotionEvent, distanceX:Float, distanceY:Float):Boolean = {
-    	debug("@@@ onScroll")
+    def onScroll(event1:AndroidMotionEvent, event2:AndroidMotionEvent, distanceX:Float, distanceY:Float):Boolean = {
+    	if(! scaling) {
+    		queueEvent(ScrollEventAndroid(event2, Vector3(-distanceX, -distanceY, 0)))
+	        true
+    	} else {
+    		false
+    	}
+    }
+
+    def onShowPress(event:AndroidMotionEvent) {
+    	//queueEvent(ShowPressEventAndroid)
+    }
+
+    def onSingleTapUp(event:AndroidMotionEvent):Boolean = {
+    	queueEvent(TapEventAndroid(event))
         true
     }
 
-    def onShowPress(event:MotionEvent) {
-    	debug("@@@ onShowPress")
-    }
-
-    def onSingleTapUp(event:MotionEvent):Boolean = {
-    	debug("@@@ onSingleTapUp")
+    def onDoubleTap(event:AndroidMotionEvent):Boolean = {
+    	queueEvent(DoubleTapEventAndroid(event))
         true
     }
 
-    def onDoubleTap(event:MotionEvent):Boolean = {
-    	debug("@@@ onDoubleTap")
+    def onDoubleTapEvent(event:AndroidMotionEvent):Boolean = {
+    	//debug("@@@ onDoubleTapEvent")
         true
     }
 
-    def onDoubleTapEvent(event:MotionEvent):Boolean = {
-    	debug("@@@ onDoubleTapEvent")
-        true
-    }
-
-    def onSingleTapConfirmed(event:MotionEvent):Boolean = {
-    	debug("@@@ onSingleTapConfirmed")
+    def onSingleTapConfirmed(event:AndroidMotionEvent):Boolean = {
+    	queueEvent(SingleTapEventAndroid(event))
         true
     }
 
 // -- Gestures scale events -------------------------------
 
 	def onScale(detector:ScaleGestureDetector):Boolean =  {
-		debug("@@@ onScale")
+		queueEvent(ScaleEventAndroid(detector.getPreviousSpan-detector.getCurrentSpan, 0))
 		true
 	}
 
 	def onScaleBegin(detector:ScaleGestureDetector):Boolean = {
-		debug("@@@ onScaleBegin")
+		scaling = true
+		//queueEvent(ScaleEventAndroid(delta, -1))
 		true
 	}
 
 	def onScaleEnd(detector:ScaleGestureDetector) {
-		debug("@@@ onScaleEnd")
+		scaling = false
+		//queueEvent(ScaleEventAndroid(delta, 1))
 	}
-}
-
-
-
-
-
-class ScrollEventAndroid(val source:android.view.MotionEvent) extends org.sofa.gfx.surface.ScrollEvent {
-    // Not supported in > 10 (> android 2.3)
-    def amount:Double = 0//source.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL).toInt
-}
-
-class MotionEventAndroid(val source:android.view.MotionEvent) extends org.sofa.gfx.surface.MotionEvent {
-/* On android 4 only
-    def deviceType:DeviceType.Value = { source.getToolType(0) match {
-        	case android.view.MotionEvent.TOOL_TYPE_ERASER => DeviceType.Eraser
-        	case android.view.MotionEvent.TOOL_TYPE_FINGER => DeviceType.Finger
-        	case android.view.MotionEvent.TOOL_TYPE_MOUSE  => DeviceType.Mouse
-        	case android.view.MotionEvent.TOOL_TYPE_STYLUS => DeviceType.Stylus
-        	case _                                         => DeviceType.Unknown
-    	}
-    }
-*/
-    def deviceType:DeviceType.Value = {
-        val sources = source.getDevice.getSources
-        	
-        if((sources & android.view.InputDevice.SOURCE_TOUCHSCREEN) != 0) {
-            DeviceType.Finger
-        } else if((sources & android.view.InputDevice.SOURCE_MOUSE) != 0) {
-            DeviceType.Mouse
-        } else {
-        	DeviceType.Unknown
-        }
-   	}
-    
-    def isStart:Boolean = {
-        (  source.getActionMasked == android.view.MotionEvent.ACTION_DOWN 
-        || source.getActionMasked == android.view.MotionEvent.ACTION_POINTER_DOWN )
-    }
-    
-    def isEnd:Boolean = {
-        (  source.getActionMasked == android.view.MotionEvent.ACTION_UP
-        || source.getActionMasked == android.view.MotionEvent.ACTION_POINTER_UP) }
-    
-    def x:Double = source.getX
-    
-    def y:Double = source.getY
-    
-    def x(pointer:Int):Double = source.getX(pointer)
-    
-    def y(pointer:Int):Double = source.getY(pointer)
-    
-    def pressure:Double = source.getPressure
-    
-    def pressure(pointer:Int):Double = source.getPressure(pointer)
-    
-    def pointerCount:Int = source.getPointerCount
-    
-    def sourceEvent:AnyRef = source
 }

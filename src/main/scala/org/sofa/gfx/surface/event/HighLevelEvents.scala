@@ -32,10 +32,10 @@ trait GestureEvent extends SpatialEvent with HighLevelEvent {}
 
 
 trait FlingEvent extends GestureEvent {
-	/** Speed factor. */
-	def velocity:Double
+	/** Speed factor along three axes. */
+	def velocity:Vector3
 
-	override def toString():String = "Fling[velocity=%f] %s".format(velocity, if(isStart) "BEG" else if(isEnd) "END" else "")
+	override def toString():String = "Fling[velocity=%s] %s".format(velocity, if(isStart) "BEG" else if(isEnd) "END" else "")
 }
 
 
