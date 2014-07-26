@@ -75,7 +75,7 @@ object Shader {
 	        	    buf ++= streamToArrayOfStringsConvert(gl, loader.open(fileName), shaderType, depth+1)
         		}
         		case VersionMatcher(number) => {
-        			buf += gl.ShaderVersion
+        			buf += "%s%n".format(gl.ShaderVersion)
         		}
         		case AttributeMatcher(restOfLine) => {
         			if(version < 130)
@@ -124,6 +124,10 @@ object Shader {
         	if(version >= 130) {
         		buf.insert(1, "out vec4 mgl_FragColor;%n".format())
         	}
+        }
+        if(version < 130) {
+        	buf.insert(1, "precision mediump float;%n".format())
+        	buf.insert(1, "precision mediump int;%n".format())
         }
 
         // Console.err.println("** %s:".format(if(shaderType==gl.VERTEX_SHADER) "vertex shader" else "fragment shader"))
