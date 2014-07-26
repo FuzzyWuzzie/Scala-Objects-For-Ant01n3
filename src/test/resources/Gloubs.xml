@@ -6,7 +6,7 @@
 		<tex>/Users/antoine/Documents/Art/Images</tex>
 		<tex>textures</tex>
 		<armature>/Users/antoine/Documents/Art/Images/HexaLife</armature>
-		<armature>svg</armature>
+		<armature>armatures</armature>
 	</pathes>
 	<shaders>
 		<shader id="image-shader"         vert="image_shader.vert.glsl" frag="image_shader.frag.glsl"/>

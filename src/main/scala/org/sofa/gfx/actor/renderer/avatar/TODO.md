@@ -2,10 +2,6 @@
 
 ## Priority list and roadmap:
 
-0. Test on Android.
-    - events.
-    - finish resource loading.
-    - do time tests.
 1. Creation and representation of the map in the model.
     - a format to store it on disk.
     - a way to represent it on memory.
@@ -16,7 +12,6 @@
 3. Add a more efficient ordered rendering in AvatarContainer.
 4. Add selective rendering.
 5. Picking.
-6. Test on Android.
 
 ## Avatars
 
@@ -84,4 +79,3 @@
 * Modify the TextureLoader (or others ?) to handle both resources in assets but maybe also in res/raw.
     - This would allow fast load of textures from AssetFileDescriptor with NIO instead of using the InputStream byte read.s
     - See the TODO in AndroidImageTEXLoader.
-* Debug events in Android surface.

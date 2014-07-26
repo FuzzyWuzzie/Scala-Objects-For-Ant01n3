@@ -142,10 +142,6 @@ class IsoGame extends Actor {
 		val habitat1Config  = IsoEntityConfig("habitat1-armature", "<none>", "habitat1-mask")
 		val somadrop1Config = IsoEntityConfig("somadrop-armature", "<none>", "habitat1-mask")
 
-		// renderer ! AddAvatar("iso-entity", gloub1)
-		// renderer ! ChangeAvatar(gloub1, gloub1Config)
-		// renderer ! ChangeAvatar(gloub1, AvatarBaseStates.MoveAt(Point3(1,0,0)))
-
 		renderer ! AddAvatar("iso-entity", bolok1)
 		renderer ! ChangeAvatar(bolok1, bolok1Config)
 
