@@ -28,18 +28,18 @@ trait Space {
       * it since it is used very often. Memory/speed compromise. */
     val mvp = new Matrix4()
 
-    /** Inverse of the top-most mvp, computed only when needed. */
-    protected var inverseMVP:Matrix4 = null
-
-    /** Flag indicating if the modelview or projection changed since the last MVP compute. */
-    protected var needRecomputeMVP = true
-        
     /** View port size in pixels. */
     var viewportPx = Vector2(800, 600)
     
     /** Maximum depth of the view (far clip-plane position). */
     var maxDepth = 100.0
 
+    /** Inverse of the top-most mvp, computed only when needed. */
+    protected[this] var inverseMVP:Matrix4 = null
+
+    /** Flag indicating if the modelview or projection changed since the last MVP compute. */
+    protected[this] var needRecomputeMVP = true
+        
     /** Viewport width in pixels. */
     def viewportWidth:Double = viewportPx.x
 
@@ -63,7 +63,6 @@ trait Space {
     
     /** Obtain the current view-port width / height ratio. */
     def viewportRatio:Double = viewportPx.x / viewportPx.y
-
 
     /** Erase the projection matrix with a new projection using the given frustum
       * specifications. */

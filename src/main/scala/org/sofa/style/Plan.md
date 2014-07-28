@@ -1,7 +1,7 @@
 ZenGarden
 =========
 
-Goal: provide a way to attribute style to elements of a something that is drawn, in very much the same way CSS is used to attribute style to a web page elements.
+Goal: provide a way to attribute style to elements of something that is drawn, in very much the same way CSS is used to attribute style to a web page elements.
 
 Goal: to be very general on what we apply style to.
 

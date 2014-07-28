@@ -11,7 +11,11 @@ case class ShaderLinkException(msg:String, nested:Throwable=null) extends Except
 case class ShaderAttributeException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
 
 
-/** Shader companion object. */
+/** Shader companion object.
+  *
+  * This contains methods to convert shaders to and from version 100 to version 300 in
+  * order to work with Desktop and ES 2.0 mobile versions. The convertion naturally
+  * works only for the common subset of features. */
 object Shader {
 	var convertToCurrentShaderVersion = true
 

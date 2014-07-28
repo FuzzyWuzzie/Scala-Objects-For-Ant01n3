@@ -2,10 +2,8 @@
 
 ## Priority list and roadmap:
 
+0. Remove all tests from SOFA and put them appart in a SOFATest (and may be other bigger projects) project.
 1. Creation and representation of the map in the model.
-    - a format to store it on disk.
-    - a way to represent it on memory.
-    - a way to communicate with entities actors ? (constraints, events...)
 2. Displacement on the map
     - On the model side.
     - On the avatar side, we provides simple ways to displace avatars.
@@ -69,6 +67,9 @@
         + The other way to do it is to tell the avatar that at the given time it must be at a given point.
         + The avatar computes the displacement based on the frame time.
 * A *level file* with the right reader to load levels. An ASCII map ?
+    - a format to store it on disk.
+    - a way to represent it on memory.
+    - a way to communicate with entities actors ? (constraints, events...)
 
 ## CSS
 
