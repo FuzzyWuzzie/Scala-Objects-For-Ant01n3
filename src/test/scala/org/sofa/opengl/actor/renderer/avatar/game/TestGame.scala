@@ -1,4 +1,4 @@
-// package org.sofa.gfx.actor.renderer.avatar.game
+// package org.sofa.gfx.renderer.avatar.game
 
 // import org.scalatest.FlatSpec
 
@@ -7,11 +7,11 @@
 // import org.sofa.math.{Vector3, Point3}
 
 // import org.sofa.gfx.{Shader, Texture}
-// import org.sofa.gfx.actor.renderer.{AvatarName, AvatarBaseStates}
-// import org.sofa.gfx.actor.renderer.backend.RendererNewt
+// import org.sofa.gfx.renderer.{AvatarName, AvatarBaseStates}
+// import org.sofa.gfx.renderer.backend.RendererNewt
 // import org.sofa.gfx.text.GLFont
 
-//import org.sofa.gfx.actor.renderer.avatar.game.IsoCellGridRelief
+//import org.sofa.gfx.renderer.avatar.game.IsoCellGridRelief
 
 
 // class TestGame extends FlatSpec {

@@ -1,12 +1,12 @@
-package org.sofa.gfx.actor.renderer.avatar.ui
+package org.sofa.gfx.renderer.avatar.ui
 
 import org.scalatest.FlatSpec
 
 import akka.actor.ActorSystem
 
 import org.sofa.gfx.{Shader}
-import org.sofa.gfx.actor.renderer.{AvatarName}
-import org.sofa.gfx.actor.renderer.backend.RendererNewt
+import org.sofa.gfx.renderer.{AvatarName}
+import org.sofa.gfx.renderer.backend.RendererNewt
 import org.sofa.gfx.text.GLFont
 
 

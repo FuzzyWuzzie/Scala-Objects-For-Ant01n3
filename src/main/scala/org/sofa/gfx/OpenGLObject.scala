@@ -3,7 +3,7 @@ package org.sofa.gfx
 
 /** Represents a base for any OpenGL object.
   *
-  * The identifier of the object is free (ofen an integer, but in webgl these are
+  * The identifier of the object is free (often an integer, but in webgl these are
   * objects for example).
   */
 class OpenGLObject(val sgl:SGL) {
