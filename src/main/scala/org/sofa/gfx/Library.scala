@@ -200,6 +200,7 @@ class Libraries(gl:SGL) {
 	  *				<armature>path/to/armatures</armature>
 	  *				<tex>there/can/be/several/pathes</tex>
 	  *             <behavior>path/to/sifz/behavior/descriptions</behavior>
+	  *				<font>path/to/fonts/files</font>
 	  *			</pathes>
 	  *			<shaders>
 	  *				<shader id="mandatoryId" vert="vertexShader" frag="fragmentShader"/>
@@ -241,6 +242,7 @@ class Libraries(gl:SGL) {
 		nodes \ "tex"      foreach { Texture.path          += _.text }
 		nodes \ "armature" foreach { Armature.path         += _.text }
 		nodes \ "behavior" foreach { ArmatureBehavior.path += _.text }
+		nodes \ "font"     foreach { GLFont.path           += _.text }
 	}
 
 	protected def parseShaders(nodes:NodeSeq) {
@@ -413,7 +415,8 @@ class Libraries(gl:SGL) {
 	  *		"shader":   [ "S", "S" ],
 	  *		"texture":  [ "S", "S" ],
 	  *		"armature": [ "S", "S" ],
-	  *		"behavior": [ "S", "S" ]
+	  *		"behavior": [ "S", "S" ],
+	  *     "font":     [ "S", "S" ]
 	  *	},
 	  *	"shaders": [
 	  *		{ "id": "S", "vertex": "S", "fragment": "S" }
@@ -514,7 +517,8 @@ case class Pathes(
 	shader:Array[String],
 	texture:Array[String],
 	armature:Array[String],
-	behavior:Array[String]) {}
+	behavior:Array[String],
+	font:Array[String]) {}
 
 case class TextureDesc(
 	id:String,

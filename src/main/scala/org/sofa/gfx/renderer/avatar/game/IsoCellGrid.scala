@@ -54,7 +54,11 @@ case class IsoCellGridShade(shader:String, color:String, mask:String, ground:Iso
   * @param x The set of u coordinates (in UV) for patches, the number of patches is the size of the array.
   * @param y The set of v coordinates (in UV) for patches, the number of patches is the size of the array.
   */
-case class IsoCellGridTex(w:Float, h:Float, x:Array[Float], y:Array[Float])
+case class IsoCellGridTex(w:Float, h:Float, x:Array[Float], y:Array[Float]) {
+	override def toString():String = {
+		"IsoCellGridTex(%d, %d, [%s], [%s])".format(w, h, x.mkString(","), y.mkString(","))
+	}
+}
 
 
 /** Express how to create and render the iso-cell grid.

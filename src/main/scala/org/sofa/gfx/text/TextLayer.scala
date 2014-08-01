@@ -10,9 +10,11 @@ import org.sofa.math.{Point2, Point3, Point4, Rgba}
 /** A text renderer that memorize couples of points and strings in pixel space,
   * and render them in one pass.
   *
-  * The way the text layer work is that at some point in your rendering process,
+  * At some point in your rendering process,
   * you issue a string at a given position. This position can either be pixels,
-  * or your current space (in which case the position is projected in pixels).
+  * or your current space (in which case the position is projected in pixels) using
+  * the current model-view and projection matrices.
+  *
   * Then at the end of the current frame rendering, the `render()` method is
   * called, and all strings are displayed at once in an optimized way. Then
   * these memorized strings are cleared for the next rendering pass.
@@ -89,7 +91,6 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	def string(text:String, position:Point4, space:Space) {
 		var pos:Point4 = position
 
-		//print(s"${position} --> ")
 		if(space ne null) {
 			pos = space.transform(position)
 			pos.perspectiveDivide

@@ -45,7 +45,7 @@ trait UIrenderUtils {
 
 	def self:Avatar
 
-	def fill() {
+	def fillAndStroke() {
 		import VertexAttribute._
 
 		val screen = self.screen
@@ -65,7 +65,9 @@ trait UIrenderUtils {
 			mesh.setTriangle(0, 0, 1, 2)
 			mesh.setTriangle(1, 0, 2, 3)
 			mesh.newVertexArray(gl, shader, Vertex -> "position")
+		}
 
+		if(lines eq null) {
 			lines = new LinesMesh(4)
 			lines.setLine(0, 0,0,0, 1,0,0)
 			lines.setLine(1, 1,0,0, 1,1,0)
@@ -88,6 +90,42 @@ trait UIrenderUtils {
 			lines.lastva.draw(lines.drawAs(gl))
 		}
 	}
+
+	def fill() {
+		import VertexAttribute._
+
+		val screen = self.screen
+		val space  = screen.space
+		val gl     = screen.gl
+
+		if(shader eq null) {
+			shader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
+		}
+
+		if(mesh eq null) {
+			mesh = new TrianglesMesh(2)
+			mesh.setPoint(0, 0, 0, 0)
+			mesh.setPoint(1, 1, 0, 0)
+			mesh.setPoint(2, 1, 1, 0)
+			mesh.setPoint(3, 0, 1, 0)
+			mesh.setTriangle(0, 0, 1, 2)
+			mesh.setTriangle(1, 0, 2, 3)
+			mesh.newVertexArray(gl, shader, Vertex -> "position")
+		}
+
+		val subSpace = self.space.subSpace
+
+		shader.use
+		space.pushpop {
+			//println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
+			shader.use
+			shader.uniform("uniformColor", color)
+			space.scale(subSpace.size(0), subSpace.size(1), 1)
+			space.uniformMVP(shader)
+			mesh.lastva.draw(mesh.drawAs(gl))
+		}
+	}
+
 }
 
 

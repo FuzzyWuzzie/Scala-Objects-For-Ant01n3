@@ -15,7 +15,7 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIre
 	override def render() {
 		//println(s"* render ${self.name}")
 		self.space.pushSubSpace
-		fill
+		//fill
 		self.renderSubs
 		self.space.popSubSpace		
 	}
@@ -23,20 +23,26 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIre
 
 class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 
-	color = Rgba.White
+	color = null//Rgba.White
 
-	lineColor = Rgba.Black
+//	lineColor = Rgba.Black
 
 	override def render() {
 		//println(s"* render ${self.name}")
 		val space = self.space
 		val text  = screen.textLayer
+		val size  = space.subSpace.size
+
+		if(color eq null) {
+			color = Rgba.randomHue(0.7, 1.0)
+		}
+
 
 		space.pushSubSpace
 		fill
-		text.font("Ubuntu-L.ttf", 13)
+		text.font("Ubuntu-M.ttf", 15)
 		text.color(Rgba.Black)
-		text.string("Hello", 0.2, 0.1, 0, screen.space)
+		text.string("Hello", size.x*0.1, size.y*0.9, 0, screen.space)
 		self.renderSubs
 		space.popSubSpace		
 	}
@@ -70,21 +76,24 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 		newState match {
 			case AvatarOffsetState(amount) => {
 				offsety += amount*0.01
-
-				var offsetMax = -(toSpace.size.height - fromSpace.size.height)
-				
-				if(offsetMax > 0) offsetMax = 0
-
-				if(offsety > 0) offsety = 0
-				else if(offsety < offsetMax) offsety = offsetMax
+				checkOffset
 			}
 			case _ => super.changeSpace(newState)
 		}
 	}
+
+	protected def checkOffset() {
+		var offsetMax = -(toSpace.size.height - fromSpace.size.height)
+				
+		if(offsetMax > 0) offsetMax = 0
+		if(offsety > 0) offsety = 0
+		else if(offsety < offsetMax) offsety = offsetMax
+	}
+
  	override def animateSpace() {
  		scale1cm = self.parent.space.scale1cm
-
  		toSpace.to.set(1, scale1cm * itemHeight * avatar.subCount, 1)
+ 		checkOffset
 
  		//println(s"# layout list available space (${fromSpace.size(0)}, ${fromSpace.size(1)})")
  		//println(s"#        list pos(${fromSpace.pos.x}, ${fromSpace.pos.y}) scale1cm=${scale1cm} items=${avatar.subCount} size=(${toSpace.to.x}, ${toSpace.to.y})")

@@ -1,6 +1,8 @@
 package org.sofa.math
 
+import scala.util.Random
 import scala.math._
+
 
 object Rgba {
     final val Black   = new Rgba(0, 0, 0, 1)
@@ -42,6 +44,61 @@ object Rgba {
     def apply(r:Double, g:Double, b:Double):Rgba = new Rgba(r, g, b, 1)
 
     def unapply(from:Rgba):Some[(Double,Double,Double,Double)] = Some(from.rgba)
+
+    /** A random RGB color with alpha to 1. Values for red, green and blue are taken in
+      * randomly in [0:1]. */
+    def random():Rgba = Rgba(Random.nextDouble, Random.nextDouble, Random.nextDouble, 1.0)
+
+    /** A color with random hue, but fixed `saturation` and `value`. */
+    def randomHue(saturation:Double, value:Double):Rgba = fromHSV((Random.nextDouble*(2*Pi)), saturation, value)
+
+    /** Create a RGBA color from the HSV (`hue`, `saturation`, `value`) specification. The alpha is 1.
+      * The `hue` is given in radians, whereas the `saturation` and `value` are given in [0:1]. */
+    def fromHSV(hue:Double, saturation:Double, value:Double):Rgba = fromHSV(hue, saturation, value, 1.0)
+
+    /** Create a RGBA color from the HSV (`hue`, `saturation`, `value`) and `alpha` specification.
+      * The `hue` is given in radians, whereas the `saturation` and `value` are given in [0:1]. */
+    def fromHSV(hue:Double, saturation:Double, value:Double, alpha:Double) = {
+    	val C = value * saturation		// chroma
+    	val H = (hue / (Pi/3.0))		// H' = hue / 60°
+    	val X = C * (1 - abs(H % 2 - 1))
+
+    	var R1 = 0.0
+    	var G1 = 0.0
+    	var B1 = 0.0
+
+    	if(H >=0 && H < 1) {
+    		R1 = C
+    		G1 = X
+    		B1 = 0
+    	} else if(H >= 1 && H < 2) {
+    		R1 = X
+    		G1 = C
+    		B1 = 0
+    	} else if(H >= 2 && H < 3) {
+    		R1 = 0
+    		G1 = C
+    		B1 = X
+    	} else if(H >= 3 && H < 4) {
+    		R1 = 0
+    		G1 = X
+    		B1 = C
+    	} else if(H >= 4 && H < 5) {
+    		R1 = X
+    		G1 = 0
+    		B1 = C
+    	} else if(H >= 5 && H < 6) {
+    		R1 = C
+    		G1 = 0
+    		B1 = X
+    	} else {
+    		throw new RuntimeException("unexpected H value %f not in [0:6[".format(H))
+    	}
+
+    	val m = value - C
+//println("HSV(%f, %f, %f) -> RGB(%f, %f, %f)".format(hue, saturation, value, R1+m, G1+m, B1+m))
+    	Rgba(R1+m, G1+m, B1+m, alpha)
+    }
 }
 
 /* This should maybe inherit NumberSeq4 ??! */

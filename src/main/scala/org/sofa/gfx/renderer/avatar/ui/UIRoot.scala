@@ -1,6 +1,6 @@
 package org.sofa.gfx.renderer.avatar.ui
 
-import org.sofa.math.{ Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default }
+import org.sofa.math.{ Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default, Point4 }
 import org.sofa.gfx.{ ShaderResource }
 import org.sofa.gfx.renderer.{ Screen }
 import org.sofa.gfx.renderer.{ Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState }
@@ -11,9 +11,12 @@ import org.sofa.gfx.{ SGL, ShaderProgram } //, Camera, VertexArray, Texture, Hem
 import org.sofa.gfx.mesh.{ TrianglesMesh, Mesh, VertexAttribute, LinesMesh } //, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 
 
-class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) {
+class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
+	color = Rgba.Yellow
+
 	override def render() {
 		val gl = screen.gl
+		val text  = screen.textLayer
 
 		gl.clearColor(Rgba.White)
 		gl.clear(gl.COLOR_BUFFER_BIT)
@@ -24,9 +27,18 @@ class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) {
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 		//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)		// Premultiplied alpha
 
-		//println(s"* render ${self.name}")
 		gl.checkErrors
+
 		super.render
+
+		// self.space.pushSubSpace
+		// text.font("Ubuntu-B.ttf", 20)
+		// text.color(Rgba.Red)
+		// val size = self.space.subSpace.size
+		// text.string("ROOT", size.x/2, size.y/2, 0, screen.space)
+		// fill
+		// self.renderSubs
+		// self.space.popSubSpace		
 	}
 }
 
