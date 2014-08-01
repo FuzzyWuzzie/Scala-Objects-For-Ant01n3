@@ -577,6 +577,42 @@ trait NumberSeq extends IndexedSeq[Double] {
 	    }
 	    this.asInstanceOf[ReturnType]
 	}
+
+	/** True if this point coordinates are between `from` and `to`. This is a bounding box inclusion.
+	  * The point is considered inside even if coordinates are equal. This means that >= and <= operations
+	  * are used, in other words with this point equal to `from` and `to`, the operation returns true. */
+	def inside(from:NumberSeq, to:NumberSeq):Boolean = {
+		var inside = true
+		var dim = 0
+		val n = scala.math.min(data.length, scala.math.min(from.data.length, to.data.length))
+		
+		while(dim < n && inside) {
+			inside = (data(dim)>= from.data(dim) && data(dim) <= to.data(dim))
+			dim += 1
+		}
+
+		inside
+	}
+
+	/** True if this point coordinates are between points `first` and `second` even if
+	  * the point coordinates of `second` are not >= to `first`. This is a bounding box inclusion.
+	  * The `first` and `second` point coordinates are sorted to test the inclusion.
+	  * The point is considered inside even if coordinates are equal. This means that >= and <= operations
+	  * are used, in other words with this point equal to `from` and `to`, the operation returns true. */
+	def insideOneOrAnother(first:NumberSeq, second:NumberSeq):Boolean = {
+		var inside = true
+		var dim = 0
+		val n = scala.math.min(data.length, scala.math.min(first.data.length, second.data.length))
+		
+		while(dim < n && inside) {
+//println("%d  %f <> (%f, %f)".format(dim, data(dim), scala.math.min(first.data(dim), second.data(dim)), scala.math.max(first.data(dim), second.data(dim))))
+			inside = (data(dim) >= scala.math.min(first.data(dim), second.data(dim)) &&
+				      data(dim) <= scala.math.max(first.data(dim), second.data(dim)))
+			dim += 1
+		}
+
+		inside
+	}
 }
 
 //===================================================

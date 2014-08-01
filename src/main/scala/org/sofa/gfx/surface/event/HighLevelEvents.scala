@@ -51,7 +51,7 @@ trait ScrollEvent extends GestureEvent {
 
 
 trait TapEvent extends GestureEvent { 
-	override def toString():String = "Tap[] %s".format(if(isStart) "BEG" else if(isEnd) "END" else "")
+	override def toString():String = "Tap[] %s (src=%s)".format(if(isStart) "BEG" else if(isEnd) "END" else "", source)
 }
 
 

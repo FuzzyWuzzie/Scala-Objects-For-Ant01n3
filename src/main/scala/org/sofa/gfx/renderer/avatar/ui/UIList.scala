@@ -37,7 +37,6 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 			color = Rgba.randomHue(0.7, 1.0)
 		}
 
-
 		space.pushSubSpace
 		fill
 		text.font("Ubuntu-M.ttf", 15)
@@ -84,7 +83,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	protected def checkOffset() {
 		var offsetMax = -(toSpace.size.height - fromSpace.size.height)
-				
+
 		if(offsetMax > 0) offsetMax = 0
 		if(offsety > 0) offsety = 0
 		else if(offsety < offsetMax) offsety = offsetMax
@@ -178,8 +177,12 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 	def consumeEvent(event:Event):Boolean = {
 		event match {
 			case e:ScrollEvent => {
-				space.changeSpace(AvatarOffsetState(e.delta.y))
-				true
+				if(containsEvent(event)) {
+					space.changeSpace(AvatarOffsetState(e.delta.y))
+					true
+				} else {
+					false
+				}
 			}
 			case _ => { false }
 		}
@@ -196,19 +199,30 @@ class UIListItem(name:AvatarName, screen:Screen)
 	def consumeEvent(event:Event):Boolean = {
 		event match {
 			case e:SingleTapEvent => {
-				println("%s tap event %s".format(name, event))
-				true
+				if(containsEvent(event)) {
+					println("%s tap event %s".format(name, event))
+					true
+				} else {
+					false
+				}
 			}
 			case e:DoubleTapEvent => {
-				println("%s double tap event %s".format(name, event))
-				true
+				if(containsEvent(event)) {
+					println("%s double-tap event %s".format(name, event))
+					true
+				} else {
+					false
+				}
 			}
 			case e:LongPressEvent => {
-				println("%s long press event %s".format(name, event))
-				true
+				if(containsEvent(event)) {
+					println("%s long-press event %s".format(name, event))
+					true
+				} else {
+					false
+				}
 			}
 			case _ => {
-			//	println("%s received event %s".format(name, event))
 				false
 			}
 		}

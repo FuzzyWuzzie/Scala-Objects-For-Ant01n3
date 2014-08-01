@@ -78,6 +78,11 @@
     - a way to represent it on memory.
     - a way to communicate with entities actors ? (constraints, events...)
 
+## UI
+
+* Lists must show a scroll indicator when more elements than visible.
+* Lists should indicate we cannot scroll more.
+
 ## CSS
 
 * Add a CSS style sheet system on the avatar hierarchy.

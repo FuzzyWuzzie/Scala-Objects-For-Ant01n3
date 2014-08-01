@@ -92,7 +92,7 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 		var pos:Point4 = position
 
 		if(space ne null) {
-			pos = space.transform(position)
+			pos = space.project(position)
 			pos.perspectiveDivide
 
 			val w:Double = space.viewportPx(0)

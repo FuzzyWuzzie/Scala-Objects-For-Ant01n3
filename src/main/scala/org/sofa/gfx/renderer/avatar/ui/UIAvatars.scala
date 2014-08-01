@@ -1,6 +1,8 @@
 package org.sofa.gfx.renderer.avatar.ui
 
-import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
+import scala.math.{min, max}
+
+import org.sofa.math.{Point3, Point4, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
 import org.sofa.gfx.{ShaderResource}
 import org.sofa.gfx.renderer.{Screen}
 import org.sofa.gfx.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState}
@@ -26,6 +28,52 @@ class UIAvatarFactory extends DefaultAvatarFactory {
 
 
 abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarComposed(name, screen) {
+	
+	/** Overriding of the consume-event operation to push/pop the avatar space.
+	  * This allows to be able to test if a spatial event is inside an avatar or
+	  * not. */
+	override def consumeOrPropagateEvent(event:Event):Boolean = {
+		var res:Boolean = false
+
+		event match {
+			case e:SpatialEvent => {
+				space.pushSubSpace
+				res = super.consumeOrPropagateEvent(event)
+				space.popSubSpace
+			}
+			case _ => super.consumeOrPropagateEvent(event)
+		}
+
+		res
+	}
+
+	def containsEvent(event:Event):Boolean = {
+		if(event.isInstanceOf[SpatialEvent]) {
+			val space    = screen.space
+			val sevent   = event.asInstanceOf[SpatialEvent] 
+			val from     = space.project(Point4(0, 0, 0, 1))
+			val to       = space.project(Point4(this.space.subSpace.size, 1))
+			val origPos  = sevent.position()
+			val w:Double = space.viewportPx(0)
+			val h:Double = space.viewportPx(1)
+
+			// // project yield elements in [-1:1] along X and Y, convert to pixels:
+
+			val posx  = origPos.x
+			val posy  = h - origPos.y
+			val fromx = from.x / 2 * w + w / 2
+			val fromy = from.y / 2 * h + h / 2
+			val tox   = to.x   / 2 * w + w / 2
+			val toy   = to.y   / 2 * h + h / 2
+
+			// Test inclusion in pixels:
+
+			(( (posx >= min(fromx, tox)) && (posx <= max(fromx, tox)) ) &&
+			 ( (posy >= min(fromy, toy)) && (posy <= max(fromy, toy)) ))
+		} else {
+			false
+		}
+	}
 }
 
 

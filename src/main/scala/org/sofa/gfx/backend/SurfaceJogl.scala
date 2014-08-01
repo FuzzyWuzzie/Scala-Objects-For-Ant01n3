@@ -105,6 +105,10 @@ class SurfaceNewt(
       * only in the renderer thread. */
     protected[this] var needValidateSingleTap:Long = 0
 
+    /** When a single tap is issued, this allow to set a source from the last tap event,
+      * to provide a position. See `needValidateSingleTap`. */
+    protected[this] var singleTapSource:TapEvent = null
+
     /** Send motion events for the mouse even when no button is pressed ? This field
       * is used only in the EDT thread. */
     protected[this] var noButtonMotionEvents:Boolean = false
@@ -404,11 +408,13 @@ class SurfaceNewt(
    				case e:ShortCutEvent  => { if(renderer.shortCut  ne null) renderer.shortCut( this, e) }
    				// Special case gesture events:
    				case e:TapEvent => { 
-   					needValidateSingleTap = System.nanoTime				
+   					needValidateSingleTap = System.nanoTime
+   					singleTapSource = e
    					if(renderer.gesture ne null) renderer.gesture(this, e) 
    				}
    				case e:DoubleTapEvent => {
    					needValidateSingleTap = 0
+   					singleTapSource  = null
    					if(renderer.gesture ne null) renderer.gesture(this, e) 
    				}
    				// All other gesture events:
@@ -424,13 +430,15 @@ class SurfaceNewt(
    	  * has been issued. */
    	protected def singleTapEventValidation() {
    		if(needValidateSingleTap > 0) {
+   			assert(singleTapSource ne null)
    			val t = System.nanoTime
    			
    			if((t - needValidateSingleTap) > doubleTapDelay) {
    				if(renderer.gesture ne null)
-   					renderer.gesture(this, SingleTapEventJogl(null, 0))
+   					renderer.gesture(this, SingleTapEventJogl(singleTapSource.source.asInstanceOf[JoglMouseEvent], 0))
    				
    				needValidateSingleTap = 0
+   				singleTapSource = null
    			}
    		}
    	}

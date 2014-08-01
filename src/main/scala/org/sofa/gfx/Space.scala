@@ -114,7 +114,7 @@ trait Space {
     }
 
     /** Transform the given `point` using the top most matrix. */
-    def transform(point:Point4):Point4 = {
+    def project(point:Point4):Point4 = {
     	recomputeMVP
     	mvp.mult(point)
     }

@@ -31,14 +31,21 @@ class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) with UIr
 
 		super.render
 
-		// self.space.pushSubSpace
-		// text.font("Ubuntu-B.ttf", 20)
-		// text.color(Rgba.Red)
-		// val size = self.space.subSpace.size
-		// text.string("ROOT", size.x/2, size.y/2, 0, screen.space)
-		// fill
-		// self.renderSubs
-		// self.space.popSubSpace		
+// 		self.space.pushSubSpace
+// 		text.font("Ubuntu-B.ttf", 20)
+// 		text.color(Rgba.Red)
+// 		val size = self.space.subSpace.size
+// 		text.string("ROOT", size.x/2, size.y/2, 0, screen.space)
+// 		text.string("ROOT1", 0, 0, 0, screen.space)
+// 		text.string("ROOT1", 0, 0, 0, screen.space)
+// 		fill
+
+// 		val from = screen.space.project(Point4(0, 0, 0, 1))
+// 		val to   = screen.space.project(Point4(self.space.subSpace.size, 1))
+// println("%s -> %s --> %s".format(self.name, from, to))
+
+// 		self.renderSubs
+// 		self.space.popSubSpace		
 	}
 }
 
