@@ -29,6 +29,23 @@ class UIAvatarFactory extends DefaultAvatarFactory {
 
 abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarComposed(name, screen) {
 	
+	/** Another consumeOrPropagateEvent that looks if an avatar is visible to propagate the
+	  * event to it. To call only if the event is a spatial one. */
+	def consumeOrPropagateSpatialEventVisible(event:Event):Boolean = {
+		if(! consumeEvent(event)) {
+			self.findSub { sub =>
+				if(space.isVisible(sub))
+					 sub.events.consumeOrPropagateEvent(event)
+				else false
+			} match {
+				case Some(a) => true
+				case _       => false
+			}
+		} else {
+			true
+		}
+	}
+
 	/** Overriding of the consume-event operation to push/pop the avatar space.
 	  * This allows to be able to test if a spatial event is inside an avatar or
 	  * not. */
@@ -38,7 +55,7 @@ abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarCom
 		event match {
 			case e:SpatialEvent => {
 				space.pushSubSpace
-				res = super.consumeOrPropagateEvent(event)
+				res = consumeOrPropagateSpatialEventVisible(event)
 				space.popSubSpace
 			}
 			case _ => super.consumeOrPropagateEvent(event)
@@ -52,7 +69,7 @@ abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarCom
 			val space    = screen.space
 			val sevent   = event.asInstanceOf[SpatialEvent] 
 			val from     = space.project(Point4(0, 0, 0, 1))
-			val to       = space.project(Point4(this.space.subSpace.size, 1))
+			val to       = space.project(Point4(this.space.subSpace.sizex, this.space.subSpace.sizey, 0, 1))
 			val origPos  = sevent.position()
 			val w:Double = space.viewportPx(0)
 			val h:Double = space.viewportPx(1)
@@ -80,13 +97,18 @@ abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarCom
 // ----------------------------------------------------------------------------------------------
 
 
-trait UIrenderUtils {
+object UIrenderUtils {
 	var mesh:TrianglesMesh = null
 
 	var lines:LinesMesh = null
 
 	var shader:ShaderProgram = null
 
+
+}
+
+
+trait UIrenderUtils {
 	var color = Rgba.Cyan
 
 	var lineColor = Rgba.Red
@@ -95,16 +117,19 @@ trait UIrenderUtils {
 
 	def fillAndStroke() {
 		import VertexAttribute._
+		import UIrenderUtils._
 
 		val screen = self.screen
 		val space  = screen.space
 		val gl     = screen.gl
 
 		if(shader eq null) {
+println("*** NEW SHADER")
 			shader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		}
 
 		if(mesh eq null) {
+println("*** NEW MESH")
 			mesh = new TrianglesMesh(2)
 			mesh.setPoint(0, 0, 0, 0)
 			mesh.setPoint(1, 1, 0, 0)
@@ -129,9 +154,8 @@ trait UIrenderUtils {
 		shader.use
 		space.pushpop {
 			//println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
-			shader.use
 			shader.uniform("uniformColor", color)
-			space.scale(subSpace.size(0), subSpace.size(1), 1)
+			space.scale(subSpace.sizex, subSpace.sizey, 1)
 			space.uniformMVP(shader)
 			mesh.lastva.draw(mesh.drawAs(gl))
 			shader.uniform("uniformColor", lineColor)
@@ -141,16 +165,19 @@ trait UIrenderUtils {
 
 	def fill() {
 		import VertexAttribute._
+		import UIrenderUtils._
 
 		val screen = self.screen
 		val space  = screen.space
 		val gl     = screen.gl
 
 		if(shader eq null) {
+println("*** NEW SHADER")
 			shader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		}
 
 		if(mesh eq null) {
+println("*** NEW MESH")
 			mesh = new TrianglesMesh(2)
 			mesh.setPoint(0, 0, 0, 0)
 			mesh.setPoint(1, 1, 0, 0)
@@ -166,9 +193,8 @@ trait UIrenderUtils {
 		shader.use
 		space.pushpop {
 			//println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
-			shader.use
 			shader.uniform("uniformColor", color)
-			space.scale(subSpace.size(0), subSpace.size(1), 1)
+			space.scale(subSpace.sizex, subSpace.sizey, 1)
 			space.uniformMVP(shader)
 			mesh.lastva.draw(mesh.drawAs(gl))
 		}

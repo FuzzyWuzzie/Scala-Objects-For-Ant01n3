@@ -83,6 +83,14 @@
 * Lists must show a scroll indicator when more elements than visible.
 * Lists should indicate we cannot scroll more.
 
+## OpenGL
+
+* Would a shader "current shader" or "current texture" avoid lots of bindings and provide performance gains ?
+
+## Text
+
+* Improve text efficiency, profiling shows we spend a lot of time drawing and remaking strings.
+
 ## CSS
 
 * Add a CSS style sheet system on the avatar hierarchy.

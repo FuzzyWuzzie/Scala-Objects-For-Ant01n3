@@ -142,11 +142,19 @@ abstract class Avatar(
 	/** Render the sub-avatars. */
 	def renderSubs()
 
-	/** Animate the sapce, the renderer and call `animateSubs()`. */
+	/** Render only the sub-avatars for which the space.isVisible method returns true.
+	  * @return the number of visible sub-avatars rendered. */
+	def renderVisibleSubs():Int
+
+	/** Animate the space, the renderer and call `animateSubs()`. */
 	def animate() { space.animateSpace; renderer.animateRender; animateSubs }
 
 	/** Animate the sub-avatars. */
 	def animateSubs()
+
+	/** Animate only the sub-avatars for which the space.isVisible method returns true.
+	  * @return the number of visible sub-avatars animated. */
+	def animateVisibleSubs():Int 
 
 	/** Apply the given `code` to each sub-avatar. */
 	def foreachSub(code:(Avatar)=>Unit)

@@ -56,4 +56,7 @@ trait AvatarSpace {
 
 	/** Position and size of this avatar in its own sub-space. */
 	def subSpace:Box3
+
+	/** Determine if the given sub-avatar is visible in the actual rendering configuration. */
+	def isVisible(sub:Avatar):Boolean = true
 }

@@ -20,6 +20,8 @@ import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
 import scala.concurrent.duration._
 import org.sofa.gfx.akka.SurfaceExecutorService
 
+import org.sofa.Timer
+
 
 /** Base exception for errors when executing a renderer. */
 case class RendererException(msg:String) extends Exception(msg)
@@ -241,6 +243,7 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 	
 	/** Render the current screen. If no screen is current, a red background should be drawn. */
 	def render(surface:Surface) {
+Timer.timer.measure("Renderer.render") {
 		animate
 
 		if(screen ne null) {
@@ -251,6 +254,7 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 		}
 
 	    gl.checkErrors
+}
 	}
 
 	def animate() { if(screen ne null) screen.animate }

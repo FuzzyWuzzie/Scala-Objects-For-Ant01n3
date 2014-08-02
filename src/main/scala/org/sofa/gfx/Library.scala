@@ -228,13 +228,18 @@ class Libraries(gl:SGL) {
 	  *
 	  * See the [[TexParams]] class for an explanation of the attributes of tex elements. */
 	def addResources(xml:Elem) {
-		Timer.timer.measure("Library: addResources()") {
-			Timer.timer.measure("Library: path ") { parsePathes(   xml \\ "pathes") }
-			Timer.timer.measure("Library: shad ") { parseShaders(  xml \\ "shaders") }
-			Timer.timer.measure("Library: texs ") { parseTexs(     xml \\ "texs") }
-			Timer.timer.measure("Library: arms ") { parseArmatures(xml \\ "armatures") }
-			Timer.timer.measure("Library: beha ") { parseBehaviors(xml \\ "behaviors") }
-		}
+		// Timer.timer.measure("Library: addResources()") {
+		// 	Timer.timer.measure("Library: path ") { parsePathes(   xml \\ "pathes") }
+		// 	Timer.timer.measure("Library: shad ") { parseShaders(  xml \\ "shaders") }
+		// 	Timer.timer.measure("Library: texs ") { parseTexs(     xml \\ "texs") }
+		// 	Timer.timer.measure("Library: arms ") { parseArmatures(xml \\ "armatures") }
+		// 	Timer.timer.measure("Library: beha ") { parseBehaviors(xml \\ "behaviors") }
+		// }
+		parsePathes(   xml \\ "pathes")
+		parseShaders(  xml \\ "shaders")
+		parseTexs(     xml \\ "texs")
+		parseArmatures(xml \\ "armatures")
+		parseBehaviors(xml \\ "behaviors")
 	}
 
 	protected def parsePathes(nodes:NodeSeq) {
@@ -448,7 +453,7 @@ class Libraries(gl:SGL) {
 	  */
 	def addResourcesJSON(jsonSrc:URL) {
 		if(jsonMapper eq null) {
-			Timer.timer.measure("addResJSON.modules") {
+//			Timer.timer.measure("addResJSON.modules") {
 				jsonMapper = new ObjectMapper() with ScalaObjectMapper
 
 				jsonMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true)
@@ -460,10 +465,10 @@ class Libraries(gl:SGL) {
 					classOf[LoopDesc], classOf[SwitchDesc], classOf[LerpToAngleDesc],
 					classOf[LerpToPositionDesc], classOf[LerpToScaleDesc],
 					classOf[LerpMoveDesc], classOf[LerpKeysDesc], classOf[WaitDesc])
-			}
+//			}
 		}
 		
-		Timer.timer.measure("addResJSON") {
+//		Timer.timer.measure("addResJSON") {
 			val conf:SOFAConf = jsonMapper.readValue(jsonSrc, classOf[SOFAConf])
 
 			conf.pathes.shader   foreach { Shader.path           += _ }		
@@ -496,7 +501,7 @@ class Libraries(gl:SGL) {
 			processBehavior(conf.behaviors.lerp_move       )
 			processBehavior(conf.behaviors.lerp_keys       )
 			processBehavior(conf.behaviors.waits           )
-		}
+//		}
 
 	}
 

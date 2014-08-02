@@ -52,6 +52,21 @@ object Rgba {
     /** A color with random hue, but fixed `saturation` and `value`. */
     def randomHue(saturation:Double, value:Double):Rgba = fromHSV((Random.nextDouble*(2*Pi)), saturation, value)
 
+    /** A color with random hue, and saturation but fixed `value`. */
+    def randomHueAndSaturation(value:Double):Rgba = fromHSV((Random.nextDouble*(2*Pi)), Random.nextDouble, value)
+
+    /** A color with random hue, and value but fixed `saturation`. */
+    def randomHueAndValue(saturation:Double):Rgba = fromHSV((Random.nextDouble*(2*Pi)), saturation, Random.nextDouble)
+
+    /** A color with random saturation, and value but fixed `hue`. */
+    def randomSaturationAndValue(hue:Double):Rgba = fromHSV(hue, Random.nextDouble, Random.nextDouble)
+
+    /** A color with random saturation, but fixed `hue` and `value`. */
+    def randomSaturation(hue:Double, value:Double):Rgba = fromHSV(hue, Random.nextDouble, value)
+
+    /** A color with random value, but fixed `hue` and `saturation`. */
+    def randomValue(hue:Double, saturation:Double):Rgba = fromHSV(hue, saturation, Random.nextDouble)
+
     /** Create a RGBA color from the HSV (`hue`, `saturation`, `value`) specification. The alpha is 1.
       * The `hue` is given in radians, whereas the `saturation` and `value` are given in [0:1]. */
     def fromHSV(hue:Double, saturation:Double, value:Double):Rgba = fromHSV(hue, saturation, value, 1.0)

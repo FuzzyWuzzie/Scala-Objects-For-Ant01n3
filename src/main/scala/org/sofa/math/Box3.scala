@@ -22,6 +22,12 @@ trait Box3 {
 	/** Overral dimensions (according to `from` and `to`) */
 	def size:Vector3
 
+	def sizex:Double
+
+	def sizey:Double
+
+	def sizez:Double
+
 	/** Change the position. */
 	def setPosition(x:Double, y:Double, z:Double)
 
@@ -59,6 +65,12 @@ class Box3Default extends Box3 {
 		from.set(pos.x - width/2, pos.y + height/2, pos.z + depth/2)
 		to.set(pos.x + width/2, to.y + height/2, to.z + depth/2)
 	}
+
+	def sizex:Double = size.x
+
+	def sizey:Double = size.y
+
+	def sizez:Double = size.z
 }
 
 
@@ -82,6 +94,12 @@ class Box3From extends Box3 {
 	}
 
 	def setSize(width:Double, height:Double, depth:Double) = to.set(from.x + width, from.y + height, from.z + depth)
+
+	def sizex:Double = to.x-from.x
+
+	def sizey:Double = to.y-from.y
+
+	def sizez:Double = to.z-from.z
 }
 
 
@@ -112,6 +130,12 @@ class Box3PosCentered extends Box3 {
 		from.set(pos.x - width/2, pos.y + height/2, pos.z + depth/2)
 		to.set(pos.x + width/2, to.y + height/2, to.z + depth/2)
 	}	
+
+	def sizex:Double = to.x-from.x
+
+	def sizey:Double = to.y-from.y
+
+	def sizez:Double = to.z-from.z
 }
 
 
@@ -136,4 +160,10 @@ class Box3Sized extends Box3 {
 	def setSize(width:Double, height:Double, depth:Double) {
 		size.set(width, height, depth)
 	}	
+
+	def sizex:Double = size.x
+
+	def sizey:Double = size.y
+
+	def sizez:Double = size.z
 }

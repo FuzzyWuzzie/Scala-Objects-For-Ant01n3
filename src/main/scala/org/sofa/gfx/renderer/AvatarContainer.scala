@@ -219,12 +219,55 @@ trait AvatarContainerArray extends AvatarContainer {
 		}
 	}
 
+	def renderVisibleSubs():Int = {
+		var visible = 0
+		
+		if(subs ne null) {
+			if(orderSubs ne null)
+				subs.sortWith(orderSubs)
+
+			val space = self.space
+			var i = 0
+			val n = subs.size
+
+			while(i < n) {
+				if(space.isVisible(subs(i))) {
+					subs(i).render
+					visible += 1
+				}
+				i += 1
+			}
+		}
+
+		visible
+	}
+
 	def animateSubs() {
 		if(subs ne null) {
 			var i = 0
 			val n = subs.size
 			while(i < n) { subs(i).animate(); i += 1 }	// for performance reasons.
 		}
+	}
+
+	def animateVisibleSubs():Int = {
+		var visible = 0
+		
+		if(subs ne null) {
+			val space = self.space
+			var i = 0
+			val n = subs.size
+
+			while(i < n) {
+				if(space.isVisible(subs(i))) {
+					subs(i).animate
+					visible += 1
+				}
+				i += 1
+			}
+		}
+
+		visible		
 	}
 
 	def foreachSub(code:(Avatar)=>Unit) { 

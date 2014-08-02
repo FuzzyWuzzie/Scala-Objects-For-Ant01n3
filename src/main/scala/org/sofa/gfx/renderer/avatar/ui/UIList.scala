@@ -10,14 +10,18 @@ import org.sofa.gfx.renderer.{NoSuchAvatarException}
 import org.sofa.gfx.{SGL, ShaderProgram}//, Camera, VertexArray, Texture, HemisphereLight, ResourceDescriptor, Libraries}
 import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}//, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 
+import org.sofa.Timer
+
 
 class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 	override def render() {
 		//println(s"* render ${self.name}")
 		self.space.pushSubSpace
 		//fill
-		self.renderSubs
-		self.space.popSubSpace		
+//		self.renderSubs
+		val count = self.renderVisibleSubs
+		self.space.popSubSpace
+//println("rendered %d visible subs / %d".format(count, self.subCount))
 	}
 }
 
@@ -31,17 +35,19 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 		//println(s"* render ${self.name}")
 		val space = self.space
 		val text  = screen.textLayer
-		val size  = space.subSpace.size
+		val sizex = space.subSpace.sizex
+		val sizey = space.subSpace.sizey
 
 		if(color eq null) {
-			color = Rgba.randomHue(0.7, 1.0)
+//			color = Rgba.randomHue(0.7, 1.0)
+			color = Rgba.randomHueAndSaturation(1.0)
 		}
 
 		space.pushSubSpace
 		fill
 		text.font("Ubuntu-M.ttf", 15)
 		text.color(Rgba.Black)
-		text.string("Hello", size.x*0.1, size.y*0.9, 0, screen.space)
+		text.string("Hello", sizex*0.1, sizey*0.9, 0, screen.space)
 		self.renderSubs
 		space.popSubSpace		
 	}
@@ -82,7 +88,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 	}
 
 	protected def checkOffset() {
-		var offsetMax = -(toSpace.size.height - fromSpace.size.height)
+		var offsetMax = -(toSpace.sizey - fromSpace.sizey)
 
 		if(offsetMax > 0) offsetMax = 0
 		if(offsety > 0) offsety = 0
@@ -120,6 +126,21 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  			i += 1
  		}
  	}
+
+	override def isVisible(sub:Avatar):Boolean = {
+		val up   = fromSpace.pos.y// + offsety
+		val down = up + fromSpace.sizey
+		val y    = sub.space.thisSpace.pos.y + offsety
+		val h    = sub.space.thisSpace.sizey
+
+		((y+h) >= up && y <= down)
+
+		// val pspace = self.parent.space
+		// val pyup   = pspace.thisSpace.pos.y
+		// val pydown = pspace.thisSpace.pos.y + pspace.thisSpace.size.y
+
+		// (fromSpace.pos.y >= pyup && fromSpace.pos.y <= pydown)
+	}
 }
 
 
@@ -145,7 +166,7 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	override def animateSpace() {
 		toSpace.from.set(0, 0, 0)
-		toSpace.setSize(fromSpace.size(0), fromSpace.size(1), 1)
+		toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
 
  		scale1cm = self.parent.space.scale1cm
 
@@ -186,6 +207,12 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 			}
 			case _ => { false }
 		}
+	}
+
+	override def animate() {
+		space.animateSpace
+		renderer.animateRender
+		val count = animateVisibleSubs
 	}
 }
 

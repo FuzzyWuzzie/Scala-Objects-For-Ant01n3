@@ -10,6 +10,8 @@ import org.sofa.gfx.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.gfx.surface.event.{Event, MotionEvent}
 import org.sofa.gfx.text.TextLayer
 
+import org.sofa.Timer
+
 
 /** A message sent to a screen. */
 trait ScreenState {}
@@ -137,6 +139,7 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** By default renders all the child avatars using [[renderAvatars]].
 	  * If the screen is empty, a blue background is drawn. */
 	def render() {
+Timer.timer.measure("screen.render") {
 		if(rendering) {
 			if(hasSubs) {
 				renderAvatars 
@@ -148,6 +151,7 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 				gl.clear(gl.COLOR_BUFFER_BIT)
 			}
 		}
+}
 	}
 
 	/** By default sets the size of the viewport to the size in pixels of the surface. */
