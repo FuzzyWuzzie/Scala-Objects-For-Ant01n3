@@ -56,7 +56,7 @@ case class IsoCellGridShade(shader:String, color:String, mask:String, ground:Iso
   */
 case class IsoCellGridTex(w:Float, h:Float, x:Array[Float], y:Array[Float]) {
 	override def toString():String = {
-		"IsoCellGridTex(%d, %d, [%s], [%s])".format(w, h, x.mkString(","), y.mkString(","))
+		"IsoCellGridTex(%f, %f, [%s], [%s])".format(w, h, x.mkString(","), y.mkString(","))
 	}
 }
 

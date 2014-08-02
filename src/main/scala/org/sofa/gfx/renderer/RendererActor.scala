@@ -32,7 +32,10 @@ object RendererController {
 	case class Start(rendererActor:ActorRef)
 
 	/** Request to exit the application: a window or screen is closed by the user. */
-	case class Exit()
+	case class Closed()
+
+	/** The renderer stopped. */
+	case class Stopped()
 }
 
 
@@ -43,6 +46,9 @@ object RendererActor {
 
 	/** Start the renderer. */
 	case class Start()
+
+	/** Stop the renderer. */
+	case class Stop()
 	
 	/** Define a new resource in the renderer. */
 	case class AddResource(res:ResourceDescriptor[AnyRef])
@@ -146,6 +152,7 @@ class RendererActor(val renderer:Renderer) extends Actor {
 
 	def receive() = {
 		case Start                                    ⇒ renderer.onStart(self)
+		case Stop                                     ⇒ context.stop(self)
 		case AddScreen(name, screenType)              ⇒ renderer.addScreen(name, screenType)
 		case RemoveScreen(name)                       ⇒ renderer.removeScreen(name)
 		case SwitchScreen(name)                       ⇒ renderer.switchToScreen(name)
@@ -159,4 +166,6 @@ class RendererActor(val renderer:Renderer) extends Actor {
 		case PrintStatus                              ⇒ println(renderer)
 		case x                                        ⇒ println(s"RendererActor unknown message ${x}")
 	}
+
+	override def postStop() { renderer.destroy }
 }

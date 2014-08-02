@@ -180,6 +180,10 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 
 		surface = null
 		inited = false
+
+		if(controller ne null) controller ! RendererController.Stopped
+
+		controller = null
 	}
 
 // == Surface events ===========================
@@ -191,9 +195,8 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 	}
 
 	def onClose(surface:Surface) {
-		if(controller ne null) controller ! RendererController.Exit
-
-		destroy
+		if(controller ne null) controller ! RendererController.Closed
+		//destroy
 	}
 
 	def onActionKey(surface:Surface, e:ActionKeyEvent) {

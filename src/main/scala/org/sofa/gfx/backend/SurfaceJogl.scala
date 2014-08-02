@@ -7,12 +7,11 @@ import org.sofa.gfx.{SGL, Camera}
 import org.sofa.gfx.surface._
 import org.sofa.gfx.surface.event._
 
-import java.awt.{Frame=>AWTFrame}
 import javax.media.opengl.{GLCapabilities, GLEventListener, GLAutoDrawable}
 import javax.media.opengl.{GLDrawableFactory, GLRunnable}
 import javax.media.opengl.awt.GLCanvas
 import javax.media.opengl.glu.GLU
-import java.awt.event.{MouseListener=>AWTMouseListener,KeyListener=>AWTKeyListener,WindowListener=>AWTWindowListener, KeyEvent=>AWTKeyEvent, MouseEvent=>AWTMouseEvent, WindowEvent=>AWTWindowEvent, MouseWheelListener=>AWTMouseWheelListener, MouseWheelEvent=>AWTMouseWheelEvent}
+import javax.media.nativewindow.WindowClosingProtocol.WindowClosingMode
 
 import com.jogamp.newt.opengl.GLWindow
 import com.jogamp.newt.event.{NEWTEvent=>JoglEvent, KeyEvent=>JoglKeyEvent, MouseEvent=>JoglMouseEvent, MouseListener=>JoglMouseListener, WindowListener=>JoglWindowListener, KeyListener=>JoglKeyListener, WindowEvent=>JoglWindowEvent, WindowUpdateEvent=>JoglWindowUpdateEvent}
@@ -129,10 +128,11 @@ class SurfaceNewt(
 
         win.setFullscreen(fullScreen)
         win.setUndecorated(! decorated)
-	   	win.setVisible(true)	
+	   	win.setVisible(true)
 	   	
 	    win.setSize(w + win.getInsets.getTotalWidth, h + win.getInsets.getTotalHeight)
 	    win.setTitle(title)
+	    win.setDefaultCloseOperation(WindowClosingMode.DO_NOTHING_ON_CLOSE)
 
 	    win.addWindowListener(this)
 	    win.addMouseListener(this)
@@ -175,34 +175,40 @@ class SurfaceNewt(
     		renderer.frame(this)
     }
     
-    def dispose(win:GLAutoDrawable) { if(renderer.close ne null) renderer.close(this) }
+    def dispose(win:GLAutoDrawable) { 
+		println("SurfaceJogl.dispose")
+		//if(renderer.close ne null) renderer.close(this)
+//		destroy
+	}
     
 // -- Invokation on the rendering thread --------------
 
     def invoke(code:(Surface)=>Boolean) {
-    	val me = this
+		if(win ne null) {
+    		val me = this
 
-    	if(invokeThread eq Thread.currentThread) {
-    		code(me)	
-    	} else {
-    		win.invoke(false,
-    			new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { if(invokeThread eq null) invokeThread = Thread.currentThread; code(me) } }
-    		)
+    		if(invokeThread eq Thread.currentThread) {
+    			code(me)	
+    		} else {
+    			win.invoke(false,
+    				new GLRunnable() { override def run(win:GLAutoDrawable):Boolean = { if(invokeThread eq null) invokeThread = Thread.currentThread; code(me) } }
+    			)
+    		}
     	}
     }
 
     def invoke(runnable:Runnable) {
-    	val me = this
+    	if(win ne null) {
+    		val me = this
 
-    	if(invokeThread eq Thread.currentThread) {
-	    	runnable.run
-    	} else {
-    		if(win ne null) {
+    		if(invokeThread eq Thread.currentThread) {
+	    		runnable.run
+   	 		} else {
     			win.invoke(false,
 	    			new GLRunnable() { override def run(win:GLAutoDrawable) = { if(invokeThread eq null) invokeThread = Thread.currentThread; runnable.run; true } }
     			)
-    		}
-    	}
+	    	}
+   		}
    	}
 
 // -- Surface interface -----------------
@@ -226,11 +232,10 @@ class SurfaceNewt(
     def fps:Int = expectedFps
 
     def fps(newFps:Int) {
-    	// Have not seen a method to change the FPS in FpsAnimator ... strange
     	if(newFps > 0) {
     		val paused = anim.isPaused
 
-    		anim.stop
+    		anim.stop 			// Can we do this ?
     		anim.setFPS(newFps)
     		anim.start
 
@@ -256,9 +261,23 @@ class SurfaceNewt(
     }
 
     def destroy() {
-    	anim.stop
-    	win.destroy
+		if(win ne null) {
+    		val res = anim.stop
+    		var i = 0
+    		while(anim.isAnimating) {
+    			Thread.sleep(100)
+    			i+= 1
+println("SurfaceJogl waiting animator to stop %d".format(i))
+    		}
+			win.setVisible(false)
+			win.removeWindowListener(this)
+			win.removeMouseListener(this)
+			win.removeKeyListener(this)
+			//win.removeGLEventListener(this)
+    		//win.destroy
+    	}
     	win = null
+		renderer.close = null
     }
 
 // -- GUI Events --------------------------------------------------------------
@@ -276,8 +295,19 @@ class SurfaceNewt(
     /** Used to measure click duration. This field is used only in the EDT thread. */
     private[this] var clickTime:Long = 0L
 
-    def windowDestroyNotify(ev:JoglWindowEvent) {}
-    def windowDestroyed(e:JoglWindowEvent) {}
+    def windowDestroyNotify(ev:JoglWindowEvent) {
+		invoke { surface =>
+	    	if((renderer.close ne null) && (win ne null)) {
+				renderer.close(this)
+			}
+			true
+		}
+    }
+
+    def windowDestroyed(e:JoglWindowEvent) {
+
+    }
+
     def windowGainedFocus(e:JoglWindowEvent) {} 
     def windowLostFocus(e:JoglWindowEvent) {} 
     def windowMoved(e:JoglWindowEvent) {}
