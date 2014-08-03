@@ -75,8 +75,16 @@ object RendererActor {
 	  * depends on the `avatarType`. */
 	case class AddAvatar(avatarType:String, name:AvatarName)
 
+	/** Add several avatars of the same type at once. An array of `names` is provided
+	  * to retrieve them. The number of avatars is given by the size of the array. */
+	case class AddAvatars(avatarsType:String, names:Array[AvatarName])
+
 	/** Remove an avatar from the current screen. */
 	case class RemoveAvatar(name:AvatarName)
+
+	/** Remove several avatars at once. An array of `names` is provided
+	  * to retrieve them. The number of avatars is given by the size of the array. */
+	case class RemoveAvatars(names:Array[AvatarName])
 
 	/** Change some value for an avatar. Possible axes depend on the avatar type. */
 	case class ChangeAvatar(name:AvatarName, state:AvatarState)
@@ -157,7 +165,9 @@ class RendererActor(val renderer:Renderer) extends Actor {
 		case RemoveScreen(name)                       ⇒ renderer.removeScreen(name)
 		case SwitchScreen(name)                       ⇒ renderer.switchToScreen(name)
 		case AddAvatar(atype, name)                   ⇒ renderer.currentScreen.addAvatar(name, atype)
+		case AddAvatars(atype, names)                 ⇒ renderer.currentScreen.addAvatars(names, atype)
 		case RemoveAvatar(name)                       ⇒ renderer.currentScreen.removeAvatar(name)
+		case RemoveAvatars(names)                     ⇒ renderer.currentScreen.removeAvatars(names)
 		case ChangeScreen(state)                      ⇒ renderer.currentScreen.change(state)
 		case ChangeAvatar(name, state)                ⇒ renderer.currentScreen.changeAvatar(name, state)
 		case AddAvatarAcquaintance(name, acqaintance) ⇒ renderer.currentScreen.addAvatarAcquaintance(name, acqaintance)

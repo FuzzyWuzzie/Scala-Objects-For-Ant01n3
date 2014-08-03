@@ -80,6 +80,7 @@
 
 ## UI
 
+* An "action bar" à la Android ?
 * Lists must show a scroll indicator when more elements than visible.
 * Lists should indicate we cannot scroll more.
 
@@ -90,6 +91,7 @@
 ## Text
 
 * Improve text efficiency, profiling shows we spend a lot of time drawing and remaking strings.
+* Do some tests and benchmarks.
 
 ## CSS
 

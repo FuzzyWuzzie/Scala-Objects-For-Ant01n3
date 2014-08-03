@@ -173,6 +173,8 @@ class SurfaceNewt(
 
     	if(renderer.frame ne null)
     		renderer.frame(this)
+
+//    	win.swapBuffers
     }
     
     def dispose(win:GLAutoDrawable) { 

@@ -180,11 +180,14 @@ Timer.timer.measure("screen.render") {
 // Avatars.
 
 	/** Add an avatar (and send it the begin signal if the screen is rendering).
-	  * The avatar `name` can contain a dot so that the avatar is put in a given
-	  * group. Names without a dot are put in the default group. A name like
-	  * "foo.bar" for examples creates an avatar "bar" in the group "foo".
-	  * Similarly a name "foo.bar.zub" creates an avatar "zub" in a group "foo.bar".
-	  * (but not in a group "bar" inside a group "foo", groups are not recursive). */
+	  * The avatar `name` can ressemble a path to tell where to put the avatar
+	  * inside the avatar hierarchy. The components of such pathes are separated
+	  * by dots. Names without a dot are put as direct child of this screen. A
+	  * name like "foo.bar" for examples creates an avatar "bar" as sub-avatar of
+	  * "foo" which is child of the screen. Similarly a name "foo.bar.zub" creates
+	  * an avatar "zub" as sub avatar of avatar "foo.bar". See [[AvatarName]].
+	  * The `avatarType` will be passed to the avatar factory chain to create
+	  * the appropriate kind of avatar. */
 	def addAvatar(path:AvatarName, avatarType:String) {
 		val avatar = addSub(path, avatarType)
 
@@ -192,9 +195,31 @@ Timer.timer.measure("screen.render") {
 			avatar.begin			
 	}
 
+	/** Like the regular `addAvatar` method but add as many avatars as there
+	  * are entries in the given `pathes`. All the avatars will have the same
+	  * `avatarType`. */
+	def addAvatars(pathes:Array[AvatarName], avatarType:String) {
+		var i = 0
+		val n = pathes.length
+		while(i < n) {
+			addAvatar(pathes(i), avatarType)
+			i += 1
+		}
+	}
+
 	/** Remove an avatar (and send it the end signal if the screen is rendering).
 	  * Does nothing if the avatar does not exist. */
 	def removeAvatar(path:AvatarName) { removeSub(path) }
+
+	/** Like the regular `removeAvatar` but removes all the avatars named in `pathes`. */
+	def removeAvatars(pathes:Array[AvatarName]) {
+		var i = 0
+		val n = pathes.length
+		while(i < n) {
+			removeAvatar(pathes(i))
+			i += 1
+		}
+	}
 
 	/** Something changed in an avatar of this screen. */
 	def changeAvatar(path:AvatarName, state:AvatarState) {
