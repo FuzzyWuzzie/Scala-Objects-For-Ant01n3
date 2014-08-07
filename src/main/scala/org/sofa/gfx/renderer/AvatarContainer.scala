@@ -8,7 +8,7 @@ import org.sofa.collection.{SpatialCube, SpatialHash, SpatialHashException}
 
 
 /** Something that can contain avatars and helpers to render and animate them. */
-trait AvatarContainer {
+trait AvatarContainer extends Iterable[Avatar] {
 
 	/** Number of sub-avatars. */
 	def subCount:Int
@@ -37,13 +37,16 @@ trait AvatarContainer {
 
 	/** Find an avatar in this one or in its hierarchy of sub-avatars. */
 	def avatar(name:AvatarName, prefix:Int = -1):Option[Avatar]
+
+	/** Access to all sub-avatars. */
+	def iterator:Iterator[Avatar]
 }
 
 
 /** An avatar container based on a hash map.
   *
   * Avantage: fast modification.
-  * Disadvantage: slow browsing.
+  * Disadvantage: slow browsing, no order, no indexed access.
   */
 trait AvatarContainerHashMap extends AvatarContainer {
 	val screen:Screen
@@ -133,12 +136,14 @@ trait AvatarContainerHashMap extends AvatarContainer {
 			}
 		}
 	}
+
+	def iterator:Iterator[Avatar] = subs.valuesIterator
 }
 
 
 /** An avatar container based on an array.
   *
-  * Advantage: allow very fast browsing of the set of avatars.
+  * Advantage: allow very fast browsing of the set of avatars, indexed access, ordering.
   * Disadvantage: updating maybe a little slower.
   */
 trait AvatarContainerArray extends AvatarContainer {
@@ -316,4 +321,6 @@ trait AvatarContainerArray extends AvatarContainer {
 	def sortSubsBeforeRender(order:(Avatar, Avatar) => Boolean) {
 		orderSubs = order
 	}
+
+	def iterator:Iterator[Avatar] = subs.iterator
 }

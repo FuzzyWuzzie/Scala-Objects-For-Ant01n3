@@ -8,6 +8,11 @@ package org.sofa.math
   * points define a bounding box. Note that the position can be outside of
   * this box. the size is always equal to the distance along x, y and z between
   * the from and to points.
+  *
+  * The `sizex`, etc., `posx` etc., `fromx` etc. and `tox', etc. are here for
+  * efficiency reasons. As some fields do not exist in some implementation, they
+  * incur repetitive creation of [[Point3]] or [[Vector3]] which in some rendering
+  * loops may cost a lot.
   */
 trait Box3 {
 	/** Position or origin of object. */
@@ -27,6 +32,24 @@ trait Box3 {
 	def sizey:Double
 
 	def sizez:Double
+
+	def posx:Double
+
+	def posy:Double
+
+	def posz:Double
+
+	def fromx:Double
+
+	def fromy:Double
+
+	def fromz:Double
+
+	def tox:Double
+
+	def toy:Double
+
+	def toz:Double	
 
 	/** Change the position. */
 	def setPosition(x:Double, y:Double, z:Double)
@@ -71,6 +94,24 @@ class Box3Default extends Box3 {
 	def sizey:Double = size.y
 
 	def sizez:Double = size.z
+
+	def posx:Double = pos.x
+
+	def posy:Double = pos.y
+
+	def posz:Double = pos.z
+
+	def fromx:Double = from.x
+
+	def fromy:Double = from.y
+
+	def fromz:Double = from.z
+
+	def tox:Double = to.x
+
+	def toy:Double = to.y
+
+	def toz:Double = to.z
 }
 
 
@@ -100,6 +141,24 @@ class Box3From extends Box3 {
 	def sizey:Double = to.y-from.y
 
 	def sizez:Double = to.z-from.z
+
+	def posx:Double = from.x
+
+	def posy:Double = from.y
+
+	def posz:Double = from.z
+
+	def fromx:Double = from.x
+
+	def fromy:Double = from.y
+
+	def fromz:Double = from.z
+
+	def tox:Double = to.x
+
+	def toy:Double = to.y
+
+	def toz:Double = to.z
 }
 
 
@@ -136,6 +195,24 @@ class Box3PosCentered extends Box3 {
 	def sizey:Double = to.y-from.y
 
 	def sizez:Double = to.z-from.z
+	
+	def posx:Double = pos.x
+
+	def posy:Double = pos.y
+
+	def posz:Double = pos.z
+
+	def fromx:Double = from.x
+
+	def fromy:Double = from.y
+
+	def fromz:Double = from.z
+
+	def tox:Double = to.x
+
+	def toy:Double = to.y
+
+	def toz:Double = to.z
 }
 
 
@@ -166,4 +243,22 @@ class Box3Sized extends Box3 {
 	def sizey:Double = size.y
 
 	def sizez:Double = size.z
+
+	def posx:Double = pos.x
+
+	def posy:Double = pos.y
+
+	def posz:Double = pos.z
+
+	def fromx:Double = pos.x-size(0)/2
+
+	def fromy:Double = pos.y-size(1)/2
+
+	def fromz:Double = pos.z-size(2)/2
+
+	def tox:Double = pos.x+size(0)/2
+
+	def toy:Double = pos.y+size(1)/2
+
+	def toz:Double = pos.z+size(2)/2
 }

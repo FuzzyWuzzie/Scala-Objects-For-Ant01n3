@@ -34,6 +34,16 @@ class AvatarName(protected val path:Array[String]) {
 	/** Build the fully qualified name of the avatar using a set of strings. */
 	def this(names:String*) { this(names.toArray) }
 
+	/** Build a fully qualified name of the avatar using the name of the parent,
+	  * and suffixing the sub-avatars names. */
+	def this(superName:AvatarName, subNames:Array[String]) {
+		this(superName.path ++ subNames)
+	}
+
+	/** Build a fully qualified name of the avatar using the name of the parent,
+	  * and suffixing the sub-avatars names. */
+	def this(superName:AvatarName, names:String*) { this(superName, names.toArray) }
+
 	/** Number of components of the avatar path. */
 	def length = path.length
 
@@ -110,7 +120,11 @@ object AvatarName {
 
 	def apply(names:String*):AvatarName = new AvatarName(names:_*)
 
-	def apply(pathStr:String):AvatarName = { new AvatarName(pathStr)}
+	def apply(pathStr:String):AvatarName = { new AvatarName(pathStr) }
+
+	def apply(superName:AvatarName, subsNames:Array[String]):AvatarName = { new AvatarName(superName, subsNames) }
+
+	def apply(superName:AvatarName, subsNames:String*):AvatarName = { new AvatarName(superName, subsNames:_*) }
 
 	def unapply(name:AvatarName):String = name.toString
 

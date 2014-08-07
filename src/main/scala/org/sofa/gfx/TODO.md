@@ -22,10 +22,13 @@
 
 * Handle *ordered rendering* in AvatarContainer.
     - It is handled, but probably not efficient : a Z-sort (indeed Y here) before each frame.
+    - -> This is specific to games.
 * Handle *selective rendering*, based on a visibility function (use a SpaceHash ?)
+    - -> this is specific to each avatar sub-library (UI, Game, ect.) Partly done in UI.
 * Handle *picking -> allow avatars to register in a spaceHash ? 
     - a general one ? one per sub-avatar ? one in a specific avatar ?
     - When several avatars are picked, how to sort them ?
+    - -> this is specific to each avatar sub-library (UI, Game, etc.) Partly done in UI.
 
 ## Mesh
 
@@ -80,9 +83,21 @@
 
 ## UI
 
+* Actually the DPC is used to scale the UI, elements keep their physical size in the metric system.
+    - This means that chaning screen will change the size in pixels of elements, but conserve the metric size.
+    - With JOGL this measure can change if the application changes monitor (multi-monitor setting), and the Root element will scale accordingly and all its descendants with it.
+    - It remains a problem with fonts. Although fonts are expressed in pica points that have a correspondance in the real world, most OSes do not consider points as such. Therefore a text at 12pts will not have the same physical size on two screens with the same resolution but not the same physical size (say a 24inch monitor and a 17inch monitor). That is a shame, but how to circumvent it ?
 * An "action bar" à la Android ?
 * Lists must show a scroll indicator when more elements than visible.
 * Lists should indicate we cannot scroll more.
+* UI avatars should have visual transitions to appear and end.
+    - More than this an animation is needed -> behaviors ?
+* An animateSpace that avoids to redo positionning at each frame, see under.
+* A layout system that avoid computing the layouts at each frame.
+    - A way to do this is to use dirty bits to indicate an avatar needs to relayout its sub-avatars. It can work in the reverse : a sub can tell its parent it changed, and therefore the parent needs to relayout.
+    - How to do this properly ?
+* Be able to create interfaces using a dedicated JSON format or some other DSL.
+    - Add a message to the RendererActor that handles such things, maybe from a separate JSON, but also using a DSL.
 
 ## OpenGL
 

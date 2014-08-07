@@ -13,42 +13,115 @@ import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}//, Pl
 import org.sofa.Timer
 
 
+object UIList {
+	case class Offset(amount:Double) extends AvatarSpaceState {}
+}
+
+
+class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
+
+	var space = new UIAvatarSpaceList(this)
+
+	var renderer = new UIAvatarRenderList(this)
+
+	def consumeEvent(event:Event):Boolean = {
+		event match {
+			case e:ScrollEvent => {
+				if(containsEvent(event)) {
+					space.changeSpace(UIList.Offset(e.delta.y))
+					true
+				} else {
+					false
+				}
+			}
+			case _ => { false }
+		}
+	}
+
+	override def animate() {
+		space.animateSpace
+		renderer.animateRender
+		animateVisibleSubs
+	}
+}
+
+class UIListItem(name:AvatarName, screen:Screen)
+	extends UIAvatar(name, screen) {
+
+	var space = new UIAvatarSpaceListItem(this)
+
+	var renderer = new UIAvatarRenderListItem(this)
+
+	def consumeEvent(event:Event):Boolean = false /* {
+		event match {
+			case e:SingleTapEvent => {
+				if(containsEvent(event)) {
+					println("%s tap event %s".format(name, event))
+					true
+				} else {
+					false
+				}
+			}
+			case e:DoubleTapEvent => {
+				if(containsEvent(event)) {
+					println("%s double-tap event %s".format(name, event))
+					true
+				} else {
+					false
+				}
+			}
+			case e:LongPressEvent => {
+				if(containsEvent(event)) {
+					println("%s long-press event %s".format(name, event))
+					true
+				} else {
+					false
+				}
+			}
+			case _ => {
+				false
+			}
+		}
+	}*/
+}
+
+
+// ----------------------------------------------------------------------------------------------
+
+
 class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 	override def render() {
-		//println(s"* render ${self.name}")
 		self.space.pushSubSpace
-		//fill
-//		self.renderSubs
-		val count = self.renderVisibleSubs
+		self.renderVisibleSubs
 		self.space.popSubSpace
-//println("rendered %d visible subs / %d".format(count, self.subCount))
 	}
 }
 
 class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 
-	color = null//Rgba.White
+	color = Rgba.White
 
-//	lineColor = Rgba.Black
+	lineColor = Rgba.Black
 
 	override def render() {
 		//println(s"* render ${self.name}")
 		val space = self.space
-		val text  = screen.textLayer
-		val sizex = space.subSpace.sizex
-		val sizey = space.subSpace.sizey
+		// val text  = screen.textLayer
+		// val sizex = space.subSpace.sizex
+		// val sizey = space.subSpace.sizey
 
-		if(color eq null) {
-//			color = Rgba.randomHue(0.7, 1.0)
-			color = Rgba.randomHueAndSaturation(1.0)
-		}
+//		if(color eq null) {
+// //			color = Rgba.randomHue(0.7, 1.0)
+//			color = Rgba.randomHueAndSaturation(1.0)
+//		}
 
 		space.pushSubSpace
-		fill
-		text.font("Ubuntu-M.ttf", 15)
-		text.color(Rgba.Black)
-		text.string("Hello", sizex*0.1, sizey*0.9, 0, screen.space)
-		self.renderSubs
+//			fill
+			//text.font("Ubuntu-M.ttf", 15)
+//			text.font("LTe50136.ttf", cmToPoints(1).toInt)
+//			text.color(Rgba.Black)
+//			text.string("Hello", sizex*0.1, sizey*0.9, 0, screen.space)
+			self.renderSubs
 		space.popSubSpace		
 	}
 }
@@ -79,7 +152,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	override def changeSpace(newState:AvatarSpaceState) {
 		newState match {
-			case AvatarOffsetState(amount) => {
+			case UIList.Offset(amount) => {
 				offsety += amount*0.01
 				checkOffset
 			}
@@ -110,7 +183,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  		val space = avatar.screen.space
 
  		space.push
- 		space.translate(thisSpace.pos.x, thisSpace.pos.y + offsety, 0)
+ 		space.translate(thisSpace.posx, thisSpace.posy + offsety, 0)
  	}
 
  	override def popSubSpace() {
@@ -120,34 +193,26 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  	protected def layoutSubs() {
  		var i = 0
  		self.foreachSub { sub =>
- 			sub.space.thisSpace.setSize(1, itemHeight*scale1cm, 1)
- 			sub.space.thisSpace.setPosition(0, itemHeight*scale1cm*i, 0)
+ 			sub.space.thisSpace.setSize(1, itemHeight * scale1cm, 1)
+ 			sub.space.thisSpace.setPosition(0, itemHeight * scale1cm * i, 0)
  			//println("    | layout %d %s".format(i, sub))
  			i += 1
  		}
  	}
 
 	override def isVisible(sub:Avatar):Boolean = {
-		val up   = fromSpace.pos.y// + offsety
+		val up   = fromSpace.posy // + offsety
 		val down = up + fromSpace.sizey
-		val y    = sub.space.thisSpace.pos.y + offsety
+		val y    = sub.space.thisSpace.posy + offsety
 		val h    = sub.space.thisSpace.sizey
 
 		((y+h) >= up && y <= down)
-
-		// val pspace = self.parent.space
-		// val pyup   = pspace.thisSpace.pos.y
-		// val pydown = pspace.thisSpace.pos.y + pspace.thisSpace.size.y
-
-		// (fromSpace.pos.y >= pyup && fromSpace.pos.y <= pydown)
 	}
 }
 
 
-case class AvatarOffsetState(amount:Double) extends AvatarSpaceState {}
-
-
 class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
+
 	var scale1cm = 1.0
 
 	var fromSpace = new Box3From {
@@ -165,93 +230,21 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 	def subSpace = toSpace
 
 	override def animateSpace() {
-		toSpace.from.set(0, 0, 0)
-		toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
-
  		scale1cm = self.parent.space.scale1cm
 
- 		//println(s"# layout ListItem pos=${fromSpace.pos} size=${fromSpace.from} sub -> pos=${toSpace.pos} size=${toSpace.size}")
+		toSpace.from.set(0, 0, 0)
+		toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
+ 		super.animateSpace
 	}
 
 	override def pushSubSpace() {
  		val space = self.screen.space
 
  		space.push
- 		space.translate(thisSpace.pos.x, thisSpace.pos.y, 0)
+ 		space.translate(thisSpace.posx, thisSpace.posy, 0)
 	}
 
 	override def popSubSpace() {
 		self.screen.space.pop
-	}
-}
-
-
-// ----------------------------------------------------------------------------------------------
-
-
-class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
-
-	var space = new UIAvatarSpaceList(this)
-
-	var renderer = new UIAvatarRenderList(this)
-
-	def consumeEvent(event:Event):Boolean = {
-		event match {
-			case e:ScrollEvent => {
-				if(containsEvent(event)) {
-					space.changeSpace(AvatarOffsetState(e.delta.y))
-					true
-				} else {
-					false
-				}
-			}
-			case _ => { false }
-		}
-	}
-
-	override def animate() {
-		space.animateSpace
-		renderer.animateRender
-		val count = animateVisibleSubs
-	}
-}
-
-class UIListItem(name:AvatarName, screen:Screen)
-	extends UIAvatar(name, screen) {
-
-	var space = new UIAvatarSpaceListItem(this)
-
-	var renderer = new UIAvatarRenderListItem(this)
-
-	def consumeEvent(event:Event):Boolean = {
-		event match {
-			case e:SingleTapEvent => {
-				if(containsEvent(event)) {
-					println("%s tap event %s".format(name, event))
-					true
-				} else {
-					false
-				}
-			}
-			case e:DoubleTapEvent => {
-				if(containsEvent(event)) {
-					println("%s double-tap event %s".format(name, event))
-					true
-				} else {
-					false
-				}
-			}
-			case e:LongPressEvent => {
-				if(containsEvent(event)) {
-					println("%s long-press event %s".format(name, event))
-					true
-				} else {
-					false
-				}
-			}
-			case _ => {
-				false
-			}
-		}
 	}
 }

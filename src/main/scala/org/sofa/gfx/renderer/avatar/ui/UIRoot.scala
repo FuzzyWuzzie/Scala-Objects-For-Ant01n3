@@ -57,6 +57,9 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 	/** Ratiohw height / width. */
 	protected[this] var ratiohw = 1.0
 
+	/** Dots per centimeter. */
+	protected[this] var dpc = 0.0
+
 	var scale1cm = 1.0
 
 	protected val fromSpace = new Box3Default {
@@ -77,11 +80,18 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 
 	def subSpace = toSpace
 
+	// override def changeSpace(newState:AvatarSpaceState) {
+	// 	newState match {
+	// 		case UIRoot.DotPerCentimeter(dpc) => { this.dpc = dpc }
+	// 		case x => { println("%s unknown message %s".format(self.name, x)) }
+	// 	}
+	// }
+
 	override def animateSpace() {
 		val screen = avatar.screen
 		val surface = screen.surface
 		ratiohw = surface.height.toDouble / surface.width.toDouble
-		val dpc = 37.0 // 37 dots-pixels per centimeter
+		dpc = avatar.screen.surface.dpc
 		scale1cm = 1.0 / (screen.surface.width / dpc) // One centimeter in the sub-space equals this
 
 		toSpace.to.set(1, 1 * ratiohw, 1)
@@ -119,6 +129,11 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 
 
 // ----------------------------------------------------------------------------------------------
+
+
+object UIRoot {
+	//case class DotPerCentimeter(dotsPerCm:Int) extends AvatarSpaceState {}
+}
 
 
 /** An avatar that creates a space

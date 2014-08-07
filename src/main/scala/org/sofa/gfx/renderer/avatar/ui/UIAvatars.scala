@@ -21,9 +21,16 @@ class UIAvatarFactory extends DefaultAvatarFactory {
 			case "ui.list" => new UIList(name, screen)
 			case "ui.list-item" => new UIListItem(name, screen)
 			case "ui.perspective" => new UIPerspective(name, screen)
+			case "ui.panel" => new UIPanel(name, screen)
 			case _ => chainAvatarFor(name, screen, kind)
 		}
 	}
+}
+
+
+object UIAvatar {
+	/** Set the layout of an avatar. */
+	case class SetLayout(layout:UILayout) extends AvatarSpaceState {}
 }
 
 
@@ -31,7 +38,7 @@ abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarCom
 	
 	/** Another consumeOrPropagateEvent that looks if an avatar is visible to propagate the
 	  * event to it. To call only if the event is a spatial one. */
-	def consumeOrPropagateSpatialEventVisible(event:Event):Boolean = {
+	def consumeOrPropagateEventVisible(event:SpatialEvent):Boolean = {
 		if(! consumeEvent(event)) {
 			self.findSub { sub =>
 				if(space.isVisible(sub))
@@ -55,7 +62,7 @@ abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarCom
 		event match {
 			case e:SpatialEvent => {
 				space.pushSubSpace
-				res = consumeOrPropagateSpatialEventVisible(event)
+				res = consumeOrPropagateEventVisible(e)
 				space.popSubSpace
 			}
 			case _ => super.consumeOrPropagateEvent(event)
@@ -85,8 +92,8 @@ abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarCom
 
 			// Test inclusion in pixels:
 
-			(( (posx >= min(fromx, tox)) && (posx <= max(fromx, tox)) ) &&
-			 ( (posy >= min(fromy, toy)) && (posy <= max(fromy, toy)) ))
+			(( (posx >= scala.math.min(fromx, tox)) && (posx <= scala.math.max(fromx, tox)) ) &&
+			 ( (posy >= scala.math.min(fromy, toy)) && (posy <= scala.math.max(fromy, toy)) ))
 		} else {
 			false
 		}
@@ -115,6 +122,8 @@ trait UIrenderUtils {
 
 	def self:Avatar
 
+	def cmToPoints(cmValue:Double):Double = cmValue * 28.34
+
 	def fillAndStroke() {
 		import VertexAttribute._
 		import UIrenderUtils._
@@ -124,12 +133,10 @@ trait UIrenderUtils {
 		val gl     = screen.gl
 
 		if(shader eq null) {
-println("*** NEW SHADER")
 			shader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		}
 
 		if(mesh eq null) {
-println("*** NEW MESH")
 			mesh = new TrianglesMesh(2)
 			mesh.setPoint(0, 0, 0, 0)
 			mesh.setPoint(1, 1, 0, 0)
@@ -172,12 +179,10 @@ println("*** NEW MESH")
 		val gl     = screen.gl
 
 		if(shader eq null) {
-println("*** NEW SHADER")
 			shader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		}
 
 		if(mesh eq null) {
-println("*** NEW MESH")
 			mesh = new TrianglesMesh(2)
 			mesh.setPoint(0, 0, 0, 0)
 			mesh.setPoint(1, 1, 0, 0)
@@ -212,4 +217,30 @@ class UIAvatarRender(var self:Avatar) extends AvatarRender {
 
 
 abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
+
+	// TODO a layout system that avoid computing the layouts at each frame.
+	// A way to do this is to use dirty bits to indicate an avatar needs to
+	// relayout its sub-avatars. It can work in the reverse : a sub can
+	// tell its parent it changed, and therefore the parent needs to 
+	// relayout.
+	//
+	// How to do this properly ?
+
+	/** An independant layout algorithm, eventually shared between instances, if
+	  * the space does not already acts as a layout. */
+	protected[this] var layout:UILayout = null
+
+	override def changeSpace(newState:AvatarSpaceState) {
+		newState match {
+			case UIAvatar.SetLayout(newLayout) => layout = newLayout
+			case state => super.changeSpace(state)
+		}
+	}
+
+	override def animateSpace() {
+		if(layout ne null)
+			layout.layout(self, scale1cm)
+
+		super.animateSpace
+	}
 }

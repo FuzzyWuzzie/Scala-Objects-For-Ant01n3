@@ -1,5 +1,6 @@
 package org.sofa.gfx.backend
 
+import scala.math.sqrt
 import scala.collection.mutable.SynchronizedQueue
 
 import org.sofa.math.{Point3, Vector3}
@@ -173,14 +174,9 @@ class SurfaceNewt(
 
     	if(renderer.frame ne null)
     		renderer.frame(this)
-
-//    	win.swapBuffers
     }
     
     def dispose(win:GLAutoDrawable) { 
-		println("SurfaceJogl.dispose")
-		//if(renderer.close ne null) renderer.close(this)
-//		destroy
 	}
     
 // -- Invokation on the rendering thread --------------
@@ -218,6 +214,27 @@ class SurfaceNewt(
     def width = w
     
     def height = h
+
+    protected[this] var savedDpc = 0.0
+    protected[this] var dpcAsked = 0
+
+    def dpc = {
+    	// To avoid requesting DPC potentially every frame, we use a counter and
+    	// a backup variable. TODO determine the cost of asking the monitor sizes
+    	// at each use of this method...
+
+    	if(savedDpc == 0.0)
+    		savedDpc = computeDpc
+  
+    	dpcAsked += 1
+  
+    	if(dpcAsked > 30) {
+    		savedDpc = computeDpc
+    		dpcAsked = 0
+    	}
+
+    	savedDpc
+    }
 
    	def fullscreen(on:Boolean) { win.setFullscreen(on) }
 
@@ -484,5 +501,16 @@ println("SurfaceJogl waiting animator to stop %d".format(i))
     	println("HW      %s".format(prof.isHardwareRasterizer))
     	println("GSSL    %s".format(ctx.getGLSLVersionString))
     	println("version %s".format(ctx.getGLVersion))
+    }
+
+    /** Compute the dots per centimeters for the current monitor. */
+    protected def computeDpc:Double = {
+    	val monitor = win.getMainMonitor
+    	val sizemm  = monitor.getSizeMM
+    	val sizepx  = monitor.getViewport
+    	val diagcm  = sqrt(sizemm.getWidth*sizemm.getWidth + sizemm.getHeight*sizemm.getHeight) / 10.0
+    	val diagpx  = sqrt(sizepx.getWidth*sizepx.getWidth + sizepx.getHeight*sizepx.getHeight)
+
+    	diagpx / diagcm
     }
 }

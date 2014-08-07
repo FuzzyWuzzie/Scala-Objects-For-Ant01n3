@@ -36,6 +36,9 @@ abstract trait Surface {
     /** The actual surface frame rate. */
     def fps:Int
 
+    /** Dots per centimeter of the current rendering device. */
+    def dpc:Double
+
     /** Try to change the surface width and height. This may not be always possible. */
     def resize(newWidth:Int, newHeight:Int)
 

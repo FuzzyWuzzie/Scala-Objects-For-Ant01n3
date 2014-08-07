@@ -221,11 +221,21 @@ Timer.timer.measure("screen.render") {
 		}
 	}
 
-	/** Something changed in an avatar of this screen. */
+	/** Change an avatar state. */
 	def changeAvatar(path:AvatarName, state:AvatarState) {
 		avatar(path) match {
 			case Some(avatar) => avatar.change(state) 
 			case None => System.err.println("changeAvatar(%s) no such avatar".format(path.toString))
+		}
+	}
+
+	/** Change an avatar state. */
+	def changeAvatars(pathes:Array[AvatarName], state:AvatarState) {
+		var i = 0
+		val n = pathes.length
+		while(i < n) {
+			changeAvatar(pathes(i), state)
+			i += 1
 		}
 	}
 

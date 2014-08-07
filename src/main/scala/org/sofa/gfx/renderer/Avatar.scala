@@ -26,7 +26,7 @@ case class NoSuchAvatarStateException(state:AvatarState) extends Exception(state
   * Avatars have a name (a path) that identify them uniquely in the hierarchy of
   * avatars. They also know the screen they are attached to actually.
   *
-  * Avatars are containers for other avatars. This forms a hierarchy of
+  * Avatars are, containers for other avatars. This forms a hierarchy of
   * nested graphical elements.
   *
   * Avatars also maintain a set of "acquaintances" that is actor refs where
