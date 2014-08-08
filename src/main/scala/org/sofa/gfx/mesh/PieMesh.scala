@@ -1,0 +1,89 @@
+package org.sofa.gfx.mesh
+
+import scala.math._
+
+import org.sofa.gfx.{SGL, VertexArray, ShaderProgram}
+import org.sofa.math.{Rgba, Point3, Vector3, NumberSeq2, NumberSeq3, Triangle}
+import org.sofa.nio.{IntBuffer}
+
+
+/** A pie chart or cirle in 2D.
+  *
+  * This always create a complete circle, but allows to draw as many segments as requested.
+  *
+  * The circle has radius 1 and lies in the plane XY.
+  *
+  * @param the number of segments of the circle (parts of the pie). */
+class PieMesh(val segments:Int) extends Mesh {
+
+	/** The mutable set of coordinates. Shortcut to the necessary mesh attribute. */
+	protected[this] val V:MeshAttribute = createMesh
+    
+    /** Create the circle with the given set of segments. */
+	protected def createMesh():MeshAttribute = {
+		val attrib = addMeshAttribute(VertexAttribute.Vertex, 3)
+		val data   = attrib.theData
+
+		// Center
+
+		data(0) = 0
+		data(1) = 0
+		data(2) = 0
+
+		// Other points
+
+		var v = 3
+		var s = 0
+		var a = 0f
+		var angle = ((Pi*2) / segments).toFloat
+
+		while(s <= segments) {		// <= since the second and last points are superposed.
+			data(v+0) = cos(a).toFloat
+			data(v+1) = sin(a).toFloat
+			data(v+2) = 0f
+
+			a += angle
+			s += 1
+			v += 3
+		}
+
+		attrib
+	}
+
+	// -- Mesh interface -----------------------------------------------------
+
+	def vertexCount:Int = segments + 2
+
+	def drawAs(gl:SGL):Int = gl.TRIANGLE_FAN
+
+    /** Draw the last vertex array created and draw only the given number of `segments`.
+      * If no vertex array has been created a [[NoVertexArrayException]] is thrown. Use
+      * the `drawAs()` method to select how to draw the mesh (triangles, points, etc.). */
+    def draw(gl:SGL, segments:Int) {
+    	if(va ne null) {
+    		val s = if(segments <= this.segments) segments else this.segments
+    		va.draw(drawAs(gl), 2+s) 
+    	} else {
+    		throw new NoVertexArrayException("Mesh : create a vertex array first")
+    	}
+    }
+
+    override def hasIndices():Boolean = false
+
+	// -- Dynamic updating -------------------------------------------
+	
+ //    override def beforeNewVertexArray() {
+	// 	if(has(VertexAttribute.Vertex)) V.resetMarkers
+	// 	I.resetMarkers
+ //    }
+
+	// /** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
+	//   * avoid moving data between the CPU and GPU. You may give a boolean for each buffer in the vertex array
+	//   * that you want to update or not. */
+	// def updateVertexArray(gl:SGL, attributes:String*) {
+	// 	if(va ne null) {
+	// 		I.update(va)
+	// 		attributes.foreach { meshAttribute(_).update(va) }
+	// 	}
+	// }
+}

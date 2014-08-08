@@ -105,13 +105,21 @@ abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarCom
 
 
 object UIrenderUtils {
-	var mesh:TrianglesMesh = null
+	/** A quad mesh to fill a rectangular area. */
+	var plainRect:TrianglesMesh = null
 
-	var lines:LinesMesh = null
+	/** A square line plainRect to stroke a rectangular area. */
+	var strokeRect:LinesMesh = null
 
-	var shader:ShaderProgram = null
+	/** A quad mesh with the two upper vertices black and the two lower vertices transparent. */
+	var shadowUnderRect:TrianglesMesh = null
 
+	/** A shader that takes an uniform color named `uniformColor` an apply it to each vertex. */
+	var shaderUniform:ShaderProgram = null
 
+	/** A shader that waits color information on each vertex, and allows a `transparency`
+	  * uniform to make it more or less transparent. */
+	var shaderColor:ShaderProgram = null
 }
 
 
@@ -124,6 +132,7 @@ trait UIrenderUtils {
 
 	def cmToPoints(cmValue:Double):Double = cmValue * 28.34
 
+	/** Stroke the space of the avatar with an uniform color. */
 	def fillAndStroke() {
 		import VertexAttribute._
 		import UIrenderUtils._
@@ -132,44 +141,45 @@ trait UIrenderUtils {
 		val space  = screen.space
 		val gl     = screen.gl
 
-		if(shader eq null) {
-			shader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
+		if(shaderUniform eq null) {
+			shaderUniform = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		}
 
-		if(mesh eq null) {
-			mesh = new TrianglesMesh(2)
-			mesh.setPoint(0, 0, 0, 0)
-			mesh.setPoint(1, 1, 0, 0)
-			mesh.setPoint(2, 1, 1, 0)
-			mesh.setPoint(3, 0, 1, 0)
-			mesh.setTriangle(0, 0, 1, 2)
-			mesh.setTriangle(1, 0, 2, 3)
-			mesh.newVertexArray(gl, shader, Vertex -> "position")
+		if(plainRect eq null) {
+			plainRect = new TrianglesMesh(2)
+			plainRect.setPoint(0, 0, 0, 0)
+			plainRect.setPoint(1, 1, 0, 0)
+			plainRect.setPoint(2, 1, 1, 0)
+			plainRect.setPoint(3, 0, 1, 0)
+			plainRect.setTriangle(0, 0, 1, 2)
+			plainRect.setTriangle(1, 0, 2, 3)
+			plainRect.newVertexArray(gl, shaderUniform, Vertex -> "position")
 		}
 
-		if(lines eq null) {
-			lines = new LinesMesh(4)
-			lines.setLine(0, 0,0,0, 1,0,0)
-			lines.setLine(1, 1,0,0, 1,1,0)
-			lines.setLine(2, 1,1,0, 0,1,0)
-			lines.setLine(3, 0,1,0, 0,0,0)
-			lines.newVertexArray(gl, shader, Vertex -> "position")
+		if(strokeRect eq null) {
+			strokeRect = new LinesMesh(4)
+			strokeRect.setLine(0, 0,0,0, 1,0,0)
+			strokeRect.setLine(1, 1,0,0, 1,1,0)
+			strokeRect.setLine(2, 1,1,0, 0,1,0)
+			strokeRect.setLine(3, 0,1,0, 0,0,0)
+			strokeRect.newVertexArray(gl, shaderUniform, Vertex -> "position")
 		}
 
 		val subSpace = self.space.subSpace
 
-		shader.use
 		space.pushpop {
+			shaderUniform.use
 			//println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
-			shader.uniform("uniformColor", color)
+			shaderUniform.uniform("uniformColor", color)
 			space.scale(subSpace.sizex, subSpace.sizey, 1)
-			space.uniformMVP(shader)
-			mesh.lastva.draw(mesh.drawAs(gl))
-			shader.uniform("uniformColor", lineColor)
-			lines.lastva.draw(lines.drawAs(gl))
+			space.uniformMVP(shaderUniform)
+			plainRect.lastva.draw(plainRect.drawAs(gl))
+			shaderUniform.uniform("uniformColor", lineColor)
+			strokeRect.lastva.draw(strokeRect.drawAs(gl))
 		}
 	}
 
+	/** Fill the space of the avatar with an uniform color. */
 	def fill() {
 		import VertexAttribute._
 		import UIrenderUtils._
@@ -178,33 +188,66 @@ trait UIrenderUtils {
 		val space  = screen.space
 		val gl     = screen.gl
 
-		if(shader eq null) {
-			shader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
+		if(shaderUniform eq null) {
+			shaderUniform = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		}
 
-		if(mesh eq null) {
-			mesh = new TrianglesMesh(2)
-			mesh.setPoint(0, 0, 0, 0)
-			mesh.setPoint(1, 1, 0, 0)
-			mesh.setPoint(2, 1, 1, 0)
-			mesh.setPoint(3, 0, 1, 0)
-			mesh.setTriangle(0, 0, 1, 2)
-			mesh.setTriangle(1, 0, 2, 3)
-			mesh.newVertexArray(gl, shader, Vertex -> "position")
+		if(plainRect eq null) {
+			plainRect = new TrianglesMesh(2)
+			plainRect.setPoint(0, 0, 0, 0)
+			plainRect.setPoint(1, 1, 0, 0)
+			plainRect.setPoint(2, 1, 1, 0)
+			plainRect.setPoint(3, 0, 1, 0)
+			plainRect.setTriangle(0, 0, 1, 2)
+			plainRect.setTriangle(1, 0, 2, 3)
+			plainRect.newVertexArray(gl, shaderUniform, Vertex -> "position")
 		}
 
 		val subSpace = self.space.subSpace
 
-		shader.use
+		shaderUniform.use
 		space.pushpop {
 			//println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
-			shader.uniform("uniformColor", color)
+			shaderUniform.uniform("uniformColor", color)
 			space.scale(subSpace.sizex, subSpace.sizey, 1)
-			space.uniformMVP(shader)
-			mesh.lastva.draw(mesh.drawAs(gl))
+			space.uniformMVP(shaderUniform)
+			plainRect.lastva.draw(plainRect.drawAs(gl))
 		}
 	}
 
+	def shadowAbove(alpha:Double) {
+		import VertexAttribute._
+		import UIrenderUtils._
+
+		val screen = self.screen
+		val space  = screen.space
+		val gl     = screen.gl
+
+		if(shaderColor eq null) {
+			shaderColor = screen.libraries.shaders.addAndGet(gl, "color-shader", ShaderResource("color-shader", "plain_shader.vert.glsl", "plain_shader.frag.glsl"))
+		}
+
+		if(shadowUnderRect eq null) {
+			shadowUnderRect = new TrianglesMesh(2)
+			shadowUnderRect v(0) xyz(0, 0, 0) rgba(0, 0, 0, 0.05f)
+			shadowUnderRect v(1) xyz(1, 0, 0) rgba(0, 0, 0, 0.05f)
+			shadowUnderRect v(2) xyz(1, 1, 0) rgba(0, 0, 0, 0)
+			shadowUnderRect v(3) xyz(0, 1, 0) rgba(0, 0, 0, 0)
+			shadowUnderRect t(0, 0, 1, 2)
+			shadowUnderRect t(1, 0, 2, 3)
+			shadowUnderRect.newVertexArray(gl, shaderColor, Vertex -> "position", Color -> "color")
+		}
+
+		val subSpace = self.space.subSpace
+		val s1cm     = self.space.scale1cm
+
+		shaderColor.use
+		space.pushpop {
+			space.scale(subSpace.sizex, s1cm*0.3, 1)
+			space.uniformMVP(shaderColor)
+			shadowUnderRect.lastva.draw(shadowUnderRect.drawAs(gl))
+		}
+	}
 }
 
 

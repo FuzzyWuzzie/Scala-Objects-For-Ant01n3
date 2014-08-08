@@ -32,7 +32,7 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 		event match {
 			case e:ScrollEvent => {
 				if(containsEvent(event)) {
-					space.changeSpace(UIList.Offset(e.delta.y))
+					space.changeSpace(UIList.Offset(e.delta.y*0.1))
 					true
 				} else {
 					false
