@@ -337,7 +337,9 @@ class GLFontLoaderAWT extends GLFontLoader {
 				else TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.LinearAndMipMapNearest,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.Generate)
 			}
 		} else {
-			TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Linear,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.No)
+			if(optimizeFor3D)
+			     TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Linear,magFilter=TexMag.Linear,wrap=TexWrap.Clamp,mipMap=TexMipMap.No)
+			else TexParams(alpha=TexAlpha.Premultiply,minFilter=TexMin.Nearest,magFilter=TexMag.Nearest,wrap=TexWrap.Clamp,mipMap=TexMipMap.No)
 		}
 		
 		font.texture = new Texture(gl, new TextureImageAwt(images, texParams), texParams)

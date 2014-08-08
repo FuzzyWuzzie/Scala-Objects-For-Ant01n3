@@ -31,6 +31,22 @@ object SurfaceNewtGLBackend extends Enumeration {
 }
 
 
+object SurfaceNewt {
+    /** Delay between button press and release to consider it as a long press event. */
+    var pressDelay:Long = 200000000L // 2 sec.
+
+    /** Delay between two clicks under which the second click generates a double tap. */
+    var doubleTapDelay:Long = 180000000L // 1 sec.
+
+    /** Send motion events for the mouse even when no button is pressed ? */
+    var noButtonMotionEvents:Boolean = false
+
+    /** If true the mouse scroll wheel event is transformed to a [[ScaleEvent]],
+      * else a [[ScrollEvent]] with a delta y is sent. */
+    var mouseWheelSendsScale:Boolean = true
+}
+
+
 /** A surface implementation that uses the Jogl Newt framework.
   *
   * Implementation note: this class is used by two threads :
@@ -92,10 +108,10 @@ class SurfaceNewt(
 
     /** Delay between button press and release to consider it as a long press event.
       * This field is used only in the EDT thread. */
-    protected[this] var pressDelay:Long = 200000000L // 2 sec.
+    protected[this] var pressDelay:Long = SurfaceNewt.pressDelay
 
     /** Delay between two clicks under which the second click generates a double tap. */
-    protected[this] val doubleTapDelay:Long = 180000000L // 1 sec.
+    protected[this] val doubleTapDelay:Long = SurfaceNewt.doubleTapDelay
 
     /** If this field is not zero, it contains the last date at which a single tap
       * has been issued. In this case if the difference between this and the current
@@ -111,11 +127,11 @@ class SurfaceNewt(
 
     /** Send motion events for the mouse even when no button is pressed ? This field
       * is used only in the EDT thread. */
-    protected[this] var noButtonMotionEvents:Boolean = false
+    protected[this] var noButtonMotionEvents:Boolean = SurfaceNewt.noButtonMotionEvents
 
     /** If true the mouse scroll wheel event is transformed to a [[ScaleEventJogl]],
       * else a [[ScrollEventJogl]] with a delta y is sent. */
-    protected[this] var mouseWheelSendsScale:Boolean = true
+    protected[this] var mouseWheelSendsScale:Boolean = SurfaceNewt.mouseWheelSendsScale
 
     build(backend)
     

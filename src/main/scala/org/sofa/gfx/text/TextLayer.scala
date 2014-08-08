@@ -303,7 +303,7 @@ class TextItemReuse(var text:String, val font:FontLayerReuse, val position:Point
 
 
 object FontLayerCached {
-	final val MaxCacheSize = 128
+	final val MaxCacheSize = 1024
 
 	final val CleanEverySteps = 100
 }
