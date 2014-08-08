@@ -13,14 +13,26 @@ import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}//, Pl
 import org.sofa.Timer
 
 
-/** A very simple avatar that does not render anything but support 
-  * a customisable renderer and a space that is able to receive a 
-  * layout algorithm. */
+object UIPanel {
+	/** Change the default panel renderer by a specialized one. */
+	case class ChangeRender(creator:(Avatar)=>UIAvatarRenderPanel) extends AvatarState
+}
+
+
+/** A very simple avatar that does not render anything but supports
+  * a customisable renderer. */
 class UIPanel(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 
 	var space = new UIAvatarSpacePanel(this)
 
 	var renderer = new UIAvatarRenderPanel(this)
+
+	override def change(state:AvatarState) {
+		state match {
+			case UIPanel.ChangeRender(creator) => { renderer = creator(self) }
+			case s => super.change(s)
+		}
+	}
 
 	def consumeEvent(event:Event):Boolean = false
 }
@@ -40,7 +52,7 @@ class UIAvatarRenderPanel(avatar:Avatar) extends UIAvatarRender(avatar) with UIr
 		// val sizey = space.subSpace.sizey
 
 		if(color eq null) {
-			color = Rgba.randomHueAndSaturation(1.0)
+			color = Rgba.randomHue(0.1, 1.0)
 		}
 
 		space.pushSubSpace

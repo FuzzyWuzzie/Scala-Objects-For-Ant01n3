@@ -54,7 +54,7 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	  * Then a call to this method is in amortized O(1) time. */
 	def font(fontName:String, size:Int) {
 		font = fonts.get((fontName,size)).getOrElse {
-			val f = new FontLayer(gl, new GLFont(gl, fontName, size, textShader), this)
+			val f = FontLayer(gl, new GLFont(gl, fontName, size, textShader))
 			fonts += ((fontName, size) -> f)
 			f
 		}
@@ -132,17 +132,52 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 }
 
 
+/** Acts as a factory for font layer implementations. */
 object FontLayer {
+	def apply(gl:SGL, font:GLFont):FontLayer = {
+		//new FontLayerReuse(gl, font)
+		new FontLayerCached(gl, font)
+	}
+}
+
+
+/** Interface of a font layer. */
+trait FontLayer {
+	/** Add a `text` to be renderer at next frame at `position` with `color`. */
+	def addItem(text:String, position:Point4, color:Rgba):TextItem
+
+	/** Render all the text items added via `addItem()` in the current `space`. All
+	  * The items are them removed for the next frame. You must add them at each frame. */
+	def renderItems(space:Space)
+
+	/** Clear and release resources. */
+	def dispose()
+}
+
+
+trait TextItem {
+	/** The advance in pixels of this text item. */
+	def advance:Double
+
+	/** The height in pixels of this text item. */
+	def height:Double
+}
+
+
+// -- Reuse a pool of GLStrings recompose them --------------------------------------------
+
+
+object FontLayerReuse {
 	val MaxChars = 128
 }
 
 
-/** A layer of text items with an unique font.
+/** A layer of text items with an unique font that reuse text items for each new string.
   *
   * This allows to render strings with the same font in groups, to avoid
-  * texture and GL attribute switches. 
+  * texture and GL attribute switches.
   *
-  * The font layer uses the following strategy to avoid creating new strings
+  * The font layer 'reuse' uses the following strategy to avoid creating new strings
   * at each render pass :
   *   - There is a pool of already used strings.
   *   - There is a set of strings to render.
@@ -152,14 +187,18 @@ object FontLayer {
   *     strings if any, and the set of strings is switched with the pool.
   * This strategy allows to maintain a set of strings that is as large as
   * the max number of strings used at the last render.
+  *
+  * The strings are [[GLString]] objects, but the text of the string can vary, and is
+  * recomposed each time. See [[FontLayerCached]] for a font layer that tries to
+  * cache text strings and reuse them.
   */
-class FontLayer(val gl:SGL, val font:GLFont, val textlayer:TextLayer) {
+class FontLayerReuse(val gl:SGL, val font:GLFont) extends FontLayer {
 
 	/** Pool of unused text items. */
-	protected[this] var pool = new ArrayBuffer[TextItem]()
+	protected[this] var pool = new ArrayBuffer[TextItemReuse]()
 
 	/** Set of text items to render at next rendering pass. */
-	protected[this] var items = new ArrayBuffer[TextItem]()
+	protected[this] var items = new ArrayBuffer[TextItemReuse]()
 
 	/** Render each stored text items. */
 	def renderItems(space:Space) { 
@@ -183,13 +222,13 @@ class FontLayer(val gl:SGL, val font:GLFont, val textlayer:TextLayer) {
 	def addItem(text:String, position:Point4, color:Rgba):TextItem = {
 		// Take an item from the pool if possible or create it.
 
-		var item:TextItem = null
+		var item:TextItemReuse = null
 
 		if(! pool.isEmpty) {
 			item = pool.remove(pool.size-1)
 			item.rebuild(text, position, color)
 		} else {
- 			item = new TextItem(text, this, position, color)
+ 			item = new TextItemReuse(text, this, position, color)
 		}
 
 		items += item
@@ -213,10 +252,10 @@ class FontLayer(val gl:SGL, val font:GLFont, val textlayer:TextLayer) {
   * color. The string has by default a capacity of [[FontLayer#MaxChars]] characters.
   * It can grow if one uses a text string larger and will never shrink.
   */
-class TextItem(var text:String, val font:FontLayer, val position:Point4, val color:Rgba) {
+class TextItemReuse(var text:String, val font:FontLayerReuse, val position:Point4, val color:Rgba) extends TextItem {
 	
 	/** The GL string used to render the text. */
-	protected[this] var string:GLString = font.font.newString(text, FontLayer.MaxChars)
+	protected[this] var string:GLString = font.font.newString(text, FontLayerReuse.MaxChars)
 
 	/** Total advance in pixels. */
 	def advance:Double = string.advance
@@ -256,5 +295,137 @@ class TextItem(var text:String, val font:FontLayer, val position:Point4, val col
 		// string.setColor(color)
 		// string.render(space)
 		// space.translate(-position.x, -position.y, 0)
+	}
+}
+
+
+// -- Use a cache of the most often used texts -------------------------------------
+
+
+object FontLayerCached {
+	final val MaxCacheSize = 128
+
+	final val CleanEverySteps = 100
+}
+
+
+case class TextItemCached(string:StringItemCached, position:Point4, color:Rgba) extends TextItem {
+	/** Total advance in pixels. */
+	def advance:Double = string.advance
+
+	/** Total height in pixels. */
+	def height:Double = string.height
+
+	/** Advance and height in pixels. */
+	def sizes:(Double,Double) = (string.advance, string.height)
+
+	/** Push a new space, translate to the string position, render the string and restore the space. */
+	def render(space:Space) {
+		// Push and pop or translate and translate back ?
+		space.pushpop {
+			space.translate(position.x, position.y, 0)
+			string.string.setColor(color)
+			string.string.render(space)
+		}
+	}
+}
+
+
+case class StringItemCached(string:GLString, text:String) {
+
+	/** Number of uses of the string. */
+	protected[this] var used:Int = 0
+
+	/** Use the string. */
+	def use() { used += 1 }
+
+	/** Number of times the string has been used. */
+	def usage:Int = used
+
+	/** Total advance in pixels. */
+	def advance:Double = string.advance
+
+	/** Total height in pixels. */
+	def height:Double = string.height
+
+	/** Advance and height in pixels. */
+	def sizes:(Double,Double) = (string.advance, string.height)
+
+	/** Release the resources of the string. */
+	def dispose() { string.dispose }
+}
+
+
+class FontLayerCached(val gl:SGL, val font:GLFont) extends FontLayer {
+	import FontLayerCached._
+
+	/** The things to draw at next frame. */
+	protected[this] var items = new ArrayBuffer[TextItemCached]()
+
+	/** The cache of strings and fonts. */
+	protected[this] val pool = new HashMap[String, StringItemCached]()
+
+	protected[this] var needClean = CleanEverySteps
+
+	/** Render each stored text items. */
+	def renderItems(space:Space) { 
+		font.beginRender
+		var i = 0
+		val n = items.size
+		while(i < n) {
+			items(i).render(space)
+			i += 1
+		}
+		//items.foreach { _.render(space) } 
+		font.endRender
+		
+		items.clear
+		cleanCache
+	}
+
+	/** Add an item */
+	def addItem(text:String, position:Point4, color:Rgba):TextItem = {
+		val string = pool.get(text).getOrElse {
+			val s = new StringItemCached(font.newString(text, text.length), text)
+			pool += (text -> s)
+			s
+		}
+
+		string.use
+
+		val item = TextItemCached(string, position, color)
+
+		items += item
+
+		item
+	}
+
+	protected def cleanCache() {
+		needClean -= 1
+
+		if(needClean <= 0) {
+			val n = pool.size
+			
+			if(n > MaxCacheSize) {
+				org.sofa.Timer.timer.measure("TextLayer.Cache.Clean") {
+					val sorted = pool.valuesIterator.toArray.sortWith { (a, b) => a.usage > b.usage }
+					var i      = MaxCacheSize
+				
+					while(i < n) {
+						pool.remove(sorted(i).text)
+						i += 1
+					}
+				}
+			}
+
+			needClean = CleanEverySteps
+		}
+	}
+
+	/** Release all GL and font resources. */
+	def dispose() {
+		pool.foreach { _._2.dispose }
+		pool.clear
+		items.clear
 	}
 }

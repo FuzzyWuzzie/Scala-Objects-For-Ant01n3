@@ -76,7 +76,7 @@ object Rgba {
     def fromHSV(hue:Double, saturation:Double, value:Double, alpha:Double) = {
     	val C = value * saturation		// chroma
     	val H = (hue / (Pi/3.0))		// H' = hue / 60°
-    	val X = C * (1 - abs(H % 2 - 1))
+    	val X = C * (1.0 - abs(H % 2.0 - 1.0))
 
     	var R1 = 0.0
     	var G1 = 0.0

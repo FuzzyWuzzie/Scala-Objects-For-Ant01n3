@@ -199,7 +199,7 @@ class GLFont(val gl:SGL, file:String, val size:Int, val shader:ShaderProgram, va
 	/** Create an empty string, re-composable, with a given maximum length. */
 	def newString(maxLength:Int):GLString = new GLString(gl, this, maxLength)
 
-	/** Create a string with a given maximul length of character, initialized with `text`.
+	/** Create a string with a given maximum length of character, initialized with `text`.
 	  * `text` length must be less or equal to `maxLength`. */
 	def newString(text:String, maxLength:Int):GLString = new GLString(gl, this, maxLength, text)
 }
@@ -263,8 +263,11 @@ class GLFontLoaderAWT extends GLFontLoader {
 		gfx.foreach { g =>
 			g.setRenderingHints(hints)
 			g.setFont(awtFont(level))
-			g.setRenderingHint(AWTRenderingHints.KEY_TEXT_ANTIALIASING,
- 	 	 					   AWTRenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+
+			g.setRenderingHint(AWTRenderingHints.KEY_ANTIALIASING, AWTRenderingHints.VALUE_ANTIALIAS_OFF)
+			g.setRenderingHint(AWTRenderingHints.KEY_TEXT_ANTIALIASING, AWTRenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB)
+//			g.setRenderingHint(AWTRenderingHints.KEY_TEXT_ANTIALIASING,
+// 	 	 					   AWTRenderingHints.VALUE_TEXT_ANTIALIAS_ON)
 			if(mipmaps)
 				g.setRenderingHint(AWTRenderingHints.KEY_FRACTIONALMETRICS,			// Avoid repositionning glyphs on the pixel grid. 
 								   AWTRenderingHints.VALUE_FRACTIONALMETRICS_ON)	// We will do this ourselves.
@@ -526,7 +529,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	/** Build a GLString from a string, but allow to reserver more space in characters for future reuse. */
 	def this(gl:SGL, font:GLFont, maxLength:Int, text:String) {
 		this(gl, font, maxLength)
-		if(text.length < maxLength)
+		if(text.length <= maxLength)
 			build(text)
 	}
 

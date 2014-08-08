@@ -229,12 +229,22 @@ Timer.timer.measure("screen.render") {
 		}
 	}
 
-	/** Change an avatar state. */
+	/** Change multiple avatars with the same state. */
 	def changeAvatars(pathes:Array[AvatarName], state:AvatarState) {
 		var i = 0
 		val n = pathes.length
 		while(i < n) {
 			changeAvatar(pathes(i), state)
+			i += 1
+		}
+	}
+
+	/** Change multiple avatars each with a distinct state. */
+	def changesAvatars(changes:Array[RendererActor.ChangeAvatar]) {
+		var i = 0
+		val n = changes.length
+		while(i < n) {
+			changeAvatar(changes(i).name, changes(i).state)
 			i += 1
 		}
 	}

@@ -14,6 +14,10 @@ import org.sofa.Timer
 
 
 object UIList {
+	/** Message sent to the list to scale the height in centimeters of list items. */
+	case class ItemsSize(sizeCm:Double) extends AvatarSpaceState {}
+
+	/** Message sent to the list to scroll. Often used internally. */
 	case class Offset(amount:Double) extends AvatarSpaceState {}
 }
 
@@ -132,7 +136,7 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  	var scale1cm = 1.0
 
- 	var itemHeight = 1.5	// cm
+ 	var itemSize = 1.5	// cm
 
  	var fromSpace = new Box3From {
  		from.set(0,0,0)
@@ -152,6 +156,9 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	override def changeSpace(newState:AvatarSpaceState) {
 		newState match {
+			case UIList.ItemsSize(sizeCm) => {
+				itemSize = sizeCm
+			}
 			case UIList.Offset(amount) => {
 				offsety += amount*0.01
 				checkOffset
@@ -170,7 +177,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
  	override def animateSpace() {
  		scale1cm = self.parent.space.scale1cm
- 		toSpace.to.set(1, scale1cm * itemHeight * avatar.subCount, 1)
+ 		toSpace.to.set(1, scale1cm * itemSize * avatar.subCount, 1)
  		checkOffset
 
  		//println(s"# layout list available space (${fromSpace.size(0)}, ${fromSpace.size(1)})")
@@ -193,8 +200,8 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  	protected def layoutSubs() {
  		var i = 0
  		self.foreachSub { sub =>
- 			sub.space.thisSpace.setSize(1, itemHeight * scale1cm, 1)
- 			sub.space.thisSpace.setPosition(0, itemHeight * scale1cm * i, 0)
+ 			sub.space.thisSpace.setSize(1, itemSize * scale1cm, 1)
+ 			sub.space.thisSpace.setPosition(0, itemSize * scale1cm * i, 0)
  			//println("    | layout %d %s".format(i, sub))
  			i += 1
  		}

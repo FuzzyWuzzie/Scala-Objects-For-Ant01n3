@@ -89,8 +89,11 @@ object RendererActor {
 	/** Change some value for an avatar. Possible axes depend on the avatar type. */
 	case class ChangeAvatar(name:AvatarName, state:AvatarState)
 
-	/** Change some value for a list of avatars. Possible axes depend on the avatar type. */
+	/** Send the same change state message to a list of avatars. Possible axes depend on the avatar type. */
 	case class ChangeAvatars(names:Array[AvatarName], state:AvatarState)
+
+	/** Send multiple [[ChangeAvatar]] messages at once. */
+	case class ChangesAvatars(changes:Array[ChangeAvatar])
 
 	/** Ask the avatar `name` to send messages to `acquaintance` when something occurs. */
 	case class AddAvatarAcquaintance(name:AvatarName, acquaintance:ActorRef)
@@ -174,6 +177,7 @@ class RendererActor(val renderer:Renderer) extends Actor {
 		case ChangeScreen(state)                      ⇒ renderer.currentScreen.change(state)
 		case ChangeAvatar(name, state)                ⇒ renderer.currentScreen.changeAvatar(name, state)
 		case ChangeAvatars(names, state)              ⇒ renderer.currentScreen.changeAvatars(names, state)
+		case ChangesAvatars(changes)                  ⇒ renderer.currentScreen.changesAvatars(changes)
 		case AddAvatarAcquaintance(name, acqaintance) ⇒ renderer.currentScreen.addAvatarAcquaintance(name, acqaintance)
 		case AddResource(res)                         ⇒ renderer.libraries.addResource(res)
 		case AddResources(fileName)                   ⇒ renderer.libraries.addResources(fileName)
