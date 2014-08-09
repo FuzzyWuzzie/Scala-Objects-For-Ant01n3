@@ -328,7 +328,6 @@ trait NumberGrid extends IndexedSeq[Double] {
 	def mult[T<:NumberSeq](other:T):T = {
 	    checkSizes(other)
 	    val result = other.newInstance.asInstanceOf[T]
-
 // TODO
 	    for(row <- 0 until height) {
 	        var res = 0.0
@@ -551,40 +550,127 @@ trait NumberGrid4 extends NumberGrid {
 		data(2) = 0;  data(6) = 0;  data(10) = 1;  data(14) = 0
 		data(3) = 0;  data(7) = 0;  data(11) = 0;  data(15) = 1
 	}
-    
+
+	override def mult[T<:NumberSeq](other:T):T = {
+		if(other.isInstanceOf[NumberSeq4]) {
+			multv4(other.asInstanceOf[NumberSeq4]).asInstanceOf[T]
+		} else {
+			super.mult(other)
+		}
+	}
+
+    /** Faster way to multiply a vector4 and a matrix4 when the vector4 data is replaced by the result. */
+	def multv4InPlace[T<:NumberSeq4](v4:T):T = {
+	    val vdata = v4.data
+
+		val v0 = (data(0) * vdata(0)) + (data(4) * vdata(1)) + (data( 8) * vdata(2)) + (data(12) * vdata(3))
+		val v1 = (data(1) * vdata(0)) + (data(5) * vdata(1)) + (data( 9) * vdata(2)) + (data(13) * vdata(3))
+		val v2 = (data(2) * vdata(0)) + (data(6) * vdata(1)) + (data(10) * vdata(2)) + (data(14) * vdata(3))
+		val v3 = (data(3) * vdata(0)) + (data(7) * vdata(1)) + (data(11) * vdata(2)) + (data(15) * vdata(3))
+
+	    vdata(0) = v0
+	    vdata(1) = v1
+	    vdata(2) = v2
+	    vdata(3) = v3
+
+	    v4
+	}
+
+    /** Faster way to multiply a vector4 and a matrix4. */
+	def multv4[T<:NumberSeq4](v4:T):T = {
+	    val result = v4.newInstance.asInstanceOf[T]
+	    val rdata  = result.data
+	    val vdata  = v4.data
+
+		rdata(0) = (data(0) * vdata(0)) + (data(4) * vdata(1)) + (data( 8) * vdata(2)) + (data(12) * vdata(3))
+		rdata(1) = (data(1) * vdata(0)) + (data(5) * vdata(1)) + (data( 9) * vdata(2)) + (data(13) * vdata(3))
+		rdata(2) = (data(2) * vdata(0)) + (data(6) * vdata(1)) + (data(10) * vdata(2)) + (data(14) * vdata(3))
+		rdata(3) = (data(3) * vdata(0)) + (data(7) * vdata(1)) + (data(11) * vdata(2)) + (data(15) * vdata(3))
+
+	    result
+	}
+
     /** Multiply this by `rhs` storing the result in this, using usual matrix multiplication.
       * 
       * The result is stored in place.
       */
-    def multBy(rhs:NumberGrid4) = {
+ //    def multBy(rhs:NumberGrid4) = {
+	// 	if(rhs eq this)
+	// 		throw new RuntimeException("this and rhs cannot be the same matrix")
+
+	// 	var a, b, c, d = 0.0
+	// 	var i = 0
+	// 	var rdata = rsh.data
+
+	// 	//
+	// 	// For each row of the result.
+	// 	//
+	// 	while(i < 4) {
+	// 		//
+	// 		// Row i of this.
+	// 		//
+	// 		a = data(i+0)
+	// 		b = data(i+4)
+	// 		c = data(i+8)
+	// 		d = data(i+12)
+
+	// 		//
+	// 		// With each column of rhs.
+	// 		//
+	// 		data(i+0)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
+	// 		data(i+4)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
+	// 		data(i+8)  = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
+	// 		data(i+12) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
+				
+	// 		i += 1
+	// 	}
+	// }
+
+	def multBy(rhs:NumberGrid4) = {
 		if(rhs eq this)
 			throw new RuntimeException("this and rhs cannot be the same matrix")
 
-		var a, b, c, d = 0.0
-		var i = 0
+		val rdata = rhs.data
 
-		//
-		// For each row of the result.
-		//
-		while(i < 4) {
-			//
-			// Row i of this.
-			//
-			a = data(i+0)
-			b = data(i+4)
-			c = data(i+8)
-			d = data(i+12)
+		var a = data(0)
+		var b = data(4)
+		var c = data(8)
+		var d = data(12)
 
-			//
-			// With each column of rhs.
-			//
-			data(i+0)  = (a * rhs.data( 0)) + (b * rhs.data( 1)) + (c * rhs.data( 2)) + ( d * rhs.data( 3))
-			data(i+4)  = (a * rhs.data( 4)) + (b * rhs.data( 5)) + (c * rhs.data( 6)) + ( d * rhs.data( 7))
-			data(i+8)  = (a * rhs.data( 8)) + (b * rhs.data( 9)) + (c * rhs.data(10)) + ( d * rhs.data(11))
-			data(i+12) = (a * rhs.data(12)) + (b * rhs.data(13)) + (c * rhs.data(14)) + ( d * rhs.data(15))
-				
-			i += 1
-		}
+		data(0)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
+		data(4)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
+		data(8)  = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
+		data(12) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
+
+		a = data(1)
+		b = data(5)
+		c = data(9)
+		d = data(13)
+
+		data(1)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
+		data(5)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
+		data(9)  = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
+		data(13) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
+
+		a = data(2)
+		b = data(6)
+		c = data(10)
+		d = data(14)
+
+		data(2)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
+		data(6)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
+		data(10) = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
+		data(14) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
+
+		a = data(3)
+		b = data(7)
+		c = data(11)
+		d = data(15)
+
+		data(3)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
+		data(7)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
+		data(11) = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
+		data(15) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
 	}
     
     /** Multiply this by `rhs` storing the result in this, using usual matrix multiplication.
@@ -695,6 +781,14 @@ trait NumberGrid4 extends NumberGrid {
 		data(13) = ty
 		data(14) = tz
 	}
+
+	/** Fill the whole matrix with a translation by (`tx`, `ty`, `tz`). */
+	def fillTranslation(tx:Double, ty:Double, tz:Double) = {
+		data( 0) = 1;  data( 1) = 0;  data( 2) = 0;  data( 3) = 0
+		data( 4) = 0;  data( 5) = 1;  data( 6) = 0;  data( 7) = 0
+		data( 8) = 0;  data( 9) = 0;  data(10) = 1;  data(11) = 0
+		data(12) = tx; data(13) = ty; data(14) = tz; data(15) = 1
+	}
 	
 	/** Fill only the scaling part of this matrix with the values of `s`. */
 	def setScale(s:NumberSeq3) { setScale(s.x, s.y, s.z) }
@@ -704,6 +798,14 @@ trait NumberGrid4 extends NumberGrid {
 		data( 0) = sx
 		data( 5) = sy
 		data(10) = sz
+	}
+
+	/** Fill the whole matrix with scaling factors of (`sx`, `sy`, `sz`). */
+	def fillScale(sx:Double, sy:Double, sz:Double) = {
+		data( 0) = sx; data( 1) = 0;  data( 2) = 0;  data( 3) = 0
+		data( 4) = 0;  data( 5) = sy; data( 6) = 0;  data( 7) = 0
+		data( 8) = 0;  data( 9) = 0;  data(10) = sz; data(11) = 0
+		data(12) = 0;  data(13) = 0;  data(14) = 0;  data(15) = 1
 	}
 	
 	/** Fill the 3x3 upper left matrix with the three axis, the first
@@ -802,8 +904,9 @@ trait NumberGrid4 extends NumberGrid {
 //		setTranslation(tx, ty, tz)
 //		multBy(T)
 		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
-		tmpM4.setIdentity
-		tmpM4.setTranslation(tx, ty, tz)
+		//tmpM4.setIdentity
+		//tmpM4.setTranslation(tx, ty, tz)
+		tmpM4.fillTranslation(tx, ty, tz)
 		multBy(tmpM4)
 	}
 
@@ -826,8 +929,9 @@ trait NumberGrid4 extends NumberGrid {
 //		setScale(sx, sy, sz)
 //		multBy(S)
 		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
-		tmpM4.setIdentity
-		tmpM4.setScale(sx, sy, sz)
+//		tmpM4.setIdentity
+//		tmpM4.setScale(sx, sy, sz)
+		tmpM4.fillScale(sx, sy, sz)
 		multBy(tmpM4)
 	}
 	

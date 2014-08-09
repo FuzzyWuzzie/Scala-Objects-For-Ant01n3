@@ -116,18 +116,33 @@ trait Space {
     /** Transform the given `point` using the top most matrix. */
     def project(point:Point4):Point4 = {
     	recomputeMVP
-    	mvp.mult(point)
+    	mvp.multv4(point)
+    }
+
+    /** Transform in-place the given `point` using the top most matrix. */
+    def projectInPlace(point:Point4) {
+    	recomputeMVP
+    	mvp.multv4InPlace(point)
+    }
+
+    /** If neede recompute the inverse of the top most mvp matrix, and transform the given point by this inverse. */
+    def inverseTransformInPlace(point:Point4) = {
+    	recomputeMVP
+
+    	if(inverseMVP eq null)
+    		inverseMVP = mvp.inverse
+
+    	mvp.multv4InPlace(point)
     }
 
     /** If neede recompute the inverse of the top most mvp matrix, and transform the given point by this inverse. */
     def inverseTransform(point:Point4):Point4 = {
     	recomputeMVP
 
-    	if(inverseMVP eq null) {
+    	if(inverseMVP eq null)
     		inverseMVP = mvp.inverse
-    	}
 
-    	mvp.mult(point)
+    	mvp.multv4(point)
     }
     
     def pushProjection() { projection.push; inverseMVP = null }

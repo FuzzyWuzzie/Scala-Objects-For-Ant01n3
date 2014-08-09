@@ -69,13 +69,16 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	/** Request that the string `text` be displayed at next call to `render()` at (`x`, `y`) in pixels. */
 	def stringpx(text:String, x:Double, y:Double) { stringpx(text, Point4(x, y, 0, 1)) }
 
-	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels. */
+	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels.
+	  * `position` is stored and not copied. */
 	def stringpx(text:String, position:Point2) { stringpx(text, Point4(position.x, position.y, 0, 1)) }
 
-	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels. */
+	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels.
+	  * `position` is stored and not copied. */
 	def stringpx(text:String, position:Point3) { stringpx(text, Point4(position.x, position.y, 0, 1)) }
 
-	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels. */
+	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels.
+	  * `position` is stored and not copied. */
 	def stringpx(text:String, position:Point4) { font.addItem(text, position, Rgba(color)) }
 
 	/** Request that the string `text` be displayed at next call to `render()` at (`x`, `y`, `z`) in the current `space`.
@@ -83,27 +86,27 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	def string(text:String, x:Double, y:Double, z:Double, space:Space) { string(text, Point4(x, y, z, 1), space) }
 
 	/** Request that the string `text` be displayed at next call to `render()` at `position` in the current `space`.
-	  * This position is first "projected" in pixel coordinates using `space`. */
+	  * This position is first "projected" in pixel coordinates using `space`. `position` is stored and not copied. */
 	def string(text:String, position:Point3, space:Space) { string(text, Point4(position.x, position.y, position.z, 1), space) }
 
 	/** Request that the string `text` be displayed at next call to `render()` at `position` in the current `space`.
-	  * This position is first "projected" in pixel coordinates using `space`. */
+	  * This position is first "projected" in pixel coordinates using `space`. `position` is stored and not copied. */
 	def string(text:String, position:Point4, space:Space) {
 		var pos:Point4 = position
 
 		if(space ne null) {
-			pos = space.project(position)
-			pos.perspectiveDivide
+			space.projectInPlace(position)
+			position.perspectiveDivide
 
 			val w:Double = space.viewportPx(0)
 			val h:Double = space.viewportPx(1)
 
-			pos.x = pos.x / 2 * w + w / 2
-			pos.y = pos.y / 2 * h + h / 2
-			pos.z = 0
+			position.x = position.x / 2 * w + w / 2
+			position.y = position.y / 2 * h + h / 2
+			position.z = 0
 		}
 
-		val item = font.addItem(text, pos, Rgba(color))
+		val item = font.addItem(text, position, Rgba(color))
 
 		la = item.advance
 		lh = item.height
