@@ -188,11 +188,13 @@ Timer.timer.measure("screen.render") {
 	  * an avatar "zub" as sub avatar of avatar "foo.bar". See [[AvatarName]].
 	  * The `avatarType` will be passed to the avatar factory chain to create
 	  * the appropriate kind of avatar. */
-	def addAvatar(path:AvatarName, avatarType:String) {
+	def addAvatar(path:AvatarName, avatarType:String):Avatar = {
 		val avatar = addSub(path, avatarType)
 
 		if(rendering)
-			avatar.begin			
+			avatar.begin
+
+		avatar
 	}
 
 	/** Like the regular `addAvatar` method but add as many avatars as there
@@ -231,22 +233,26 @@ Timer.timer.measure("screen.render") {
 
 	/** Change multiple avatars with the same state. */
 	def changeAvatars(pathes:Array[AvatarName], state:AvatarState) {
+Timer.timer.measure("changeAvatars") {
 		var i = 0
 		val n = pathes.length
 		while(i < n) {
 			changeAvatar(pathes(i), state)
 			i += 1
 		}
+}
 	}
 
 	/** Change multiple avatars each with a distinct state. */
 	def changesAvatars(changes:Array[RendererActor.ChangeAvatar]) {
+Timer.timer.measure("changesAvatars") {
 		var i = 0
 		val n = changes.length
 		while(i < n) {
 			changeAvatar(changes(i).name, changes(i).state)
 			i += 1
 		}
+}
 	}
 
 	/** Ask the avatar `name` to send events to `acquaintance`. */
@@ -286,5 +292,36 @@ Timer.timer.measure("screen.render") {
 }
 
 
-/** A default screen class with an avatar container implemented by an array. */
-class DefaultScreen(name:String, renderer:Renderer) extends Screen(name, renderer) with AvatarContainerArray {}
+/** A default screen class with an avatar container implemented by an array and a cache of avatar names to
+  * speed-up avatar lookup. */
+class DefaultScreen(name:String, renderer:Renderer) extends Screen(name, renderer) with AvatarContainerArray {
+	// In tests the base AvatarContainer.avatar lookup is four to five times slower than using the hash-map.
+	// The overrided methods are the one of screen and this works as long as only the screen is concerned as
+	// an entry point (which should awlays be the case). This does not mean you cannot add avatars out of the
+	// screen, but they will not be searchable via the screen.
+
+	/** Cache of avatar-name -> avatar. */
+	protected[this] val avatarNameCache = new HashMap[String, Avatar]()
+
+	/** Override the base `addAvatar()` method to use an avatar name cache to speed-up avatar lookups. */
+	override def addAvatar(path:AvatarName, avatarType:String):Avatar = {
+		val avatar = super.addAvatar(path, avatarType)
+		avatarNameCache += (path.toString -> avatar)
+		avatar
+	}
+
+	/** Override the base `removeAvatar()` method to use an avatar name cache to speed-up avatar lookups. */
+	override def removeAvatar(path:AvatarName) {
+		removeSub(path)
+		avatarNameCache -= path.toString
+	}
+
+	/** Override the base `avatar()` accessor to add an avatar name cache to speed-up avatar lookups. */
+	override def avatar(path:AvatarName, prefix:Int = -1):Option[Avatar] = {
+		if(prefix < 0) {
+			avatarNameCache.get(path.toString)
+		} else {
+			super.avatar(path, prefix)
+		}
+	}
+}

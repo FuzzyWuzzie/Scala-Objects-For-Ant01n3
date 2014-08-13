@@ -96,6 +96,7 @@
 * A layout system that avoid computing the layouts at each frame.
     - A way to do this is to use dirty bits to indicate an avatar needs to relayout its sub-avatars. It can work in the reverse : a sub can tell its parent it changed, and therefore the parent needs to relayout.
     - How to do this properly ?
+    - Example : the list needs to layout its sub-items only when one is added or removed.
 * Be able to create interfaces using a dedicated JSON format or some other DSL.
     - Add a message to the RendererActor that handles such things, maybe from a separate JSON, but also using a DSL.
 

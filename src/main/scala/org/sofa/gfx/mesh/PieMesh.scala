@@ -10,8 +10,13 @@ import org.sofa.nio.{IntBuffer}
 /** A pie chart or cirle in 2D.
   *
   * This always create a complete circle, but allows to draw as many segments as requested.
+  * Use the `draw(gl,segments)` method to draw only a part of the segments.
   *
-  * The circle has radius 1 and lies in the plane XY.
+  * The circle has radius 1 and lies in the plane XY. The center is at (0,0) and the first
+  * segment is at (0.5,0) in cartesian coordinates. The segments goes up, in trigonometric
+  * direction.
+  *
+  * This mesh is not dynamic.
   *
   * @param the number of segments of the circle (parts of the pie). */
 class PieMesh(val segments:Int) extends Mesh {
@@ -69,21 +74,4 @@ class PieMesh(val segments:Int) extends Mesh {
     }
 
     override def hasIndices():Boolean = false
-
-	// -- Dynamic updating -------------------------------------------
-	
- //    override def beforeNewVertexArray() {
-	// 	if(has(VertexAttribute.Vertex)) V.resetMarkers
-	// 	I.resetMarkers
- //    }
-
-	// /** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
-	//   * avoid moving data between the CPU and GPU. You may give a boolean for each buffer in the vertex array
-	//   * that you want to update or not. */
-	// def updateVertexArray(gl:SGL, attributes:String*) {
-	// 	if(va ne null) {
-	// 		I.update(va)
-	// 		attributes.foreach { meshAttribute(_).update(va) }
-	// 	}
-	// }
 }

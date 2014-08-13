@@ -13,6 +13,7 @@ object Rgba {
     final val Cyan    = new Rgba(0, 1, 1, 1)
     final val Magenta = new Rgba(1, 0, 1, 1)
     final val Yellow  = new Rgba(1, 1, 0, 1)
+    final val Orange  = new Rgba(1, 0.5, 0, 1)
     final val Grey10  = new Rgba(0.1, 0.1, 0.1, 1)
     final val Grey20  = new Rgba(0.2, 0.2, 0.2, 1)
     final val Grey30  = new Rgba(0.3, 0.3, 0.3, 1)

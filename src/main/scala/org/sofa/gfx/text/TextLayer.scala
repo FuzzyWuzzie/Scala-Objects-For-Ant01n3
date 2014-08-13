@@ -10,22 +10,31 @@ import org.sofa.math.{Point2, Point3, Point4, Rgba}
 /** A text renderer that memorize couples of points and strings in pixel space,
   * and render them in one pass.
   *
-  * At some point in your rendering process,
-  * you issue a string at a given position. This position can either be pixels,
-  * or your current space (in which case the position is projected in pixels) using
-  * the current model-view and projection matrices.
+  * This is not done to render paragraphs of text, but to render small strings
+  * of text at given positions in space. This could for example be used in a UI
+  * for labels or buttons, or in a game.
   *
-  * Then at the end of the current frame rendering, the `render()` method is
-  * called, and all strings are displayed at once in an optimized way. Then
-  * these memorized strings are cleared for the next rendering pass.
+  * The two base ideas of the text layer are :
+  *   - Allow to cache strings of text so that repeated display of the same string is faster.
+  *   - Allow to draw text in one optimized pass at a point in the rendering process.
   *
-  * There is a caching mechanism to reuse strings. */
+  * The basic usage is to call the various `string` methods to specify a text
+  * and a position, either in the actual [[Space]] or directly in pixels. If the position
+  * is not specified in pixels, the [[Space]] is used to project the point in pixels.
+  *
+  * Then at the end of the current frame rendering for example, the `render()` method is
+  * called, and all strings are displayed at once in an optimized way.
+  *
+  * The memorized strings are cached (several implementation are provided, depending on the use)
+  * in order to accelerate their redisplay. */
 class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 
 	// TODO
 	//
 	// - do not render items out of screen. We know the size and positions.
-	// - Allow some items to remain constant, when the user know it will reuse it.
+	// - Allow some items to remain constant, when the user know it will reuse it (done with the cached items).
+	// - Allow to handle "centered" and "right-aligne" text.
+	// - Allow more positionning.
 
 	/** Map of known fonts. */
 	protected[this] val fonts = new HashMap[(String,Int), FontLayer]()

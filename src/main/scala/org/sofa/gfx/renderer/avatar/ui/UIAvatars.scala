@@ -31,6 +31,8 @@ class UIAvatarFactory extends DefaultAvatarFactory {
 object UIAvatar {
 	/** Set the layout of an avatar. */
 	case class SetLayout(layout:UILayout) extends AvatarSpaceState {}
+
+	
 }
 
 
