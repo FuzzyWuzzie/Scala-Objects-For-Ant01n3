@@ -268,11 +268,12 @@ abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
 	protected[this] var layout:UILayout = null
 	
 	/** A flag indicating the layout must be recomputed.
-	  * This flag is set to true only in particular moments:
-	  *  - when the avatar is created.
-	  *  - when this avatar space changes.
-	  *  - when a sub-avatar is added or removed.
-	  *  - when the layoutRequest is issued by the sub-avatars. */
+	  * This flag is set to true when (this list is exaustive
+	  * and should be kept up to date):
+	  *  - the avatar is created.
+	  *  - this avatar space changes.
+	  *  - a sub-avatar is added or removed.
+	  *  - the layoutRequest is issued by the sub-avatars. */
 	protected[this] var dirtyLayout = true
 
 	/** Tell this avatar that one of its sub-avatar changed its size or disposition and this
@@ -282,6 +283,7 @@ abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
 
 	override def subCountChanged(delta:Int) {
 		dirtyLayout = true 
+		self.screen.requestRender
 	}
 
 	override def changeSpace(newState:AvatarSpaceState) {
@@ -293,6 +295,7 @@ abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
 
 	override def animateSpace() {
 		if(dirtyLayout) {
+			self.screen.requestRender
 			dirtyLayout = false
 			
 			if(layout ne null)

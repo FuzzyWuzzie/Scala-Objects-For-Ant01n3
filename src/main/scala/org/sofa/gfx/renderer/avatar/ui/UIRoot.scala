@@ -106,6 +106,7 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 			toSpace.to.set(  1, 1 * ratiohw, 1)
 			toSpace.size.set(1, 1 * ratiohw, 1)
 
+			screen.requestRender
 			dirtyLayout = false	// Before subs, because they can ask for a new relayout !
 
 			layoutSubs

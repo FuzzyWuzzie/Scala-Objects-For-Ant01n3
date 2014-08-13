@@ -81,15 +81,18 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Set of avatars in the active selection. */
 	val selection = new AvatarSelection
 
+// Hiden variable fields
+
 	/** Layer of text above the screen. */
 	protected[this] var text:TextLayer = null
-
-// Hiden variable fields
 
 	/** Set to true after begin() and reset to false after end(). */
 	protected[this] var rendering = false
 
 // Modification
+
+	/** Ask the renderer to re-render. Only needed if the renderer is not in continuous rendering mode. */
+	def requestRender() { if(rendering) renderer.requestRender }
 
 	/** Something changed in the screen. */
 	def change(state:ScreenState) {}

@@ -57,6 +57,9 @@ object RendererActor {
 	  * The file must end with ".xml" or ".json". */
 	case class AddResources(fileName:String)
 
+	/** Activate or disable continuous rendering mode. On by default. */
+	case class ContinuousRender(on:Boolean)
+
 	/** Add a new screen. The name of the screen is free. */
 	case class AddScreen(name:String, screenType:String = "default")
 
@@ -135,9 +138,10 @@ object RendererActor {
 	          fps:Int,
 	          decorated:Boolean = false,
 	          fullscreen:Boolean = false,
+	          continuous:Boolean = true,
 	          overSample:Int = 4,
 	          rendererActorName:String = "renderer-actor") {
-		renderer.start(title, width, height, fps, decorated, fullscreen, overSample, { () => 
+		renderer.start(title, width, height, fps, decorated, fullscreen, continuous, overSample, { () => 
 			// This is executed when the renderer is ready. In the OpenGL surface thread.
 
 			// Tell our specific executor service which thread to use (the same as the one of the OpenGL surface used).
@@ -167,6 +171,7 @@ class RendererActor(val renderer:Renderer) extends Actor {
 	def receive() = {
 		case Start                                    ⇒ renderer.onStart(self)
 		case Stop                                     ⇒ context.stop(self)
+		case ContinuousRender(on)                     ⇒ renderer.continuousRenderMode(on)
 		case AddScreen(name, screenType)              ⇒ renderer.addScreen(name, screenType)
 		case RemoveScreen(name)                       ⇒ renderer.removeScreen(name)
 		case SwitchScreen(name)                       ⇒ renderer.switchToScreen(name)

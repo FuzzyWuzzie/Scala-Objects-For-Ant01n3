@@ -67,6 +67,14 @@ object Renderer {
   * underlying system, and [[org.sofa.gfx.surface.Surface]] event callbacks
   * `onKey()`, `onMotion()` and `onScroll()`.
   *
+  * The renderer by default will invoke its render method continuously to achieve
+  * the given frame-rate. However you can ask to render only when needed. In
+  * this render mode, the renderer will trigger a render only when the surface
+  * changed, or if the `requestRender()` method has been called. Avatars and
+  * screens are responsible for calling this method. Some avatar libraries are
+  * done for continuous rendering (games or simulations for example), others for
+  * rendering on demand (UI for example).
+  *
   * Be very careful. Excepted the creation phase and the `start()` method, the
   * renderer is made to run in the same thread as its surface. Methods are not
   * synchronized for efficiency reasons, but you should call them only from
@@ -111,6 +119,20 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 	  * is used as a stand-alone renderer. */
 	protected[this] var rendererActor:ActorRef = null
 
+	/** The actual rendering mode, either continuous, or as needed.
+	  * Render as needed is done for example if the surface is resized,
+	  * its contents damaged, or something changed in the screen or
+	  * avatar hierarchy. */
+	protected[this] var continuousRender = true
+
+	/** A flag used in "render-when-needed" mode to ask for a new render.
+	  * This flag is set to true in the following situations (this list is
+	  * exaustive and should be kept up to date):
+	  *   - The surface size changed.
+	  *   - The `requestRender` method has been called.
+	  */
+	protected[this] var dirty = true
+
 	if(factory eq null)
 		factory = new DefaultAvatarFactory()
    
@@ -134,20 +156,22 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
       * @param fps The requested frames-per-second, the renderer will try to match this.
       * @param decorated If false, no system borders are drawn around the window (if in a windowed system).
       * @param fullscreen If in a windowed system, try to open a full screen surface.
+      * @param continuous Ask for continuous rendering at given fps or render as needed.
       * @param overSample Defaults to 4, if set to 1 or less, oversampling is disabled. */
     def start(title:String, initialWidth:Int, initialHeight:Int, fps:Int,
-              decorated:Boolean=false, fullscreen:Boolean=false, overSample:Int = 4, runAtInit: () => Unit = null) {
-	    this.runAtInit = runAtInit
-	    initSurface    = initRenderer
-	    frame          = render
-	    surfaceChanged = reshape
-	    close          = onClose
-	    actionKey      = onActionKey
-	    unicode        = onUnicode
-	    motion         = onMotion
-	    gesture        = onGesture
-	    shortCut       = onShortCut
-	    surface        = newSurface(this, initialWidth, initialHeight, title, fps,
+              decorated:Boolean=false, fullscreen:Boolean=false, continuous:Boolean=true, overSample:Int = 4, runAtInit: () => Unit = null) {
+	    this.runAtInit   = runAtInit
+	    initSurface      = initRenderer
+	    frame            = render
+	    surfaceChanged   = reshape
+	    close            = onClose
+	    actionKey        = onActionKey
+	    unicode          = onUnicode
+	    motion           = onMotion
+	    gesture          = onGesture
+	    shortCut         = onShortCut
+	    continuousRender = continuous
+	    surface          = newSurface(this, initialWidth, initialHeight, title, fps,
 	    							decorated, fullscreen, overSample)
 	}
 
@@ -232,6 +256,7 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 		this.gl   = gl
 		libraries = Libraries(gl)
 		inited    = true
+		dirty     = true
 
 		if(runAtInit ne null)
 			runAtInit()
@@ -239,17 +264,38 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 		runAtInit = null
 	}
 	
-	def reshape(surface:Surface) { if(screen ne null) { screen.reshape } }
+	def reshape(surface:Surface) { if(screen ne null) { screen.reshape }; dirty = true }
 	
-	/** Render the current screen. If no screen is current, a red background should be drawn. */
+	/** Enable or disable continuous rendering. If enabled the renderer
+	  * renders the current screen at a given frame rate (see contructor).
+	  * Else render only when the rendering surface needs it or something
+	  * changed in the screen and avatar hierarchy. On by default. */
+	def continuousRenderMode(on:Boolean) {
+		continuousRender = on
+	}
+
+	/** If not in continuous rendering mode, request the renderer to do a
+	  * render at next frame slot. Never call render directly, use this method
+	  * instead. */
+	def requestRender() { dirty = true }
+
+	/** Render the current screen. If no screen is current, a red background is drawn.
+	  * This method is automatically called, never call it directly. See `requestRender()`. */
 	def render(surface:Surface) {
 Timer.timer.measure("Renderer.render") {
 Timer.timer.measure("Renderer.animate") {
 		animate
 }
-
 		if(screen ne null) {
-			screen.render
+			if(continuousRender) {
+				screen.render
+			} else {
+				if(dirty) {
+					dirty = false	// Before in case a sub-avatar resquest a render during the rendering process.
+					screen.render
+println("## render")
+				}
+			}
 		} else {
 			gl.clearColor(Rgba.Red)
 			gl.clear(gl.COLOR_BUFFER_BIT)
@@ -302,6 +348,8 @@ Timer.timer.measure("Renderer.animate") {
 		screen = screens.get(name).getOrElse(null)
 
 		if(screen ne null) { screen.begin }
+
+		dirty = true
 	}
 
 	/** True if the renderer has a current screen. */

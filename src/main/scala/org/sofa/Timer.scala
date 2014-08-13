@@ -98,7 +98,7 @@ class Measures(val name:String) {
 	/** Print the average measure to the given output stream. */
 	def printAvg(out:PrintStream):Double = {
 		val avg = average
-		out.println("    %32s: ~%8.2f msecs | %d samples || last %8.2f | max %8.2f | min %8.2f | sum %8.2f |".format(name, avg/100000.0, count, last/100000.0, max/100000.0, min/100000.0, sum/100000.0))
+		out.println("    %32s: ~%8.2f msecs | %6d samples || last %8.2f | max %8.2f | min %8.2f | sum %8.2f |".format(name, avg/100000.0, count, last/100000.0, max/100000.0, min/100000.0, sum/100000.0))
 		avg
 	}
 }

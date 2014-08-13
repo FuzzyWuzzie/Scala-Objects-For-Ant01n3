@@ -160,9 +160,11 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 			case UIList.ItemsSize(sizeCm) => {
 				itemSize = sizeCm
 				dirtyLayout = true
+				self.screen.requestRender
 			}
 			case UIList.Offset(amount) => {
 				offsety += amount*0.01
+				self.screen.requestRender
 				checkOffset
 			}
 			case _ => super.changeSpace(newState)
@@ -186,6 +188,8 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  			// If the sizey changed, this means the dpc or scale1cm changed,
  			// we must ask the parent to relayout anew since we changed size.
  			
+			self.screen.requestRender
+
  			if(oldsizey == toSpace.to.y)
  		 	     dirtyLayout = false	// Before subs, as they can ask a relayout.
  		 	else self.parent.space.asInstanceOf[UIAvatarSpace].layoutRequest
@@ -224,6 +228,16 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 		((y+h) >= up && y <= down)
 	}
+
+	override def subCountChanged(delta:Int) {
+		dirtyLayout = true
+		self.screen.requestRender
+
+		// The size of the list changed. Ask the parent to relayout.
+
+		if(self.parent ne null)
+			self.parent.space.asInstanceOf[UIAvatarSpace].layoutRequest
+	}
 }
 
 
@@ -251,6 +265,7 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
  		if(dirtyLayout) {
 			toSpace.from.set(0, 0, 0)
 			toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
+			self.screen.requestRender
 		}
 		
 		// DirtyLayout flag is reset in super.animateSpace
@@ -267,14 +282,5 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	override def popSubSpace() {
 		self.screen.space.pop
-	}
-
-	override def subCountChanged(delta:Int) {
-		dirtyLayout = true 
-
-		// The size of the list changed. Ask the parent to relayout.
-
-		if(self.parent ne null)
-			self.parent.space.asInstanceOf[UIAvatarSpace].layoutRequest
 	}
 }

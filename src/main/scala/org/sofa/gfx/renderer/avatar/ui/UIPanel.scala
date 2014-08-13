@@ -96,6 +96,7 @@ class UIAvatarSpacePanel(avatar:Avatar) extends UIAvatarSpace(avatar) {
 		if(dirtyLayout) {
 			toSpace.from.set(0, 0, 0)
 			toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
+			self.screen.requestRender
 		}
 
 		// dirtyLayout flag is reset in super.animateSpace.
