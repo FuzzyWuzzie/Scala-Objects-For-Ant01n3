@@ -293,7 +293,6 @@ Timer.timer.measure("Renderer.animate") {
 				if(dirty) {
 					dirty = false	// Before in case a sub-avatar resquest a render during the rendering process.
 					screen.render
-println("## render")
 				}
 			}
 		} else {

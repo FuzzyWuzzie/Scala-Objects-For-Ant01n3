@@ -1,5 +1,7 @@
 package org.sofa.gfx.renderer.avatar.ui
 
+import scala.math._
+
 import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
 import org.sofa.gfx.{ShaderResource}
 import org.sofa.gfx.renderer.{Screen}
@@ -19,6 +21,9 @@ object UIList {
 
 	/** Message sent to the list to scroll. Often used internally. */
 	case class Offset(amount:Double) extends AvatarSpaceState {}
+
+	/** Message sent to the list to scroll at a given percent (0 to 1) in the list. Often used internally. */
+	case class OffsetAt(percent:Double) extends AvatarSpaceState {}
 }
 
 
@@ -29,6 +34,8 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 	var renderer = new UIAvatarRenderList(this)
 
 	def consumeEvent(event:Event):Boolean = {
+		import ActionKey._
+
 		event match {
 			case e:ScrollEvent => {
 				if(containsEvent(event)) {
@@ -36,6 +43,17 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 					true
 				} else {
 					false
+				}
+			}
+			case e:ActionKeyEvent => {
+				e.key match {
+					case PageUp   => { space.changeSpace(UIList.Offset(1)); true }
+					case PageDown => { space.changeSpace(UIList.Offset(1)); true }
+					case Begin    => { space.changeSpace(UIList.OffsetAt(0.0)); true }
+					case End      => { space.changeSpace(UIList.OffsetAt(1.0)); true }
+					case Up       => { space.changeSpace(UIList.Offset(0.1)); true }
+					case Down     => { space.changeSpace(UIList.Offset(0.1)); true }
+					case _        => { false }
 				}
 			}
 			case _ => { false }
@@ -163,18 +181,26 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 				self.screen.requestRender
 			}
 			case UIList.Offset(amount) => {
+println("offset")
 				offsety += amount*0.01
 				self.screen.requestRender
 				checkOffset
+			}
+			case UIList.OffsetAt(percent) => {
+println("offsetAt")
+				var p = max(0, min(1, percent))
+				self.screen.requestRender
+				var offsetMax = min(-(toSpace.sizey - fromSpace.sizey), 0)
+				offsety = offsetMax * p
 			}
 			case _ => super.changeSpace(newState)
 		}
 	}
 
 	protected def checkOffset() {
-		var offsetMax = -(toSpace.sizey - fromSpace.sizey)
+		var offsetMax = min(-(toSpace.sizey - fromSpace.sizey), 0)
 
-		if(offsetMax > 0) offsetMax = 0
+//		if(offsetMax > 0) offsetMax = 0
 		if(offsety > 0) offsety = 0
 		else if(offsety < offsetMax) offsety = offsetMax
 	}
