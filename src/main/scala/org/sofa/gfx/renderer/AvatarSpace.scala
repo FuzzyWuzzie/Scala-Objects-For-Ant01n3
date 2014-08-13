@@ -42,6 +42,9 @@ trait AvatarSpace {
 	  * For example, if there is a layout for sub-avatars, it takes place here. */
 	def animateSpace() {}
 
+	/** Called when one or more sub-avatars have been added or removed. */
+	def subCountChanged(delta:Int) {}
+
 	/** Change the space. Send any kind of state change event to modify the space. */
 	def changeSpace(newState:AvatarSpaceState) {}
 

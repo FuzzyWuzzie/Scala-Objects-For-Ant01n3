@@ -60,6 +60,10 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 	/** Dots per centimeter. */
 	protected[this] var dpc = 0.0
 
+	/** Size of the surface in pixels, to detect changes. First two coordinates
+	  * are the width and height of the surface, and third is the dpc. */
+	protected[this] val oldSurface = Point3(0, 0, 0)
+
 	var scale1cm = 1.0
 
 	protected val fromSpace = new Box3Default {
@@ -88,18 +92,24 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 	// }
 
 	override def animateSpace() {
-		val screen = avatar.screen
+		val screen  = avatar.screen
 		val surface = screen.surface
-		ratiohw = surface.height.toDouble / surface.width.toDouble
-		dpc = avatar.screen.surface.dpc
-		scale1cm = 1.0 / (screen.surface.width / dpc) // One centimeter in the sub-space equals this
 
-		toSpace.to.set(1, 1 * ratiohw, 1)
-		toSpace.size.set(1, 1 * ratiohw, 1)
+		dpc = screen.surface.dpc
 
-		//println("------------------")
-		//println(s"# layout root scale1cm=${scale1cm} ratiohw=${ratiohw} size(2, ${ratiohw*2}) subSize(${toSpace.size(0)}, ${toSpace.size(1)})")
-		layoutSubs
+		if(dirtyLayout || oldSurface.x != surface.width || oldSurface.y != surface.height || oldSurface.z != dpc) {
+			oldSurface.set(surface.width, surface.height, dpc)
+			
+			ratiohw  = surface.height.toDouble / surface.width.toDouble
+			scale1cm = 1.0 / (screen.surface.width / dpc) // One centimeter in the sub-space equals this
+
+			toSpace.to.set(  1, 1 * ratiohw, 1)
+			toSpace.size.set(1, 1 * ratiohw, 1)
+
+			dirtyLayout = false	// Before subs, because they can ask for a new relayout !
+
+			layoutSubs
+		}
 	}
 
 	override def pushSubSpace() {
@@ -115,14 +125,12 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 
 	override def popSubSpace() { self.screen.space.pop }
 
+	/** A layout that put each child at the same position, filling the avaiable space, one above the other. */
 	def layoutSubs() {
-		// A layout that put each child at the same position, filling the avaiable space, one above the other.
-		var i = 0
 		self.foreachSub { sub ⇒
 			sub.space.thisSpace.setSize(toSpace.size(0), toSpace.size(1), 1)
 			sub.space.thisSpace.setPosition(0, 0, 0)
-			//println("    | layout %d %s".format(i, sub))
-			i += 1
+			sub.space.asInstanceOf[UIAvatarSpace].layoutRequest
 		}
 	}
 }

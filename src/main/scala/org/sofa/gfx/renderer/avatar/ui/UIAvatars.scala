@@ -37,7 +37,7 @@ object UIAvatar {
 
 
 abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarComposed(name, screen) {
-	
+
 	/** Another consumeOrPropagateEvent that looks if an avatar is visible to propagate the
 	  * event to it. To call only if the event is a spatial one. */
 	def consumeOrPropagateEventVisible(event:SpatialEvent):Boolean = {
@@ -263,17 +263,26 @@ class UIAvatarRender(var self:Avatar) extends AvatarRender {
 
 abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
 
-	// TODO a layout system that avoid computing the layouts at each frame.
-	// A way to do this is to use dirty bits to indicate an avatar needs to
-	// relayout its sub-avatars. It can work in the reverse : a sub can
-	// tell its parent it changed, and therefore the parent needs to 
-	// relayout.
-	//
-	// How to do this properly ?
-
 	/** An independant layout algorithm, eventually shared between instances, if
 	  * the space does not already acts as a layout. */
 	protected[this] var layout:UILayout = null
+	
+	/** A flag indicating the layout must be recomputed.
+	  * This flag is set to true only in particular moments:
+	  *  - when the avatar is created.
+	  *  - when this avatar space changes.
+	  *  - when a sub-avatar is added or removed.
+	  *  - when the layoutRequest is issued by the sub-avatars. */
+	protected[this] var dirtyLayout = true
+
+	/** Tell this avatar that one of its sub-avatar changed its size or disposition and this
+	  * avatar must relayout. If this avatar changes its size or disposition in return, it
+	  * can propagate the layout request to its parent avatar. */
+	def layoutRequest() { dirtyLayout = true }
+
+	override def subCountChanged(delta:Int) {
+		dirtyLayout = true 
+	}
 
 	override def changeSpace(newState:AvatarSpaceState) {
 		newState match {
@@ -283,8 +292,12 @@ abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
 	}
 
 	override def animateSpace() {
-		if(layout ne null)
-			layout.layout(self, scale1cm)
+		if(dirtyLayout) {
+			dirtyLayout = false
+			
+			if(layout ne null)
+				layout.layout(self, scale1cm)
+		}
 
 		super.animateSpace
 	}

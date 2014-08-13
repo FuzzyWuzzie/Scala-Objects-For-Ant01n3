@@ -71,10 +71,12 @@ trait AvatarContainerHashMap extends AvatarContainer {
 				val avatar = screen.createAvatar(path, avatarType)
 				avatar.reparent(self)
 				subs += (path.suffix -> avatar)
+				if(self ne null) // for screen
+					self.space.subCountChanged(1)
 				avatar
 			} else {
 				subs.get(path(prefix-1)) match {
-					case Some(avatar) =>  avatar.addSub(path, avatarType, prefix + 1)
+					case Some(avatar) => avatar.addSub(path, avatarType, prefix + 1)
 					case None         => throw new NoSuchAvatarException("%s (%s)".format(path.toString, path(prefix)))
 				}
 			}
@@ -89,6 +91,8 @@ trait AvatarContainerHashMap extends AvatarContainer {
 				if(prefix == path.size) {
 					val a = subs.remove(path(prefix-1)).getOrElse(throw new NoSuchAvatarException("%s".format(path.toString)))
 					if(subs.isEmpty) subs = null
+					if(self ne null)	// for screen
+						self.space.subCountChanged(-1)
 					a
 				} else {
 					subs.get(path(prefix-1)) match {
@@ -176,6 +180,8 @@ trait AvatarContainerArray extends AvatarContainer {
 				val avatar = screen.createAvatar(path, avatarType)
 				avatar.reparent(self)
 				subs += avatar
+				if(self ne null) // for screen
+					self.space.subCountChanged(1)
 				avatar
 			} else {
 				subs.find(_.name.equalPrefix(prefix, path)) match {
@@ -200,6 +206,8 @@ trait AvatarContainerArray extends AvatarContainer {
 					val a = if(i >= 0) subs.remove(i)
 					        else throw new NoSuchAvatarException("%s".format(path.toString))
 					if(subs.isEmpty) subs = null
+					if(self ne null) // for screen
+						self.space.subCountChanged(-1)
 					a
 				} else {
 					subs.find(_.name.equalPrefix(prefix, path)) match {

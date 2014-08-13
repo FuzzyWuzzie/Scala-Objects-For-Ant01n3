@@ -26,8 +26,10 @@ object UILayoutSeparationMode extends Enumeration {
   * If possible, layouts should not store any state so that they can be shared between
   * avatar instances. */
 trait UILayout {
-	/** Lay out the sub-avatars of the given `parent`. `scale1cm` represents 1 centimeter on screen. */
-	def layout(parent:Avatar, scale1cm:Double)
+	/** Lay out the sub-avatars of the given `parent`. `scale1cm` represents 1 centimeter on screen.
+	  * @return true if the layout of the sub-avatars changed the space of this avatar. In this case
+	  *              the avatar may issue a layout request to its parent. */
+	def layout(parent:Avatar, scale1cm:Double):Boolean
 
 	/** If true, the `layout()` method has no side effects and the layout can
 	  * be shared by multiple avatar instances. */
@@ -41,7 +43,7 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 
 	override def isShareable = true
 
-	def layout(parent:Avatar, scale1cm:Double) {
+	def layout(parent:Avatar, scale1cm:Double):Boolean = {
 		if(parent.subCount >= 2) {
 			val pspace = parent.space.subSpace
 			val fromx  = pspace.fromx
@@ -59,6 +61,7 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 				case m => throw new RuntimeException("unknown layout mode %s".format(m))
 			}
 		}
+		false
 	}
 
 	protected def layoutPercentage(parent:Avatar, scale1cm:Double, fromx:Double, fromy:Double, sizex:Double, sizey:Double, sub0:Avatar, sub1:Avatar) {
@@ -73,6 +76,9 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 			sub1.space.thisSpace.setPosition(fromx, fromy + sizey * separation, 0)
 			sub1.space.thisSpace.setSize(sizex, sizey - (sizey * separation), 1)
 		}
+
+		sub0.space.asInstanceOf[UIAvatarSpace].layoutRequest
+		sub1.space.asInstanceOf[UIAvatarSpace].layoutRequest
 	}
 
 	protected def layoutFirstPaneFixedSizeCm(parent:Avatar, scale1cm:Double, fromx:Double, fromy:Double, sizex:Double, sizey:Double, sub0:Avatar, sub1:Avatar) {
@@ -89,6 +95,9 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 			sub1.space.thisSpace.setPosition(fromx, fromy + sep, 0)
 			sub1.space.thisSpace.setSize(sizex, sizey - sep, 1)
 		}
+
+		sub0.space.asInstanceOf[UIAvatarSpace].layoutRequest
+		sub1.space.asInstanceOf[UIAvatarSpace].layoutRequest
 	}
 
 	protected def layoutSecondPaneFixedSizeCm(parent:Avatar, scale1cm:Double, fromx:Double, fromy:Double, sizex:Double, sizey:Double, sub0:Avatar, sub1:Avatar) {
@@ -105,5 +114,8 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 			sub1.space.thisSpace.setPosition(fromx, fromy + sizey - sep, 0)
 			sub1.space.thisSpace.setSize(sizex, sep, 1)
 		}
+
+		sub0.space.asInstanceOf[UIAvatarSpace].layoutRequest
+		sub1.space.asInstanceOf[UIAvatarSpace].layoutRequest
 	}
 }

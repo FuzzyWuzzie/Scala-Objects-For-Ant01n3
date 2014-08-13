@@ -244,7 +244,9 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 	/** Render the current screen. If no screen is current, a red background should be drawn. */
 	def render(surface:Surface) {
 Timer.timer.measure("Renderer.render") {
+Timer.timer.measure("Renderer.animate") {
 		animate
+}
 
 		if(screen ne null) {
 			screen.render

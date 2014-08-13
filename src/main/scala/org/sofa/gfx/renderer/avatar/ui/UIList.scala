@@ -46,6 +46,7 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 		space.animateSpace
 		renderer.animateRender
 		animateVisibleSubs
+		//animateSubs
 	}
 }
 
@@ -158,6 +159,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 		newState match {
 			case UIList.ItemsSize(sizeCm) => {
 				itemSize = sizeCm
+				dirtyLayout = true
 			}
 			case UIList.Offset(amount) => {
 				offsety += amount*0.01
@@ -176,14 +178,20 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 	}
 
  	override def animateSpace() {
- 		scale1cm = self.parent.space.scale1cm
- 		toSpace.to.set(1, scale1cm * itemSize * avatar.subCount, 1)
- 		checkOffset
+  		if(dirtyLayout) {
+  			val oldsizey = toSpace.to.y
+ 			scale1cm = self.parent.space.scale1cm
+ 			toSpace.to.set(1, scale1cm * itemSize * avatar.subCount, 1)
+ 			
+ 			// If the sizey changed, this means the dpc or scale1cm changed,
+ 			// we must ask the parent to relayout anew since we changed size.
+ 			
+ 			if(oldsizey == toSpace.to.y)
+ 		 	     dirtyLayout = false	// Before subs, as they can ask a relayout.
+ 		 	else self.parent.space.asInstanceOf[UIAvatarSpace].layoutRequest
 
- 		//println(s"# layout list available space (${fromSpace.size(0)}, ${fromSpace.size(1)})")
- 		//println(s"#        list pos(${fromSpace.pos.x}, ${fromSpace.pos.y}) scale1cm=${scale1cm} items=${avatar.subCount} size=(${toSpace.to.x}, ${toSpace.to.y})")
-
- 		layoutSubs
+ 			layoutSubs
+		}
  	}
 
  	override def pushSubSpace() {
@@ -202,6 +210,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  		self.foreachSub { sub =>
  			sub.space.thisSpace.setSize(1, itemSize * scale1cm, 1)
  			sub.space.thisSpace.setPosition(0, itemSize * scale1cm * i, 0)
+ 			sub.space.asInstanceOf[UIAvatarSpace].layoutRequest
  			//println("    | layout %d %s".format(i, sub))
  			i += 1
  		}
@@ -239,8 +248,13 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 	override def animateSpace() {
  		scale1cm = self.parent.space.scale1cm
 
-		toSpace.from.set(0, 0, 0)
-		toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
+ 		if(dirtyLayout) {
+			toSpace.from.set(0, 0, 0)
+			toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
+		}
+		
+		// DirtyLayout flag is reset in super.animateSpace
+ 		
  		super.animateSpace
 	}
 
@@ -253,5 +267,14 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	override def popSubSpace() {
 		self.screen.space.pop
+	}
+
+	override def subCountChanged(delta:Int) {
+		dirtyLayout = true 
+
+		// The size of the list changed. Ask the parent to relayout.
+
+		if(self.parent ne null)
+			self.parent.space.asInstanceOf[UIAvatarSpace].layoutRequest
 	}
 }

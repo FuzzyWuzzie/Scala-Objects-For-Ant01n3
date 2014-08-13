@@ -92,8 +92,14 @@ class UIAvatarSpacePanel(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	override def animateSpace() {
 		scale1cm = self.parent.space.scale1cm
-		toSpace.from.set(0, 0, 0)
-		toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
+
+		if(dirtyLayout) {
+			toSpace.from.set(0, 0, 0)
+			toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
+		}
+
+		// dirtyLayout flag is reset in super.animateSpace.
+
 		super.animateSpace
 	}
 
