@@ -24,6 +24,10 @@ object UIList {
 
 	/** Message sent to the list to scroll at a given percent (0 to 1) in the list. Often used internally. */
 	case class OffsetAt(percent:Double) extends AvatarSpaceState {}
+
+	/** Message sent to the list to scroll of one or more complete visible page (negative numbers
+	  * are possible). */
+	case class OffsetPages(pages:Int) extends AvatarSpaceState {}
 }
 
 
@@ -39,7 +43,7 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 		event match {
 			case e:ScrollEvent => {
 				if(containsEvent(event)) {
-					space.changeSpace(UIList.Offset(e.delta.y*0.1))
+					space.changeSpace(UIList.Offset(e.delta.y))
 					true
 				} else {
 					false
@@ -47,12 +51,12 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 			}
 			case e:ActionKeyEvent => {
 				e.key match {
-					case PageUp   => { space.changeSpace(UIList.Offset(1)); true }
-					case PageDown => { space.changeSpace(UIList.Offset(1)); true }
+					case PageUp   => { space.changeSpace(UIList.OffsetPages(1)); true }
+					case PageDown => { space.changeSpace(UIList.OffsetPages(-1)); true }
 					case Begin    => { space.changeSpace(UIList.OffsetAt(0.0)); true }
 					case End      => { space.changeSpace(UIList.OffsetAt(1.0)); true }
-					case Up       => { space.changeSpace(UIList.Offset(0.1)); true }
-					case Down     => { space.changeSpace(UIList.Offset(0.1)); true }
+					case Up       => { space.changeSpace(UIList.Offset(1)); true }
+					case Down     => { space.changeSpace(UIList.Offset(-1)); true }
 					case _        => { false }
 				}
 			}
@@ -181,17 +185,21 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 				self.screen.requestRender
 			}
 			case UIList.Offset(amount) => {
-println("offset")
-				offsety += amount*0.01
+				offsety += amount * scale1cm
 				self.screen.requestRender
 				checkOffset
 			}
 			case UIList.OffsetAt(percent) => {
-println("offsetAt")
 				var p = max(0, min(1, percent))
 				self.screen.requestRender
 				var offsetMax = min(-(toSpace.sizey - fromSpace.sizey), 0)
 				offsety = offsetMax * p
+			}
+			case UIList.OffsetPages(pages) => {
+				self.screen.requestRender
+				offsety += fromSpace.sizey * pages
+				checkOffset
+
 			}
 			case _ => super.changeSpace(newState)
 		}
@@ -200,7 +208,6 @@ println("offsetAt")
 	protected def checkOffset() {
 		var offsetMax = min(-(toSpace.sizey - fromSpace.sizey), 0)
 
-//		if(offsetMax > 0) offsetMax = 0
 		if(offsety > 0) offsety = 0
 		else if(offsety < offsetMax) offsety = offsetMax
 	}

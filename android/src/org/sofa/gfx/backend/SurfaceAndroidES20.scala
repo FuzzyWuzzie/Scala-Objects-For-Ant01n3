@@ -11,6 +11,7 @@ import android.content.Context
 import android.app.Activity
 import android.view.{GestureDetector, ScaleGestureDetector, MotionEvent=>AndroidMotionEvent}
 import android.support.v4.view.GestureDetectorCompat
+import android.util.DisplayMetrics
 
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -40,9 +41,9 @@ class SurfaceAndroidES20(
     	/** Requested frames per second. */
 		protected[this] var expectedFps:Int = 30
 	) extends
-		GLSurfaceView(context, attrs)
+		GLSurfaceViewExt(context, attrs)	// See this in the Java part.
 		with Surface
-		with GLSurfaceView.Renderer
+		with GLSurfaceViewExt.Renderer
 		with SOFALog
 		with GestureDetector.OnGestureListener
         with GestureDetector.OnDoubleTapListener
@@ -117,6 +118,25 @@ class SurfaceAndroidES20(
     def width:Int = w
     def height:Int = h
     def fps:Int = expectedFps
+    def dpc:Double = {
+    	// Some android devices may change screen, for example phones that dock to tablets.
+
+    	if(dpcValue <= 0)
+    		dpcValue = computeDpc
+
+    	dpcAccess += 1
+
+    	if(dpcAccess > 120) {
+    		dpcValue = computeDpc
+    		dpcAccess = 0
+    	}
+
+    	dpcValue
+    }
+
+    protected[this] var dpcValue = 0.0
+    protected[this] var dpcAccess = 0
+
     def swapBuffers():Unit = {}	// Implicit with Android.
     
     def fps(newFps:Int) { expectedFps = newFps }
@@ -150,7 +170,7 @@ class SurfaceAndroidES20(
     	if((renderer ne null) && (renderer.initSurface ne null)) renderer.initSurface(gl, this)
     }
     
-    def onDrawFrame(unused:GL10) {
+    def onDrawFrame(unused:GL10):Boolean = {
 //debug(s"** onDrawFrame(${Thread.currentThread.getName})")
     	// It seems there is actually no better way to do FPS rendering than what
     	// follows. After all it is not really a problem, since the thread doing
@@ -170,7 +190,12 @@ class SurfaceAndroidES20(
     	// We mesure time between calls to this in order to consider the buffer swap time.
     	// Real rendering occurs here :
 
-        if(renderer.frame ne null) renderer.frame(this)
+    	var swap = false
+
+        if(renderer.frame ne null)
+        	swap = renderer.frame(this)
+
+        swap
     }
     
     def onSurfaceChanged(unused:GL10, width:Int, height:Int) {
@@ -270,7 +295,7 @@ class SurfaceAndroidES20(
 
     def onScroll(event1:AndroidMotionEvent, event2:AndroidMotionEvent, distanceX:Float, distanceY:Float):Boolean = {
     	if(! scaling) {
-    		queueEvent(ScrollEventAndroid(event2, Vector3(-distanceX, -distanceY, 0)))
+    		queueEvent(ScrollEventAndroid(event2, Vector3(px2cm(-distanceX), px2cm(-distanceY), 0)))
 	        true
     	} else {
     		false
@@ -317,5 +342,18 @@ class SurfaceAndroidES20(
 	def onScaleEnd(detector:ScaleGestureDetector) {
 		scaling = false
 		//queueEvent(ScaleEventAndroid(delta, 1))
+	}
+
+// -- Utility ----------------------------------------------
+
+    /** Knowning the DPC of the surface, convertex pixel distances to centimeters. */
+    def px2cm(px:Double):Double = px / dpc 
+
+	/** Compute the dots-per-centimeter of the current device screen. */
+	protected def computeDpc():Double = {
+		context.getResources.getDisplayMetrics.densityDpi / 2.54
+		// val dm = new DisplayMetrics
+  //   	getWindowManager.getDefaultDisplay.getMetrics(dm)
+  //   	dm.densityDpi / 2.54
 	}
 }

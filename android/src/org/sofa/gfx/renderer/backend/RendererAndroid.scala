@@ -1,4 +1,4 @@
-package org.sofa.gfx.actor.renderer.backend
+package org.sofa.gfx.renderer.backend
 
 import android.app.Activity
 import android.opengl.GLSurfaceView
@@ -6,10 +6,10 @@ import android.opengl.GLSurfaceView
 
 import org.sofa.backend.SOFALog
 import org.sofa.math.Point3
-import org.sofa.gfx.actor.renderer.{Renderer, RendererFactory, AvatarFactory}
+import org.sofa.gfx.renderer.{Renderer, RendererFactory, AvatarFactory}
 import org.sofa.gfx.surface.{Surface, SurfaceRenderer}
 
-import org.sofa.gfx.backend.{SurfaceAndroidES20}
+import org.sofa.gfx.backend.{SurfaceAndroidES20, GLSurfaceViewExt}
 
 import akka.actor.{ActorRef}
 
@@ -41,5 +41,5 @@ class RendererAndroidES20(activity:Activity, factory:AvatarFactory=null) extends
 	/** The underlying surface, as a view usable to insert it in an activity.
 	  * This is the same object as the surface field, but casted as a
 	  * GlSurfaceView. */
-	def glSurfaceView:GLSurfaceView = surface.asInstanceOf[GLSurfaceView]
+	def glSurfaceView:GLSurfaceViewExt = surface.asInstanceOf[GLSurfaceViewExt]
 }

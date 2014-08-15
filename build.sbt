@@ -4,13 +4,13 @@ version := "0.1"
 
 scalaVersion := "2.11.0"
 
-scalacOptions += "-deprecation"
-
-scalacOptions += "-feature" 
-
-scalacOptions += "-Ydelambdafy:method"
-
-scalacOptions += "-target:jvm-1.7"
+scalacOptions ++= Seq(
+	"-deprecation",
+	"-feature",
+	"-Ydelambdafy:method",
+	"-target:jvm-1.7",
+	"-language:implicitConversions"
+)
 
 fork := true
 

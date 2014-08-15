@@ -107,8 +107,10 @@ trait SurfaceRenderer {
 	  * `close` are called before. */
 	var initSurface:(SGL,Surface)=>Unit = null
 
-	/** Called at each frame (either periodically or when the [[Surface]] needs a redraw). */
-	var frame:(Surface)=>Unit = null
+	/** Called at each frame (either periodically or when the [[Surface]] needs a redraw).
+	  * Return true if you wan the surface to swap the front and back buffers (if double
+	  * buffering is enabled).  */
+	var frame:(Surface)=>Boolean = null
 	
 	/** Code to call at each surface reconfiguration. */
 	var surfaceChanged:(Surface)=>Unit = null

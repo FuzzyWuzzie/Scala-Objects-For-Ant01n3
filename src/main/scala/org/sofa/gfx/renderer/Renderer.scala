@@ -281,18 +281,23 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 
 	/** Render the current screen. If no screen is current, a red background is drawn.
 	  * This method is automatically called, never call it directly. See `requestRender()`. */
-	def render(surface:Surface) {
+	def render(surface:Surface):Boolean = {
+		var swap = false
+
 Timer.timer.measure("Renderer.render") {
 Timer.timer.measure("Renderer.animate") {
 		animate
 }
+
 		if(screen ne null) {
 			if(continuousRender) {
 				screen.render
+				swap = true
 			} else {
 				if(dirty) {
 					dirty = false	// Before in case a sub-avatar resquest a render during the rendering process.
 					screen.render
+					swap = true
 				}
 			}
 		} else {
@@ -302,6 +307,7 @@ Timer.timer.measure("Renderer.animate") {
 
 	    gl.checkErrors
 }
+		swap
 	}
 
 	def animate() { if(screen ne null) screen.animate }

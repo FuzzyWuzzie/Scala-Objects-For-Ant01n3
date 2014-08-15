@@ -150,6 +150,7 @@ class SurfaceNewt(
 	    win.setSize(w + win.getInsets.getTotalWidth, h + win.getInsets.getTotalHeight)
 	    win.setTitle(title)
 	    win.setDefaultCloseOperation(WindowClosingMode.DO_NOTHING_ON_CLOSE)
+	    win.setAutoSwapBufferMode(false)
 
 	    win.addWindowListener(this)
 	    win.addMouseListener(this)
@@ -187,9 +188,13 @@ class SurfaceNewt(
     def display(win:GLAutoDrawable) {
     	processEvents
     	singleTapEventValidation
+    	var swap = false
 
     	if(renderer.frame ne null)
-    		renderer.frame(this)
+    		swap = renderer.frame(this)
+    	
+    	if(swap)
+    		win.swapBuffers
     }
     
     def dispose(win:GLAutoDrawable) { 
@@ -244,7 +249,7 @@ class SurfaceNewt(
   
     	dpcAsked += 1
   
-    	if(dpcAsked > 30) {
+    	if(dpcAsked > 60) {
     		savedDpc = computeDpc
     		dpcAsked = 0
     	}
@@ -410,7 +415,7 @@ println("SurfaceJogl waiting animator to stop %d".format(i))
     				previousPos = Point3(e.getX, e.getY, 0)
     				eventQueue.add(ScrollEventJogl(e, -1, Vector3(0,0,0)))
     			} else {
-    				eventQueue.add(ScrollEventJogl(e, 0, Vector3(e.getX-previousPos.x, e.getY-previousPos.y, 0)))
+    				eventQueue.add(ScrollEventJogl(e, 0, Vector3(px2cm(e.getX-previousPos.x), px2cm(e.getY-previousPos.y), 0)))
     				previousPos.set(e.getX, e.getY, 0)
     			}
     		}
@@ -425,7 +430,7 @@ println("SurfaceJogl waiting animator to stop %d".format(i))
     			eventQueue.add(MotionEventJogl(e, 1))
 
     		if(previousPos ne null) {
-    			eventQueue.add(ScrollEventJogl(e, 1, Vector3(e.getX-previousPos.x, e.getY-previousPos.y, 0)))
+    			eventQueue.add(ScrollEventJogl(e, 1, Vector3(px2cm(e.getX-previousPos.x), px2cm(e.getY-previousPos.y), 0)))
     			previousPos = null 
     		} else if(hlEvents) {
         		e.getButton match {
@@ -456,7 +461,7 @@ println("SurfaceJogl waiting animator to stop %d".format(i))
 				eventQueue.add(ScaleEventJogl(e, 0))
 			} else {
 				val a = e.getRotation
-				eventQueue.add(ScrollEventJogl(e, 0, Vector3(0, a(1), 0)))
+				eventQueue.add(ScrollEventJogl(e, 0, Vector3(0, px2cm(a(1)), 0)))
 			}
     	}
     }
@@ -529,4 +534,7 @@ println("SurfaceJogl waiting animator to stop %d".format(i))
 
     	diagpx / diagcm
     }
+
+    /** Knowning the DPC of the surface, convertex pixel distances to centimeters. */
+    def px2cm(px:Double):Double = px / dpc 
 }

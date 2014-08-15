@@ -40,7 +40,8 @@ trait FlingEvent extends GestureEvent {
 
 
 trait ScrollEvent extends GestureEvent {
-	/** Amount of displacement since last scroll event (cumulative). */
+	/** Amount of displacement since last scroll event (cumulative).
+	  * The amounts given here are in centimeters. */
 	def delta:Vector3
 
 	/** Speed factor. */

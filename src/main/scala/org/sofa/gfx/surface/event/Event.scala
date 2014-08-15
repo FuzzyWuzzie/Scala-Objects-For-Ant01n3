@@ -126,7 +126,8 @@ trait Event {
   * several positions or pointers at once. This is usually the case with touch
   * devices where one or more fingers can be used to do an action. */
 trait SpatialEvent extends Event {
-	/** Actual position of the device pointer(s).
+	/** Actual position of the device pointer(s) in pixels with X axis positive going right,
+	  * Y axis positive going down and origin at upper-left corner.
 	  * By default the first pointer position is given. You can obtain the
 	  * number of pointers with `pointerCount`. */
 	def position(pointer:Int=0):Point3
