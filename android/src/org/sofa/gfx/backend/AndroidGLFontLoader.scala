@@ -1,7 +1,7 @@
 package org.sofa.gfx.backend
 
 import org.sofa.Timer
-import org.sofa.gfx.{SGL, Texture, TexParams}
+import org.sofa.gfx.{SGL, Texture, TexParams, TexAlpha}
 import org.sofa.backend.AndroidLoader
 import android.content.res.Resources
 import android.graphics.{Bitmap, Canvas, Paint, Typeface, Matrix}
@@ -15,7 +15,7 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 	//def load(gl:SGL, resource:String, size:Int, font:GLFont) {
 		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
 
-		font.isAlphaPremultiplied = false
+		font.isAlphaPremultiplied = true
 
 		// Load the font.
 
@@ -110,8 +110,11 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 
 		// Generate a new texture.
 
-//		font.texture = new Texture(gl, new TextureImageAndroid(bitmap, TexParams()), TexParams())
-		font.texture = new Texture(gl, new TextureImageAndroid(flipUpsideDown(bitmap), TexParams()), TexParams())
+
+		val params = if(font.isAlphaPremultiplied) TexParams(alpha = TexAlpha.Premultiply) else TexParams()
+
+//		font.texture = new Texture(gl, new TextureImageAndroid(bitmap, params), params)
+		font.texture = new Texture(gl, new TextureImageAndroid(flipUpsideDown(bitmap), params), params)
 		font.texture.minMagFilter(gl.NEAREST, gl.LINEAR)
 		font.texture.wrap(gl.CLAMP_TO_EDGE)
 

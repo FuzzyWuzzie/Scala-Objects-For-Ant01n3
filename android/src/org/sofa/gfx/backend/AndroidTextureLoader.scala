@@ -217,11 +217,12 @@ class TextureImageAndroid(val data:ScalaArrayBuffer[Bitmap], val params:TexParam
     	 			gl.texImage2D(mode, level, GLES20.GL_ALPHA, data(level).getWidth, data(level).getHeight, 0, GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, bytes)
     	 		}
     		} else {
-   			if(params.alpha == TexAlpha.Premultiply) {
-    				val bytes = imageDataRgba(data(level), true)
+   				if(params.alpha != TexAlpha.Premultiply) {
+    		 		val bytes = imageDataRgba(data(level), false)
 
-    				gl.texImage2D(mode, level, GLES20.GL_RGBA, data(level).getWidth, data(level).getHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, bytes) 
-    			} else {
+    		 		gl.texImage2D(mode, level, GLES20.GL_RGBA, data(level).getWidth, data(level).getHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, bytes) 
+    		 	} else {
+    				// GLUtils will always premultiply alpha, not an option.
 	        		GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_RGBA,  data(level), 0)
     			}
         	}
@@ -239,6 +240,7 @@ class TextureImageAndroid(val data:ScalaArrayBuffer[Bitmap], val params:TexParam
     	val bytes  = ByteBuffer(width*height*4, true)
 
     	// Very very inefficient.
+Console.err.println("## Be careful very slow texImage2D for bitmap with non premultiplied alpha")
 
     	var b = 0
     	var y = height - 1
