@@ -39,7 +39,7 @@ class SurfaceAndroidES20(
 		context:Context,
 		attrs:android.util.AttributeSet,
     	/** Requested frames per second. */
-		protected[this] var expectedFps:Int = 30
+		protected[this] var expectedFps:Int
 	) extends
 		GLSurfaceViewExt(context, attrs)	// See this in the Java part.
 		with Surface
@@ -89,6 +89,10 @@ class SurfaceAndroidES20(
     protected[this] var noButtonMotionEvents = false
 
 // -- Build --------------------
+
+	def this(context:Context, attrs:android.util.AttributeSet) {
+		this(context, attrs, 30)
+	}
 
     def build(renderer:SurfaceRenderer, activity:Activity) {
     	build(renderer, activity, 30)

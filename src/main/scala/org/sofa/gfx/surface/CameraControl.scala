@@ -13,8 +13,8 @@ class BasicCameraController(val camera:Camera) {
 	def gesture(surface:Surface, e:GestureEvent) {
 		e match {
 			case scroll:ScrollEvent => {
-				camera.rotateEyeHorizontal(scroll.delta.x * step * 0.05)
-				camera.rotateEyeVertical(scroll.delta.y * step * 0.05)
+				camera.rotateEyeHorizontal(scroll.delta.x * step * 0.5)
+				camera.rotateEyeVertical(-scroll.delta.y * step * 0.5)
 			}
 			case scale:ScaleEvent => {
 				camera.eyeTraveling(scale.delta * 0.05)
@@ -37,9 +37,9 @@ class BasicCameraController(val camera:Camera) {
 		}
 	} 
 
-	def unicode(surface:Surface, e:UnicodeEvent) {
-	}  
+	def unicode(surface:Surface, e:UnicodeEvent) {}
 	
-	def motion(surface:Surface, e:MotionEvent) {
-	}
+	def motion(surface:Surface, e:MotionEvent) {}
+
+	def shortcut(surface:Surface, e:ShortCutEvent) {}
 }

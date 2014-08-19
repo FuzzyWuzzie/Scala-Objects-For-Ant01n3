@@ -1,12 +1,12 @@
 #version 110
 //precision highp float;
 //precision highp int;
-#include <es2/lightStruct.glsl>
 
 varying vec3 vNormal;
 varying vec3 vPosition;
 varying vec4 vColor;
 
+#include <es2/lightStruct.glsl>
 uniform Light light;
 
 void main(void) {

@@ -501,7 +501,7 @@ object GLString {
 class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	/** Mesh used to build the quads of the batch. */
 	//protected[this] val batchMesh = new QuadsMesh(maxCharCnt)
-	protected[this] val batchMesh = new TrianglesMesh(maxCharCnt*2)
+	protected[this] val batchMesh = new TrianglesMesh(maxCharCnt * 2)
 	// Cannot use triangle strips, since chars can overlap (kerning).
 
 	/** Rendering color. */
@@ -541,7 +541,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		import VertexAttribute._
 		// set a vertex and a texcoord to declare the mesh has having these attributes.
 		batchMesh v(0) xyz (0,0,0) uv (0,0)
-		batchMesh.newVertexArray(gl, font.shader, Vertex -> "position", TexCoord -> "texCoords")
+		batchMesh.newVertexArray(gl, gl.DYNAMIC_DRAW, font.shader, Vertex -> "position", TexCoord -> "texCoords")
 	}
 
 	/** Release the resources of this string, the string is no more usable after this. */
@@ -617,7 +617,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 	    font.shader.uniform("textColor", clr)
 	    camera.uniformMVP(font.shader)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)		
+		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
 	}
 
 	def render(mvp:Matrix4) {
@@ -678,19 +678,12 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 			//  v   |/ |     |
 			// v2   0--1   >-+ CCW
 
-			// Vertices
+			// Vertices & TexCoords
 
-			batchMesh.setPoint(p,   X,   Y,   0)
-			batchMesh.setPoint(p+1, X+W, Y,   0)
-			batchMesh.setPoint(p+2, X+W, Y+H, 0)
-			batchMesh.setPoint(p+3, X,   Y+H, 0)
-
-			// TexCoords
-
-			batchMesh.setPointTexCoord(p,   rgn.u1, rgn.v2)
-			batchMesh.setPointTexCoord(p+1, rgn.u2, rgn.v2)
-			batchMesh.setPointTexCoord(p+2, rgn.u2, rgn.v1)
-			batchMesh.setPointTexCoord(p+3, rgn.u1, rgn.v1)
+			batchMesh v(p+0) xyz(X,   Y,   0) uv(rgn.u1, rgn.v2)
+			batchMesh v(p+1) xyz(X+W, Y,   0) uv(rgn.u2, rgn.v2)
+			batchMesh v(p+2) xyz(X+W, Y+H, 0) uv(rgn.u2, rgn.v1)
+			batchMesh v(p+3) xyz(X,   Y+H, 0) uv(rgn.u1, rgn.v1)
 
 			// The triangles
 

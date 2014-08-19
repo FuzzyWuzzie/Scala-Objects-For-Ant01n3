@@ -61,10 +61,6 @@
 ## Events
 
 * Shortcuts
-* Define units in Scale and Scroll to better interpret moves:
-    - Use percents of the screen ?
-    - Use pixels (depend on resolution) ?
-    - Other ?
 
 ## Game
 

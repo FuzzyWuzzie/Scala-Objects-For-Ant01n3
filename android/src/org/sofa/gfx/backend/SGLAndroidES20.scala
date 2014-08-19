@@ -247,7 +247,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer, alsoPositionInData:Boolean) {
 		val buffer = data.buffer.asInstanceOf[NioIntBuffer]
 		if(alsoPositionInData) { buffer.clear; buffer.position(offset) }
-		GLES20.glBufferSubData(target, offset, size, buffer)
+		GLES20.glBufferSubData(target, offset*4, size*4, buffer)
 		if(alsoPositionInData) buffer.clear
 	}
 	

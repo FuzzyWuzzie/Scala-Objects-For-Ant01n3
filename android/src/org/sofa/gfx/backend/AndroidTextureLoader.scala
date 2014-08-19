@@ -206,24 +206,24 @@ class TextureImageAndroid(val data:ScalaArrayBuffer[Bitmap], val params:TexParam
 				val align = gl.getInteger(gl.UNPACK_ALIGNMENT)
 	        	val pad   = (align - (width % align)) % align
     	     
-				if(pad == 0) {
-    	    		GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_ALPHA, data(level), 0)
-    	 		} else {
+				// if(pad == 0) {
+    // 	    		GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_ALPHA, data(level), 0)
+    // 	 		} else {
     	 			// We need to align the image data with the unpack alignment
     	 			// in order to have an efficient texture memory access.
 
     	 			val bytes = imageDataGray(data(level), align)
 
     	 			gl.texImage2D(mode, level, GLES20.GL_ALPHA, data(level).getWidth, data(level).getHeight, 0, GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, bytes)
-    	 		}
+    	 		// }
     		} else {
-    			if(params.alpha == TexAlpha.Premultiply) {
+//    			if(params.alpha == TexAlpha.Premultiply) {
     				val bytes = imageDataRgba(data(level), true)
 
     				gl.texImage2D(mode, level, GLES20.GL_RGBA, data(level).getWidth, data(level).getHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, bytes) 
-    			} else {
-	        		GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_RGBA,  data(level), 0)
-    			}
+    			// } else {
+	      //   		GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_RGBA,  data(level), 0)
+    			// }
         	}
 
         	level += 1
@@ -287,11 +287,11 @@ Console.err.println("## Be careful very slow texImage2D for grey bitmap with unp
         val bytes = ByteBuffer(width*height, true)
         image.copyPixelsToBuffer(bytes.buffer.asInstanceOf[java.nio.ByteBuffer]) 
 
-		var y = 0        
+		var y = height - 1    
 		var x = 0
 		var b = 0
 
-		while(y < height) {
+		while(y >= 0) {
             x = 0
             while(x < width) {
             	buf(b) = bytes(y*width+x)
@@ -299,7 +299,7 @@ Console.err.println("## Be careful very slow texImage2D for grey bitmap with unp
             	b += 1
             }
             b += pad
-            y += 1
+            y -= 1
 		}
 
 //        var b = 0

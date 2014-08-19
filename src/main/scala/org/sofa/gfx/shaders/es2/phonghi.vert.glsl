@@ -1,5 +1,4 @@
 #version 110
-#include <es2/lightStruct.glsl>
 
 attribute vec3 position;
 attribute vec4 color;
@@ -9,6 +8,7 @@ uniform mat4 MVP;
 uniform mat4 MV;
 uniform mat3 MV3x3;
 
+#include <es2/lightStruct.glsl>
 uniform Light light;
 
 varying vec3 vNormal;

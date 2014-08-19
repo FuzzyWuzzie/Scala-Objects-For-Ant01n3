@@ -129,7 +129,7 @@ object Shader {
         		buf.insert(1, "out vec4 mgl_FragColor;%n".format())
         	}
         }
-        if(version < 130) {
+        if(version < 130 && depth == 0) {
         	buf.insert(1, "precision mediump float;%n".format())
         	buf.insert(1, "precision mediump int;%n".format())
         }

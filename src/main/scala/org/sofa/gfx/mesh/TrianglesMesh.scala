@@ -218,9 +218,9 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	  * that you want to update or not. */
 	def updateVertexArray(gl:SGL, updateVertices:Boolean=false, updateColors:Boolean=false, updateNormals:Boolean=false, updateTexCoords:Boolean=false) {
 		if(va ne null) {
-			if(updateVertices) V.update(va)
-			if(updateNormals) N.update(va)
-			if(updateColors) C.update(va)
+			if(updateVertices)  V.update(va)
+			if(updateNormals)   N.update(va)
+			if(updateColors)    C.update(va)
 			if(updateTexCoords) T.update(va)
 			I.update(va)
 		}

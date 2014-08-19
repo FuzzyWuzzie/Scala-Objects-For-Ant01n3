@@ -35,29 +35,25 @@
 // What we need is only to avoid doing a swap buffers if we did
 // not render anything. GLSurfaceView sadly forces a swap after each
 // render (other API do not, they give control of buffer swap, note to
-// Android developpers). 
+// Android developpers... ;-) ). 
 //
 // Taking control of the buffer swapping is quite difficult in Android.
 // It seems one has to learn the complete EGL spec, and redo GLSurfaceView.
-// Inheriting GLSurfaceView to change only what is needed is not possible.
-// First the running code is in GLThread an inner class, then it is not
+// Inheriting GLSurfaceView to change only what is needed is not possible
+// First most fields are private. Second the running code is in GLThread
+// an inner class and it is not
 // possible to change the GLThread implementation without modifying
 // GLSurfaceView. Finally, the GLThread code is... no words can describe
 // this.
 //
 // Instead of this I merely copied it and changed what is needed. I took
 // this decision relentlessly, after having tried every possible things I
-// thought was cleaner. It is with a lot of sadness that I must resign
-// to dot this.
-//
-// Sad :'(
+// thought was cleaner... :'(
 //
 // The changes concern only the GLSurfaceView.Renderer.onDrawFrame()
 // method that returns true if a swap is needed. The rest of the changes
 // concern the renaming of the class and some classes that are not
-// accessible to mortals like me since not exported publicly by the SDK.
-// (which is also a clear indication that this thing is dirty, but hey
-// Android developpers, make something cleaner, please !!).
+// accessible to mortals since not exported publicly by the SDK.
 
 
 package org.sofa.gfx.backend;
