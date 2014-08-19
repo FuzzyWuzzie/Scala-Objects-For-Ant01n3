@@ -206,24 +206,24 @@ class TextureImageAndroid(val data:ScalaArrayBuffer[Bitmap], val params:TexParam
 				val align = gl.getInteger(gl.UNPACK_ALIGNMENT)
 	        	val pad   = (align - (width % align)) % align
     	     
-				// if(pad == 0) {
-    // 	    		GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_ALPHA, data(level), 0)
-    // 	 		} else {
+				if(pad == 0) {
+    	    		GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_ALPHA, data(level), 0)
+    	 		} else {
     	 			// We need to align the image data with the unpack alignment
     	 			// in order to have an efficient texture memory access.
 
     	 			val bytes = imageDataGray(data(level), align)
 
     	 			gl.texImage2D(mode, level, GLES20.GL_ALPHA, data(level).getWidth, data(level).getHeight, 0, GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, bytes)
-    	 		// }
+    	 		}
     		} else {
-//    			if(params.alpha == TexAlpha.Premultiply) {
+   			if(params.alpha == TexAlpha.Premultiply) {
     				val bytes = imageDataRgba(data(level), true)
 
     				gl.texImage2D(mode, level, GLES20.GL_RGBA, data(level).getWidth, data(level).getHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, bytes) 
-    			// } else {
-	      //   		GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_RGBA,  data(level), 0)
-    			// }
+    			} else {
+	        		GLUtils.texImage2D(gl.TEXTURE_2D, level, GLES20.GL_RGBA,  data(level), 0)
+    			}
         	}
 
         	level += 1

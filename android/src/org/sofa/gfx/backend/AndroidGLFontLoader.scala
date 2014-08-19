@@ -4,7 +4,7 @@ import org.sofa.Timer
 import org.sofa.gfx.{SGL, Texture, TexParams}
 import org.sofa.backend.AndroidLoader
 import android.content.res.Resources
-import android.graphics.{Bitmap, Canvas, Paint, Typeface}
+import android.graphics.{Bitmap, Canvas, Paint, Typeface, Matrix}
 import org.sofa.gfx.text.{GLFont, GLFontLoader, TextureRegion}
 
 import scala.math._
@@ -15,7 +15,7 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 	//def load(gl:SGL, resource:String, size:Int, font:GLFont) {
 		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
 
-		font.isAlphaPremultiplied = true
+		font.isAlphaPremultiplied = false
 
 		// Load the font.
 
@@ -110,7 +110,8 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 
 		// Generate a new texture.
 
-		font.texture = new Texture(gl, new TextureImageAndroid(bitmap, TexParams()), TexParams())
+//		font.texture = new Texture(gl, new TextureImageAndroid(bitmap, TexParams()), TexParams())
+		font.texture = new Texture(gl, new TextureImageAndroid(flipUpsideDown(bitmap), TexParams()), TexParams())
 		font.texture.minMagFilter(gl.NEAREST, gl.LINEAR)
 		font.texture.wrap(gl.CLAMP_TO_EDGE)
 
@@ -134,6 +135,14 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 
 			c += 1
 		}
+	}
+
+	protected def flipUpsideDown(src:Bitmap):Bitmap = {
+    	val matrix = new Matrix()
+
+        matrix.preScale(1.0f, -1.0f)
+ 
+    	Bitmap.createBitmap(src, 0, 0, src.getWidth, src.getHeight, matrix, true)
 	}
 
 	protected def loadFont(resource:String):Typeface = Typeface.createFromAsset(resources.getAssets, searchInAssets(resource, GLFont.path))
