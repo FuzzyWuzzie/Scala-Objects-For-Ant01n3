@@ -50,7 +50,7 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 			val fromy  = pspace.fromy
 			val sizex  = pspace.sizex
 			val sizey  = pspace.sizey
-			val subs   = parent.iterator
+			val subs   = parent.filteredIterator
 			val sub0   = subs.next
 			val sub1   = subs.next
 

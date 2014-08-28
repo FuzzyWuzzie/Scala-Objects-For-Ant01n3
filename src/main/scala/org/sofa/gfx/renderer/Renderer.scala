@@ -284,11 +284,10 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 	def render(surface:Surface):Boolean = {
 		var swap = false
 
-Timer.timer.measure("Renderer.render") {
 Timer.timer.measure("Renderer.animate") {
 		animate
 }
-
+Timer.timer.measure("Renderer.render") {
 		if(screen ne null) {
 			if(continuousRender) {
 				screen.render

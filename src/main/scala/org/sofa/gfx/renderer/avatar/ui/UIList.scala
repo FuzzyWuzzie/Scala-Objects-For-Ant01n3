@@ -5,7 +5,10 @@ import scala.math._
 import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
 import org.sofa.gfx.{ShaderResource}
 import org.sofa.gfx.renderer.{Screen}
-import org.sofa.gfx.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState}
+import org.sofa.gfx.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName,
+                              AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer,
+                              AvatarFactory, DefaultAvatarFactory, AvatarSpaceState,
+                              AvatarRenderState, AvatarState}
 import org.sofa.gfx.surface.event._
 import org.sofa.gfx.renderer.{NoSuchAvatarException}
 
@@ -22,7 +25,8 @@ object UIList {
 	/** Message sent to the list to scroll. Often used internally. */
 	case class Offset(amount:Double) extends AvatarSpaceState {}
 
-	/** Message sent to the list to scroll at a given percent (0 to 1) in the list. Often used internally. */
+	/** Message sent to the list to scroll at a given percent (0 to 1) in the list. Often used 
+	  *internally. */
 	case class OffsetAt(percent:Double) extends AvatarSpaceState {}
 
 	/** Message sent to the list to scroll of one or more complete visible page (negative numbers
@@ -244,7 +248,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
  	protected def layoutSubs() {
  		var i = 0
- 		self.foreachSub { sub =>
+ 		self.foreachFilteredSub { sub =>
  			sub.space.thisSpace.setSize(1, itemSize * scale1cm, 1)
  			sub.space.thisSpace.setPosition(0, itemSize * scale1cm * i, 0)
  			sub.space.asInstanceOf[UIAvatarSpace].layoutRequest

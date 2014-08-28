@@ -67,6 +67,7 @@ class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with And
 		val bitmap = Bitmap.createBitmap(textureSize, textureSize, Bitmap.Config.ARGB_8888)
       	val image  = new Canvas(bitmap)
       	
+//	      	bitmap.setPremultiplied(font.isAlphaPremultiplied)	// API level 19, by default anyway.
       	bitmap.eraseColor(0x00000000)			// Set Transparent Background (ARGB)
 
 		// Find the maximum size, validate, and setup cell sizes.

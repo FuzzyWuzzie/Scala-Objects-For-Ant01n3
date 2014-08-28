@@ -20,12 +20,19 @@
 
 ## Avatars
 
-* Handle *ordered rendering* in AvatarContainer.
-    - It is handled, but probably not efficient : a Z-sort (indeed Y here) before each frame.
-    - -> This is specific to games.
-* Handle *selective rendering*, based on a visibility function (use a SpaceHash ?)
-    - -> this is specific to each avatar sub-library (UI, Game, ect.) Partly done in UI.
-* Handle *picking -> allow avatars to register in a spaceHash ? 
+* Rationale on the new *ordered and filtered rendering* in `AvatarContainer`:
+    - It is possible to specify a `RenderFilter`.
+    - The render filter selects which sub-avatars are rendered and in which order.
+    - There are actually two ways to specify the filter:
+        + a list of names.
+        + a predicate and an order (select and sort).
+    - Actually filters are objects that have a "dirty" flag.
+        + This flag is set automatically when the filter is first set and when avatars are added or removed.
+        + There is a "requestFiltering" option that allows avatars or users to ask the filter to run anew.
+    - -> the next thing to determine is how to choose when this flag is set ?
+        + With events ? (AvatarAdded, AvatarRemoved, Frame, AvatarAnimated ?)
+        + Uniquely with the requestFiltering call ?
+* Handle *picking* -> allow avatars to register in a spaceHash ? 
     - a general one ? one per sub-avatar ? one in a specific avatar ?
     - When several avatars are picked, how to sort them ?
     - -> this is specific to each avatar sub-library (UI, Game, etc.) Partly done in UI.
@@ -42,15 +49,15 @@
 * Handle animation of particles in behaviors ?
     - Allow a part of an armature to be instanced multiple times for particles ?
     - Already possible with almost no change in the Armature.
-* Add "Composition" behavior to activate several behaviors at will.
-* Add "InParallelLoop" that runs several behaviors in parallel repeating them as fast as possible.
+* Add `Composition` behavior to activate several behaviors at will.
+* Add `InParallelLoop` that runs several behaviors in parallel repeating them as fast as possible.
     The current way is to put a "InParallel" in a "Loop", but this forces to wait for the end
     of the longest behavior in the "InParallel" behavior.
-* Add "FromVariable" behavior that scale a value (scale, translation, angle) to an external variable. Question : how to specify how to reach/read the variable. (via an interface on objects that can be named in the library ? --> AnimatedValues ?)
+* Add `FromVariable` behavior that scale a value (scale, translation, angle) to an external variable. Question : how to specify how to reach/read the variable. (via an interface on objects that can be named in the library ? --> AnimatedValues ?)
 
 ## Library/Resources
 
-* Allow the Library to be actor based, loading elements in the background ? Return a Future instead of an item ? How to handle the fact OpenGL is not thread safe ?
+* Allow the `Library` to be actor based, loading elements in the background ? Return a Future instead of an item ? How to handle the fact OpenGL is not thread safe ?
 * Change the loadresources of Libraries, the XML lib of Scala is very slow. A dedicated format ? JSON ??
     - JSON done but loading is still very slow -> use a dedicated parser done with Jackson.
 

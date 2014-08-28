@@ -84,16 +84,18 @@ abstract class Avatar(
 	/** By default handles avatar space and render states otherwise throw a NoSuchAvatarStateException. */
 	def change(state:AvatarState) {
 		var used = false
+		
+		// Cannot use a match, since the state can be sent several times.
 		if(state.isInstanceOf[AvatarSpaceState])  { used = true; space.changeSpace(state.asInstanceOf[AvatarSpaceState]) }
 		if(state.isInstanceOf[AvatarRenderState]) { used = true; renderer.changeRender(state.asInstanceOf[AvatarRenderState]) }
-		// state match {
-		// 	case st:AvatarSpaceState => space.changeSpace(st)
-		// 	case st:AvatarRenderState => renderer.changeRender(st)
-		// 	case _ => throw NoSuchAvatarStateException(state)
-		// }
 
-		if(! used)
-			throw new NoSuchAvatarStateException(state)
+		if(! used) {
+			state match {
+				case AvatarBaseStates.RenderFilter(filter) => renderFilter(filter)
+				case AvatarBaseStates.RenderFilterRequest() => renderFilterRequest
+				case _ => throw new NoSuchAvatarStateException(state)
+			}
+		}
 	}
 
 // Sub-Avatars
@@ -159,6 +161,10 @@ abstract class Avatar(
 	/** Apply the given `code` to each sub-avatar. */
 	def foreachSub(code:(Avatar)=>Unit)
 
+	/** Apply the given `code` to each sub-avatar in the render filter. If there is
+	  * no render filter this is applied to each sub-avatar. */
+	def foreachFilteredSub(code:(Avatar)=>Unit)
+
 	/** Find the first sub-avatar that matches the given `predicate`. */
 	def findSub(predicate:(Avatar)=>Boolean):Option[Avatar]
 
@@ -204,13 +210,14 @@ abstract class DefaultAvatarMixed(name:AvatarName, screen:Screen) extends Defaul
 
 	override def animate() { animateSpace; animateRender; animateSubs }
 
-	override def change(state:AvatarState) {
-		state match {
-			case st:AvatarSpaceState => changeSpace(st)
-			case st:AvatarRenderState => changeRender(st)
-			case _ => throw NoSuchAvatarStateException(state)
-		}
-	}
+// Not needed and bugged (state can be sent to sapce AND render)
+// 	override def change(state:AvatarState) {
+// 		state match {
+// 			case st:AvatarSpaceState => changeSpace(st)
+// 			case st:AvatarRenderState => changeRender(st)
+// 			case _ => throw NoSuchAvatarStateException(state)
+// 		}
+// 	}
 }
 
 
