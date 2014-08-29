@@ -7,6 +7,11 @@ import org.sofa.math.{Vector3, Point3, NumberSeq3, Rgba}
 import org.sofa.collection.{SpatialCube, SpatialHash, SpatialHashException}
 
 
+object AvatarContainer {
+	final val EmptySubs = new ArrayBuffer[Avatar]()
+}
+
+
 /** Something that can contain avatars and helpers to render and animate them. */
 trait AvatarContainer extends Iterable[Avatar] {
 
@@ -58,6 +63,9 @@ trait AvatarContainer extends Iterable[Avatar] {
 	  * at start. Automatic filter requests are issued when a new avatar is added or when
 	  * one is removed. */
 	def renderFilterRequest()
+
+	/** Fun the render filter if needed. This is called from the `animate`. */
+	def renderFilterSubs()
 
 	/** Access to all sub-avatars. */
 	def iterator:Iterator[Avatar]
@@ -175,6 +183,8 @@ trait AvatarContainerHashMap extends AvatarContainer {
 	def renderFilter(filter:RenderFilter) { throw new RuntimeException("TODO renderFilter()") }
 
 	def renderFilterRequest() { throw new RuntimeException("TODO renderFilterRequest()") }
+
+	def renderFilterSubs() { throw new RuntimeException("TODO renderFilterSubs()") }
 }
 
 
@@ -219,8 +229,7 @@ trait AvatarContainerArray extends AvatarContainer {
 				subs += avatar
 				if(self ne null) // for screen
 					self.space.subCountChanged(1)
-				if(filter ne null)
-					filter.requestFiltering
+				renderFilterRequest
 				avatar
 			} else {
 				subs.find(_.name.equalPrefix(prefix, path)) match {
@@ -251,8 +260,7 @@ trait AvatarContainerArray extends AvatarContainer {
 					// 	val i = renderedSubs.indexWhere(_.name == path)
 					// 	if(i >= 0) renderedSubs.remove(i)
 					// }
-					if(filter ne null)
-						filter.requestFiltering
+					renderFilterRequest
 					a
 				} else {
 					subs.find(_.name.equalPrefix(prefix, path)) match {
@@ -268,9 +276,6 @@ trait AvatarContainerArray extends AvatarContainer {
 
 	def renderSubs() {
 		if(subs ne null) {
-			if((filter ne null) && filter.isDirty)
-				renderedSubs = filter.filter(iterator)
-
 			val s = if(renderedSubs ne null) renderedSubs else subs
 			var i = 0
 			val n = s.size
@@ -282,9 +287,6 @@ trait AvatarContainerArray extends AvatarContainer {
 		var visible = 0
 		
 		if(subs ne null) {
-			if((filter ne null) && filter.isDirty)
-				renderedSubs = filter.filter(iterator)
-
 			val space = self.space
 			val s = if(renderedSubs ne null) renderedSubs else subs
 			var i = 0
@@ -383,17 +385,25 @@ trait AvatarContainerArray extends AvatarContainer {
 		buf.toString
 	}
 
-	def iterator:Iterator[Avatar] = subs.iterator
+	def iterator:Iterator[Avatar] = if(subs ne null) subs.iterator else AvatarContainer.EmptySubs.iterator
 
 	def filteredIterator:Iterator[Avatar] = if(renderedSubs ne null) renderedSubs.iterator else iterator
 
 	def renderFilter(filter:RenderFilter) {
 		this.filter = filter
-		filter.requestFiltering
+		renderFilterRequest
 	}
 
 	def renderFilterRequest() {
-		if(filter ne null) filter.requestFiltering
+		if(filter ne null) {
+			filter.requestFiltering
+		}
+	}
+
+	def renderFilterSubs() {
+		if((filter ne null) && filter.isDirty) {
+			renderedSubs = filter.filter(iterator)
+		}
 	}
 }
 
@@ -472,7 +482,7 @@ class RenderFilterByPredicate(
 		extends RenderFilterBase {
 
 	def filter(avatars:Iterator[Avatar]):IndexedSeq[Avatar] = {
-		val res = new ArrayBuffer[Avatar]
+		var res = new ArrayBuffer[Avatar]
 
 		if(predicate ne null) {
 			while(avatars.hasNext) {
@@ -485,7 +495,7 @@ class RenderFilterByPredicate(
 		}
 
 		if(order ne null) {
-			res.sortWith(order)
+			res = res.sortWith(order)
 		}
 
 		dirty = false

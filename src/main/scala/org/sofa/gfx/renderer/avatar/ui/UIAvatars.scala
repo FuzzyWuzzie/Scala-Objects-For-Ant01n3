@@ -98,6 +98,15 @@ abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarCom
 			false
 		}
 	}
+
+	override def renderFilterRequest() {
+		space match {
+			case s:UIAvatarSpace => s.layoutRequest
+			case _ => {}
+		}
+		super.renderFilterRequest
+		self.screen.requestRender		
+	}
 }
 
 

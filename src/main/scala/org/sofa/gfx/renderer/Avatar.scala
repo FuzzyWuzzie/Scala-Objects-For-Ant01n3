@@ -84,7 +84,7 @@ abstract class Avatar(
 	/** By default handles avatar space and render states otherwise throw a NoSuchAvatarStateException. */
 	def change(state:AvatarState) {
 		var used = false
-		
+
 		// Cannot use a match, since the state can be sent several times.
 		if(state.isInstanceOf[AvatarSpaceState])  { used = true; space.changeSpace(state.asInstanceOf[AvatarSpaceState]) }
 		if(state.isInstanceOf[AvatarRenderState]) { used = true; renderer.changeRender(state.asInstanceOf[AvatarRenderState]) }
@@ -92,7 +92,7 @@ abstract class Avatar(
 		if(! used) {
 			state match {
 				case AvatarBaseStates.RenderFilter(filter) => renderFilter(filter)
-				case AvatarBaseStates.RenderFilterRequest() => renderFilterRequest
+				case AvatarBaseStates.RenderFilterRequest() => renderFilterRequest()
 				case _ => throw new NoSuchAvatarStateException(state)
 			}
 		}
@@ -149,7 +149,12 @@ abstract class Avatar(
 	def renderVisibleSubs():Int
 
 	/** Animate the space, the renderer and call `animateSubs()`. */
-	def animate() { space.animateSpace; renderer.animateRender; animateSubs }
+	def animate() { 
+		renderFilterSubs
+		space.animateSpace
+		renderer.animateRender
+		animateSubs
+	}
 
 	/** Animate the sub-avatars. */
 	def animateSubs()

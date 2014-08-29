@@ -69,6 +69,7 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 	}
 
 	override def animate() {
+		renderFilterSubs
 		space.animateSpace
 		renderer.animateRender
 		animateVisibleSubs
