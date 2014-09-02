@@ -261,8 +261,8 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	override def isVisible(sub:Avatar):Boolean = {
 		if(!dirtyLayout) {
-			val up   = fromSpace.posy // + offsety
-			val down = up + fromSpace.sizey
+			val up   = toSpace.pos.y //fromSpace.posy // + offsety
+			val down = up + toSpace.sizey //fromSpace.sizey
 			val y    = sub.space.thisSpace.posy + offsety
 			val h    = sub.space.thisSpace.sizey
 
