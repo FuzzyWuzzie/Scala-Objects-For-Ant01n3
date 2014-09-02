@@ -312,6 +312,6 @@ abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
 				layout.layout(self, scale1cm)
 		}
 
-		super.animateSpace
+		//super.animateSpace	// super is a trait with an abstract animateSpace() method.
 	}
 }

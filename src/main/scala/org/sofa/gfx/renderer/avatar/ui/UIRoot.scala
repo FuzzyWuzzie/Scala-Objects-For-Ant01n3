@@ -81,7 +81,10 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 
 		dpc = screen.surface.dpc
 
-		if(dirtyLayout || oldSurface.x != surface.width || oldSurface.y != surface.height || oldSurface.z != dpc) {
+		if(oldSurface.x != surface.width || oldSurface.y != surface.height || oldSurface.z != dpc)
+			dirtyLayout = true
+
+		if(dirtyLayout) {
 			oldSurface.set(surface.width, surface.height, dpc)
 			
 			ratiohw  = surface.height.toDouble / surface.width.toDouble
