@@ -557,7 +557,11 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	def advance:Float = x
 
 	/** height of the string in pixels. */
-	def height:Float = y
+	def height:Float = font.charHeight
+
+	def ascent:Float = font.ascent
+
+	def descent:Float = font.descent
 
 	/** Change the color of the string. */
 	def setColor(color:Rgba) { this.color = color }

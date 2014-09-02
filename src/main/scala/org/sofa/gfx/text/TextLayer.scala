@@ -7,6 +7,22 @@ import org.sofa.gfx.{SGL, Space, ShaderProgram}
 import org.sofa.math.{Point2, Point3, Point4, Rgba}
 
 
+object TextAlign extends Enumeration {
+	final val Left = Value
+	final val Right = Value
+	final val Center = Value
+
+	type TextAlign = Value
+}
+
+object VerticalAlign extends Enumeration {
+	final val Baseline = Value
+	final val Center = Value
+
+	type VerticalAlign = Value
+}
+
+
 /** A text renderer that memorize couples of points and strings in pixel space,
   * and render them in one pass.
   *
@@ -45,6 +61,12 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	/** Current color. */
 	protected[this] var color = Rgba.Black
 
+	/** Current text alignment. */
+	protected[this] var align = TextAlign.Left
+
+	/** Current vertical alignment. */
+	protected[this] var vertAlign = VerticalAlign.Baseline
+
 	/** Last advance of inserted string. */
 	protected[this] var la = -1.0
 
@@ -75,6 +97,29 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	/** Set the current color. All subsequently inserted strings will use it. */
 	def color(r:Double, g:Double, b:Double, a:Double) { color = Rgba(r, g, b, a) }
 
+	/** Text alignment according to the string postion. All subsequently inserted strings
+	  * will use it. */
+	def alignment(align:TextAlign.Value) { this.align = align }
+
+	/** Text vertical alignment according to the string position. All subsequently inserted
+	  * strings will use it. */
+	def verticalAlignment(valign:VerticalAlign.Value) { this.vertAlign = valign }
+
+	/** Text alignment at left, see `alignment()`. */
+	def alignLeft() { align = TextAlign.Left }
+
+	/** Text alignment at right, see `alignment()`. */
+	def alignRight() { align = TextAlign.Right }
+
+	/** Text alignment centered, see `alignment()`. */
+	def alignCenter() { align = TextAlign.Center }
+
+	/** Text vertical alignment at baseline, see `verticalAlignment()` */
+	def verticalAlignBaseline() { vertAlign = VerticalAlign.Baseline }
+
+	/** Text vertical alignment centered, see `verticalAlignment()` */
+	def verticalAlignCenter() { vertAlign = VerticalAlign.Center }
+
 	/** Request that the string `text` be displayed at next call to `render()` at (`x`, `y`) in pixels. */
 	def stringpx(text:String, x:Double, y:Double) { stringpx(text, Point4(x, y, 0, 1)) }
 
@@ -88,7 +133,7 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 
 	/** Request that the string `text` be displayed at next call to `render()` at `position` in pixels.
 	  * `position` is stored and not copied. */
-	def stringpx(text:String, position:Point4) { font.addItem(text, position, Rgba(color)) }
+	def stringpx(text:String, position:Point4) { font.addItem(text, position, Rgba(color), align, vertAlign) }
 
 	/** Request that the string `text` be displayed at next call to `render()` at (`x`, `y`, `z`) in the current `space`.
 	  * This position is first "projected" in pixel coordinates using `space`. */
@@ -115,7 +160,7 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 			position.z = 0
 		}
 
-		val item = font.addItem(text, position, Rgba(color))
+		val item = font.addItem(text, position, Rgba(color), align, vertAlign)
 
 		la = item.advance
 		lh = item.height
@@ -156,7 +201,7 @@ object FontLayer {
 /** Interface of a font layer. */
 trait FontLayer {
 	/** Add a `text` to be renderer at next frame at `position` with `color`. */
-	def addItem(text:String, position:Point4, color:Rgba):TextItem
+	def addItem(text:String, position:Point4, color:Rgba, align:TextAlign.Value, vertAlign:VerticalAlign.Value):TextItem
 
 	/** Render all the text items added via `addItem()` in the current `space`. All
 	  * The items are them removed for the next frame. You must add them at each frame. */
@@ -173,6 +218,9 @@ trait TextItem {
 
 	/** The height in pixels of this text item. */
 	def height:Double
+
+	/** Text alignment. */
+	def align:TextAlign.Value
 }
 
 
@@ -231,16 +279,16 @@ class FontLayerReuse(val gl:SGL, val font:GLFont) extends FontLayer {
 	}
 
 	/** Add an item */
-	def addItem(text:String, position:Point4, color:Rgba):TextItem = {
+	def addItem(text:String, position:Point4, color:Rgba, align:TextAlign.Value, valign:VerticalAlign.Value):TextItem = {
 		// Take an item from the pool if possible or create it.
 
 		var item:TextItemReuse = null
 
 		if(! pool.isEmpty) {
 			item = pool.remove(pool.size-1)
-			item.rebuild(text, position, color)
+			item.rebuild(text, position, color, align, valign)
 		} else {
- 			item = new TextItemReuse(text, this, position, color)
+ 			item = new TextItemReuse(text, this, position, color, align, valign)
 		}
 
 		items += item
@@ -264,7 +312,7 @@ class FontLayerReuse(val gl:SGL, val font:GLFont) extends FontLayer {
   * color. The string has by default a capacity of [[FontLayer#MaxChars]] characters.
   * It can grow if one uses a text string larger and will never shrink.
   */
-class TextItemReuse(var text:String, val font:FontLayerReuse, val position:Point4, val color:Rgba) extends TextItem {
+class TextItemReuse(var text:String, val font:FontLayerReuse, val position:Point4, val color:Rgba, var align:TextAlign.Value, var valign:VerticalAlign.Value) extends TextItem {
 	
 	/** The GL string used to render the text. */
 	protected[this] var string:GLString = font.font.newString(text, FontLayerReuse.MaxChars)
@@ -282,10 +330,12 @@ class TextItemReuse(var text:String, val font:FontLayerReuse, val position:Point
 	def dispose() { string.dispose }
 
 	/** Rebuild the item with a `newText` string at `newPosition` with `newColor`. */
-	def rebuild(newText:String, newPosition:Point4, newColor:Rgba) {
+	def rebuild(newText:String, newPosition:Point4, newColor:Rgba, newAlign:TextAlign.Value, newVAlign:VerticalAlign.Value) {
 		color.copy(newColor)
 		position.copy(newPosition)
 		text = newText
+		align = newAlign
+		valign = newVAlign
 
 		if(string.maxLength < newText.length) {
 			string.dispose
@@ -299,14 +349,19 @@ class TextItemReuse(var text:String, val font:FontLayerReuse, val position:Point
 	def render(space:Space) {
 		// Push and pop or translate and translate back ?
 		space.pushpop {
-			space.translate(position.x, position.y, 0)
+			val x = align match {
+				case TextAlign.Right  => position.x - string.advance
+				case TextAlign.Center => position.x - string.advance / 2
+				case _                => position.x
+			}
+			val y = valign match {
+				case VerticalAlign.Center => position.y - (string.height / 2 - string.descent)
+				case _                    => position.y
+			}
+			space.translate(x, y, 0)
 			string.setColor(color)
 			string.render(space)
 		}
-		// space.translate(position.x, position.y, 0)
-		// string.setColor(color)
-		// string.render(space)
-		// space.translate(-position.x, -position.y, 0)
 	}
 }
 
@@ -321,7 +376,7 @@ object FontLayerCached {
 }
 
 
-case class TextItemCached(string:StringItemCached, position:Point4, color:Rgba) extends TextItem {
+case class TextItemCached(string:StringItemCached, position:Point4, color:Rgba, align:TextAlign.Value, valign:VerticalAlign.Value) extends TextItem {
 	/** Total advance in pixels. */
 	def advance:Double = string.advance
 
@@ -335,7 +390,17 @@ case class TextItemCached(string:StringItemCached, position:Point4, color:Rgba) 
 	def render(space:Space) {
 		// Push and pop or translate and translate back ?
 		space.pushpop {
-			space.translate(position.x, position.y, 0)
+			val x = align match {
+				case TextAlign.Right  => position.x - string.advance
+				case TextAlign.Center => position.x - string.advance / 2
+				case _                => position.x
+			}
+			val y = valign match {
+				case VerticalAlign.Center => position.y - (string.height / 2 - string.descent)
+				case _                    => position.y
+			}
+//println("position.y=%f  y=%f  string.height=%f".format(position.y, y, string.height))
+			space.translate(x, y, 0)
 			string.string.setColor(color)
 			string.string.render(space)
 		}
@@ -356,6 +421,10 @@ case class StringItemCached(string:GLString, text:String) {
 
 	/** Total advance in pixels. */
 	def advance:Double = string.advance
+
+	def ascent:Double = string.ascent
+
+	def descent:Double = string.descent
 
 	/** Total height in pixels. */
 	def height:Double = string.height
@@ -396,7 +465,7 @@ class FontLayerCached(val gl:SGL, val font:GLFont) extends FontLayer {
 	}
 
 	/** Add an item */
-	def addItem(text:String, position:Point4, color:Rgba):TextItem = {
+	def addItem(text:String, position:Point4, color:Rgba, align:TextAlign.Value, valign:VerticalAlign.Value):TextItem = {
 		val string = pool.get(text).getOrElse {
 			val s = new StringItemCached(font.newString(text, text.length), text)
 			pool += (text -> s)
@@ -405,7 +474,7 @@ class FontLayerCached(val gl:SGL, val font:GLFont) extends FontLayer {
 
 		string.use
 
-		val item = TextItemCached(string, position, color)
+		val item = TextItemCached(string, position, color, align, valign)
 
 		items += item
 
