@@ -18,6 +18,10 @@ trait AvatarContainer extends Iterable[Avatar] {
 	/** Number of sub-avatars. */
 	def subCount:Int
 
+	/** Number of rendered sub-avatars, useful if a filter is setup. If there is no
+	  * filter, this is the same as `subCount`. */
+	def filteredSubCount:Int
+
 	/** True if there is at leas one sub-avatar. */
 	def hasSubs:Boolean
 
@@ -209,6 +213,8 @@ trait AvatarContainerArray extends AvatarContainer {
 	protected def self:Avatar
 
 	def subCount = if(subs ne null) subs.size else 0
+
+	def filteredSubCount = if(renderedSubs ne null) renderedSubs.size else subCount
 
 	def hasSubs = ((subs ne null) && (subs.size > 0))
 

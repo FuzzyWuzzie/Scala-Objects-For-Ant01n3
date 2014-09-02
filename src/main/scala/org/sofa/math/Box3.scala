@@ -13,6 +13,11 @@ package org.sofa.math
   * efficiency reasons. As some fields do not exist in some implementation, they
   * incur repetitive creation of [[Point3]] or [[Vector3]] which in some rendering
   * loops may cost a lot.
+  *
+  * Be also careful that the values returned by `pos`, `from`, `to` and `size` are
+  * read-only, you cannot expect change made to the returned point or vector to be
+  * kept by the box. Use `setSize()`, `setBox()` and `setPosition()` to update the
+  * box dimensions and position.
   */
 trait Box3 {
 	/** Position or origin of object. */
@@ -64,8 +69,7 @@ trait Box3 {
 
 
 /** A default implementation of [[Box3]] that stores all fields. 
-  * It maintains the size according to the `from` and `to` fields.
-  */
+  * It maintains the size according to the `from` and `to` fields. */
 class Box3Default extends Box3 {
 	val pos = Point3(0, 0, 0)
 
@@ -117,30 +121,32 @@ class Box3Default extends Box3 {
 
 /** A basic implementation of [[Box3]] that resizes according to its `from` position.
   * It does not store a position, and uses its `from` field that coincide with it.
-  * It does not stored a size that is deduced from the `from` and `to` fields. */
+  * It does not stored a `to` point that is deduced from the `size` and `from` fields.
+  *
+  * Ideal for things whose origin is at a corner. */
 class Box3From extends Box3 {
 	val from = Point3(0,0,0)
 
-	val to = Point3(1,1,1)
+	val size = Vector3(1,1,1)
 
 	def pos = from
 
-	def size = Vector3(to.x-from.x, to.y-from.y, to.z-from.z)
+	def to = Point3(from.x+size.x, from.y+size.y, from.z+size.z)
 
 	def setPosition(x:Double, y:Double, z:Double) = from.set(x, y, z)
 
 	def setBox(fromx:Double, fromy:Double, fromz:Double, tox:Double, toy:Double, toz:Double) {
 		from.set(fromx, fromy, fromz)
-		to.set(tox, toy, toz)
+		to.set(tox-fromx, toy-fromy, toz-fromz)
 	}
 
-	def setSize(width:Double, height:Double, depth:Double) = to.set(from.x + width, from.y + height, from.z + depth)
+	def setSize(width:Double, height:Double, depth:Double) = size.set(width, height, depth)
 
-	def sizex:Double = to.x-from.x
+	def sizex:Double = size.x
 
-	def sizey:Double = to.y-from.y
+	def sizey:Double = size.y
 
-	def sizez:Double = to.z-from.z
+	def sizez:Double = size.z
 
 	def posx:Double = from.x
 
@@ -154,11 +160,11 @@ class Box3From extends Box3 {
 
 	def fromz:Double = from.z
 
-	def tox:Double = to.x
+	def tox:Double = from.x + size.x
 
-	def toy:Double = to.y
+	def toy:Double = from.y + size.y
 
-	def toz:Double = to.z
+	def toz:Double = from.z + size.z
 }
 
 

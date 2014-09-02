@@ -288,8 +288,11 @@ abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
 	  * can propagate the layout request to its parent avatar. */
 	def layoutRequest() { dirtyLayout = true }
 
+	/** True if the layout needs to be recomputed at next animation step. */
+	def needRelayout:Boolean = dirtyLayout
+
 	override def subCountChanged(delta:Int) {
-		dirtyLayout = true 
+		layoutRequest
 		self.screen.requestRender
 	}
 

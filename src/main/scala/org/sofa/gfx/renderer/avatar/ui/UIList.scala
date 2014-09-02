@@ -168,12 +168,12 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
  	var fromSpace = new Box3From {
  		from.set(0,0,0)
- 		to.set(1,1,1)
+ 		size.set(1,1,1)
  	}
 
  	var toSpace = new Box3From {
  		from.set(0,0,0)
- 		to.set(1,1,1)
+ 		size.set(1,1,1)
  	}
 
 	var offsety = 0.0
@@ -199,12 +199,12 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 				self.screen.requestRender
 				var offsetMax = min(-(toSpace.sizey - fromSpace.sizey), 0)
 				offsety = offsetMax * p
+				checkOffset
 			}
 			case UIList.OffsetPages(pages) => {
 				self.screen.requestRender
 				offsety += fromSpace.sizey * pages
 				checkOffset
-
 			}
 			case _ => super.changeSpace(newState)
 		}
@@ -221,7 +221,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
   		if(dirtyLayout) {
   			val oldsizey = toSpace.to.y
  			scale1cm = self.parent.space.scale1cm
- 			toSpace.to.set(1, scale1cm * itemSize * avatar.subCount, 1)
+ 			toSpace.setSize(1, scale1cm * itemSize * avatar.filteredSubCount, 1)
  			
  			// If the sizey changed, this means the dpc or scale1cm changed,
  			// we must ask the parent to relayout anew since we changed size.
@@ -233,6 +233,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  		 	else self.parent.space.asInstanceOf[UIAvatarSpace].layoutRequest
 
  			layoutSubs
+ 			checkOffset
 		}
  	}
 
@@ -250,21 +251,25 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  	protected def layoutSubs() {
  		var i = 0
  		self.foreachFilteredSub { sub =>
- 			sub.space.thisSpace.setSize(1, itemSize * scale1cm, 1)
  			sub.space.thisSpace.setPosition(0, itemSize * scale1cm * i, 0)
+ 			sub.space.thisSpace.setSize(1, itemSize * scale1cm, 1)
  			sub.space.asInstanceOf[UIAvatarSpace].layoutRequest
- 			//println("    | layout %d %s".format(i, sub))
+			//println("    | layout %d %s size(%f, %f)".format(i, sub, sub.space.thisSpace.sizex, sub.space.thisSpace.sizey))
  			i += 1
  		}
  	}
 
 	override def isVisible(sub:Avatar):Boolean = {
-		val up   = fromSpace.posy // + offsety
-		val down = up + fromSpace.sizey
-		val y    = sub.space.thisSpace.posy + offsety
-		val h    = sub.space.thisSpace.sizey
+		if(!dirtyLayout) {
+			val up   = fromSpace.posy // + offsety
+			val down = up + fromSpace.sizey
+			val y    = sub.space.thisSpace.posy + offsety
+			val h    = sub.space.thisSpace.sizey
 
-		((y+h) >= up && y <= down)
+			((y+h) >= up && y <= down)
+		} else {
+			true
+		}
 	}
 
 	override def subCountChanged(delta:Int) {
@@ -285,12 +290,12 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	var fromSpace = new Box3From {
 		from.set(0, 0, 0)
-		to.set(1, 1, 1)
+		size.set(1, 1, 1)
 	}
 
 	var toSpace = new Box3From {
 		from.set(0, 0, 0)
-		to.set(1, 1, 1)
+		size.set(1, 1, 1)
 	}
 
 	def thisSpace = fromSpace

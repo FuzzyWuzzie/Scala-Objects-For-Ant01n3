@@ -74,12 +74,12 @@ class UIAvatarSpacePanel(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	var fromSpace = new Box3From {
 		from.set(0,0,0)
-		to.set(1,1,1)
+		size.set(1,1,1)
 	}
 
 	var toSpace = new Box3From {
 		from.set(0,0,0)
-		to.set(1,1,1)
+		size.set(1,1,1)
 	}
 
 	def thisSpace = fromSpace
