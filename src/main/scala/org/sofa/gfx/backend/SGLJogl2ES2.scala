@@ -34,6 +34,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
     val BACK:Int = GL.GL_BACK
     val CW:Int = GL.GL_CW
     val CCW:Int = GL.GL_CCW
+    val SCISSOR_TEST:Int = GL.GL_SCISSOR_TEST
     
     val COLOR_BUFFER_BIT:Int = GL.GL_COLOR_BUFFER_BIT
     val DEPTH_BUFFER_BIT:Int = GL.GL_DEPTH_BUFFER_BIT
@@ -397,7 +398,9 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
     def polygonMode(face:Int, mode:Int) = throw new RuntimeException("no polygon mode for GL ES 2.0 too bad")
 
     def pixelStore(param:Int, value:Int) = glPixelStorei(param, value)
-    
+
+    def scissor(x:Int, y:Int, width:Int, height:Int) = glScissor(x, y, width, height)
+
 // Utilities
     
     def printInfos() {

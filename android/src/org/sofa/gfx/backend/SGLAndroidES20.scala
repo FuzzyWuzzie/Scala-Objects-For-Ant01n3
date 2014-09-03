@@ -32,6 +32,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     val BACK:Int = GLES20.GL_BACK
     val CW:Int = GLES20.GL_CW
     val CCW:Int = GLES20.GL_CCW
+    val SCISSOR_TEST:Int = GLES20.SCISSOR_TEST
     
     val COLOR_BUFFER_BIT:Int = GLES20.GL_COLOR_BUFFER_BIT
     val DEPTH_BUFFER_BIT:Int = GLES20.GL_DEPTH_BUFFER_BIT
@@ -374,6 +375,8 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     def polygonMode(face:Int, mode:Int) = throw new RuntimeException("no polygonMode in GL ES 20, too bad")
 
     def pixelStore(param:Int, value:Int) = GLES20.glPixelStorei(param, value)
+
+    def scissor(x:Int, y:Int, width:Int, height:Int) = GLES20.glScissor(x, y, width, height)
     
 // Utilities
     

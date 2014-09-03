@@ -52,6 +52,9 @@ trait AvatarContainer extends Iterable[Avatar] {
 	def avatar(name:AvatarName, prefix:Int = -1):Option[Avatar]
 
 	/** Filter which direct sub-avatars are rendered and in which order.
+	  * The given order is only the rendering one, it may or not impact
+	  * the positionning of sub-elements, depending on the way the parent
+	  * avatar control or not their position.
 	  * Once added, the filter is requested to run at next frame. Automatic
 	  * filter requests will be issued when a new sub-avatar is added or one
 	  * is removed. The filter is free to generate more requests automatically
@@ -63,19 +66,19 @@ trait AvatarContainer extends Iterable[Avatar] {
 	def renderFilter(filter:RenderFilter) 
 
 	/** Request the render filter (if any) be called at next frame.
-	  * This allows to re-run the render filter. By default the filter is run only
-	  * at start. Automatic filter requests are issued when a new avatar is added or when
-	  * one is removed. */
+	  * This allows to re-run the render filter. By default the filter is run
+	  * at start. Automatic filter requests are also issued when a new avatar is
+	  * added or when one is removed. */
 	def renderFilterRequest()
 
-	/** Fun the render filter if needed. This is called from the `animate`. */
+	/** Run the render filter if needed. This is called from the `animate` method. */
 	def renderFilterSubs()
 
 	/** Access to all sub-avatars. */
 	def iterator:Iterator[Avatar]
 
-	/** Access to avatars in the render filter. If there is no filter render,
-	  * this provides access to all sub-avatars. */
+	/** Access to avatars in the render filter in the correct order. If there is no
+	  * filter render, this provides access to all sub-avatars. */
 	def filteredIterator:Iterator[Avatar]
 }
 
@@ -416,7 +419,7 @@ trait AvatarContainerArray extends AvatarContainer {
 
 /** Filter to apply to avatars when an [[AvatarContainer]] renders
   * them. The filter selects which avatars will be rendered and in
-  * which order. */
+  * which order. The order does not indicates a position. */
 trait RenderFilter {
 	/** True if the `filter()` method needs to be called. This method
 	  * will reset this flag to false. */
@@ -472,6 +475,15 @@ class RenderFilterByName(
 		dirty = false
 
 		res
+	}
+}
+
+
+object RenderFilterByPredicate {
+	/** An ordering using the Z axis position of avatars. */
+	def zOrder(a:Avatar, b:Avatar):Boolean = { 
+println("*** APPLY ZORDER ***")
+		a.space.thisSpace.posz <= b.space.thisSpace.posz 
 	}
 }
 

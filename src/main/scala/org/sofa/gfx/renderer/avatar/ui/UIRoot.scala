@@ -121,7 +121,7 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 	def layoutSubs() {
 		self.foreachSub { sub ⇒
 			sub.space.thisSpace.setSize(toSpace.size(0), toSpace.size(1), 1)
-			sub.space.thisSpace.setPosition(0, 0, 0)
+			sub.space.thisSpace.setPosition(0, 0, sub.space.thisSpace.posz)
 			sub.space.asInstanceOf[UIAvatarSpace].layoutRequest
 		}
 	}

@@ -5,7 +5,7 @@ import akka.actor.{ActorRef}
 
 import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3}
 import org.sofa.collection.{SpatialHash, SpatialObject, SpatialPoint}
-import org.sofa.gfx.{Space, ShaderResource}
+import org.sofa.gfx.{Space, ShaderResource, ScissorStack}
 import org.sofa.gfx.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.gfx.surface.event.{Event, MotionEvent}
 import org.sofa.gfx.text.TextLayer
@@ -80,6 +80,9 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 
 	/** Set of avatars in the active selection. */
 	val selection = new AvatarSelection
+
+	/** Eventually scissors to select area of the screen to draw. */
+	val scissors = ScissorStack()
 
 // Hiden variable fields
 

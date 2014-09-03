@@ -37,7 +37,8 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
     val BACK:Int = GL.GL_BACK
     val CW:Int = GL.GL_CW
     val CCW:Int = GL.GL_CCW
-    
+    val SCISSOR_TEST:Int = GL.GL_SCISSOR_TEST
+
     val COLOR_BUFFER_BIT:Int = GL.GL_COLOR_BUFFER_BIT
     val DEPTH_BUFFER_BIT:Int = GL.GL_DEPTH_BUFFER_BIT
     val FRONT_AND_BACK:Int = GL.GL_FRONT_AND_BACK
@@ -397,7 +398,9 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
     def polygonMode(face:Int, mode:Int) = glPolygonMode(face, mode)
 
     def pixelStore(param:Int, value:Int) = glPixelStorei(param, value)
-    
+
+    def scissor(x:Int, y:Int, width:Int, height:Int) = glScissor(x, y, width, height)
+
 // Utilities
     
     def printInfos() {

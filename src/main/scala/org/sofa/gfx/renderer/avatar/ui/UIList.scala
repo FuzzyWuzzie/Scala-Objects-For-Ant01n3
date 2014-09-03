@@ -123,9 +123,14 @@ class UIListItem(name:AvatarName, screen:Screen)
 
 class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 	override def render() {
-		self.space.pushSubSpace
-		self.renderVisibleSubs
-		self.space.popSubSpace
+		val s = self.space.thisSpace
+		val scissors = self.screen.scissors.push(screen.gl, s.posx, s.posy, s.posx+s.sizex, s.posy+s.sizey, screen.space)
+			self.screen.textLayer.pushScissors(scissors)
+				self.space.pushSubSpace
+					self.renderVisibleSubs
+				self.space.popSubSpace
+			self.screen.textLayer.popScissors()
+		self.screen.scissors.pop(screen.gl)
 	}
 }
 
@@ -251,8 +256,9 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
  	protected def layoutSubs() {
  		var i = 0
  		self.foreachFilteredSub { sub =>
- 			sub.space.thisSpace.setPosition(0, itemSize * scale1cm * i, 0)
- 			sub.space.thisSpace.setSize(1, itemSize * scale1cm, 1)
+ 			val subspace = sub.space.thisSpace
+ 			subspace.setPosition(0, itemSize * scale1cm * i, subspace.posz)
+ 			subspace.setSize(1, itemSize * scale1cm, 1)
  			sub.space.asInstanceOf[UIAvatarSpace].layoutRequest
 			//println("    | layout %d %s size(%f, %f)".format(i, sub, sub.space.thisSpace.sizex, sub.space.thisSpace.sizey))
  			i += 1

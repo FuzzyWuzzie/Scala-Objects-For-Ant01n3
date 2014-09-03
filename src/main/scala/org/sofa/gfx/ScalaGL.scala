@@ -21,6 +21,7 @@ abstract class SGL {
     val BACK:Int
     val CW:Int
     val CCW:Int
+    val SCISSOR_TEST:Int
     
     val COLOR_BUFFER_BIT:Int
     val DEPTH_BUFFER_BIT:Int
@@ -243,6 +244,7 @@ abstract class SGL {
     def depthFunc(op:Int)
     def polygonMode(face:Int, mode:Int)
     def pixelStore(param:Int, value:Int)
+    def scissor(x:Int, y:Int, width:Int, height:Int)
     
 // Utilities
     

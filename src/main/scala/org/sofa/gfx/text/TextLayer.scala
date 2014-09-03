@@ -3,7 +3,7 @@ package org.sofa.gfx.text
 import scala.math._
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 
-import org.sofa.gfx.{SGL, Space, ShaderProgram}
+import org.sofa.gfx.{SGL, Space, ShaderProgram, Scissors, ScissorStack}
 import org.sofa.math.{Point2, Point3, Point4, Rgba}
 
 
@@ -32,7 +32,7 @@ object VerticalAlign extends Enumeration {
   *
   * The two base ideas of the text layer are :
   *   - Allow to cache strings of text so that repeated display of the same string is faster.
-  *   - Allow to draw text in one optimized pass at a point in the rendering process.
+  *   - Allow to draw text in a unique optimized pass at a point in the rendering process.
   *
   * The basic usage is to call the various `string` methods to specify a text
   * and a position, either in the actual [[Space]] or directly in pixels. If the position
@@ -48,9 +48,9 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	// TODO
 	//
 	// - do not render items out of screen. We know the size and positions.
-	// - Allow some items to remain constant, when the user know it will reuse it (done with the cached items).
-	// - Allow to handle "centered" and "right-aligne" text.
 	// - Allow more positionning.
+	// - Allow scissor operations.
+	// - Make text items rendered in order or allow an ordering filter.
 
 	/** Map of known fonts. */
 	protected[this] val fonts = new HashMap[(String,Int), FontLayer]()
@@ -73,6 +73,10 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	/** Last height of inserted string. */
 	protected[this] var lh = -1.0
 
+	protected[this] var scissorStack:ScissorStack = null
+
+	protected[this] var scissors:scala.collection.mutable.ArrayBuffer[Scissors] = null
+
 	/** Overall width in pixels of the last inserted string. */
 	def lastAdvance:Double = la
 
@@ -87,6 +91,10 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 		font = fonts.get((fontName,size)).getOrElse {
 			val f = FontLayer(gl, new GLFont(gl, fontName, size, textShader))
 			fonts += ((fontName, size) -> f)
+
+			if((scissors ne null) && (scissors.size > 0))
+				scissors.foreach { f.pushScissors(scissorStack, _) }
+
 			f
 		}
 	}
@@ -166,19 +174,34 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 		lh = item.height
 	}
 
+	def pushScissors(scissors:Scissors) {
+		if(scissorStack eq null) {
+			scissorStack = ScissorStack()
+			this.scissors = new scala.collection.mutable.ArrayBuffer[Scissors]()
+		}
+
+		this.scissors += scissors
+
+		fonts.foreach { _._2.pushScissors(scissorStack, scissors) }
+	}
+
+	def popScissors() { fonts.foreach { _._2.popScissors(scissorStack) }
+		this.scissors.trimEnd(1)
+	}
+
 	/** Render all strings and flush them. */
 	def render(space:Space) {
 		space.pushpop {
 			space.pushpopProjection {
 				space.orthographicPixels()
 				space.viewIdentity
-				renderText(space)
+				renderFontLayers(space)
 			}
 		}
 	}
 
-	protected def renderText(space:Space) {
-		fonts.foreach { _._2.renderItems(space) }
+	protected def renderFontLayers(space:Space) {
+		fonts.foreach { _._2.renderItems(gl, space) }
 	}
 
 	/** Release all resources (OpenGL and fonts). */
@@ -203,16 +226,45 @@ trait FontLayer {
 	/** Add a `text` to be renderer at next frame at `position` with `color`. */
 	def addItem(text:String, position:Point4, color:Rgba, align:TextAlign.Value, vertAlign:VerticalAlign.Value):TextItem
 
+	def pushScissors(stack:ScissorStack, scissors:Scissors)
+
+	def popScissors(stack:ScissorStack)
+
 	/** Render all the text items added via `addItem()` in the current `space`. All
 	  * The items are them removed for the next frame. You must add them at each frame. */
-	def renderItems(space:Space)
+	def renderItems(gl:SGL, space:Space)
 
 	/** Clear and release resources. */
 	def dispose()
 }
 
 
-trait TextItem {
+trait FontLayerItem {
+	def render(gl:SGL, space:Space)
+
+	def dispose()
+}
+
+
+case class PushScissorsItem(stack:ScissorStack, scissors:Scissors) extends FontLayerItem {
+	def render(gl:SGL, space:Space) {
+		stack.push(gl, scissors)
+	}
+
+	def dispose() {}
+}
+
+
+case class PopScissorsItem(stack:ScissorStack) extends FontLayerItem {
+	def render(gl:SGL, space:Space) {
+		stack.pop(gl)
+	}
+
+	def dispose() {}
+}
+
+
+trait TextItem extends FontLayerItem {
 	/** The advance in pixels of this text item. */
 	def advance:Double
 
@@ -255,15 +307,15 @@ object FontLayerReuse {
 class FontLayerReuse(val gl:SGL, val font:GLFont) extends FontLayer {
 
 	/** Pool of unused text items. */
-	protected[this] var pool = new ArrayBuffer[TextItemReuse]()
+	protected[this] var pool = new ArrayBuffer[FontLayerItem]()
 
 	/** Set of text items to render at next rendering pass. */
-	protected[this] var items = new ArrayBuffer[TextItemReuse]()
+	protected[this] var items = new ArrayBuffer[FontLayerItem]()
 
 	/** Render each stored text items. */
-	def renderItems(space:Space) { 
+	def renderItems(gl:SGL, space:Space) { 
 		font.beginRender
-		items.foreach { _.render(space) } 
+		items.foreach { _.render(gl, space) } 
 		font.endRender
 		
 		// Remove remaining items in pool.
@@ -285,8 +337,10 @@ class FontLayerReuse(val gl:SGL, val font:GLFont) extends FontLayer {
 		var item:TextItemReuse = null
 
 		if(! pool.isEmpty) {
-			item = pool.remove(pool.size-1)
-			item.rebuild(text, position, color, align, valign)
+			item = nextFreeTextItem()
+			if(item ne null)
+				item.rebuild(text, position, color, align, valign)
+			else item = new TextItemReuse(text, this, position, color, align, valign)
 		} else {
  			item = new TextItemReuse(text, this, position, color, align, valign)
 		}
@@ -294,6 +348,24 @@ class FontLayerReuse(val gl:SGL, val font:GLFont) extends FontLayer {
 		items += item
 
 		item
+	}
+
+	def pushScissors(stack:ScissorStack, scissors:Scissors) {
+		items += PushScissorsItem(stack, scissors)
+	}
+
+	def popScissors(stack:ScissorStack) {
+		items += PopScissorsItem(stack)
+	} 
+
+	protected def nextFreeTextItem():TextItemReuse = {
+		var item:FontLayerItem = null
+		while(!pool.isEmpty && (item eq null)) {
+			item = pool.remove(pool.size - 1)
+			if(!item.isInstanceOf[TextItemReuse])
+				item = null
+		}
+		item.asInstanceOf[TextItemReuse]
 	}
 
 	/** Release all GL and font resources. */
@@ -346,7 +418,7 @@ class TextItemReuse(var text:String, val font:FontLayerReuse, val position:Point
 	}
 
 	/** Push a new space, translate to the string position, render the string and restore the space. */
-	def render(space:Space) {
+	def render(gl:SGL, space:Space) {
 		// Push and pop or translate and translate back ?
 		space.pushpop {
 			val x = align match {
@@ -387,7 +459,7 @@ case class TextItemCached(string:StringItemCached, position:Point4, color:Rgba, 
 	def sizes:(Double,Double) = (string.advance, string.height)
 
 	/** Push a new space, translate to the string position, render the string and restore the space. */
-	def render(space:Space) {
+	def render(gl:SGL, space:Space) {
 		// Push and pop or translate and translate back ?
 		space.pushpop {
 			val x = align match {
@@ -405,6 +477,8 @@ case class TextItemCached(string:StringItemCached, position:Point4, color:Rgba, 
 			string.string.render(space)
 		}
 	}
+
+	def dispose() {}
 }
 
 
@@ -441,7 +515,7 @@ class FontLayerCached(val gl:SGL, val font:GLFont) extends FontLayer {
 	import FontLayerCached._
 
 	/** The things to draw at next frame. */
-	protected[this] var items = new ArrayBuffer[TextItemCached]()
+	protected[this] var items = new ArrayBuffer[FontLayerItem]()
 
 	/** The cache of strings and fonts. */
 	protected[this] val pool = new HashMap[String, StringItemCached]()
@@ -449,12 +523,12 @@ class FontLayerCached(val gl:SGL, val font:GLFont) extends FontLayer {
 	protected[this] var needClean = CleanEverySteps
 
 	/** Render each stored text items. */
-	def renderItems(space:Space) { 
+	def renderItems(gl:SGL, space:Space) { 
 		font.beginRender
 		var i = 0
 		val n = items.size
 		while(i < n) {
-			items(i).render(space)
+			items(i).render(gl, space)
 			i += 1
 		}
 		//items.foreach { _.render(space) } 
@@ -480,6 +554,14 @@ class FontLayerCached(val gl:SGL, val font:GLFont) extends FontLayer {
 
 		item
 	}
+
+	def pushScissors(stack:ScissorStack, scissors:Scissors) {
+		items += PushScissorsItem(stack, scissors)
+	}
+
+	def popScissors(stack:ScissorStack) {
+		items += PopScissorsItem(stack)
+	} 
 
 	protected def cleanCache() {
 		needClean -= 1

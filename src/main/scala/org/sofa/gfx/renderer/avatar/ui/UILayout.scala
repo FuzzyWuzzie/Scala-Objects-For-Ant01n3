@@ -37,8 +37,13 @@ trait UILayout {
 }
 
 
-/** A simple layout that position only two sub-avatars. */
-class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separationMode:UILayoutSeparationMode.Value) extends UILayout {
+/** A simple 2D layout that position only two sub-avatars. 
+  *
+  * @param horizontal if true, the layout follows the X axis, else the Y axis.
+  * @param separation the value used to position and size the two sub avatars.
+  * @param separationMode how to interpret the `separation` value.
+  * @param useRenderFilter if true, the avatars are taken from the eventually filtered list of subs, else the full list of subs. */
+class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separationMode:UILayoutSeparationMode.Value, useRenderFilter:Boolean=true) extends UILayout {
 	import UILayoutSeparationMode._
 
 	override def isShareable = true
@@ -50,7 +55,7 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 			val fromy  = pspace.fromy
 			val sizex  = pspace.sizex
 			val sizey  = pspace.sizey
-			val subs   = parent.filteredIterator
+			val subs   = if(useRenderFilter) parent.filteredIterator else parent.iterator
 			val sub0   = subs.next
 			val sub1   = subs.next
 
@@ -65,16 +70,19 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 	}
 
 	protected def layoutPercentage(parent:Avatar, scale1cm:Double, fromx:Double, fromy:Double, sizex:Double, sizey:Double, sub0:Avatar, sub1:Avatar) {
+		val s0 = sub0.space.thisSpace
+		val s1 = sub1.space.thisSpace
+		
 		if(horizontal) {
-			sub0.space.thisSpace.setPosition(fromx, fromy, 0)
-			sub0.space.thisSpace.setSize(sizex * separation, sizey, 1)
-			sub1.space.thisSpace.setPosition(fromx + sizex * separation, fromy, 0)
-			sub1.space.thisSpace.setSize(sizex - (sizex * separation), sizey, 1)
+			s0.setPosition(fromx, fromy, s0.posz)
+			s0.setSize(sizex * separation, sizey, 1)
+			s1.setPosition(fromx + sizex * separation, fromy, s1.posz)
+			s1.setSize(sizex - (sizex * separation), sizey, 1)
 		} else {
-			sub0.space.thisSpace.setPosition(fromx, fromy, 0)
-			sub0.space.thisSpace.setSize(sizex, sizey * separation, 1)
-			sub1.space.thisSpace.setPosition(fromx, fromy + sizey * separation, 0)
-			sub1.space.thisSpace.setSize(sizex, sizey - (sizey * separation), 1)
+			s0.setPosition(fromx, fromy, s0.posz)
+			s0.setSize(sizex, sizey * separation, 1)
+			s1.setPosition(fromx, fromy + sizey * separation, s1.posz)
+			s1.setSize(sizex, sizey - (sizey * separation), 1)
 		}
 
 		sub0.space.asInstanceOf[UIAvatarSpace].layoutRequest
@@ -83,17 +91,19 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 
 	protected def layoutFirstPaneFixedSizeCm(parent:Avatar, scale1cm:Double, fromx:Double, fromy:Double, sizex:Double, sizey:Double, sub0:Avatar, sub1:Avatar) {
 		val sep = separation * scale1cm
+		val s0  = sub0.space.thisSpace
+		val s1  = sub1.space.thisSpace
 
 		if(horizontal) {
-			sub0.space.thisSpace.setPosition(fromx, fromy, 0)
-			sub0.space.thisSpace.setSize(sep, sizey, 1)
-			sub1.space.thisSpace.setPosition(fromx + sep, fromy, 0)
-			sub1.space.thisSpace.setSize(sizex - sep, sizey, 1)
+			s0.setPosition(fromx, fromy, s0.posz)
+			s0.setSize(sep, sizey, 1)
+			s1.setPosition(fromx + sep, fromy, s1.posz)
+			s1.setSize(sizex - sep, sizey, 1)
 		} else {
-			sub0.space.thisSpace.setPosition(fromx, fromy, 0)
-			sub0.space.thisSpace.setSize(sizex, sep, 1)
-			sub1.space.thisSpace.setPosition(fromx, fromy + sep, 0)
-			sub1.space.thisSpace.setSize(sizex, sizey - sep, 1)
+			s0.setPosition(fromx, fromy, s0.posz)
+			s0.setSize(sizex, sep, 1)
+			s1.setPosition(fromx, fromy + sep, s1.posz)
+			s1.setSize(sizex, sizey - sep, 1)
 		}
 
 		sub0.space.asInstanceOf[UIAvatarSpace].layoutRequest
@@ -102,17 +112,19 @@ class UILayoutTwoPanes(val horizontal:Boolean, var separation:Double, val separa
 
 	protected def layoutSecondPaneFixedSizeCm(parent:Avatar, scale1cm:Double, fromx:Double, fromy:Double, sizex:Double, sizey:Double, sub0:Avatar, sub1:Avatar) {
 		val sep = separation * scale1cm
+		val s0  = sub0.space.thisSpace
+		val s1  = sub1.space.thisSpace
 
 		if(horizontal) {
-			sub0.space.thisSpace.setPosition(fromx, fromy, 0)
-			sub0.space.thisSpace.setSize(sizex - sep, sizey, 1)
-			sub1.space.thisSpace.setPosition(fromx + sizex - sep, fromy, 0)
-			sub1.space.thisSpace.setSize(sep, sizey, 1)
+			s0.setPosition(fromx, fromy, s0.posz)
+			s0.setSize(sizex - sep, sizey, 1)
+			s1.setPosition(fromx + sizex - sep, fromy, s1.posz)
+			s1.setSize(sep, sizey, 1)
 		} else {
-			sub0.space.thisSpace.setPosition(fromx, fromy, 0)
-			sub0.space.thisSpace.setSize(sizex, sizey - sep, 1)
-			sub1.space.thisSpace.setPosition(fromx, fromy + sizey - sep, 0)
-			sub1.space.thisSpace.setSize(sizex, sep, 1)
+			s0.setPosition(fromx, fromy, s0.posz)
+			s0.setSize(sizex, sizey - sep, 1)
+			s1.setPosition(fromx, fromy + sizey - sep, s1.posz)
+			s1.setSize(sizex, sep, 1)
 		}
 
 		sub0.space.asInstanceOf[UIAvatarSpace].layoutRequest
