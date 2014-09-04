@@ -79,7 +79,7 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 		val screen  = avatar.screen
 		val surface = screen.surface
 
-		dpc = screen.surface.dpc
+		dpc = screen.dpc
 
 		if(oldSurface.x != surface.width || oldSurface.y != surface.height || oldSurface.z != dpc)
 			dirtyLayout = true

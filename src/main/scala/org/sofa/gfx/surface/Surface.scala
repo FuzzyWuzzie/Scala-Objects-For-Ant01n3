@@ -43,8 +43,9 @@ abstract trait Surface {
       * and system. Millimeters are more practical than centimeters for fonts. The
       * returned value has no unit, since distinct systems use distinct units to
       * scale fonts (Java uses points, but always for an hypothetic screen at 72 dpi,
-      * android uses pixels, etc.) */
-    def mmToFontSize(value:Int):Int
+      * android uses pixels, etc.)
+      * The `ratio` allows to scale the whole calcultion. */
+    def mmToFontSize(value:Int, ratio:Double = 1.0):Int
 
     /** Try to change the surface width and height. This may not be always possible. */
     def resize(newWidth:Int, newHeight:Int)

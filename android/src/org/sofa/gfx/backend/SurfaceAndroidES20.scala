@@ -138,8 +138,8 @@ class SurfaceAndroidES20(
     	dpcValue
     }
 
-    def mmToFontSize(value:Int):Int = {
-    	TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, value, context.getResources.getDisplayMetrics).toInt
+    def mmToFontSize(value:Int, ratio:Double = 1.0):Int = {
+    	(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, value, context.getResources.getDisplayMetrics) * ratio).toInt
     }
 
     protected[this] var dpcValue = 0.0

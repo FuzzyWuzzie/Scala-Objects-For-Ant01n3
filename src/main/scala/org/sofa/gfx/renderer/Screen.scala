@@ -22,7 +22,7 @@ case class NoSuchScreenException(msg:String) extends Exception(msg)
 
 
 /** When a state does not exist in a screen. */
-case class NoSuchScreenStateException(state:ScreenState) extends Exception(state.toString)
+case class NoSuchScreenStateException(state:ScreenState) extends Exception("unknown screen state %s (%s)".format(state, state.getClass.getName))
 
 
 /** When the screen is used out of its rendering cycle (the screen is not current, its begin() method 
@@ -38,6 +38,11 @@ class ScreenSpace extends Space {}
 object Screen {
 	/** Creates a [[DefaultScreen]]. */
 	def apply(name:String, renderer:Renderer):Screen = new DefaultScreen(name, renderer)
+
+	/** Change the screen global ratio. By default all given measures are respected
+	  * in the metric system independently of the screen resolution. This ratio
+	  * scales all. */
+	case class ScreenRatio(ratio:Double) extends ScreenState {}
 }
 
 
@@ -92,13 +97,21 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Set to true after begin() and reset to false after end(). */
 	protected[this] var rendering = false
 
+	/** The global rendering ratio, scales all measure in centimeters. */
+	protected[this] var ratio = 1.0
+
 // Modification
 
 	/** Ask the renderer to re-render. Only needed if the renderer is not in continuous rendering mode. */
 	def requestRender() { if(rendering) renderer.requestRender }
 
 	/** Something changed in the screen. */
-	def change(state:ScreenState) {}
+	def change(state:ScreenState) {
+		state match {
+			case Screen.ScreenRatio(ratio) => this.ratio = ratio
+			case _ => throw new NoSuchScreenStateException(state)
+		}
+	}
 
 // Access
 
@@ -117,7 +130,10 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	}
 
 	/** Convert a value in millimeters to a font size suitable for the actual screen and system. */
-	def mmToFontSize(value:Int):Int = surface.mmToFontSize(value)
+	def mmToFontSize(value:Int):Int = surface.mmToFontSize(value, ratio)
+
+	/** Dots per centimeters (how many device pixels per centimeters). */
+	def dpc:Double = surface.dpc * ratio
 
 // Interaction Events
 
