@@ -34,6 +34,6 @@ libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test"
 // However when using only the classifier "native...", the builder seems to ignore the main jar and compile
 // using the only native jar. Using the classifier "" seems to solve the problem, although it is ugly.
 
-libraryDependencies += "org.jogamp.gluegen" % "gluegen-rt" % "2.1.0" classifier "natives-macosx-universal" classifier ""
+libraryDependencies += "org.jogamp.gluegen" % "gluegen-rt" % "2.2.0" classifier "natives-macosx-universal" classifier ""
 
-libraryDependencies += "org.jogamp.jogl" % "jogl-all" % "2.1.0" classifier "natives-macosx-universal" classifier ""
+libraryDependencies += "org.jogamp.jogl" % "jogl-all" % "2.2.0" classifier "natives-macosx-universal" classifier ""

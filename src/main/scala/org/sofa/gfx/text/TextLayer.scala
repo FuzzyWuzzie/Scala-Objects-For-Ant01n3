@@ -48,9 +48,7 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	// TODO
 	//
 	// - do not render items out of screen. We know the size and positions.
-	// - Allow more positionning.
-	// - Allow scissor operations.
-	// - Make text items rendered in order or allow an ordering filter.
+	// - The scissor tmp stack trick is horrible.
 
 	/** Map of known fonts. */
 	protected[this] val fonts = new HashMap[(String,Int), FontLayer]()
@@ -73,9 +71,12 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	/** Last height of inserted string. */
 	protected[this] var lh = -1.0
 
+	/** The scissor stack used during rendering. */
 	protected[this] var scissorStack:ScissorStack = null
 
-	protected[this] var scissors:scala.collection.mutable.ArrayBuffer[Scissors] = null
+	/** The temporary false stack used while submitting text items.
+	  * Used to handle fonts added while some scissor operations are pushed. */
+	protected[this] var scissorsTmpStack:ArrayBuffer[Scissors] = null
 
 	/** Overall width in pixels of the last inserted string. */
 	def lastAdvance:Double = la
@@ -92,8 +93,8 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 			val f = FontLayer(gl, new GLFont(gl, fontName, size, textShader))
 			fonts += ((fontName, size) -> f)
 
-			if((scissors ne null) && (scissors.size > 0))
-				scissors.foreach { f.pushScissors(scissorStack, _) }
+			if((scissorsTmpStack ne null) && (scissorsTmpStack.size > 0))
+				scissorsTmpStack.foreach { f.pushScissors(scissorStack, _) }
 
 			f
 		}
@@ -174,19 +175,22 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 		lh = item.height
 	}
 
+	/** All string pushed after this will be potentially cut by the given scissors. */
 	def pushScissors(scissors:Scissors) {
 		if(scissorStack eq null) {
 			scissorStack = ScissorStack()
-			this.scissors = new scala.collection.mutable.ArrayBuffer[Scissors]()
+			scissorsTmpStack = new ArrayBuffer[Scissors]()
 		}
 
-		this.scissors += scissors
+		scissorsTmpStack += scissors
 
 		fonts.foreach { _._2.pushScissors(scissorStack, scissors) }
 	}
 
-	def popScissors() { fonts.foreach { _._2.popScissors(scissorStack) }
-		this.scissors.trimEnd(1)
+	/** Remove the last pushed scissors. */
+	def popScissors() {
+		fonts.foreach { _._2.popScissors(scissorStack) }
+		scissorsTmpStack.trimEnd(1)
 	}
 
 	/** Render all strings and flush them. */
@@ -226,8 +230,10 @@ trait FontLayer {
 	/** Add a `text` to be renderer at next frame at `position` with `color`. */
 	def addItem(text:String, position:Point4, color:Rgba, align:TextAlign.Value, vertAlign:VerticalAlign.Value):TextItem
 
+	/** All items added after this will be potentially cut by the given scissors. */	
 	def pushScissors(stack:ScissorStack, scissors:Scissors)
 
+	/** Remove the last pushed scissors. */
 	def popScissors(stack:ScissorStack)
 
 	/** Render all the text items added via `addItem()` in the current `space`. All

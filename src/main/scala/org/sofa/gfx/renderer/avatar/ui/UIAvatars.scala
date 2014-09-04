@@ -16,12 +16,13 @@ import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}//, Pl
 class UIAvatarFactory extends DefaultAvatarFactory {
 	override def avatarFor(name:AvatarName, screen:Screen, kind:String):Avatar = {
 		kind.toLowerCase match {
-			case "ui.root" => new UIRoot(name, screen)
+			case "ui.root"        => new UIRoot(name, screen)
 			case "ui.root-events" => new UIRootEvents(name, screen)
-			case "ui.list" => new UIList(name, screen)
-			case "ui.list-item" => new UIListItem(name, screen)
+			case "ui.list"        => new UIList(name, screen)
+			case "ui.list-item"   => new UIListItem(name, screen)
 			case "ui.perspective" => new UIPerspective(name, screen)
-			case "ui.panel" => new UIPanel(name, screen)
+			case "ui.panel"       => new UIPanel(name, screen)
+			case "ui.toolbar"     => new UIToolbar(name, screen)
 			case _ => chainAvatarFor(name, screen, kind)
 		}
 	}
@@ -138,8 +139,6 @@ trait UIrenderUtils {
 	var lineColor = Rgba.Red
 
 	def self:Avatar
-
-	def cmToPoints(cmValue:Double):Double = cmValue * 28.34
 
 	/** Stroke the space of the avatar with an uniform color. */
 	def fillAndStroke() {

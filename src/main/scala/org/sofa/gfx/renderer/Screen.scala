@@ -116,6 +116,9 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 		text
 	}
 
+	/** Convert a value in millimeters to a font size suitable for the actual screen and system. */
+	def mmToFontSize(value:Int):Int = surface.mmToFontSize(value)
+
 // Interaction Events
 
 	/** Propagate an event to sub avatars. 

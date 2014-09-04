@@ -257,6 +257,28 @@ class SurfaceNewt(
     	savedDpc
     }
 
+    def mmToFontSize(value:Int):Int = {
+    	// Java always assume that there is 72 dpi on the screen, even if
+    	// the screen is not at 72 dpi... Nobody knows why. Therefore we
+    	// compute a ratio between actual dpi and 72 dpi.
+    	// We then convert our given value that must be in millimeters to
+    	// points (there are 28.34 points in a centimeter when desktop
+    	// points are concerned). Then we apply our ratio on this measure.
+
+    	// val ppc    = 28.34			// Points-per-centimeters
+    	// val dpc72  = 72.0 / 2.54	// A screen of 72 dpi in dots-per-centimeters
+    	// val ratio  = dpc / dpc72 	// ratio betten 72dpc and our screen
+    	// val size   = value / 10.0 	// in centimeters
+    	// val sizept = size * ppc 	// size in points (with a 72 dpi screen)
+    	// val result = sizept * ratio // size in points adjusted to our screen.
+
+    	// result.toInt
+
+    	//|----value points----|    |---- ratio ---------|
+        //|--value cm--|   |ppc|    |      |72 dpi in dpc|
+    	(((value / 10.0) * 28.34) * (dpc / (72.0 / 2.54))).toInt
+    }
+
    	def fullscreen(on:Boolean) { win.setFullscreen(on) }
 
     def resize(newWidth:Int, newHeight:Int) {

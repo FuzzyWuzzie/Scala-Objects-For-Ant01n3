@@ -11,7 +11,7 @@ import android.content.Context
 import android.app.Activity
 import android.view.{GestureDetector, ScaleGestureDetector, MotionEvent=>AndroidMotionEvent}
 import android.support.v4.view.GestureDetectorCompat
-import android.util.DisplayMetrics
+import android.util.{DisplayMetrics, TypedValue}
 
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -136,6 +136,10 @@ class SurfaceAndroidES20(
     	}
 
     	dpcValue
+    }
+
+    def mmToFontSize(value:Int):Int = {
+    	TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, value, context.getResources.getDisplayMetrics).toInt
     }
 
     protected[this] var dpcValue = 0.0
@@ -356,8 +360,5 @@ class SurfaceAndroidES20(
 	/** Compute the dots-per-centimeter of the current device screen. */
 	protected def computeDpc():Double = {
 		context.getResources.getDisplayMetrics.densityDpi / 2.54
-		// val dm = new DisplayMetrics
-  //   	getWindowManager.getDefaultDisplay.getMetrics(dm)
-  //   	dm.densityDpi / 2.54
 	}
 }

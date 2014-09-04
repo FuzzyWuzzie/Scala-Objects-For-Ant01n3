@@ -86,10 +86,6 @@
 
 ## UI
 
-* Actually the DPC is used to scale the UI, elements keep their physical size in the metric system.
-    - This means that chaning screen will change the size in pixels of elements, but conserve the metric size.
-    - With JOGL this measure can change if the application changes monitor (multi-monitor setting), and the Root element will scale accordingly and all its descendants with it.
-    - It remains a problem with fonts. Although fonts are expressed in pica points that have a correspondance in the real world, most OSes do not consider points as such. Therefore a text at 12pts will not have the same physical size on two screens with the same resolution but not the same physical size (say a 24inch monitor and a 17inch monitor). That is a shame, but how to circumvent it ?
 * An "action bar" à la Android ?
 * Lists must show a scroll indicator when more elements than visible.
 * Lists should indicate we cannot scroll more.

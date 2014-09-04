@@ -230,6 +230,7 @@ trait GLFontLoader {
 
 /** A fond loader that rasterize the text using AWT and Java2D. */
 class GLFontLoaderAWT extends GLFontLoader {
+
 	def load(gl:SGL, resource:String, size:Int, font:GLFont, mipmaps:Boolean = false, rasterizeMipMaps:Boolean = true, optimizeFor3D:Boolean = false) {
 		val padX = size * 0.5f	// Start drawing at this distance from the left border (for slanted fonts).
 
@@ -238,8 +239,8 @@ class GLFontLoaderAWT extends GLFontLoader {
 		// Java2D forces me to create an image before I have access to font metrics
 		// However, I need font metrics to know the size of the image ... hum ...
 
-		val w = size*1.4 		// factor to make some room.
-		val h = size*1.4 		// idem
+		val w = size * 1.4 		// factor to make some room.
+		val h = size * 1.4 		// idem
 		val textureSize = math.sqrt((w*1.1) * (h*1.1) * GLFont.CharCnt).toInt
 
 		// If we use generated mipmaps, rasterizeMipMaps is false and we will
