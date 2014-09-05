@@ -467,7 +467,7 @@ case class TextItemCached(string:StringItemCached, position:Point4, color:Rgba, 
 	/** Push a new space, translate to the string position, render the string and restore the space. */
 	def render(gl:SGL, space:Space) {
 		// Push and pop or translate and translate back ?
-		space.pushpop {
+//		space.pushpop {
 			val x = align match {
 				case TextAlign.Right  => position.x - string.advance
 				case TextAlign.Center => position.x - string.advance / 2
@@ -481,7 +481,8 @@ case class TextItemCached(string:StringItemCached, position:Point4, color:Rgba, 
 			space.translate(x, y, 0)
 			string.string.setColor(color)
 			string.string.render(space)
-		}
+			space.translate(-x, -y, 0)
+//		}
 	}
 
 	def dispose() {}

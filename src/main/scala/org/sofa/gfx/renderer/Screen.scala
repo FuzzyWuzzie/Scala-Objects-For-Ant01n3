@@ -164,19 +164,22 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** By default renders all the child avatars using [[renderAvatars]].
 	  * If the screen is empty, a blue background is drawn. */
 	def render() {
-Timer.timer.measure("screen.render") {
 		if(rendering) {
 			if(hasSubs) {
+Timer.timer.measure("screen.render") {
 				renderAvatars 
+}
 
-				if(text ne null)
+				if(text ne null) {
+Timer.timer.measure("screen.renderText") {
 					text.render(space)
+}
+				}
 			} else {
 				gl.clearColor(Rgba.Blue)
 				gl.clear(gl.COLOR_BUFFER_BIT)
 			}
 		}
-}
 	}
 
 	/** By default sets the size of the viewport to the size in pixels of the surface. */

@@ -31,7 +31,7 @@ class UIAvatarFactory extends DefaultAvatarFactory {
 
 object UIAvatar {
 	/** Width of a knob, by default 1.5 mm. TODO CSS. */
-	final val KnobWidth = 0.15
+	final val KnobWidth = 0.1
 
 	/** Color of a knob. TODO CSS. */
 	final val KnobColor = Rgba.Grey40

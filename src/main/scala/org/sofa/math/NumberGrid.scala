@@ -898,16 +898,14 @@ trait NumberGrid4 extends NumberGrid {
 	  * The matrix is changed in place.
 	  */
 	def translate(tx:Double, ty:Double, tz:Double) = {
-//		val T = newInstance(4, 4).asInstanceOf[NumberGrid4]
-//		T.copy(this)
-//		setIdentity
-//		setTranslation(tx, ty, tz)
-//		multBy(T)
-		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
-		//tmpM4.setIdentity
-		//tmpM4.setTranslation(tx, ty, tz)
-		tmpM4.fillTranslation(tx, ty, tz)
-		multBy(tmpM4)
+		// if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
+		// tmpM4.fillTranslation(tx, ty, tz)
+		// multBy(tmpM4)
+
+		data(12) = (data(0) * tx) + (data(4) * ty) + (data(8) * tz) + data(12)
+		data(13) = (data(1) * tx) + (data(5) * ty) + (data(9) * tz) + data(13)
+		data(14) = (data(2) * tx) + (data(6) * ty) + (data(10) * tz) + data(14)
+		data(15) = (data(3) * tx) + (data(7) * ty) + (data(11) * tz) + data(15)
 	}
 
 	/** Multiply this matrix by a scale matrix defined by the given
@@ -923,16 +921,25 @@ trait NumberGrid4 extends NumberGrid {
 	  * The matrix is changed in place.
 	  */
 	def scale(sx:Double, sy:Double, sz:Double) = {
-//		val S = newInstance(4, 4).asInstanceOf[NumberGrid4]
-//		S.copy(this)
-//		setIdentity
-//		setScale(sx, sy, sz)
-//		multBy(S)
-		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
-//		tmpM4.setIdentity
-//		tmpM4.setScale(sx, sy, sz)
-		tmpM4.fillScale(sx, sy, sz)
-		multBy(tmpM4)
+		// if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
+		// tmpM4.fillScale(sx, sy, sz)
+		// multBy(tmpM4)
+
+		data(0)  *= sx
+		data(4)  *= sy
+		data(8)  *= sz
+
+		data(1)  *= sx
+		data(5)  *= sy
+		data(9)  *= sz
+
+		data(2)  *= sx
+		data(6)  *= sy
+		data(10) *= sz
+
+		data(3)  *= sx
+		data(7)  *= sy
+		data(11) *= sz
 	}
 	
 	/** Mutliply this matrix by a rotation matrix defined by the given

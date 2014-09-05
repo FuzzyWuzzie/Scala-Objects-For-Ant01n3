@@ -31,26 +31,16 @@ class UIToolbar(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 
 class UIAvatarRenderToolbar(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 
-	color = null
+	color = Rgba.fromHSV(toRadians(260.0), 1.0, 1.0)
 
 	override def render() {
 		val space = self.space
-		// val text  = screen.textLayer
-		// val sizex = space.subSpace.sizex
-		// val sizey = space.subSpace.sizey
-
-		if(color eq null) {
-			color = Rgba.fromHSV(toRadians(260.0), 1.0, 1.0)
-		}
 
 		space.pushSubSpace
 			fill
-//			text.font("LTe50136.ttf", cmToPoints(1).toInt)
-//			text.color(Rgba.Black)
-//			text.string("Hello", sizex*0.1, sizey*0.9, 0, screen.space)
 			self.renderSubs
 		space.popSubSpace		
-		horizShadowUnder(0.4)
+		horizShadowUnder(0.3)
 	}
 }
 
