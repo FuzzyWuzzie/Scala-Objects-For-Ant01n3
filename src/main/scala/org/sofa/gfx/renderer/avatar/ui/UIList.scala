@@ -131,8 +131,40 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIre
 				self.space.popSubSpace
 			self.screen.textLayer.popScissors()
 		self.screen.scissors.pop(screen.gl)
+		renderScrollIndicator
+	}
+
+	protected def renderScrollIndicator() {
+		import UIAvatar._
+
+		val space = self.space.asInstanceOf[UIAvatarSpaceList]
+
+		if(space.knobVisible > 0) {
+			val thisH = space.thisSpace.sizey
+			val subH  = space.subSpace.sizey
+			val offY  = space.offsety
+			val ratio = thisH / subH
+			val s1cm  = self.parent.space.scale1cm
+			val sp    = screen.space
+			val gl    = screen.gl
+
+			val color = if(space.knobVisible > 0.5) KnobColor
+			            else Rgba(KnobColor.red, KnobColor.green, KnobColor.blue, space.knobVisible * 2)
+
+			sp.pushpop {
+				// We are in the parent space.
+				shaderUniform.use
+				shaderUniform.uniform("uniformColor", color)
+				sp.translate(space.thisSpace.posx + space.thisSpace.sizex - (s1cm*KnobWidth),
+				             space.thisSpace.posy - offY * ratio, 0)
+				sp.scale(s1cm * KnobWidth, thisH * ratio, 1)
+				sp.uniformMVP(shaderUniform)
+				plainRect.draw(gl)
+			}
+		}
 	}
 }
+
 
 class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 
@@ -159,7 +191,7 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 //			text.color(Rgba.Black)
 //			text.string("Hello", sizex*0.1, sizey*0.9, 0, screen.space)
 			self.renderSubs
-		space.popSubSpace		
+		space.popSubSpace
 	}
 }
 
@@ -183,6 +215,8 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	var offsety = 0.0
 
+	var knobVisible = 1.0
+
  	def thisSpace = fromSpace
 
  	def subSpace = toSpace
@@ -193,10 +227,12 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 				itemSize = sizeCm
 				dirtyLayout = true
 				self.screen.requestRender
+				knobVisible = 1.0
 			}
 			case UIList.Offset(amount) => {
 				offsety += amount * scale1cm
 				self.screen.requestRender
+				knobVisible = 1.0
 				checkOffset
 			}
 			case UIList.OffsetAt(percent) => {
@@ -204,11 +240,13 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 				self.screen.requestRender
 				var offsetMax = min(-(toSpace.sizey - fromSpace.sizey), 0)
 				offsety = offsetMax * p
+				knobVisible = 1.0
 				checkOffset
 			}
 			case UIList.OffsetPages(pages) => {
 				self.screen.requestRender
 				offsety += fromSpace.sizey * pages
+				knobVisible = 1.0
 				checkOffset
 			}
 			case _ => super.changeSpace(newState)
@@ -239,6 +277,14 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
  			layoutSubs
  			checkOffset
+		}
+
+		if(knobVisible > 0.05) {
+			knobVisible -= 0.05
+			self.screen.requestRender
+		} else if(knobVisible > 0 && knobVisible <= 0.05) {
+			knobVisible  = 0.0
+			self.screen.requestRender
 		}
  	}
 

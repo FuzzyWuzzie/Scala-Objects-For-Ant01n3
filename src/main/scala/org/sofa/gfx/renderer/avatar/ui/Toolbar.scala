@@ -1,5 +1,7 @@
 package org.sofa.gfx.renderer.avatar.ui
 
+import scala.math._
+
 import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
 import org.sofa.gfx.{ShaderResource}
 import org.sofa.gfx.renderer.{Screen}
@@ -38,7 +40,7 @@ class UIAvatarRenderToolbar(avatar:Avatar) extends UIAvatarRender(avatar) with U
 		// val sizey = space.subSpace.sizey
 
 		if(color eq null) {
-			color = Rgba.randomHue(0.1, 1.0)
+			color = Rgba.fromHSV(toRadians(260.0), 1.0, 1.0)
 		}
 
 		space.pushSubSpace
@@ -48,6 +50,7 @@ class UIAvatarRenderToolbar(avatar:Avatar) extends UIAvatarRender(avatar) with U
 //			text.string("Hello", sizex*0.1, sizey*0.9, 0, screen.space)
 			self.renderSubs
 		space.popSubSpace		
+		horizShadowUnder(0.4)
 	}
 }
 
