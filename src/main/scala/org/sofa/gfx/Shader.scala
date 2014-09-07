@@ -328,11 +328,11 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     }
     
     def use() {
-//    	if(Shader.currentlyBound ne this) {
+   		if(Shader.currentlyBound ne this) {
         	checkId
        		useProgram(oid)
-  //     		Shader.currentlyBound = this
-   // 	}
+	     	Shader.currentlyBound = this
+	   	}
     }
     
     override def dispose() {
@@ -473,7 +473,8 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     def getAttribLocation(variable:String):Int = {
         var loc = attributeLocations.get(variable).getOrElse {
         	checkId
-        	useProgram(oid)
+        	use
+        	//useProgram(oid)
             val l = gl.getAttribLocation(oid, variable) 
             checkErrors
             if(l >= 0) {
@@ -489,7 +490,8 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     def getUniformLocation(variable:String):AnyRef = {
         val loc = uniformLocations.get(variable).getOrElse {
         	checkId
-        	useProgram(oid)
+        	use
+        	//useProgram(oid)
             var l = gl.getUniformLocation(oid, variable)
             checkErrors
             if(l ne null) {
