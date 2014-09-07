@@ -86,6 +86,8 @@ class HexaGridMesh(
 
     def vertexCount:Int = vcount
 
+    def elementsPerPrimitive:Int = 2
+
     protected def allocateVertices():FloatBuffer = {
     	// generate a set of points, organized first in rows (X) then
     	// in columns (Y).

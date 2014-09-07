@@ -71,6 +71,8 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 
     def vertexCount:Int = nVertX * nVertZ
 
+    def elementsPerPrimitive:Int = 3
+
     override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex   => V

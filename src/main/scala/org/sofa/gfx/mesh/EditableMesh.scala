@@ -45,6 +45,8 @@ class EditableMesh extends Mesh {
 	
 	override def drawAs(gl:SGL):Int = gl.TRIANGLES
 	
+    def elementsPerPrimitive:Int = 3
+
 	// --------------------------------------------------------------
 	// Command, mesh building
 

@@ -87,6 +87,8 @@ class RealQuadsMesh(val size:Int) extends Mesh {
 
 	def vertexCount:Int = size * 4
 
+	def elementsPerPrimitive:Int = 4
+
 	override def attribute(name:String):FloatBuffer = {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex   => V

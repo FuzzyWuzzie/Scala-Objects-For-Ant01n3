@@ -33,7 +33,9 @@ class TrianglesMesh(val size:Int) extends Mesh {
     	
 	// -- Mesh interface -----------------------------------------------------
 
-	def vertexCount:Int = size * 3
+	def vertexCount:Int = size * elementsPerPrimitive
+
+    def elementsPerPrimitive:Int = 3
 
 	def drawAs(gl:SGL):Int = gl.TRIANGLES
 
@@ -44,22 +46,25 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	// -- Constructive interface ---------------------------------------------------
 
 	class Vx(var vertex:Int) {
-	/** Set the `vertex` position (`x`, `y`, `z`). */
+		/** Set the `vertex` position (`x`, `y`, `z`). */
 		def xyz(x:Float, y:Float, z:Float):Vx = { setPoint(vertex,x,y,z); this }
 		
-	/** Set the `vertex` texture coordinates (`u`, `v`). */
+		/** Set the `vertex` texture coordinates (`u`, `v`). */
 		def uv(u:Float, v:Float):Vx = { setPointTexCoord(vertex,u,v); this }
 		
-	/** Set the `vertex` color (`r`, `g`, `b`). */
+		/** Set the `vertex` color (`r`, `g`, `b`). */
 		def rgb(r:Float, g:Float, b:Float):Vx = { setPointColor(vertex,r,g,b,1f); this }
 		
-	/** Set the `vertex` color (`r`, `g`, `b`, `a`). */
+		/** Set the `vertex` color (`r`, `g`, `b`, `a`). */
 		def rgba(r:Float, g:Float, b:Float, a:Float):Vx = { setPointColor(vertex,r,g,b,a); this }
+
+		/** Set the `vertex` `color`. */
+		def rgba(color:Rgba):Vx = { setPointColor(vertex, color); this }
 		
-	/** Set the `vertex` normal (`x`, `y`, `z`). */
+		/** Set the `vertex` normal (`x`, `y`, `z`). */
 		def nnn(x:Float, y:Float, z:Float):Vx = { setPointNormal(vertex,x,y,z); this }
 		
-	/** Set the `values` for `vertex` attribute `name`. */
+		/** Set the `values` for `vertex` attribute `name`. */
 		def user(name:String, values:Float*):Vx = { setAttribute(name, vertex, values:_*); this }
 	}
 

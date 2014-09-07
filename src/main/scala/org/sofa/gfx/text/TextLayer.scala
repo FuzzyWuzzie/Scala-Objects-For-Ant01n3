@@ -7,22 +7,6 @@ import org.sofa.gfx.{SGL, Space, ShaderProgram, Scissors, ScissorStack}
 import org.sofa.math.{Point2, Point3, Point4, Rgba}
 
 
-object TextAlign extends Enumeration {
-	final val Left = Value
-	final val Right = Value
-	final val Center = Value
-
-	type TextAlign = Value
-}
-
-object VerticalAlign extends Enumeration {
-	final val Baseline = Value
-	final val Center = Value
-
-	type VerticalAlign = Value
-}
-
-
 /** A text renderer that memorize couples of points and strings in pixel space,
   * and render them in one pass.
   *

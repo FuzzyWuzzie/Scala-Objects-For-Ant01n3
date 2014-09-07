@@ -78,6 +78,8 @@ class CubicCurveMesh(countCurves:Int, val segments:Int) extends Mesh {
 
     def vertexCount:Int = (segments + 1) * count
 
+    def elementsPerPrimitive:Int = 2
+
     override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => V

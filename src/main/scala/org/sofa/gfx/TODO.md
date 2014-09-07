@@ -2,6 +2,7 @@
 
 ## Priority list and roadmap:
 
+0. Display Lists
 1. Creation and representation of the map in the model.
 2. Displacement on the map
     - On the model side.
@@ -93,15 +94,27 @@
     - More than this an animation is needed -> behaviors ?
 * Be able to create interfaces using a dedicated JSON format or some other DSL.
     - Add a message to the RendererActor that handles such things, maybe from a separate JSON, but also using a DSL.
+* Use the idea of "Display Lists" (Android, OpenGL).
+    - For text each UI elements builds a display list of text (backed by a GLText ?). If the elment changes, the display list is rebuilt, else the display list is kept. The display list contains ALL the text the element needs (or the element builds several display lists if one changes often and others not).
+    - For graphics its the same, build a display list of graphical elements needed by the element. If the element does not changes, the list is reused, else it is rebuilt.
+* Use the idea of "invalidation" (Android),
+    - In addition to the needRender flag (general), and the layoutRequest flag (UI), we can use an invalidate flag that tells that the display list of the element needs to be rebuilt.
 
 ## OpenGL
 
 * Would a shader "current shader" or "current texture" avoid lots of bindings and provide performance gains ?
+    - Done.
+* Add buffers for some often used glGet.
+* We could improve Space when there is no projection, can avoid a matrix mult at each mvp recompute.
+
 
 ## Text
 
-* Improve text efficiency, profiling shows we spend a lot of time drawing and remaking strings.
-* Do some tests and benchmarks.
+* We probably can improve a lot text layer by avoiding to redo the same things (mvp, color, etc) at each string.
+* A way to do this, maybe, is to create a giant string for each font, since we know we will have to draw the text in one pass at the end.
+    - The giant string would position directly texts at their position on a pixel surface,
+    - Each point would have a color associated, allowing to create text effect,
+    - The counterpart would be that we cannot reuse strings, we would have to recreate it, each time.
 
 ## CSS
 

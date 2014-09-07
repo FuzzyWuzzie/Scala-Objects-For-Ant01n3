@@ -29,6 +29,8 @@ class PointsMesh(val size:Int) extends Mesh {
 
 	def vertexCount:Int = size
 
+	def elementsPerPrimitive:Int = 1
+
 	override def attribute(name:String):FloatBuffer = {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex => V

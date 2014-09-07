@@ -107,6 +107,8 @@ class HexaTilesMesh(
 
     def vertexCount = vcount
 
+    def elementsPerPrimitive:Int = 3
+
     // -- Mesh creation ------------------------------------------------
 
     protected def setPoint(p:Int, x:Float, y:Float, data:FloatBuffer=V) {

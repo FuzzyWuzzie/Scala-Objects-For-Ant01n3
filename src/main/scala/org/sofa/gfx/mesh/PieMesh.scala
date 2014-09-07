@@ -59,15 +59,14 @@ class PieMesh(val segments:Int) extends Mesh {
 
 	def vertexCount:Int = segments + 2
 
+	def elementsPerPrimitive:Int = 1
+
 	def drawAs(gl:SGL):Int = gl.TRIANGLE_FAN
 
-    /** Draw the last vertex array created and draw only the given number of `segments`.
-      * If no vertex array has been created a [[NoVertexArrayException]] is thrown. Use
-      * the `drawAs()` method to select how to draw the mesh (triangles, points, etc.). */
-    def draw(gl:SGL, segments:Int) {
+    override def draw(gl:SGL, count:Int) {
     	if(va ne null) {
-    		val s = if(segments <= this.segments) segments else this.segments
-    		va.draw(drawAs(gl), 2+s) 
+    		val s = if(count <= this.segments) count else segments
+    		va.draw(drawAs(gl), 2 + s) 
     	} else {
     		throw new NoVertexArrayException("Mesh : create a vertex array first")
     	}

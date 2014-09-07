@@ -289,6 +289,10 @@ trait Mesh {
 	/** Number of vertices in the mesh. */
 	def vertexCount:Int
 
+	/** Number of elements (vertices, colors, etc) for one primitive. For
+	  * example lines uses 2 elements, triangles 3, etc. */
+	def elementsPerPrimitive:Int
+
 	/** Internal method used to access a vertex attribute by its name 
 	  * under the form of the [[MeshAttribute]] handling it. */
 	protected def meshAttribute(name:String):MeshAttribute = {
@@ -366,12 +370,24 @@ trait Mesh {
     def drawAs(gl:SGL):Int
 
     /** Draw the last vertex array created. If no vertex array has been created 
-      * a NoVertexArrayException is thrown. Use the `drawAs()` method to select
+      * a `NoVertexArrayException` is thrown. This uses the `drawAs()` method to select
       * how to draw the mesh (triangles, points, etc.). */
     def draw(gl:SGL) {
     	if(va ne null)
     		va.draw(drawAs(gl)) 
-    	else throw new NoVertexArrayException("Mesh : create a vertex array first")
+    	else throw new NoVertexArrayException("Mesh: create a vertex array before draw")
+    }
+
+    /** Draw the `count` first primitives the last vertex array created. A
+      * primitive is a line or triangle for example, it depends on the kind of mesh.
+      * If no vertex array has been created a `NoVertexArrayException` is thrown.
+      * This uses the `drawAs()` method to select
+      * how to draw the mesh (triangles, points, etc.), and the `elementsPerPrimitive`
+      * to know how many elements (vertices, colors) makes up a primitive. */
+    def draw(gl:SGL, count:Int) {
+    	if(va ne null)
+    		va.draw(drawAs(gl), count * elementsPerPrimitive)
+    	else throw new NoVertexArrayException("Mesh: create a vertex array before draw")
     }
     
     override def toString():String = {

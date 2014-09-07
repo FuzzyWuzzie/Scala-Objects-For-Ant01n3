@@ -33,6 +33,8 @@ class UnindexedTrianglesMesh(val size:Int) extends Mesh {
 
     def vertexCount:Int = size * 3
 
+    def elementsPerPrimitive:Int = 3
+
     override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => V

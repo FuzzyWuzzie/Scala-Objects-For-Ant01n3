@@ -20,6 +20,8 @@ class WireCubeMesh(val side:Float) extends Mesh  {
 
     def vertexCount:Int = 6
 
+    def elementsPerPrimitive:Int = 2
+
     override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match {
     		case VertexAttribute.Vertex => V

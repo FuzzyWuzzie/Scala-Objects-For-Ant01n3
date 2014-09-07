@@ -15,6 +15,8 @@ class AxisMesh(val side:Float) extends Mesh {
 
     def vertexCount:Int = 12
 
+    def elementsPerPrimitive:Int = 6
+
     override def attribute(name:String):FloatBuffer = {
     	VertexAttribute.withName(name) match { 
     		case VertexAttribute.Vertex => V

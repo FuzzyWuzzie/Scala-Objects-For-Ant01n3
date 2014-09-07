@@ -277,6 +277,10 @@ object Texture {
     /** Loaded, dependant on the underlying system that allows to find, read
       * and transform an image into an input stream. */
     var loader:TextureLoader = new DefaultTextureLoader()
+
+    /** Used to avoid re-binding the same texture again and again. Not thread-safe.
+      * However we always use the same thread with OpenGL. */
+    var currentlybound = new Array[Texture](10)
 }
 
 
@@ -301,7 +305,8 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     
     protected def init() {
         super.init(createTexture)
-        bindTexture(mode, oid)
+        //bindTexture(mode, oid)
+        bind
         checkErrors
     }
     
@@ -387,13 +392,34 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     
     /** Bind the texture as current. */
     def bind() {
-        bindTexture(mode, oid)
+    	if(Texture.currentlybound(0) != this) {
+        	bindTexture(mode, oid)
+        	Texture.currentlybound(0) = this
+        }
     }
     
     /** Both bind the texture and specify to which texture unit it binds. */
     def bindTo(textureUnit:Int) {
-        activeTexture(textureUnit)
-        bindTexture(mode, oid)
+    	// Yet heavy, but faster.
+    	if(textureUnit == gl.TEXTURE0) {
+    		if(Texture.currentlybound(0) != this) {
+		        activeTexture(textureUnit)
+        		bindTexture(mode, oid)
+        		Texture.currentlybound(0) = this
+    		}	
+    	} else if(textureUnit == gl.TEXTURE1) {
+    		if(Texture.currentlybound(1) != this) {
+		        activeTexture(textureUnit)
+        		bindTexture(mode, oid)
+        		Texture.currentlybound(1) = this
+    		}	    		
+    	} else if(textureUnit == gl.TEXTURE2) {
+    		if(Texture.currentlybound(2) != this) {
+		        activeTexture(textureUnit)
+        		bindTexture(mode, oid)
+        		Texture.currentlybound(2) = this
+    		}	
+    	} else throw new RuntimeException("cannot handle more than 3 texture unit yet")
     }
 
     /** Bind the texture, specify to witch texture unit it binds, and set

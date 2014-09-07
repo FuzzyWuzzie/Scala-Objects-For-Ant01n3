@@ -90,6 +90,15 @@ class HexaTileMesh(
 
 	def drawAs(gl:SGL):Int = gl.TRIANGLE_STRIP
 
+    def elementsPerPrimitive:Int = 1
+
+    override def draw(gl:SGL, count:Int) {
+    	// Must be redefined to count elements well
+    	if(va ne null)
+    		va.draw(drawAs(gl), 2 + count)
+    	else throw new NoVertexArrayException("Mesh: create a vertex array before draw")
+    }
+
     // -- Mesh creation ------------------------------------------------
 
     protected def setPoint(p:Int, x:Float, y:Float, data:FloatBuffer=V) {

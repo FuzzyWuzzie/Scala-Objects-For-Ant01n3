@@ -3,6 +3,14 @@ package org.sofa.gfx
 import org.sofa.nio._
 import scala.collection.mutable.HashMap
 
+
+object VertexArray {
+	/** Allows to avoid re-binding the same vertex array. Not thread-safe, but
+	  * we use OpenGL only in a single thread. */
+	var currentlybound:VertexArray = null
+}
+
+
 /** Associates several buffers containing arrays representing vertex attributes and
   * an eventual element buffer (indices into these arrays) in a common structure.
   * 
@@ -219,23 +227,26 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     }
 
     protected def bind() {
-        if(gl.isES) {
-            // No vertex arrays in ES2, a shame ! :-)
-            var i = 0
-            val n = buffers.length
-            while(i < n) {
-                val pos = buffers(i)._1
-                val buf = buffers(i)._2
-                buf.bind
-                buf.vertexAttrib(pos, true)
-                i += 1
-            }
-            if(elements ne null) {
-                elements.bind
-            }
-        } else {
-            bindVertexArray(oid)
-        }
+    	if(VertexArray.currentlybound != this) {
+	        if(gl.isES) {
+	            // No vertex arrays in ES2, a shame ! :-)
+	            var i = 0
+	            val n = buffers.length
+	            while(i < n) {
+	                val pos = buffers(i)._1
+	                val buf = buffers(i)._2
+	                buf.bind
+	                buf.vertexAttrib(pos, true)
+	                i += 1
+	            }
+	            if(elements ne null) {
+	                elements.bind
+	            }
+	        } else {
+	            bindVertexArray(oid)
+	        }
+	        VertexArray.currentlybound = this
+	    }
     }
     
     def drawTriangles() {

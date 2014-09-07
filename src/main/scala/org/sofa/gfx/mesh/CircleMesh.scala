@@ -22,6 +22,8 @@ class CircleMesh(radius:Double, sides:Int) extends Mesh {
 
     def vertexCount:Int = sides
 
+    def elementsPerPrimitive:Int = sides
+
 	override def attribute(name:String):FloatBuffer = {
 		VertexAttribute.withName(name) match {
 			case VertexAttribute.Vertex => V
