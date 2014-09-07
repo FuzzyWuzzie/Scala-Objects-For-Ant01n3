@@ -212,6 +212,9 @@ class GLText(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		y = 0
 	}
 
+	/** Replace a call to `begin` / `end`. */
+	def compose(code:(GLText)=>Unit) { begin; code(this); end }
+
 	def chars(s:String):GLText = {
 		var i = 0
 		val n = min(s.length, maxCharCnt-(t/2))
