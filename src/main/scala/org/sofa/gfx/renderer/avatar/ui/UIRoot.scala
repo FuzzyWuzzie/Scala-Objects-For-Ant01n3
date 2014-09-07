@@ -18,10 +18,13 @@ class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) with UIr
 		val gl = screen.gl
 		val text  = screen.textLayer
 
-		gl.clearColor(Rgba.White)
-		gl.clear(gl.COLOR_BUFFER_BIT)
+// if(self.spaceChanged)
+// 	println("# %s space changed".format(self.name))
 
-		gl.lineWidth(1f)
+		gl.clearColor(Rgba.White)
+		//gl.clear(gl.COLOR_BUFFER_BIT)
+
+		//gl.lineWidth(1f)
 		gl.disable(gl.DEPTH_TEST)
 		gl.enable(gl.BLEND)
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -93,6 +96,7 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 			toSpace.to.set(  1, 1 * ratiohw, 1)
 			toSpace.size.set(1, 1 * ratiohw, 1)
 
+			self.spaceChanged = true
 			screen.requestRender
 			
 			if(layout eq null) {

@@ -19,6 +19,8 @@ case class ShaderAttributeException(msg:String, nested:Throwable=null) extends E
 object Shader {
 	var convertToCurrentShaderVersion = true
 
+	var currentlyBound:ShaderProgram = null
+
     /** A regular expression that matches any line that contains an include. */
     val IncludeMatcher = "#include\\s+<([^>]+)>\\s*".r
 
@@ -326,8 +328,11 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     }
     
     def use() {
-        checkId
-        useProgram(oid)
+//    	if(Shader.currentlyBound ne this) {
+        	checkId
+       		useProgram(oid)
+  //     		Shader.currentlyBound = this
+   // 	}
     }
     
     override def dispose() {

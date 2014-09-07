@@ -2,7 +2,7 @@ package org.sofa.gfx.renderer.avatar.ui
 
 import scala.math._
 
-import org.sofa.math.{Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
+import org.sofa.math.{Point3, Vector3, Matrix4, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
 import org.sofa.gfx.{ShaderResource}
 import org.sofa.gfx.renderer.{Screen}
 import org.sofa.gfx.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName,
@@ -123,6 +123,9 @@ class UIListItem(name:AvatarName, screen:Screen)
 
 class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 	override def render() {
+// if(self.spaceChanged)
+// 	println("# %s space changed".format(self.name))
+
 		val s = self.space.thisSpace
 		val scissors = self.screen.scissors.push(screen.gl, s.posx, s.posy, s.posx+s.sizex, s.posy+s.sizey, screen.space)
 			self.screen.textLayer.pushScissors(scissors)
@@ -132,35 +135,52 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIre
 			self.screen.textLayer.popScissors()
 		self.screen.scissors.pop(screen.gl)
 		renderScrollIndicator
+
+		self.spaceChanged = false
+		self.renderChanged = false
 	}
+
+	protected[this] var savedMVP = Matrix4()
 
 	protected def renderScrollIndicator() {
 		import UIAvatar._
 
 		val space = self.space.asInstanceOf[UIAvatarSpaceList]
+		val gl    = screen.gl
 
-		if(space.knobVisible > 0) {
-			val thisH = space.thisSpace.sizey
-			val subH  = space.subSpace.sizey
-			val offY  = space.offsety
-			val ratio = thisH / subH
-			val s1cm  = self.parent.space.scale1cm
-			val sp    = screen.space
-			val gl    = screen.gl
+		if(self.spaceChanged) {
+			if(space.knobVisible > 0) {
+				val thisH = space.thisSpace.sizey
+				val subH  = space.subSpace.sizey
+				val offY  = space.offsety
+				val ratio = thisH / subH
+				val s1cm  = self.parent.space.scale1cm
+				val sp    = screen.space
 
-			val color = if(space.knobVisible > 0.5) KnobColor
+				val color = if(space.knobVisible > 0.5) KnobColor
 			            else Rgba(KnobColor.red, KnobColor.green, KnobColor.blue, space.knobVisible * 2)
 
-			sp.pushpop {
-				// We are in the parent space.
-				shaderUniform.use
-				shaderUniform.uniform("uniformColor", color)
-				sp.translate(space.thisSpace.posx + space.thisSpace.sizex - (s1cm*KnobWidth),
+				sp.pushpop {
+					// We are in the parent space.
+					sp.translate(space.thisSpace.posx + space.thisSpace.sizex - (s1cm*KnobWidth),
 				             space.thisSpace.posy - offY * ratio, 0)
-				sp.scale(s1cm * KnobWidth, thisH * ratio, 1)
-				sp.uniformMVP(shaderUniform)
-				plainRect.draw(gl)
+					sp.scale(s1cm * KnobWidth, thisH * ratio, 1)
+					savedMVP.copy(sp.top)
+					shaderUniform.use
+					shaderUniform.uniform("uniformColor", color)
+					sp.uniformMVP(shaderUniform)
+					plainRect.draw(gl)
+				}
+
 			}
+		} else {
+			val color = if(space.knobVisible > 0.5) KnobColor
+			           else Rgba(KnobColor.red, KnobColor.green, KnobColor.blue, space.knobVisible * 2)
+			
+			shaderUniform.use
+			shaderUniform.uniform("uniformColor", color)
+			shaderUniform.uniformMatrix("MVP", savedMVP)
+			plainRect.draw(gl)
 		}
 	}
 }
@@ -173,6 +193,8 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 	lineColor = Rgba.Black
 
 	override def render() {
+// if(self.spaceChanged)
+// 	println("# %s space changed".format(self.name))
 		//println(s"* render ${self.name}")
 		val space = self.space
 		// val text  = screen.textLayer
@@ -192,6 +214,9 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 //			text.string("Hello", sizex*0.1, sizey*0.9, 0, screen.space)
 			self.renderSubs
 		space.popSubSpace
+
+		self.spaceChanged = false
+		self.renderChanged = false
 	}
 }
 
@@ -228,6 +253,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 				dirtyLayout = true
 				self.screen.requestRender
 				knobVisible = 1.0
+				checkOffset
 			}
 			case UIList.Offset(amount) => {
 				offsety += amount * scale1cm
@@ -258,6 +284,8 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 		if(offsety > 0) offsety = 0
 		else if(offsety < offsetMax) offsety = offsetMax
+		
+		self.spaceChanged = true
 	}
 
  	override def animateSpace() {
@@ -277,6 +305,9 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
  			layoutSubs
  			checkOffset
+		} else {
+			if(self.parent.spaceChanged)
+				self.spaceChanged = true
 		}
 
 		if(knobVisible > 0.05) {
@@ -361,6 +392,10 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 			toSpace.from.set(0, 0, 0)
 			toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
 			self.screen.requestRender
+			self.spaceChanged = true
+		} else {
+			if(self.parent.spaceChanged)
+				self.spaceChanged = true
 		}
 		
 		// DirtyLayout flag is reset in super.animateSpace

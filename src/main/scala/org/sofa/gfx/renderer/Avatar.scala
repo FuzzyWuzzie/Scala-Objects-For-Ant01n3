@@ -68,6 +68,16 @@ abstract class Avatar(
 	/** True after a call to [begin] and before [end]. */
 	protected[this] var rendering = false
 
+	/** Utility flag set to true by `AvatarRender.changeRender()` if something changed. Reset
+	  * to false at the end of the render phase (therefore usable by sub-avatars to know
+	  * if their parent render changed). */
+	var renderChanged = true
+
+	/** Utility flag set to true by `AvatarSpace.changeSpace()` if something changed. Reset
+	  * to false at the end of the render phase (therefore usable by sub-avatars to know
+	  * if their parent render changed). */
+	var spaceChanged = true
+
 // Access to components
 
 	/** The component of the avatar that handles position. */
@@ -215,6 +225,12 @@ abstract class DefaultAvatarMixed(name:AvatarName, screen:Screen) extends Defaul
 
 	override def animate() { animateSpace; animateRender; animateSubs }
 
+	override def render() {
+		super.render
+		spaceChanged  = false
+		renderChanged = false
+	}
+
 // Not needed and bugged (state can be sent to sapce AND render)
 // 	override def change(state:AvatarState) {
 // 		state match {
@@ -230,5 +246,9 @@ abstract class DefaultAvatarMixed(name:AvatarName, screen:Screen) extends Defaul
   * are references to distinct interchangeable objects. */
 abstract class DefaultAvatarComposed(name:AvatarName, screen:Screen) extends DefaultAvatar(name, screen) {
 
-	def render() { renderer.render }
+	def render() {
+		renderer.render 
+		spaceChanged  = false
+		renderChanged = false
+	}
 }

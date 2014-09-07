@@ -2,14 +2,21 @@
 
 ## Priority list and roadmap:
 
-0. Display Lists
-1. Creation and representation of the map in the model.
-2. Displacement on the map
+UI
+
+0. dirtyRender & dirtyPosition
+    - Make this more general in Avatars ?
+1. Display Lists
+
+Game
+
+0. Creation and representation of the map in the model.
+1. Displacement on the map
     - On the model side.
     - On the avatar side, we provides simple ways to displace avatars.
-3. Add a more efficient ordered rendering in AvatarContainer.
-4. Add selective rendering.
-5. Picking.
+2. Add a more efficient ordered rendering in AvatarContainer.
+3. Add selective rendering.
+4. Picking.
 
 ## General
 
@@ -88,7 +95,6 @@
 ## UI
 
 * An "action bar" à la Android ?
-* Lists must show a scroll indicator when more elements than visible.
 * Lists should indicate we cannot scroll more.
 * UI avatars should have visual transitions to appear and end.
     - More than this an animation is needed -> behaviors ?
@@ -96,7 +102,10 @@
     - Add a message to the RendererActor that handles such things, maybe from a separate JSON, but also using a DSL.
 * Use the idea of "Display Lists" (Android, OpenGL).
     - For text each UI elements builds a display list of text (backed by a GLText ?). If the elment changes, the display list is rebuilt, else the display list is kept. The display list contains ALL the text the element needs (or the element builds several display lists if one changes often and others not).
-    - For graphics its the same, build a display list of graphical elements needed by the element. If the element does not changes, the list is reused, else it is rebuilt.
+    - For graphics its the same, build a display list of graphical elements needed by the element. If the element does not changes, the list is reused, else it is rebuilt. 
+    - Display list items can contain the actual MVP at time or construction and a set of basic commands (shader, mesh)...
+    - One can consider two changes in display list items : only the MVP changed but not the contents, or both.
+        + add dirtyMVP and dirtyRender flags ?
 * Use the idea of "invalidation" (Android),
     - In addition to the needRender flag (general), and the layoutRequest flag (UI), we can use an invalidate flag that tells that the display list of the element needs to be rebuilt.
 

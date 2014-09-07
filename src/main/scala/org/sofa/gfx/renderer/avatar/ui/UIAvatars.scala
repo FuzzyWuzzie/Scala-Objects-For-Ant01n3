@@ -2,7 +2,7 @@ package org.sofa.gfx.renderer.avatar.ui
 
 import scala.math.{min, max}
 
-import org.sofa.math.{Point3, Point4, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
+import org.sofa.math.{Point3, Point4, Vector3, Matrix4, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
 import org.sofa.gfx.{ShaderResource}
 import org.sofa.gfx.renderer.{Screen}
 import org.sofa.gfx.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState}
@@ -233,21 +233,42 @@ trait UIrenderUtils {
 		}
 	}
 
+	class FillDP {
+		val mvp = Matrix4()
+		val color = Rgba(0, 0, 0, 0)
+		def compile(mvp:Matrix4, color:Rgba) {
+			this.color.copy(color)
+			this.mvp.copy(mvp)
+		}
+		def render(gl:SGL) {
+			shaderUniform.use
+			shaderUniform.uniform("uniformColor", color)
+			shaderUniform.uniformMatrix("MVP", mvp)
+			plainRect.draw(gl)
+		}
+	}
+
+	protected[this] val fillDP = new FillDP()
+
 	/** Fill the space of the avatar with an uniform color. */
 	def fill() {
-		val screen = self.screen
-		val space  = screen.space
-		val gl     = screen.gl
+		val gl = self.screen.gl
 
-		val subSpace = self.space.subSpace
+		if(self.spaceChanged || self.renderChanged) {
+			val space    = self.screen.space
+			val subSpace = self.space.subSpace
 
-		shaderUniform.use
-		space.pushpop {
-			//println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
-			shaderUniform.uniform("uniformColor", color)
-			space.scale(subSpace.sizex, subSpace.sizey, 1)
-			space.uniformMVP(shaderUniform)
-			plainRect.draw(gl)
+			space.pushpop {
+				//println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
+				shaderUniform.use
+				shaderUniform.uniform("uniformColor", color)
+				space.scale(subSpace.sizex, subSpace.sizey, 1)
+				space.uniformMVP(shaderUniform)
+				plainRect.draw(gl)
+				fillDP.compile(space.top, color)
+			}
+		} else {
+			fillDP.render(gl)
 		}
 	}
 
@@ -294,7 +315,7 @@ abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
 	  * This flag is set to true when (this list is exaustive
 	  * and should be kept up to date):
 	  *  - the avatar is created.
-	  *  - this avatar space changes.
+	  *  - this avatar space changes (Avatar.spaceChanged).
 	  *  - a sub-avatar is added or removed.
 	  *  - the layoutRequest is issued by the sub-avatars. */
 	protected[this] var dirtyLayout = true
@@ -323,6 +344,7 @@ abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
 		if(dirtyLayout) {
 			self.screen.requestRender
 			dirtyLayout = false
+			self.spaceChanged = true
 			
 			if(layout ne null)
 				layout.layout(self, scale1cm)

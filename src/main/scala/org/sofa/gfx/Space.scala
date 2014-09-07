@@ -250,6 +250,12 @@ trait Space {
         	needRecomputeMVP = false
         }    	
     }
+
+    /** Access to the model-view-projection (MVP) matrix actually on top the of stack. */
+    def top:Matrix4 = {
+    	recomputeMVP
+    	mvp
+    }
     
     /** Store as uniform variables the model-view matrix, the model-view*projection matrix (mvp)
       * and the top 3x3 matrix extracted from the model-view matrix in the given shader.

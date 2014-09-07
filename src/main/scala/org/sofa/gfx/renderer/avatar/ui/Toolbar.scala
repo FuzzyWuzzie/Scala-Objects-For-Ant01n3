@@ -34,6 +34,9 @@ class UIAvatarRenderToolbar(avatar:Avatar) extends UIAvatarRender(avatar) with U
 	color = Rgba.fromHSV(toRadians(260.0), 1.0, 1.0)
 
 	override def render() {
+// if(self.spaceChanged)
+// 	println("# %s space changed".format(self.name))
+
 		val space = self.space
 
 		space.pushSubSpace
@@ -41,6 +44,9 @@ class UIAvatarRenderToolbar(avatar:Avatar) extends UIAvatarRender(avatar) with U
 			self.renderSubs
 		space.popSubSpace		
 		horizShadowUnder(0.3)
+
+		self.spaceChanged = false
+		self.renderChanged = false
 	}
 }
 
@@ -76,6 +82,10 @@ class UIAvatarSpaceToolbar(avatar:Avatar) extends UIAvatarSpace(avatar) {
 			toSpace.from.set(0, 0, 0)
 			toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
 			self.screen.requestRender
+			self.spaceChanged = true
+		} else {
+			if(self.parent.spaceChanged)
+				self.spaceChanged = true
 		}
 
 		// dirtyLayout flag is reset in super.animateSpace.

@@ -46,10 +46,9 @@ class UIAvatarRenderPanel(avatar:Avatar) extends UIAvatarRender(avatar) with UIr
 	color = null
 
 	override def render() {
+// if(self.spaceChanged)
+// 	println("# %s space changed".format(self.name))
 		val space = self.space
-		// val text  = screen.textLayer
-		// val sizex = space.subSpace.sizex
-		// val sizey = space.subSpace.sizey
 
 		if(color eq null) {
 			color = Rgba.randomHue(0.1, 1.0)
@@ -57,11 +56,11 @@ class UIAvatarRenderPanel(avatar:Avatar) extends UIAvatarRender(avatar) with UIr
 
 		space.pushSubSpace
 			fill
-//			text.font("LTe50136.ttf", cmToPoints(1).toInt)
-//			text.color(Rgba.Black)
-//			text.string("Hello", sizex*0.1, sizey*0.9, 0, screen.space)
 			self.renderSubs
-		space.popSubSpace		
+		space.popSubSpace
+
+		self.spaceChanged = false
+		self.renderChanged = false
 	}
 }
 
@@ -97,6 +96,10 @@ class UIAvatarSpacePanel(avatar:Avatar) extends UIAvatarSpace(avatar) {
 			toSpace.from.set(0, 0, 0)
 			toSpace.setSize(fromSpace.sizex, fromSpace.sizey, 1)
 			self.screen.requestRender
+			self.spaceChanged = true
+		} else {
+			if(self.parent.spaceChanged)
+				self.spaceChanged = true
 		}
 
 		// dirtyLayout flag is reset in super.animateSpace.
