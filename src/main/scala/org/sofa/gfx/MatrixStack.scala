@@ -27,10 +27,10 @@ class MatrixStack[M<:Matrix4](initialMatrix:M) {
 // Attributes
     
     /** The stack of matrices, excepted the top. */
-    protected var stack = new scala.collection.mutable.ArrayBuffer[M]()
+    private[this] var stack = new scala.collection.mutable.ArrayBuffer[M]()
 
     /** Position the top matrix. */
-    protected var end = 0
+    private[this] var end = 0
 
     stack += initialMatrix
     

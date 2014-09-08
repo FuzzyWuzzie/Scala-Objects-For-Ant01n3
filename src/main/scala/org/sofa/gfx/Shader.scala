@@ -472,9 +472,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     
     def getAttribLocation(variable:String):Int = {
         var loc = attributeLocations.get(variable).getOrElse {
-        	checkId
         	use
-        	//useProgram(oid)
             val l = gl.getAttribLocation(oid, variable) 
             checkErrors
             if(l >= 0) {
@@ -489,9 +487,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     
     def getUniformLocation(variable:String):AnyRef = {
         val loc = uniformLocations.get(variable).getOrElse {
-        	checkId
         	use
-        	//useProgram(oid)
             var l = gl.getUniformLocation(oid, variable)
             checkErrors
             if(l ne null) {

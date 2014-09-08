@@ -1,13 +1,15 @@
 package org.sofa.gfx.backend
 
 import org.sofa.Timer
-import org.sofa.gfx.{SGL, Texture, TexParams, TexAlpha}
 import org.sofa.backend.AndroidLoader
-import android.content.res.Resources
-import android.graphics.{Bitmap, Canvas, Paint, Typeface, Matrix}
+import org.sofa.gfx.{SGL, Texture, TexParams, TexAlpha}
 import org.sofa.gfx.text.{GLFont, GLFontLoader, TextureRegion}
 
+import android.content.res.Resources
+import android.graphics.{Bitmap, Canvas, Paint, Typeface, Matrix}
+
 import scala.math._
+
 
 /** Font loader for Android using the bitmap and canvas method to retrieve the font texture. */
 class AndroidGLFontLoader(val resources:Resources) extends GLFontLoader with AndroidLoader {

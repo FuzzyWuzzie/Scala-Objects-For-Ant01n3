@@ -30,7 +30,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	type ReturnType <: NumberGrid
 	
 	/** The real storage. */
-	protected[math] val data:Array[Double]
+	protected[this] val data:Array[Double]
 
 	/** A reference to a temporary array, to avoid reallocate it constantly. */
     protected var tmpFltArr:Array[Float] = null
@@ -47,6 +47,9 @@ trait NumberGrid extends IndexedSeq[Double] {
 	
 	/** Number of rows. */
 	def height:Int
+
+	/** Access to underlying data array. */
+	def getData:Array[Double] = data
 
 	/** Access to the `i`-th element of the grid seen as a linear sequence of numbers in
 	  * column major order. */
@@ -165,7 +168,7 @@ trait NumberGrid extends IndexedSeq[Double] {
       * only the 3x3 upper part of the 4x4 grid will be changed.0
       */
     def copy(other:NumberGrid) {
-    	Platform.arraycopy(other.data, 0, data, 0, math.min(data.length, other.data.length))
+    	Platform.arraycopy(other.getData, 0, data, 0, math.min(data.length, other.getData.length))
     }
 
     def copy(floats:Array[Float], offset:Int) {
@@ -219,12 +222,13 @@ trait NumberGrid extends IndexedSeq[Double] {
 	    var h = math.min(height, other.height)
 	   	var x = 0
 	   	var y = 0
+	   	val otherData = other.getData
 
 	   	while(y < h) {
 	   		x = 0
 	   		var Y = y*w;
 	   		while(x < w) {
-	   			data(Y+x) += other.data(Y+x)
+	   			data(Y+x) += otherData(Y+x)
 	   			x += 1
 	   		}
 	   		y += 1
@@ -425,19 +429,22 @@ trait NumberGrid3 extends NumberGrid {
 	override def apply(row:Int, col:Int):Double = data(row+col*3)
 
 	override def setIdentity() {
-		data(0) = 1;  data(3) = 0;  data(6) = 0
-		data(1) = 0;  data(4) = 1;  data(7) = 0
-		data(2) = 0;  data(5) = 0;  data(8) = 1
+		val d = data
+		d(0) = 1;  d(3) = 0;  d(6) = 0
+		d(1) = 0;  d(4) = 1;  d(7) = 0
+		d(2) = 0;  d(5) = 0;  d(8) = 1
 	}
     
     /** Multiply this by `rhs` storing the result in this, using usual matrix multiplication.
       * 
-      * The result is stored in place.
+      * The result is stored in place. This method is probably not very efficient, use sub-classes
+      * with a fixed size for more efficient matrix mult.
       */
     def multBy(rhs:NumberGrid3) = {
 		if(rhs eq this)
 			throw new RuntimeException("this and rhs cannot be the same matrix")
 
+		val rhsdata = rhs.getData
 		var a, b, c = 0.0
 		var i = 0
 
@@ -455,9 +462,9 @@ trait NumberGrid3 extends NumberGrid {
 			//
 			// With each column of rhs.
 			//
-			this(i,0) = (a * rhs.data(0)) + (b * rhs.data(1)) + (c * rhs.data(2))
-			this(i,1) = (a * rhs.data(3)) + (b * rhs.data(4)) + (c * rhs.data(5))
-			this(i,2) = (a * rhs.data(6)) + (b * rhs.data(7)) + (c * rhs.data(8))
+			this(i,0) = (a * rhsdata(0)) + (b * rhsdata(1)) + (c * rhsdata(2))
+			this(i,1) = (a * rhsdata(3)) + (b * rhsdata(4)) + (c * rhsdata(5))
+			this(i,2) = (a * rhsdata(6)) + (b * rhsdata(7)) + (c * rhsdata(8))
 				
 			i += 1
 		}
@@ -484,9 +491,10 @@ trait NumberGrid3 extends NumberGrid {
 
     /** Determinant of this. */
     def det:Double = {
-        data(0) * (data(4) * data(8) - data(5) * data(7)) -
-        data(3) * (data(1) * data(8) - data(2) * data(7)) +
-        data(6) * (data(1) * data(5) - data(2) * data(4))
+    	val d = data
+        d(0) * (d(4) * d(8) - d(5) * d(7)) -
+        d(3) * (d(1) * d(8) - d(2) * d(7)) +
+        d(6) * (d(1) * d(5) - d(2) * d(4))
     }
 
     /** Inverse of this matrix.
@@ -499,17 +507,18 @@ trait NumberGrid3 extends NumberGrid {
         val r = newInstance(width, height)
 
         if(abs(d) > 0.0005) {
-        	r(0) = (  data(4) * data(8) - data(7) * data(5) ) / d
-        	r(3) = (-(data(3) * data(8) - data(5) * data(6))) / d
-        	r(6) = (  data(3) * data(7) - data(4) * data(6) ) / d
+        	val dat = data
+        	r(0) = (  dat(4) * dat(8) - dat(7) * dat(5) ) / d
+        	r(3) = (-(dat(3) * dat(8) - dat(5) * dat(6))) / d
+        	r(6) = (  dat(3) * dat(7) - dat(4) * dat(6) ) / d
 
-        	r(1) = (-(data(1) * data(8) - data(7) * data(2))) / d
-        	r(4) = (  data(0) * data(8) - data(2) * data(6) ) / d
-    		r(7) = (-(data(0) * data(7) - data(1) * data(6))) / d
+        	r(1) = (-(dat(1) * dat(8) - dat(7) * dat(2))) / d
+        	r(4) = (  dat(0) * dat(8) - dat(2) * dat(6) ) / d
+    		r(7) = (-(dat(0) * dat(7) - dat(1) * dat(6))) / d
 
-    		r(2) = (  data(1) * data(5) - data(2) * data(4) ) / d
-    		r(5) = (-(data(0) * data(5) - data(2) * data(3))) / d
-    		r(8) = (  data(0) * data(4) - data(3) * data(1) ) / d
+    		r(2) = (  dat(1) * dat(5) - dat(2) * dat(4) ) / d
+    		r(5) = (-(dat(0) * dat(5) - dat(2) * dat(3))) / d
+    		r(8) = (  dat(0) * dat(4) - dat(3) * dat(1) ) / d
         } else {
             r.setIdentity
         }
@@ -545,10 +554,11 @@ trait NumberGrid4 extends NumberGrid {
 	override def apply(row:Int, col:Int):Double = data(row+col*4)
 
 	override def setIdentity() {
-		data(0) = 1;  data(4) = 0;  data(8)  = 0;  data(12) = 0
-		data(1) = 0;  data(5) = 1;  data(9)  = 0;  data(13) = 0
-		data(2) = 0;  data(6) = 0;  data(10) = 1;  data(14) = 0
-		data(3) = 0;  data(7) = 0;  data(11) = 0;  data(15) = 1
+		val d = data
+		d(0) = 1;  d(4) = 0;  d(8)  = 0;  d(12) = 0
+		d(1) = 0;  d(5) = 1;  d(9)  = 0;  d(13) = 0
+		d(2) = 0;  d(6) = 0;  d(10) = 1;  d(14) = 0
+		d(3) = 0;  d(7) = 0;  d(11) = 0;  d(15) = 1
 	}
 
 	override def mult[T<:NumberSeq](other:T):T = {
@@ -562,11 +572,12 @@ trait NumberGrid4 extends NumberGrid {
     /** Faster way to multiply a vector4 and a matrix4 when the vector4 data is replaced by the result. */
 	def multv4InPlace[T<:NumberSeq4](v4:T):T = {
 	    val vdata = v4.data
+	    val d = data
 
-		val v0 = (data(0) * vdata(0)) + (data(4) * vdata(1)) + (data( 8) * vdata(2)) + (data(12) * vdata(3))
-		val v1 = (data(1) * vdata(0)) + (data(5) * vdata(1)) + (data( 9) * vdata(2)) + (data(13) * vdata(3))
-		val v2 = (data(2) * vdata(0)) + (data(6) * vdata(1)) + (data(10) * vdata(2)) + (data(14) * vdata(3))
-		val v3 = (data(3) * vdata(0)) + (data(7) * vdata(1)) + (data(11) * vdata(2)) + (data(15) * vdata(3))
+		val v0 = (d(0) * vdata(0)) + (d(4) * vdata(1)) + (d( 8) * vdata(2)) + (d(12) * vdata(3))
+		val v1 = (d(1) * vdata(0)) + (d(5) * vdata(1)) + (d( 9) * vdata(2)) + (d(13) * vdata(3))
+		val v2 = (d(2) * vdata(0)) + (d(6) * vdata(1)) + (d(10) * vdata(2)) + (d(14) * vdata(3))
+		val v3 = (d(3) * vdata(0)) + (d(7) * vdata(1)) + (d(11) * vdata(2)) + (d(15) * vdata(3))
 
 	    vdata(0) = v0
 	    vdata(1) = v1
@@ -581,11 +592,12 @@ trait NumberGrid4 extends NumberGrid {
 	    val result = v4.newInstance.asInstanceOf[T]
 	    val rdata  = result.data
 	    val vdata  = v4.data
+	    val d      = data
 
-		rdata(0) = (data(0) * vdata(0)) + (data(4) * vdata(1)) + (data( 8) * vdata(2)) + (data(12) * vdata(3))
-		rdata(1) = (data(1) * vdata(0)) + (data(5) * vdata(1)) + (data( 9) * vdata(2)) + (data(13) * vdata(3))
-		rdata(2) = (data(2) * vdata(0)) + (data(6) * vdata(1)) + (data(10) * vdata(2)) + (data(14) * vdata(3))
-		rdata(3) = (data(3) * vdata(0)) + (data(7) * vdata(1)) + (data(11) * vdata(2)) + (data(15) * vdata(3))
+		rdata(0) = (d(0) * vdata(0)) + (d(4) * vdata(1)) + (d( 8) * vdata(2)) + (d(12) * vdata(3))
+		rdata(1) = (d(1) * vdata(0)) + (d(5) * vdata(1)) + (d( 9) * vdata(2)) + (d(13) * vdata(3))
+		rdata(2) = (d(2) * vdata(0)) + (d(6) * vdata(1)) + (d(10) * vdata(2)) + (d(14) * vdata(3))
+		rdata(3) = (d(3) * vdata(0)) + (d(7) * vdata(1)) + (d(11) * vdata(2)) + (d(15) * vdata(3))
 
 	    result
 	}
@@ -630,47 +642,48 @@ trait NumberGrid4 extends NumberGrid {
 		if(rhs eq this)
 			throw new RuntimeException("this and rhs cannot be the same matrix")
 
-		val rdata = rhs.data
+		val rdata = rhs.getData
+		val dat   = data
 
-		var a = data(0)
-		var b = data(4)
-		var c = data(8)
-		var d = data(12)
+		var a = dat(0)
+		var b = dat(4)
+		var c = dat(8)
+		var d = dat(12)
 
-		data(0)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
-		data(4)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
-		data(8)  = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
-		data(12) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
+		dat(0)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
+		dat(4)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
+		dat(8)  = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
+		dat(12) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
 
-		a = data(1)
-		b = data(5)
-		c = data(9)
-		d = data(13)
+		a = dat(1)
+		b = dat(5)
+		c = dat(9)
+		d = dat(13)
 
-		data(1)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
-		data(5)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
-		data(9)  = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
-		data(13) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
+		dat(1)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
+		dat(5)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
+		dat(9)  = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
+		dat(13) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
 
-		a = data(2)
-		b = data(6)
-		c = data(10)
-		d = data(14)
+		a = dat(2)
+		b = dat(6)
+		c = dat(10)
+		d = dat(14)
 
-		data(2)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
-		data(6)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
-		data(10) = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
-		data(14) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
+		dat(2)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
+		dat(6)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
+		dat(10) = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
+		dat(14) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
 
-		a = data(3)
-		b = data(7)
-		c = data(11)
-		d = data(15)
+		a = dat(3)
+		b = dat(7)
+		c = dat(11)
+		d = dat(15)
 
-		data(3)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
-		data(7)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
-		data(11) = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
-		data(15) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
+		dat(3)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
+		dat(7)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
+		dat(11) = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
+		dat(15) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
 	}
     
     /** Multiply this by `rhs` storing the result in this, using usual matrix multiplication.
@@ -700,46 +713,52 @@ trait NumberGrid4 extends NumberGrid {
 	 */
 	def setXRotation(angle:Double) = {
 		var a = angle
+		val d = data
+
 		if     (a < -360) a = -360
 		else if(a >  360) a =  360
 
 		val sint = sin((Pi / 180.0) * a)
 		val cost = cos((Pi / 180.0) * a)
 	
-		data(0) = 1;  data(4) = 0;     data(8)  = 0;      data(12) = 0
-		data(1) = 0;  data(5) = cost;  data(9)  = -sint;  data(13) = 0
-		data(2) = 0;  data(6) = sint;  data(10) =  cost;  data(14) = 0
-		data(3) = 0;  data(7) = 0;     data(11) = 0;      data(15) = 1
+		d(0) = 1;  d(4) = 0;     d(8)  = 0;      d(12) = 0
+		d(1) = 0;  d(5) = cost;  d(9)  = -sint;  d(13) = 0
+		d(2) = 0;  d(6) = sint;  d(10) =  cost;  d(14) = 0
+		d(3) = 0;  d(7) = 0;     d(11) = 0;      d(15) = 1
 	}
 	
 	/**Same as {@link #setXRotation(Double)} but around the Y axis. */
 	def setYRotation(angle:Double) = {
 		var a = angle
+		val d = data
+
 		if     (a < -360) a = -360
 		else if(a >  360) a =  360
 	
 		val sint = sin((Pi / 180.0) * a)
 		val cost = cos((Pi / 180.0) * a)
 	
-		data(0) = cost;   data(4) = 0;  data(8)  = sint;  data(12) = 0
-		data(1) = 0;      data(5) = 1;  data(9)  = 0;     data(13) = 0
-		data(2) = -sint;  data(6) = 0;  data(10) = cost;  data(14) = 0
-		data(3) = 0;      data(7) = 0;  data(11) = 0;     data(15) = 1
+		d(0) = cost;   d(4) = 0;  d(8)  = sint;  d(12) = 0
+		d(1) = 0;      d(5) = 1;  d(9)  = 0;     d(13) = 0
+		d(2) = -sint;  d(6) = 0;  d(10) = cost;  d(14) = 0
+		d(3) = 0;      d(7) = 0;  d(11) = 0;     d(15) = 1
 	}
 	
 	/** Same as {@link #setXRotation(Double)} but around the Z axis. */
 	def setZRotation(angle:Double) = {
 		var a = angle
+		val d = data
+
 		if     (a < -360) a = -360
 		else if(a >  360) a =  360
 	
 		val sint = sin((Pi / 180.0) * a)
 		val cost = cos((Pi / 180.0) * a)
 	
-		data(0) = cost;  data(4) = -sint;  data(8)  = 0;  data(12) = 0
-		data(1) = sint;  data(5) =  cost;  data(9)  = 0;  data(13) = 0
-		data(2) = 0;     data(6) = 0;      data(10) = 1;  data(14) = 0
-		data(3) = 0;     data(7) = 0;      data(11) = 0;  data(15) = 1
+		d(0) = cost;  d(4) = -sint;  d(8)  = 0;  d(12) = 0
+		d(1) = sint;  d(5) =  cost;  d(9)  = 0;  d(13) = 0
+		d(2) = 0;     d(6) = 0;      d(10) = 1;  d(14) = 0
+		d(3) = 0;     d(7) = 0;      d(11) = 0;  d(15) = 1
 	}
 	
 	/**
@@ -750,26 +769,27 @@ trait NumberGrid4 extends NumberGrid {
 	def setRotation(angle:Double, u:Double, v:Double, w:Double) = {
 		val rcos = cos(angle)
 		val rsin = sin(angle)
+		val dat  = data
 	
-		data(0)      =      rcos + u*u*(1-rcos)
-		data(1)      =  w * rsin + v*u*(1-rcos)
-		data(2)      = -v * rsin + w*u*(1-rcos)
-		data(3)      = 0
+		dat(0)      =      rcos + u*u*(1-rcos)
+		dat(1)      =  w * rsin + v*u*(1-rcos)
+		dat(2)      = -v * rsin + w*u*(1-rcos)
+		dat(3)      = 0
 
-		data(4)      = -w * rsin + u*v*(1-rcos)
-		data(5)      =      rcos + v*v*(1-rcos)
-		data(6)      =  u * rsin + w*v*(1-rcos)
-		data(7)      = 0
+		dat(4)      = -w * rsin + u*v*(1-rcos)
+		dat(5)      =      rcos + v*v*(1-rcos)
+		dat(6)      =  u * rsin + w*v*(1-rcos)
+		dat(7)      = 0
 
-		data(8)      =  v * rsin + u*w*(1-rcos)
-		data(9)      = -u * rsin + v*w*(1-rcos)
-		data(10)     =      rcos + w*w*(1-rcos)
-		data(11)     = 0
+		dat(8)      =  v * rsin + u*w*(1-rcos)
+		dat(9)      = -u * rsin + v*w*(1-rcos)
+		dat(10)     =      rcos + w*w*(1-rcos)
+		dat(11)     = 0
 		
-		data(12)     = 0
-		data(13)     = 0
-		data(14)     = 0
-		data(15)     = 1
+		dat(12)     = 0
+		dat(13)     = 0
+		dat(14)     = 0
+		dat(15)     = 1
 	}
 	
 	/** Fill only the translation part of this matrix with the vector `t`. */
@@ -777,17 +797,19 @@ trait NumberGrid4 extends NumberGrid {
 
 	/** Fill only the translation part of this matrix with the vector (`tx`,`ty,`tz`). */
 	def setTranslation(tx:Double, ty:Double, tz:Double) = {
-		data(12) = tx
-		data(13) = ty
-		data(14) = tz
+		val d = data
+		d(12) = tx
+		d(13) = ty
+		d(14) = tz
 	}
 
 	/** Fill the whole matrix with a translation by (`tx`, `ty`, `tz`). */
 	def fillTranslation(tx:Double, ty:Double, tz:Double) = {
-		data( 0) = 1;  data( 1) = 0;  data( 2) = 0;  data( 3) = 0
-		data( 4) = 0;  data( 5) = 1;  data( 6) = 0;  data( 7) = 0
-		data( 8) = 0;  data( 9) = 0;  data(10) = 1;  data(11) = 0
-		data(12) = tx; data(13) = ty; data(14) = tz; data(15) = 1
+		val d = data
+		d( 0) = 1;  d( 1) = 0;  d( 2) = 0;  d( 3) = 0
+		d( 4) = 0;  d( 5) = 1;  d( 6) = 0;  d( 7) = 0
+		d( 8) = 0;  d( 9) = 0;  d(10) = 1;  d(11) = 0
+		d(12) = tx; d(13) = ty; d(14) = tz; d(15) = 1
 	}
 	
 	/** Fill only the scaling part of this matrix with the values of `s`. */
@@ -795,17 +817,19 @@ trait NumberGrid4 extends NumberGrid {
 	
 	/** Fill only the scaling part of this matrix with the values (`sx`, `sy`, `sz`). */
 	def setScale(sx:Double, sy:Double, sz:Double) = {
-		data( 0) = sx
-		data( 5) = sy
-		data(10) = sz
+		val d = data
+		d( 0) = sx
+		d( 5) = sy
+		d(10) = sz
 	}
 
 	/** Fill the whole matrix with scaling factors of (`sx`, `sy`, `sz`). */
 	def fillScale(sx:Double, sy:Double, sz:Double) = {
-		data( 0) = sx; data( 1) = 0;  data( 2) = 0;  data( 3) = 0
-		data( 4) = 0;  data( 5) = sy; data( 6) = 0;  data( 7) = 0
-		data( 8) = 0;  data( 9) = 0;  data(10) = sz; data(11) = 0
-		data(12) = 0;  data(13) = 0;  data(14) = 0;  data(15) = 1
+		val d = data
+		d( 0) = sx; d( 1) = 0;  d( 2) = 0;  d( 3) = 0
+		d( 4) = 0;  d( 5) = sy; d( 6) = 0;  d( 7) = 0
+		d( 8) = 0;  d( 9) = 0;  d(10) = sz; d(11) = 0
+		d(12) = 0;  d(13) = 0;  d(14) = 0;  d(15) = 1
 	}
 	
 	/** Fill the 3x3 upper left matrix with the three axis, the first
@@ -813,10 +837,11 @@ trait NumberGrid4 extends NumberGrid {
 	  * The other matrix coefficients are not changed.
 	  */
 	def setRotation(X:NumberSeq3, Y:NumberSeq3, Z:NumberSeq3) {
-	    data(0) = X.x; data(4) = Y.x; data(8)  = Z.x;  //data(12) = 0
-	    data(1) = X.y; data(5) = Y.y; data(9)  = Z.y;  //data(13) = 0
-	    data(2) = X.z; data(6) = Y.z; data(10) = Z.z;  //data(14) = 0
-	    //data(3) = 0;   data(7) = 0;   data(11) = 0;    data(15) = 1
+	    val d = data
+	    d(0) = X.x; d(4) = Y.x; d(8)  = Z.x;  //d(12) = 0
+	    d(1) = X.y; d(5) = Y.y; d(9)  = Z.y;  //d(13) = 0
+	    d(2) = X.z; d(6) = Y.z; d(10) = Z.z;  //d(14) = 0
+	    //d(3) = 0;   d(7) = 0;   d(11) = 0;    d(15) = 1
 	}
 	
 	/** Fill only the upper left 3x3 matrix. */
@@ -824,17 +849,19 @@ trait NumberGrid4 extends NumberGrid {
 		r01:Double, r02:Double, r03:Double,
 		r11:Double, r12:Double, r13:Double,
 		r21:Double, r22:Double, r23:Double ) = {
-		data(0) = r01;		data(4) = r02;		data(8)  = r03;		//data(12) = 0
-		data(1) = r11;		data(5) = r12;		data(9)  = r13;		//data(13) = 0
-		data(2) = r21;		data(6) = r22;		data(10) = r23;		//data(14) = 0
-		//data(3) = 0;        data(7) = 0;        data(11) = 0;		data(15) = 1
+		val d = data
+		d(0) = r01;		d(4) = r02;		d(8)  = r03;		//d(12) = 0
+		d(1) = r11;		d(5) = r12;		d(9)  = r13;		//d(13) = 0
+		d(2) = r21;		d(6) = r22;		d(10) = r23;		//d(14) = 0
+		//d(3) = 0;        d(7) = 0;        d(11) = 0;		d(15) = 1
 	}
 
 	/** Inverse each of the translation coefficients. */
 	def inverseTranslation() = {
-		data(12) = -data(12)
-		data(13) = -data(13)
-		data(14) = -data(14)
+		val d = data
+		d(12) = -d(12)
+		d(13) = -d(13)
+		d(14) = -d(14)
 	}
 
 	/**
@@ -864,6 +891,7 @@ trait NumberGrid4 extends NumberGrid {
 		ry *= (Pi / 180)
 		rz *= (Pi / 180)
 
+		val d    = data
 		val A    = cos(rx)
 		val B    = sin(rx)
 		val C    = cos(ry)
@@ -872,17 +900,17 @@ trait NumberGrid4 extends NumberGrid {
 		val F    = sin(rz)
 		val AD   =   A * D
 		val BD   =   B * D
-		data(0)  =   C * E
-		data(4)  =  -C * F
-		data(8)  =   D
-		data(1)  =  BD * E + A * F
-		data(5)  = -BD * F + A * E
-		data(9)  =  -B * C
-		data(2)  = -AD * E + B * F
-		data(6)  =  AD * F + B * E
-		data(10) =   A * C
-		data(3)  = 0; data(7) = 0; data(11) = 0; data(12) = 0; data(13) = 0; data(14) = 0
-		data(15) =  1
+		d(0)  =   C * E
+		d(4)  =  -C * F
+		d(8)  =   D
+		d(1)  =  BD * E + A * F
+		d(5)  = -BD * F + A * E
+		d(9)  =  -B * C
+		d(2)  = -AD * E + B * F
+		d(6)  =  AD * F + B * E
+		d(10) =   A * C
+		d(3)  = 0; d(7) = 0; d(11) = 0; d(12) = 0; d(13) = 0; d(14) = 0
+		d(15) =  1
 	}
 
 	/** Multiply this matrix by a translation matrix defined by the given
@@ -901,11 +929,11 @@ trait NumberGrid4 extends NumberGrid {
 		// if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
 		// tmpM4.fillTranslation(tx, ty, tz)
 		// multBy(tmpM4)
-
-		data(12) = (data(0) * tx) + (data(4) * ty) + (data(8) * tz) + data(12)
-		data(13) = (data(1) * tx) + (data(5) * ty) + (data(9) * tz) + data(13)
-		data(14) = (data(2) * tx) + (data(6) * ty) + (data(10) * tz) + data(14)
-		data(15) = (data(3) * tx) + (data(7) * ty) + (data(11) * tz) + data(15)
+		val d = data
+		d(12) = (d(0) * tx) + (d(4) * ty) + (d(8) * tz) + d(12)
+		d(13) = (d(1) * tx) + (d(5) * ty) + (d(9) * tz) + d(13)
+		d(14) = (d(2) * tx) + (d(6) * ty) + (d(10) * tz) + d(14)
+		d(15) = (d(3) * tx) + (d(7) * ty) + (d(11) * tz) + d(15)
 	}
 
 	/** Multiply this matrix by a scale matrix defined by the given
@@ -925,21 +953,23 @@ trait NumberGrid4 extends NumberGrid {
 		// tmpM4.fillScale(sx, sy, sz)
 		// multBy(tmpM4)
 
-		data(0)  *= sx
-		data(4)  *= sy
-		data(8)  *= sz
+		val d = data
 
-		data(1)  *= sx
-		data(5)  *= sy
-		data(9)  *= sz
+		d(0)  *= sx
+		d(4)  *= sy
+		d(8)  *= sz
 
-		data(2)  *= sx
-		data(6)  *= sy
-		data(10) *= sz
+		d(1)  *= sx
+		d(5)  *= sy
+		d(9)  *= sz
 
-		data(3)  *= sx
-		data(7)  *= sy
-		data(11) *= sz
+		d(2)  *= sx
+		d(6)  *= sy
+		d(10) *= sz
+
+		d(3)  *= sx
+		d(7)  *= sy
+		d(11) *= sz
 	}
 	
 	/** Mutliply this matrix by a rotation matrix defined by the given
@@ -1015,14 +1045,14 @@ trait NumberGrid4 extends NumberGrid {
 	 */
 	def perspective(fov:Double, aspect:Double, zNear:Double, zFar:Double) = {
 		// Found on http://www.opengl3.org/wiki/Tutorial3:_Rendering_3D_Objects_(C_/SDL)
-
+		val d     = data
 		val range = (tan(fov * 0.00872664625) * zNear) // 0.00872664625 = Pi/360
 		fill(0)
-		data(0)  =  (2 * zNear) / ((range * aspect) - (-range * aspect))
-		data(5)  =  (2 * zNear) / (2 * range)
-		data(10) = -(zFar + zNear) / (zFar - zNear)
-		data(11) = -1;
-		data(14) = -(2 * zFar * zNear) / (zFar - zNear)
+		d(0)  =  (2 * zNear) / ((range * aspect) - (-range * aspect))
+		d(5)  =  (2 * zNear) / (2 * range)
+		d(10) = -(zFar + zNear) / (zFar - zNear)
+		d(11) = -1;
+		d(14) = -(2 * zFar * zNear) / (zFar - zNear)
 	}
 	
 	/** Store an orthographic projection into this matrix.

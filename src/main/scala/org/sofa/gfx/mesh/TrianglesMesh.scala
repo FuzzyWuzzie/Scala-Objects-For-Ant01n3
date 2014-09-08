@@ -17,7 +17,7 @@ import org.sofa.nio.{IntBuffer}
 class TrianglesMesh(val size:Int) extends Mesh {
 
 	/** The mutable set of coordinates. */
-	protected[this] lazy val V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)
+	protected[this] val V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)
 	
 	/** The mutable set of colors. */
 	protected[this] lazy val C:MeshAttribute = addMeshAttribute(VertexAttribute.Color, 4)

@@ -43,7 +43,7 @@ trait NioBuffer {
 
 
 /** Base for any buffer, defining the type and access to elements. */
-trait TypedNioBuffer[T] extends NioBuffer with IndexedSeq[T] {
+trait TypedNioBuffer[@specialized(Byte,Int,Float,Double) T] extends NioBuffer with IndexedSeq[T] {
 
     /** The maximum capacity of the buffer, synonym of `capacity()` */
     override def size:Int = capacity
@@ -172,8 +172,8 @@ object DoubleBuffer {
 // ---------------------------------------------------------
 
 
-class ByteBufferJava(var capacity:Int, direct:Boolean, data:Array[Byte], existingBuffer:java.nio.ByteBuffer=null) extends ByteBuffer {
-	var buf:java.nio.ByteBuffer = if(existingBuffer ne null) existingBuffer else if(direct) {
+final class ByteBufferJava(var capacity:Int, direct:Boolean, data:Array[Byte], existingBuffer:java.nio.ByteBuffer=null) extends ByteBuffer {
+	private[this] var buf:java.nio.ByteBuffer = if(existingBuffer ne null) existingBuffer else if(direct) {
 			var n = if((data ne null) && (capacity < data.length)) data.length else capacity
             val b = java.nio.ByteBuffer.allocateDirect(n)
             if(data ne null) copy(data)
@@ -190,12 +190,13 @@ class ByteBufferJava(var capacity:Int, direct:Boolean, data:Array[Byte], existin
 	def this(data:Array[Byte], direct:Boolean) { this(data.size, direct, data) }
     def this(capacity:Int, direct:Boolean) { this(capacity, direct, null) }
 	def bitSize:Int = 8
-	def update(i:Int, value:Byte):Unit = buf.put(i, value)
+	@inline final def update(i:Int, value:Byte):Unit = buf.put(i, value)
 	def copy(other:TypedNioBuffer[Byte]) = other match {
 		case bbj:ByteBufferJava => {
+			val bbjbuf = bbj.buffer.asInstanceOf[java.nio.ByteBuffer]
 			buf.rewind
-			bbj.buf.rewind
-			buf.put(bbj.buf)
+			bbjbuf.rewind
+			buf.put(bbjbuf)
 			buf.rewind
 		}
 		case _ => {
@@ -211,13 +212,13 @@ class ByteBufferJava(var capacity:Int, direct:Boolean, data:Array[Byte], existin
     def isInt:Boolean = false
     def isFloat:Boolean = false
     def isDouble:Boolean = false
-    def apply(i:Int):Byte = buf.get(i)
+    @inline final def apply(i:Int):Byte = buf.get(i)
     def buffer:AnyRef = { buf.rewind; buf }
 }
 
 
-class IntBufferJava(var capacity:Int, direct:Boolean=true) extends IntBuffer {
-	var buf:java.nio.IntBuffer = if(capacity>0) {
+final class IntBufferJava(var capacity:Int, direct:Boolean=true) extends IntBuffer {
+	private[this] var buf:java.nio.IntBuffer = if(capacity>0) {
 		if(direct) {
             java.nio.ByteBuffer.allocateDirect(capacity*4).order(java.nio.ByteOrder.nativeOrder).asIntBuffer
         } else {
@@ -230,7 +231,7 @@ class IntBufferJava(var capacity:Int, direct:Boolean=true) extends IntBuffer {
 		this(0)
 		from match {
 			case bbf:ByteBufferJava => {
-				buf = bbf.buf.asIntBuffer
+				buf = bbf.buffer.asInstanceOf[java.nio.ByteBuffer].asIntBuffer
 				capacity = buf.capacity / 4
 			}
 			case _ => {
@@ -244,12 +245,13 @@ class IntBufferJava(var capacity:Int, direct:Boolean=true) extends IntBuffer {
 		capacity = from.capacity / 4
 	}
 	def bitSize:Int = 32
-	def update(i:Int, value:Int):Unit = buf.put(i, value)
+	@inline final def update(i:Int, value:Int):Unit = buf.put(i, value)
 	def copy(other:TypedNioBuffer[Int]) = other match {
 		case ibj:IntBufferJava => {
+			val ibjbuf = ibj.buffer.asInstanceOf[java.nio.IntBuffer]
 			buf.rewind
-			ibj.buf.rewind
-			buf.put(ibj.buf)
+			ibjbuf.rewind
+			buf.put(ibjbuf)
 			buf.rewind 
 		}
 		case _ => {
@@ -262,13 +264,13 @@ class IntBufferJava(var capacity:Int, direct:Boolean=true) extends IntBuffer {
     def isInt:Boolean = true
     def isFloat:Boolean = false
     def isDouble:Boolean = false
-    def apply(i:Int):Int = buf.get(i)
+    @inline final def apply(i:Int):Int = buf.get(i)
     def buffer:AnyRef = { buf.rewind; buf }
 }
 
 
-class FloatBufferJava(var capacity:Int, direct:Boolean=true) extends FloatBuffer {
-	var buf:java.nio.FloatBuffer = if(capacity>0) {
+final class FloatBufferJava(var capacity:Int, direct:Boolean=true) extends FloatBuffer {
+	private[this] var buf:java.nio.FloatBuffer = if(capacity>0) {
 		if(direct) {
             java.nio.ByteBuffer.allocateDirect(capacity*4).order(java.nio.ByteOrder.nativeOrder).asFloatBuffer
         } else {
@@ -281,7 +283,7 @@ class FloatBufferJava(var capacity:Int, direct:Boolean=true) extends FloatBuffer
 		this(0)
 		from match {
 			case bbf:ByteBufferJava => {
-				buf = bbf.buf.asFloatBuffer
+				buf = bbf.buffer.asInstanceOf[java.nio.ByteBuffer].asFloatBuffer
 				capacity = buf.capacity / 4
 			}
 			case _ => {
@@ -290,12 +292,13 @@ class FloatBufferJava(var capacity:Int, direct:Boolean=true) extends FloatBuffer
 		}
 	}
 	def bitSize:Int = 32
-	def update(i:Int, value:Float):Unit = buf.put(i, value)
+	@inline final def update(i:Int, value:Float):Unit = buf.put(i, value)
 	def copy(other:TypedNioBuffer[Float]) = other match {
 		case fbj:FloatBufferJava => {
+			val fbjbuf = fbj.buffer.asInstanceOf[java.nio.FloatBuffer]
 			buf.rewind
-			fbj.buf.rewind
-			buf.put(fbj.buf)
+			fbjbuf.rewind
+			buf.put(fbjbuf)
 			buf.rewind 
 		}
 		case _ => {
@@ -308,13 +311,13 @@ class FloatBufferJava(var capacity:Int, direct:Boolean=true) extends FloatBuffer
     def isInt:Boolean = false
     def isFloat:Boolean = true
     def isDouble:Boolean = false
-    def apply(i:Int):Float = buf.get(i)
+    @inline final def apply(i:Int):Float = buf.get(i)
     def buffer:AnyRef = { buf.rewind; buf }
 }
 
 
-class DoubleBufferJava(var capacity:Int, direct:Boolean=true) extends DoubleBuffer {
-	var buf:java.nio.DoubleBuffer = if(capacity>0) {
+final class DoubleBufferJava(var capacity:Int, direct:Boolean=true) extends DoubleBuffer {
+	private[this] var buf:java.nio.DoubleBuffer = if(capacity>0) {
 		if(direct) {
             java.nio.ByteBuffer.allocateDirect(capacity*8).order(java.nio.ByteOrder.nativeOrder).asDoubleBuffer
         } else {
@@ -327,7 +330,7 @@ class DoubleBufferJava(var capacity:Int, direct:Boolean=true) extends DoubleBuff
 		this(0)
 		from match {
 			case bbf:ByteBufferJava => {
-				buf = bbf.buf.asDoubleBuffer
+				buf = bbf.buffer.asInstanceOf[java.nio.ByteBuffer].asDoubleBuffer
 				capacity = buf.capacity / 8
 			}
 			case _ => {
@@ -336,12 +339,13 @@ class DoubleBufferJava(var capacity:Int, direct:Boolean=true) extends DoubleBuff
 		}
 	}
 	def bitSize:Int = 64
-	def update(i:Int, value:Double):Unit = buf.put(i, value)
+	@inline final def update(i:Int, value:Double):Unit = buf.put(i, value)
 	def copy(other:TypedNioBuffer[Double]) = other match {
 		case dbj:DoubleBufferJava => {
+			val dbjbuf = dbj.buffer.asInstanceOf[java.nio.DoubleBuffer]
 			buf.rewind
-			dbj.buf.rewind
-			buf.put(dbj.buf)
+			dbjbuf.rewind
+			buf.put(dbjbuf)
 			buf.rewind 
 		}
 		case _ => {
@@ -354,6 +358,6 @@ class DoubleBufferJava(var capacity:Int, direct:Boolean=true) extends DoubleBuff
     def isInt:Boolean = false
     def isFloat:Boolean = false
     def isDouble:Boolean = true
-    def apply(i:Int):Double = buf.get(i)
+    @inline final def apply(i:Int):Double = buf.get(i)
     def buffer:AnyRef = { buf.rewind; buf }
 }

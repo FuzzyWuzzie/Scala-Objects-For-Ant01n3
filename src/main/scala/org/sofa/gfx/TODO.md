@@ -26,6 +26,13 @@ Game
     - Phi φ ?
     - SOFA Σοφα ?
 
+## NIO
+
+* backup a float buffer by a java array with faster read/write accesses.
+    - When the buffer is requested, copy back all non data to the corresponding NIO buffer.
+    - Make tests to see if this is faster.
+    - NIO buffers are such a pain, why does java arrays are not usable with native methods ?!!
+
 ## Avatars
 
 * Rationale on the new *ordered and filtered rendering* in `AvatarContainer`:
