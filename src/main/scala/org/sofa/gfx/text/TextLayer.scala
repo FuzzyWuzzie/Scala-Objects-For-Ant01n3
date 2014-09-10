@@ -432,7 +432,7 @@ class TextItemReuse(var text:String, val font:FontLayerReuse, val position:Point
 
 
 object FontLayerCached {
-	final val MaxCacheSize = 1024
+	final val MaxCacheSize = 25600 //1024
 
 	final val CleanEverySteps = 100
 }
@@ -532,6 +532,7 @@ class FontLayerCached(val gl:SGL, val font:GLFont) extends FontLayer {
 	/** Add an item */
 	def addItem(text:String, position:Point4, color:Rgba, align:TextAlign.Value, valign:VerticalAlign.Value):TextItem = {
 		val string = pool.get(text).getOrElse {
+println("#### creating string item for '%s'".format(text))
 			val s = new StringItemCached(font.newString(text, text.length), text)
 			pool += (text -> s)
 			s
@@ -567,10 +568,13 @@ class FontLayerCached(val gl:SGL, val font:GLFont) extends FontLayer {
 				
 					while(i < n) {
 						pool.remove(sorted(i).text)
+						println("#### REMOVE '%s'".format(sorted(i).text))
 						i += 1
 					}
+
+					println("#### TextLayer removed %d less often needed strings".format(n-MaxCacheSize))
 				}
-			}
+			}else println("#### no cache flush, cache size %d < %d".format(n, MaxCacheSize))
 
 			needClean = CleanEverySteps
 		}

@@ -59,7 +59,7 @@ class Timer(val out:PrintStream = Console.out) {
 
 /** A set of measures for the same part of code.
   *
-  * The name arguement allows to identify to measured thing. */
+  * The name argument allows to identify to measured thing. */
 class Measures(val name:String) {
 	/** Used during the measure to store the start time.
 	  * A start time is stored in each measure, although not

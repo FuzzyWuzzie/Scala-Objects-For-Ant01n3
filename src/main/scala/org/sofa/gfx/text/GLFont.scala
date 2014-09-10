@@ -95,7 +95,7 @@ object GLFont {
   * This code is derived and largely inspired by the implementation of Fractious:
   * http://fractiousg.blogspot.fr/2012/04/rendering-text-in-opengl-on-android.html
   */
-class GLFont(val gl:SGL, file:String, val size:Int, val shader:ShaderProgram, val isMipMapped:Boolean = false, rasterizeMipMaps:Boolean = true, optimizeFor3D:Boolean = false) {
+class GLFont(val gl:SGL, val file:String, val size:Int, val shader:ShaderProgram, val isMipMapped:Boolean = false, rasterizeMipMaps:Boolean = true, optimizeFor3D:Boolean = false) {
 	/** Font height (actual, pixels). */
 	var height = 0f
 

@@ -183,7 +183,7 @@ Debug.stopMethodTracing()
     	if((renderer ne null) && (renderer.initSurface ne null)) renderer.initSurface(gl, this)
     }
 
-private[this] var steps=0
+//private[this] var steps=0
     
     def onDrawFrame(unused:GL10):Boolean = {
 //debug(s"** onDrawFrame(${Thread.currentThread.getName})")
@@ -210,18 +210,18 @@ private[this] var steps=0
         if(renderer.frame ne null)
         	swap = renderer.frame(this)
 
-steps += 1
-if(steps == 240) {
-println("*************************************************************")
-println("*********** STOPING DEBUG SURFACE ***************************")
-println("*************************************************************")
-Debug.stopMethodTracing()
-} else if(steps == 160) {
-println("*************************************************************")
-println("********** STARTING DEBUG SURFACE ***************************")
-println("*************************************************************")
-Debug.startMethodTracing("SOFASurface", 50 * 1024 * 1024)	// 20mb of trace, (8mb ~= 6 secs, 20 ~= 16s)
-} else if(steps > 160 && steps % 10 == 0) println("***************** STEP %d **********************".format(steps))
+// steps += 1
+// if(steps == 240) {
+// println("*************************************************************")
+// println("*********** STOPING DEBUG SURFACE ***************************")
+// println("*************************************************************")
+// Debug.stopMethodTracing()
+// } else if(steps == 160) {
+// println("*************************************************************")
+// println("********** STARTING DEBUG SURFACE ***************************")
+// println("*************************************************************")
+// Debug.startMethodTracing("SOFASurface", 50 * 1024 * 1024)	// 20mb of trace, (8mb ~= 6 secs, 20 ~= 16s)
+// } else if(steps > 160 && steps % 10 == 0) println("***************** STEP %d **********************".format(steps))
 
         swap
     }

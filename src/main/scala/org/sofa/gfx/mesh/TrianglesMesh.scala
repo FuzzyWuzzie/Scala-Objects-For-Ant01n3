@@ -45,7 +45,7 @@ class TrianglesMesh(val size:Int) extends Mesh {
 
 	// -- Constructive interface ---------------------------------------------------
 
-	class Vx(var vertex:Int) {
+	final class Vx(var vertex:Int) {
 		/** Set the `vertex` position (`x`, `y`, `z`). */
 		def xyz(x:Float, y:Float, z:Float):Vx = { setPoint(vertex,x,y,z); this }
 		
@@ -68,7 +68,7 @@ class TrianglesMesh(val size:Int) extends Mesh {
 		def user(name:String, values:Float*):Vx = { setAttribute(name, vertex, values:_*); this }
 	}
 
-	protected[this] val vx = new Vx(-1)
+	private[this] val vx = new Vx(-1)
 
 	/** Access to a `vertex` by its index. You can then use the obtained vertex
 	  * to change its position, color, tex coords, and any vertex attribute. Be

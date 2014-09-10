@@ -94,6 +94,8 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Layer of text above the screen. */
 	protected[this] var text:TextLayer = null
 
+	protected[this] var text2:org.sofa.gfx.dl.TextLayer = null
+
 	/** Set to true after begin() and reset to false after end(). */
 	protected[this] var rendering = false
 
@@ -129,6 +131,17 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 		text
 	}
 
+	def textLayerDL:org.sofa.gfx.dl.TextLayer = {
+		if(!rendering) throw new ScreenNotCurrentException("cannot use the text layer if the screen is not current")
+
+		if(text2 eq null) {
+			libraries.shaders += ShaderResource("color-text-shader", "colortext.vert.glsl", "colortext.frag.glsl")
+			text2 = new org.sofa.gfx.dl.TextLayer(gl, libraries.shaders.get(gl, "color-text-shader"))
+			text2.reshape(surface.width, surface.height)
+		}
+		text2
+	}
+
 	/** Convert a value in millimeters to a font size suitable for the actual screen and system. */
 	def mmToFontSize(value:Int):Int = surface.mmToFontSize(value, ratio)
 
@@ -159,7 +172,7 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 		rendering = true
 		reshape
 		beginAvatars
-	}	
+	}
 
 	/** By default renders all the child avatars using [[renderAvatars]].
 	  * If the screen is empty, a blue background is drawn. */
@@ -170,6 +183,11 @@ Timer.timer.measure("screen.render") {
 				renderAvatars 
 }
 
+				if(text2 ne null) {
+Timer.timer.measure("screen.renderText2") {
+					text2.render
+}
+				}
 				if(text ne null) {
 Timer.timer.measure("screen.renderText") {
 					text.render(space)
@@ -187,6 +205,7 @@ Timer.timer.measure("screen.renderText") {
 		if(rendering) {
 			space.viewportPx(surface.width, surface.height)
 			gl.viewport(0, 0, surface.width, surface.height) 
+			if(text2 ne null) text2.reshape(surface.width, surface.height)
 		}
 	}
 

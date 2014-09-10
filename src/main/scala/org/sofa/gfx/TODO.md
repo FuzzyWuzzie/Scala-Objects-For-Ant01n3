@@ -107,22 +107,22 @@ Game
     - More than this an animation is needed -> behaviors ?
 * Be able to create interfaces using a dedicated JSON format or some other DSL.
     - Add a message to the RendererActor that handles such things, maybe from a separate JSON, but also using a DSL.
+* Always try in display code to avoid shader/texture context switches, that are very costly.
+
+## Display lists
+
 * Use the idea of "Display Lists" (Android, OpenGL).
-    - For text each UI elements builds a display list of text (backed by a GLText ?). If the elment changes, the display list is rebuilt, else the display list is kept. The display list contains ALL the text the element needs (or the element builds several display lists if one changes often and others not).
-    - For graphics its the same, build a display list of graphical elements needed by the element. If the element does not changes, the list is reused, else it is rebuilt. 
-    - Display list items can contain the actual MVP at time or construction and a set of basic commands (shader, mesh)...
-    - One can consider two changes in display list items : only the MVP changed but not the contents, or both.
-        + add dirtyMVP and dirtyRender flags ?
-* Use the idea of "invalidation" (Android),
-    - In addition to the needRender flag (general), and the layoutRequest flag (UI), we can use an invalidate flag that tells that the display list of the element needs to be rebuilt.
+    - The main idea is that once a MVP is built for an object that does not move, and as long as the parents do not move the matrix can be conserved.
+    - This is the same for the displayed "things", once setup, we can conserve them.
+* When drawing, one can either draw the things if they changed, and doing this memorize the resulting drawing commands, or use this memory of previously issued commands to draw faster (avoiding to recompute transformation matrices, graphic code, etc.).
+    - The basis for this could be a `DisplayList` trait (DL) that allows to firt compile an object, then redraw it faster.
+    - Such objects are stored in the avatar renderers directly.
+    - This is the renderer that decides when to compile/udapte the DL or to use it to redraw.
+* For text, as we allow "out-of-order" display, we could place DisplayList text elements into another kind of TextLayer that is used at the end or rendering only. The advantage would be to use the new GLText instead of simply GLStrings, to record more complex text displays. This TextLayer would not cache strings, each avatar would still be responsible for its text DL, but it would remember their order and allow to display them in one big step at the end (thus avoiding shader/texture context switches).
 
 ## OpenGL
 
-* Would a shader "current shader" or "current texture" avoid lots of bindings and provide performance gains ?
-    - Done.
 * Add buffers for some often used glGet.
-* We could improve Space when there is no projection, can avoid a matrix mult at each mvp recompute.
-
 
 ## Text
 

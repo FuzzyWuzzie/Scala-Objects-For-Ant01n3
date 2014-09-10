@@ -26,12 +26,12 @@ object GLText {
 	private[this] var blend   = true
 	private[this] var depth   = true
 
-	def shader(gl:SGL):ShaderProgram = {
-		if(theShader eq null) {
-			theShader = ShaderProgram(gl, "gltext-shader", "colortext.vert.glsl", "colortext.frag.glsl")
-		}
-		theShader
-	}
+	// def shader(gl:SGL):ShaderProgram = {
+	// 	if(theShader eq null) {
+	// 		theShader = ShaderProgram(gl, "gltext-shader", "colortext.vert.glsl", "colortext.frag.glsl")
+	// 	}
+	// 	theShader
+	// }
 
 	def beginRender(font:GLFont) {
 		if(currentFont ne null)
@@ -56,7 +56,7 @@ object GLText {
 	 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	 	}
 
-		shader(gl).use
+		font.shader.use
 		font.texture.bindTo(gl.TEXTURE0)
 	}
 
@@ -126,7 +126,7 @@ class GLText(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		import VertexAttribute._
 		// set a vertex and a texcoord to declare the mesh has having these attributes.
 		batchMesh v(0) xyz (0,0,0) uv (0,0) rgba(0,0,0,1)
-		batchMesh.newVertexArray(gl, gl.DYNAMIC_DRAW, GLText.shader(gl),
+		batchMesh.newVertexArray(gl, gl.DYNAMIC_DRAW, font.shader,
 			Vertex   -> "position",
 			TexCoord -> "texCoords",
 			Color    -> "color")
@@ -152,7 +152,7 @@ class GLText(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	  * after. This is used for bulk processing, when several texts of the same
 	  * font have to be rendered. */
 	def render(camera:Camera) {
-	    camera.uniformMVP(GLText.shader(font.gl))
+	    camera.uniformMVP(font.shader)
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
 	}
 
@@ -161,7 +161,7 @@ class GLText(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	  * after. This is used for bulk processing, when several strings of the same
 	  * font have to be rendered. */
 	def render(mvp:Matrix4) {
-		GLText.shader(font.gl).uniformMatrix("MVP", mvp)
+		font.shader.uniformMatrix("MVP", mvp)
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)	
 	}
 
@@ -170,7 +170,7 @@ class GLText(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	  * after. This is used for bulk processing, when several strings of the same
 	  * font have to be rendered. */
 	def render(space:Space) {
-		space.uniformMVP(GLText.shader(font.gl))
+		space.uniformMVP(font.shader)
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
 	}
 

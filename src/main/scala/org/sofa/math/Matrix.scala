@@ -42,7 +42,7 @@ object Matrix {
 
 class Matrix3 extends NumberGrid3 {
     type ReturnType = Matrix3
-    val data = new Array[Double](9)
+    //val data = new Array[Double](9)
     def newInstance(w:Int, h:Int) = new Matrix3()
 }
 
@@ -71,7 +71,7 @@ object Matrix3 {
 
 class Matrix4 extends NumberGrid4 {
     type ReturnType = Matrix4
-    val data = new Array[Double](16)
+    //val data = new Array[Double](16)
     def newInstance(w:Int, h:Int) = new Matrix4()
     def top3x3:Matrix3 = Matrix3((this(0,0), this(0,1), this(0,2)),
                                  (this(1,0), this(1,1), this(1,2)),

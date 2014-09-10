@@ -11,6 +11,7 @@ import org.sofa.gfx.renderer.{NoSuchAvatarException}
 
 import org.sofa.gfx.{SGL, ShaderProgram}//, Camera, VertexArray, Texture, HemisphereLight, ResourceDescriptor, Libraries}
 import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}//, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
+import org.sofa.gfx.dl.DisplayList
 
 
 class UIAvatarFactory extends DefaultAvatarFactory {
@@ -233,7 +234,7 @@ trait UIrenderUtils {
 		}
 	}
 
-	class FillDP {
+	class FillDP extends DisplayList {
 		val mvp = Matrix4()
 		val color = Rgba(0, 0, 0, 0)
 		def compile(mvp:Matrix4, color:Rgba) {
@@ -246,6 +247,7 @@ trait UIrenderUtils {
 			shaderUniform.uniformMatrix("MVP", mvp)
 			plainRect.draw(gl)
 		}
+		def dispose(gl:SGL) {}
 	}
 
 	protected[this] val fillDP = new FillDP()
