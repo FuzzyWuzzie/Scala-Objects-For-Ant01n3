@@ -604,42 +604,6 @@ abstract class NumberGrid4 extends NumberGrid {
 	    result
 	}
 
-    /** Multiply this by `rhs` storing the result in this, using usual matrix multiplication.
-      * 
-      * The result is stored in place.
-      */
- //    def multBy(rhs:NumberGrid4) = {
-	// 	if(rhs eq this)
-	// 		throw new RuntimeException("this and rhs cannot be the same matrix")
-
-	// 	var a, b, c, d = 0.0
-	// 	var i = 0
-	// 	var rdata = rsh.data
-
-	// 	//
-	// 	// For each row of the result.
-	// 	//
-	// 	while(i < 4) {
-	// 		//
-	// 		// Row i of this.
-	// 		//
-	// 		a = data(i+0)
-	// 		b = data(i+4)
-	// 		c = data(i+8)
-	// 		d = data(i+12)
-
-	// 		//
-	// 		// With each column of rhs.
-	// 		//
-	// 		data(i+0)  = (a * rdata( 0)) + (b * rdata( 1)) + (c * rdata( 2)) + (d * rdata( 3))
-	// 		data(i+4)  = (a * rdata( 4)) + (b * rdata( 5)) + (c * rdata( 6)) + (d * rdata( 7))
-	// 		data(i+8)  = (a * rdata( 8)) + (b * rdata( 9)) + (c * rdata(10)) + (d * rdata(11))
-	// 		data(i+12) = (a * rdata(12)) + (b * rdata(13)) + (c * rdata(14)) + (d * rdata(15))
-				
-	// 		i += 1
-	// 	}
-	// }
-
 	def multBy(rhs:NumberGrid4) = {
 		if(rhs eq this)
 			throw new RuntimeException("this and rhs cannot be the same matrix")
@@ -972,14 +936,52 @@ abstract class NumberGrid4 extends NumberGrid {
 	  * The matrix is changed in place.
 	  */
 	def rotate(angle:Double, u:Double, v:Double, w:Double) {
-//		val R = newInstance(4, 4).asInstanceOf[NumberGrid4]
-//		R.copy(this)
-//		setIdentity
-//		setRotation(angle, u, v, w)
-//		multBy(R)
-		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
-		tmpM4.setRotation(angle, u, v, w)	// This fills the matrix, no need for setIdentity
-		multBy(tmpM4)
+		val rcos = cos(angle)
+		val rsin = sin(angle)
+
+		val d0  =      rcos + u*u*(1-rcos)
+		val d1  =  w * rsin + v*u*(1-rcos)
+		val d2  = -v * rsin + w*u*(1-rcos)
+
+		val d4  = -w * rsin + u*v*(1-rcos)
+		val d5  =      rcos + v*v*(1-rcos)
+		val d6  =  u * rsin + w*v*(1-rcos)
+
+		val d8  =  v * rsin + u*w*(1-rcos)
+		val d9  = -u * rsin + v*w*(1-rcos)
+		val d10 =      rcos + w*w*(1-rcos)
+
+		var a = dat(0)
+		var b = dat(4)
+		var c = dat(8)
+
+		dat(0)  = (a * d0) + (b * d1) + (c * d2)
+		dat(4)  = (a * d4) + (b * d5) + (c * d6)
+		dat(8)  = (a * d8) + (b * d9) + (c * d10)
+
+		a = dat(1)
+		b = dat(5)
+		c = dat(9)
+
+		dat(1)  = (a * d0) + (b * d1) + (c * d2)
+		dat(5)  = (a * d4) + (b * d5) + (c * d6)
+		dat(9)  = (a * d8) + (b * d9) + (c * d10)
+
+		a = dat(2)
+		b = dat(6)
+		c = dat(10)
+
+		dat(2)  = (a * d0) + (b * d1) + (c * d2)
+		dat(6)  = (a * d4) + (b * d5) + (c * d6)
+		dat(10) = (a * d8) + (b * d9) + (c * d10)
+
+		a = dat(3)
+		b = dat(7)
+		c = dat(11)
+
+		dat(3)  = (a * d0) + (b * d1) + (c * d2)
+		dat(7)  = (a * d4) + (b * d5) + (c * d6)
+		dat(11) = (a * d8) + (b * d9) + (c * d10)	
 	}
 
 	/** Mutliply this matrix by a rotation matrix defined by the given
@@ -989,11 +991,128 @@ abstract class NumberGrid4 extends NumberGrid {
 	  */
 	def rotate(angle:Double, axis:Axis) {
 		axis match {
-			case Axis.X => rotate(angle, 1, 0, 0)
-			case Axis.Y => rotate(angle, 0, 1, 0)
-			case Axis.Z => rotate(angle, 0, 0, 1)
+			case Axis.X => rotate(angle, 1, 0, 0)	// TODO
+			case Axis.Y => rotateY(angle)
+			case Axis.Z => rotate(angle, 0, 0, 1)	// TODO
 			case _      => throw new RuntimeException("unknown axis")
 		}
+	}
+
+	/** Mutliply this matrix by a rotation matrix defined by the given
+	  * `angle` in radians around X axis.
+	  * 
+	  * The matrix is changed in place. Faster than arbitrary angle rotation.
+	  */
+	def rotateX(angle:Double) {
+		var ang = angle
+
+		if     (ang < -2*Pi) ang = -2*Pi
+		else if(ang >  2*Pi) ang =  2*Pi
+	
+		val sint = sin(ang)
+		val cost = cos(ang)
+
+		var b = dat(4)
+		var c = dat(8)
+
+		dat(4)  = (b * cost) + (c * sint)
+		dat(8)  = (b * -sint) + (c * cost)
+
+		b = dat(5)
+		c = dat(9)
+
+		dat(5)  = (b * cost) + (c * sint)
+		dat(9)  = (b * -sint) + (c * cost)
+
+		b = dat(6)
+		c = dat(10)
+
+		dat(6)  = (b * cost) + (c * sint)
+		dat(10) = (b * -sint) + (c * cost)
+
+		b = dat(7)
+		c = dat(11)
+
+		dat(7)  = (b * cost) + (c * sint)
+		dat(11) = (b * -sint) + (c * cost)
+	}
+
+	/** Mutliply this matrix by a rotation matrix defined by the given
+	  * `angle` in radians around Y axis.
+	  * 
+	  * The matrix is changed in place. Faster than arbitrary angle rotation.
+	  */
+	def rotateY(angle:Double) {
+		var ang = angle
+
+		if     (ang < -2*Pi) ang = -2*Pi
+		else if(ang >  2*Pi) ang =  2*Pi
+	
+		val sint = sin(ang)
+		val cost = cos(ang)
+	
+		var a = dat(0)
+		var c = dat(8)
+
+		dat(0)  = (a * cost) + (c * -sint)
+		dat(8)  = (a * sint) + (c * cost)
+
+		a = dat(1)
+		c = dat(9)
+
+		dat(1)  = (a * cost) + (c * -sint)
+		dat(9)  = (a * sint) + (c * cost)
+
+		a = dat(2)
+		c = dat(10)
+
+		dat(2)  = (a * cost) + (c * -sint)
+		dat(10) = (a * sint) + (c * cost)
+
+		a = dat(3)
+		c = dat(11)
+
+		dat(3)  = (a * cost) + (c * -sint)
+		dat(11) = (a * sint) + (c * cost)
+	}
+
+	/** Mutliply this matrix by a rotation matrix defined by the given
+	  * `angle` in radians around Z axis.
+	  * 
+	  * The matrix is changed in place. Faster than arbitrary angle rotation.
+	  */
+	def rotateZ(angle:Double) {
+		var ang = angle
+
+		if     (ang < -2*Pi) ang = -2*Pi
+		else if(ang >  2*Pi) ang =  2*Pi
+	
+		val sint = sin(ang)
+		val cost = cos(ang)
+	
+		var a = dat(0)
+		var b = dat(4)
+
+		dat(0)  = (a * cost) + (b * sint)
+		dat(4)  = (a * -sint) + (b * cost)
+
+		a = dat(1)
+		b = dat(5)
+
+		dat(1)  = (a * cost) + (b * sint)
+		dat(5)  = (a * -sint) + (b * cost)
+
+		a = dat(2)
+		b = dat(6)
+
+		dat(2)  = (a * cost) + (b * sint)
+		dat(6)  = (a * -sint) + (b * cost)
+
+		a = dat(3)
+		b = dat(7)
+
+		dat(3)  = (a * cost) + (b * sint)
+		dat(7)  = (a * -sint) + (b * cost)
 	}
 	
 	/**
@@ -1082,17 +1201,19 @@ abstract class NumberGrid4 extends NumberGrid {
 	 * of the top (allows to "bank" the camera).
 	 */
 	def lookAt(eye:NumberSeq3, ctr:NumberSeq3, upv:NumberSeq3, rh:Boolean) {
-		val la = newInstance(4,4).asInstanceOf[NumberGrid4]
-	    la.setLookAt(eye, ctr, upv, rh)
-	    multBy(la)
+		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
+		//val la = newInstance(4,4).asInstanceOf[NumberGrid4]
+	    tmpM4.setLookAt(eye, ctr, upv, rh)
+	    multBy(tmpM4)
 	}
 
 	def lookAt(eyeX:Double, eyeY:Double, eyeZ:Double,
 	           ctrX:Double, ctrY:Double, ctrZ:Double,
 	           upvX:Double, upvY:Double, upvZ:Double, rh:Boolean) {
-		val la = newInstance(4,4).asInstanceOf[NumberGrid4]
-		la.setLookAt(eyeX, eyeY, eyeZ, ctrX, ctrY, ctrZ, upvX, upvY, upvZ, rh)
-		multBy(la)
+		//val la = newInstance(4,4).asInstanceOf[NumberGrid4]
+		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
+		tmpM4.setLookAt(eyeX, eyeY, eyeZ, ctrX, ctrY, ctrZ, upvX, upvY, upvZ, rh)
+		multBy(tmpM4)
 	}
 	
 	/**
@@ -1140,11 +1261,12 @@ abstract class NumberGrid4 extends NumberGrid {
 		// we must add a small epsilon (or use another rotating technique !
 		// quaternions ?).
 	
-		val mm = newInstance(4, 4).asInstanceOf[NumberGrid4]
+//		val mm = newInstance(4, 4).asInstanceOf[NumberGrid4]
+		if(tmpM4 eq null) tmpM4 = newInstance(4, 4).asInstanceOf[NumberGrid4]
 		var x:Vector3 = null
-		var y  = new Vector3(upvX, upvY, upvZ)
-		var z  = new Vector3((eyeX - ctrX), (eyeY - ctrY), (eyeZ - ctrZ))
-//		var z  = new Vector3((ctrX - eyeX), (ctrY - eyeY), (ctrZ - eyeZ))
+		var y  = Vector3(upvX, upvY, upvZ)
+		var z  = Vector3((eyeX - ctrX), (eyeY - ctrY), (eyeZ - ctrZ))
+//		var z  = Vector3((ctrX - eyeX), (ctrY - eyeY), (ctrZ - eyeZ))
 
 		z.normalize
 		x = y X z
@@ -1156,15 +1278,15 @@ abstract class NumberGrid4 extends NumberGrid {
 
 		if(rh) {
 		    // OpenGL
-			mm.setRow(0, 1, 0, 0, -eyeX)
-			mm.setRow(1, 0, 1, 0, -eyeY)
-			mm.setRow(2, 0, 0, 1, -eyeZ)
-			mm.setRow(3, 0, 0, 0, 1)
+			tmpM4.setRow(0, 1, 0, 0, -eyeX)
+			tmpM4.setRow(1, 0, 1, 0, -eyeY)
+			tmpM4.setRow(2, 0, 0, 1, -eyeZ)
+			tmpM4.setRow(3, 0, 0, 0, 1)
 		} else {
-			mm.setRow(0, 1, 0, 0, eyeX)
-			mm.setRow(1, 0, 1, 0, eyeY)
-			mm.setRow(2, 0, 0, 1, eyeZ)
-			mm.setRow(3, 0, 0, 0, 1)
+			tmpM4.setRow(0, 1, 0, 0, eyeX)
+			tmpM4.setRow(1, 0, 1, 0, eyeY)
+			tmpM4.setRow(2, 0, 0, 1, eyeZ)
+			tmpM4.setRow(3, 0, 0, 0, 1)
 		}
 
 		// Set the rotation:
@@ -1176,7 +1298,7 @@ abstract class NumberGrid4 extends NumberGrid {
 
 		// Compose the translation with the rotation:
 
-		multBy(mm)
+		multBy(tmpM4)
 		//transpose()
 	}
 	

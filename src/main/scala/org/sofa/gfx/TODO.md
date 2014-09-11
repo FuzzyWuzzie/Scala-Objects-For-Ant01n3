@@ -120,6 +120,11 @@ Game
     - This is the renderer that decides when to compile/udapte the DL or to use it to redraw.
 * For text, as we allow "out-of-order" display, we could place DisplayList text elements into another kind of TextLayer that is used at the end or rendering only. The advantage would be to use the new GLText instead of simply GLStrings, to record more complex text displays. This TextLayer would not cache strings, each avatar would still be responsible for its text DL, but it would remember their order and allow to display them in one big step at the end (thus avoiding shader/texture context switches).
 
+## Math
+
+* A way to avoid a "Matrix4.toFloatArray" ???
+    - Maybe with specialized, we could have both matrices in Float or Doubles ?
+
 ## OpenGL
 
 * Add buffers for some often used glGet.

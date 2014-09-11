@@ -389,6 +389,21 @@ trait Mesh {
     		va.draw(drawAs(gl), count * elementsPerPrimitive)
     	else throw new NoVertexArrayException("Mesh: create a vertex array before draw")
     }
+
+    /** Draw `count` primitives of the last vertex array created starting at `start`. A
+      * primitive is a line or triangle for example, it depends on the kind of mesh.
+      * If no vertex array has been created a `NoVertexArrayException` is thrown.
+      * This uses the `drawAs()` method to select
+      * how to draw the mesh (triangles, points, etc.), and the `elementsPerPrimitive`
+      * to know how many elements (vertices, colors) makes up a primitive. */
+    def draw(gl:SGL, start:Int, count:Int) {
+    	if(va ne null) {
+    		val epp = elementsPerPrimitive
+    		va.draw(drawAs(gl), start * epp, count * epp)
+    	} else {
+    		throw new NoVertexArrayException("Mesh: create a vertex array before draw")
+    	}
+    }
     
     override def toString():String = {
     	val attrs = attributes.map { item => (item, components(item)) }

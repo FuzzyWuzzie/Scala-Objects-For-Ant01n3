@@ -128,11 +128,13 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIre
 
 		val s = self.space.thisSpace
 		val scissors = self.screen.scissors.push(screen.gl, s.posx, s.posy, s.posx+s.sizex, s.posy+s.sizey, screen.space)
-			self.screen.textLayer.pushScissors(scissors)
+			//self.screen.textLayer.pushScissors(scissors)
+			self.screen.textLayerDL.pushScissors(scissors)
 				self.space.pushSubSpace
 					self.renderVisibleSubs
 				self.space.popSubSpace
-			self.screen.textLayer.popScissors()
+			//self.screen.textLayer.popScissors()
+			self.screen.textLayerDL.popScissors()
 		self.screen.scissors.pop(screen.gl)
 		renderScrollIndicator
 

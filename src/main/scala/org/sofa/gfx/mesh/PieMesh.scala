@@ -72,5 +72,16 @@ class PieMesh(val segments:Int) extends Mesh {
     	}
     }
 
+    override def draw(gl:SGL, start:Int, count:Int) {
+    	if(va ne null) {
+    		throw new RuntimeException("Due to the way the pie is drawn, you cannot offset the start.")
+    		// val beg = if(start <= this.segments) start else segments
+    		// val end = if(beg+count <= this.segments) count else segments - beg
+    		// va.draw(drawAs(gl), 2 + beg, end)
+    	} else {
+    		throw new NoVertexArrayException("Mesh : create a vertex array first")
+    	}
+    }
+
     override def hasIndices():Boolean = false
 }

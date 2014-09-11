@@ -95,10 +95,22 @@ class MatrixStack[M<:Matrix4](initialMatrix:M) {
      * around `axis`. */
     def rotate(angle:Double, axis:NumberSeq3) = stack(end).rotate(angle, axis)
 
-    /** Multiply the top matrix by a rotation matrix defining a rotation of `angle` degrees
+    /** Multiply the top matrix by a rotation matrix defining a rotation of `angle` radians
      * around `axis`. */
     def rotate(angle:Double, axis:Axis) = stack(end).rotate(angle, axis)
     
+    /** Multiply the top matrix by a rotation matrix defining a rotation of `angle` radians
+     * around X axis. */
+    def rotateX(angle:Double) = stack(end).rotateX(angle)
+
+    /** Multiply the top matrix by a rotation matrix defining a rotation of `angle` radians
+     * around Y axis. */
+    def rotateY(angle:Double) = stack(end).rotateY(angle)
+
+    /** Multiply the top matrix by a rotation matrix defining a rotation of `angle` radians
+     * around Z axis. */
+    def rotateZ(angle:Double) = stack(end).rotateZ(angle)
+
     /** Multiply the top matrix by a scaling matrix with factors (`sx`, `sy`, `sz`). */
     def scale(sx:Double, sy:Double, sz:Double) = stack(end).scale(sx, sy, sz)
     

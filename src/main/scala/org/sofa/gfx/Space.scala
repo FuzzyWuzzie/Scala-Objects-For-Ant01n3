@@ -182,21 +182,39 @@ trait Space {
         needRecomputeMVP = true
     }
     
-    /** Apply a rotation of `angle` around axis `(x, y, z)` to the current model-view matrix. */
+    /** Apply a rotation of `angle` in radians around axis `(x, y, z)` to the current model-view matrix. */
     def rotate(angle:Double, x:Double, y:Double, z:Double) {
         modelview.rotate(angle, x, y, z)
         needRecomputeMVP = true
     }
     
-    /** Apply a rotation of `angle` around `axis` to the current model-view matrix. */
+    /** Apply a rotation of `angle` in radians around `axis` to the current model-view matrix. */
     def rotate(angle:Double, axis:NumberSeq3) {
         modelview.rotate(angle, axis)
         needRecomputeMVP = true
     }
 
-    /** Apply a rotation of `angle` around `axis` to the current model-view matrix. */
+    /** Apply a rotation of `angle` in radians around `axis` to the current model-view matrix. */
     def rotate(angle:Double, axis:Axis) {
     	modelview.rotate(angle, axis)
+    	needRecomputeMVP = true
+    }
+
+    /** Apply a rotation of `angle` in radians aroung X axis to the current model-view matrix. */
+    def rotateX(angle:Double) {
+    	modelview.rotateX(angle)
+    	needRecomputeMVP = true
+    }
+
+    /** Apply a rotation of `angle` in radians aroung Y axis to the current model-view matrix. */
+    def rotateY(angle:Double) {
+    	modelview.rotateY(angle)
+    	needRecomputeMVP = true
+    }
+
+    /** Apply a rotation of `angle` in radians aroung Z axis to the current model-view matrix. */
+    def rotateZ(angle:Double) {
+    	modelview.rotateZ(angle)
     	needRecomputeMVP = true
     }
     

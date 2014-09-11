@@ -237,9 +237,13 @@ trait UIrenderUtils {
 	class FillDP extends DisplayList {
 		val mvp = Matrix4()
 		val color = Rgba(0, 0, 0, 0)
-		def compile(mvp:Matrix4, color:Rgba) {
+		def compile(color:Rgba, mvp:Matrix4, width:Double, height:Double) {
 			this.color.copy(color)
+			updateSpace(mvp, width, height)
+		}
+		def updateSpace(mvp:Matrix4, width:Double, height:Double) {
 			this.mvp.copy(mvp)
+			this.mvp.scale(width, height, 1)
 		}
 		def render(gl:SGL) {
 			shaderUniform.use
@@ -250,29 +254,40 @@ trait UIrenderUtils {
 		def dispose(gl:SGL) {}
 	}
 
-	protected[this] val fillDP = new FillDP()
+	private[this] val fillDP = new FillDP()
 
 	/** Fill the space of the avatar with an uniform color. */
 	def fill() {
 		val gl = self.screen.gl
 
 		if(self.spaceChanged || self.renderChanged) {
-			val space    = self.screen.space
 			val subSpace = self.space.subSpace
 
-			space.pushpop {
-				//println(s"    | rendering ${self.name} scale(${subSpace.size(0)},${subSpace.size(1)})")
-				shaderUniform.use
-				shaderUniform.uniform("uniformColor", color)
-				space.scale(subSpace.sizex, subSpace.sizey, 1)
-				space.uniformMVP(shaderUniform)
-				plainRect.draw(gl)
-				fillDP.compile(space.top, color)
-			}
-		} else {
-			fillDP.render(gl)
+			fillDP.compile(color, self.screen.space.top, subSpace.sizex, subSpace.sizey)
 		}
+		
+		fillDP.render(gl)
 	}
+
+	class ShadowAtDP extends DisplayList {
+		val mvp = Matrix4()
+		def compile(dx:Double, dy:Double, width:Double, height:Double, mvp:Matrix4) {
+			updateSpace(dx, dy, width, height, mvp)
+		}
+		def updateSpace(dx:Double, dy:Double, width:Double, height:Double, mvp:Matrix4) {
+			this.mvp.copy(mvp)
+			this.mvp.translate(dx, dy, 0)
+			this.mvp.scale(width, height, 1)
+		}
+		def render(gl:SGL) {
+			shaderColor.use
+			shaderColor.uniformMatrix("MVP", mvp)
+			shadowUnderRect.draw(gl)
+		}
+		def dispose(gl:SGL) {}
+	}
+
+	private[this] val shadowAtDP = new ShadowAtDP()
 
 	def horizShadowAbove(sizeCm:Double) { horizShadowAt(0, 1.0, sizeCm) }
 
@@ -281,20 +296,15 @@ trait UIrenderUtils {
 	def horizShadowAt(y:Double, alpha:Double, sizeCm:Double) {
 		// TODO alpha not used yet
 
-		val screen = self.screen
-		val space  = screen.space
-		val gl     = screen.gl
+		val gl = self.screen.gl
 
-		val thisSpace = self.space.thisSpace
-		val s1cm      = self.space.scale1cm
-
-		shaderColor.use
-		space.pushpop {
-			space.translate(thisSpace.fromx, thisSpace.fromy + y, 0)
-			space.scale(thisSpace.sizex, s1cm*sizeCm, 1)
-			space.uniformMVP(shaderColor)
-			shadowUnderRect.draw(gl)
+		if(self.spaceChanged || self.renderChanged) {
+			val thisSpace = self.space.thisSpace
+			val s1cm      = self.space.scale1cm
+			shadowAtDP.compile(thisSpace.fromx, thisSpace.fromy + y, thisSpace.sizex, s1cm * sizeCm, self.screen.space.top)
 		}
+		
+		shadowAtDP.render(gl)
 	}
 }
 
