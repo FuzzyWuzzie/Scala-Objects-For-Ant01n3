@@ -168,9 +168,9 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
 	def texParameter(target:Int, name:Int, param:Int) = glTexParameteri(target, name, param)
 	def texParameter(target:Int, name:Int, params:FloatBuffer) = glTexParameterfv(target, name, params.buffer.asInstanceOf[java.nio.FloatBuffer])
 	def texParameter(target:Int, name:Int, params:IntBuffer) = glTexParameteriv(target, name, params.buffer.asInstanceOf[java.nio.IntBuffer])
-	def texImage1D(target:Int, level:Int, internalFormat:Int, width:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage1D(target, level, internalFormat, width, border, format, theType, data.buffer.asInstanceOf[java.nio.ByteBuffer])
-	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, data.buffer.asInstanceOf[java.nio.ByteBuffer])
-    def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, data.buffer.asInstanceOf[java.nio.ByteBuffer])
+	def texImage1D(target:Int, level:Int, internalFormat:Int, width:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage1D(target, level, internalFormat, width, border, format, theType, if(data ne null) data.buffer.asInstanceOf[java.nio.ByteBuffer] else null)
+	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, if(data ne null) data.buffer.asInstanceOf[java.nio.ByteBuffer] else null)
+    def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, if(data ne null) data.buffer.asInstanceOf[java.nio.ByteBuffer] else null)
     def generateMipmaps(target:Int) = glGenerateMipmap(target)
 
     def createFramebuffer:AnyRef = {

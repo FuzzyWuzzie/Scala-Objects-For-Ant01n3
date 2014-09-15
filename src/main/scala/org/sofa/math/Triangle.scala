@@ -1,14 +1,17 @@
 package org.sofa.math
 
+
 object Triangle {
 	def apply(p0:Point3, p1:Point3, p2:Point3):Triangle = new Triangle(p0, p1, p2)
 	def unapply(t:Triangle):(Point3,Point3,Point3) = (Point3(t.p0),Point3(t.p1),Point3(t.p2))
 }
 
+
 object ConstTriangle {
 	def apply(p0:Point3, p1:Point3, p2:Point3):ConstTriangle = new ConstTriangle(p0, p1, p2)
 	def unapply(t:ConstTriangle):(Point3,Point3,Point3) = (Point3(t.p0),Point3(t.p1),Point3(t.p2))	
 }
+
 
 /** A simple triangle class that allows to easily compute
   * a normal form, a normal and a distance from the triangle, with the calculus of
@@ -252,10 +255,10 @@ class ConstTriangle(p0:Point3, p1:Point3, p2:Point3) extends Triangle(p0, p1, p2
 
 	v2.normalize
 
-	/** Computes the normal form of a triangle, that is a base point,
+	/** The normal form of a triangle, that is a base point,
 	  * and two vectors to locate the two other points from the base point. */
 	override def normalForm():(Point3,Vector3,Vector3) = { (Point3(p0),Vector3(v0),Vector3(v1)) }
 
-	/** Compute the triangle normal. */
+	/** Triangle normal. */
 	override def normal():Vector3 = v2
 }

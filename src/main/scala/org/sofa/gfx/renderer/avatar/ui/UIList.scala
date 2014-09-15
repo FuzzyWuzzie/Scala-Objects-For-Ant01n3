@@ -32,6 +32,16 @@ object UIList {
 	/** Message sent to the list to scroll of one or more complete visible page (negative numbers
 	  * are possible). */
 	case class OffsetPages(pages:Int) extends AvatarSpaceState {}
+
+	case class StartFling(velocity:Vector3) extends AvatarSpaceState {}
+
+	final val FlingStart = 1.0
+
+	final val FlingDecreaseRate = 0.95
+
+	final val FlingOffsetBase = 0.01
+
+	final val FlingStopUnder = 0.05
 }
 
 
@@ -48,6 +58,14 @@ class UIList(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 			case e:ScrollEvent => {
 				if(containsEvent(event)) {
 					space.changeSpace(UIList.Offset(e.delta.y))
+					true
+				} else {
+					false
+				}
+			}
+			case e:FlingEvent => {
+				if(containsEvent(event)) {
+					space.changeSpace(UIList.StartFling(e.velocity))
 					true
 				} else {
 					false
@@ -244,6 +262,10 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	var knobVisible = 1.0
 
+	var fling = 0.0
+
+	var velocity = 0.0
+
  	def thisSpace = fromSpace
 
  	def subSpace = toSpace
@@ -277,6 +299,10 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 				knobVisible = 1.0
 				checkOffset
 			}
+			case UIList.StartFling(velocity) => {
+				this.velocity = velocity.y
+				this.fling = UIList.FlingStart
+			}
 			case _ => super.changeSpace(newState)
 		}
 	}
@@ -284,8 +310,8 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 	protected def checkOffset() {
 		var offsetMax = min(-(toSpace.sizey - fromSpace.sizey), 0)
 
-		if(offsety > 0) offsety = 0
-		else if(offsety < offsetMax) offsety = offsetMax
+		if(offsety > 0) { offsety = 0; fling = 0 }
+		else if(offsety < offsetMax) { offsety = offsetMax; fling = 0 }
 		
 		self.spaceChanged = true
 	}
@@ -318,6 +344,20 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 		} else if(knobVisible > 0 && knobVisible <= 0.05) {
 			knobVisible  = 0.0
 			self.screen.requestRender
+		}
+
+		if(fling > 0) {
+			fling *= UIList.FlingDecreaseRate
+			
+			if(fling < UIList.FlingStopUnder) {
+				fling = 0.0
+			} else {
+				val off = UIList.FlingOffsetBase * velocity * scale1cm * fling
+				offsety += off
+				self.screen.requestRender
+				knobVisible = 1.0
+				checkOffset
+			}
 		}
  	}
 

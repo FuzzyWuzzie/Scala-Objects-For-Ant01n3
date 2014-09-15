@@ -159,8 +159,8 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	def texParameter(target:Int, name:Int, params:FloatBuffer) = glTexParameterfv(target, name, params.buffer.asInstanceOf[java.nio.FloatBuffer])
 	def texParameter(target:Int, name:Int, params:IntBuffer) = glTexParameteriv(target, name, params.buffer.asInstanceOf[java.nio.IntBuffer])
 	def texImage1D(target:Int, level:Int, internalFormat:Int, width:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = throw new RuntimeException("no texImage1D in GL ES 2.0 too bad")
-	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, data.buffer.asInstanceOf[java.nio.ByteBuffer])
-    def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, data.asInstanceOf[java.nio.ByteBuffer])
+	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, if(data ne null) data.buffer.asInstanceOf[java.nio.ByteBuffer] else null)
+    def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, if(data ne null) data.asInstanceOf[java.nio.ByteBuffer] else null)
     def generateMipmaps(target:Int) = glGenerateMipmap(target)
     
     def createFramebuffer:AnyRef = {

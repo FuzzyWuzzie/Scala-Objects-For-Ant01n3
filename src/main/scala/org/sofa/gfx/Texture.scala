@@ -281,6 +281,15 @@ object Texture {
     /** Used to avoid re-binding the same texture again and again. Not thread-safe.
       * However we always use the same thread with OpenGL. */
     var currentlybound = new Array[Texture](10)
+
+    def resetCurrentlyBound() {
+    	var i = 0
+    	val n = currentlybound.length
+    	while(i < n) {
+    		currentlybound(i) = null
+    		i += 1
+    	}
+    }
 }
 
 
@@ -310,6 +319,9 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
         checkErrors
     }
     
+    /** New texture created from an image.
+      * @param imageFileName the image to upload to the texture.
+      * @param params The texture parameters. */
     def this(gl:SGL, image:TextureImage, params:TexParams) {
         this(gl, gl.TEXTURE_2D, image.width, image.height, 0)
         image.texImage2D(gl, mode)
@@ -321,8 +333,28 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     	checkErrors
     }
 
+    /** New texture created from an image filename.
+      * @param imageFileName the image to load.
+      * @param params The texture parameters. */
     def this(gl:SGL, imageFileName:String, params:TexParams) {
      	this(gl, Texture.loader.open(imageFileName,params), params)
+    }
+
+    /** New texture without image data.
+      * The texture is created "empty" with uninitialized pixels.
+      * @param format gl.RGBA or gl.DEPTH_COMPONENT for example.
+      * @param ttype Type of storage gl.UNSIGNED_BYTE or gl.UNSIGNED_SHORT for example.
+      * @param width The texture width in pixels.
+      * @param height The texture height in pixels.
+      * @param params the Texture parameters. */
+    def this(gl:SGL, format:Int, ttype:Int, width:Int, height:Int, params:TexParams) {
+    	this(gl, gl.TEXTURE_2D, width, height, 0) 
+    	texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, format, ttype, null)
+
+    	minFilter(params.minFilter)
+    	magFilter(params.magFilter)
+    	wrap(params.wrap)
+    	checkErrors
     }
     
     override def dispose() {

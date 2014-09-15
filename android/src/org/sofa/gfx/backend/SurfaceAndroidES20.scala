@@ -313,7 +313,7 @@ Debug.stopMethodTracing()
     }
 
     def onFling(event1:AndroidMotionEvent, event2:AndroidMotionEvent, velocityX:Float, velocityY:Float):Boolean = {
-		queueEvent(FlingEventAndroid(event2, Vector3(velocityX, velocityY, 0)))
+		queueEvent(FlingEventAndroid(event2, Vector3(px2cm(velocityX), px2cm(velocityY), 0)))
         true
     }
 

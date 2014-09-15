@@ -99,6 +99,7 @@ Game
     - a way to represent it on memory.
     - a way to communicate with entities actors ? (constraints, events...)
 
+
 ## UI
 
 * An "action bar" à la Android ?
@@ -107,7 +108,8 @@ Game
     - More than this an animation is needed -> behaviors ?
 * Be able to create interfaces using a dedicated JSON format or some other DSL.
     - Add a message to the RendererActor that handles such things, maybe from a separate JSON, but also using a DSL.
-* Always try in display code to avoid shader/texture context switches, that are very costly.
+* Use `TextureFrameBuffer`s as a render layer under some elements to avoid redrawing them. This should be an option, some avatars should draw using display lists, other with a render layer, according to usage. For example for the list, we could back items by a render layer, but not necessarily the list. The choice will probably depend on lots of tests... :(
+
 
 ## Display lists
 
@@ -120,14 +122,20 @@ Game
     - This is the renderer that decides when to compile/udapte the DL or to use it to redraw.
 * For text, as we allow "out-of-order" display, we could place DisplayList text elements into another kind of TextLayer that is used at the end or rendering only. The advantage would be to use the new GLText instead of simply GLStrings, to record more complex text displays. This TextLayer would not cache strings, each avatar would still be responsible for its text DL, but it would remember their order and allow to display them in one big step at the end (thus avoiding shader/texture context switches).
 
+
 ## Math
 
 * A way to avoid a "Matrix4.toFloatArray" ???
     - Maybe with specialized, we could have both matrices in Float or Doubles ?
 
+
 ## OpenGL
 
 * Add buffers for some often used glGet.
+* TextureFrameBuffer may allocate a depht buffer per frame buffer, however depth buffers can be shared.
+    - The problem is the size of this depth buffer. 
+    - Allocate only one such buffer large enough ?
+
 
 ## Text
 
@@ -137,9 +145,11 @@ Game
     - Each point would have a color associated, allowing to create text effect,
     - The counterpart would be that we cannot reuse strings, we would have to recreate it, each time.
 
+
 ## CSS
 
 * Add a CSS style sheet system on the avatar hierarchy.
+
 
 ## Android
 
