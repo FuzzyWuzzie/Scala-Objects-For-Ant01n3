@@ -28,8 +28,8 @@ class TextDL(val text:GLText, val layer:TextLayer) extends DisplayList with Text
 		p.set(x, y, z, 1)
 		renderSpace.projectInPlace(p)
 		p.perspectiveDivide
-		val w:Double = textSpace.viewportPx(0)
-		val h:Double = textSpace.viewportPx(1)
+		val w:Double = textSpace.viewport(0)
+		val h:Double = textSpace.viewport(1)
 		p.set(p.x / 2 * w + w / 2, p.y / 2 * h + h / 2, 0, 1)
 		textSpace.translate(p.x, p.y, 0)
 		mvp.copy(textSpace.top)
@@ -140,7 +140,7 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 	}
 
 	def reshape(widthPx:Int, heightPx:Int) {
-		textSpace.viewportPx(widthPx, heightPx)
+		textSpace.viewport(widthPx, heightPx)
 		textSpace.orthographicPixels()
  		textSpace.viewIdentity()
 	}

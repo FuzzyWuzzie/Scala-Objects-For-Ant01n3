@@ -190,7 +190,7 @@ class Camera extends Space with PointOfView {
     	theta = t
     }
 
-    override def toString() = "cam{cartesian(%s) spherical(%s) focus(%s) up(%s) vp(%s)}".format(cartesianEye, sphericalEye, focus, up, viewportPx)
+    override def toString() = "cam{cartesian(%s) spherical(%s) focus(%s) up(%s) vp(%s)}".format(cartesianEye, sphericalEye, focus, up, viewport)
 }
 
 

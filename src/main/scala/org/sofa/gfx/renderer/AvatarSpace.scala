@@ -51,8 +51,14 @@ trait AvatarSpace {
 	/** Setup the sub-space for sub avatars. */
 	def pushSubSpace() {}
 
-	/** Revert to the space before the call to `push()`. */
+	/** Revert to the space before the call to `pushSubSpace()`. */
 	def popSubSpace() {}
+
+	/** Setup the sub-sapce for sub avatars if using a layer. This is called from inside
+	  * [[AvatarRender]] `pushLayer()` method, that will handle the pushing and poping 
+	  * of the space current matrices and viewport. You only have to setup a projection
+	  * for a new frame buffer according to your avatar. */
+	def subSpaceLayer() {}
 
 	/** Position and size of this avatar in the parent space. */
 	def thisSpace:Box3

@@ -145,8 +145,8 @@ class TextLayer(val gl:SGL, val textShader:ShaderProgram) {
 			space.projectInPlace(position)
 			position.perspectiveDivide
 
-			val w:Double = space.viewportPx(0)
-			val h:Double = space.viewportPx(1)
+			val w:Double = space.viewport(0)
+			val h:Double = space.viewport(1)
 
 			position.x = position.x / 2 * w + w / 2
 			position.y = position.y / 2 * h + h / 2

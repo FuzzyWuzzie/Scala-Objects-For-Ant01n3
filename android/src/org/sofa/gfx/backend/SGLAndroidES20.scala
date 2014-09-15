@@ -14,10 +14,10 @@ import scala.language.implicitConversions
 class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     private[this] val ib1 = NioIntBuffer.allocate(1)
 
-    implicit def FBtoJFB(from:FloatBuffer):NioFloatBuffer = from.buffer.asInstanceOf[NioFloatBuffer]
-    implicit def BBtoJBB(from:ByteBuffer):NioByteBuffer = from.buffer.asInstanceOf[NioByteBuffer]
-    implicit def IBtoJIB(from:IntBuffer):NioIntBuffer = from.buffer.asInstanceOf[NioIntBuffer]
-    implicit def DBtoJDB(from:DoubleBuffer):NioDoubleBuffer = from.buffer.asInstanceOf[NioDoubleBuffer]
+    implicit def FBtoJFB(from:FloatBuffer):NioFloatBuffer = if(from ne null) from.buffer.asInstanceOf[NioFloatBuffer] else null
+    implicit def BBtoJBB(from:ByteBuffer):NioByteBuffer = if(from ne null) from.buffer.asInstanceOf[NioByteBuffer] else null
+    implicit def IBtoJIB(from:IntBuffer):NioIntBuffer = if(from ne null) from.buffer.asInstanceOf[NioIntBuffer] else null
+    implicit def DBtoJDB(from:DoubleBuffer):NioDoubleBuffer = if(from ne null) from.buffer.asInstanceOf[NioDoubleBuffer] else null
 
 // Awful constants
 	

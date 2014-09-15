@@ -80,6 +80,12 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val useDepth:Boo
     	bindFramebuffer(gl.FRAMEBUFFER, null)
     }
 
+    /** The color texture. */
+    def colorTexture:Texture = color
+
+    /** The depth texture, may be null if not depth buffer is used, see `useDepth`. */
+    def depthTexture:Texture = depth
+
     /** Bind the color texture (the framebuffer) for the TEXTURE_2D target. */
     def bindColorTexture() {
         //bindTexture(gl.TEXTURE_2D, color.id)

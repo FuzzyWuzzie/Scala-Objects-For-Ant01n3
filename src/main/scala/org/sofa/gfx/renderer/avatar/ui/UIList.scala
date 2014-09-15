@@ -102,6 +102,8 @@ class UIListItem(name:AvatarName, screen:Screen)
 
 	var renderer = new UIAvatarRenderListItem(this)
 
+	hasLayer = true
+
 	def consumeEvent(event:Event):Boolean = false /* {
 		event match {
 			case e:SingleTapEvent => {
@@ -208,32 +210,32 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIre
 
 class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
 
-	color = Rgba.White
+	color = null//Rgba.White
 
 	lineColor = Rgba.Black
 
 	override def render() {
-// if(self.spaceChanged)
-// 	println("# %s space changed".format(self.name))
-		//println(s"* render ${self.name}")
 		val space = self.space
-		// val text  = screen.textLayer
-		// val sizex = space.subSpace.sizex
-		// val sizey = space.subSpace.sizey
+		val gl = screen.gl
+		if(color eq null) {
+			color = Rgba.randomHue(0.7, 1.0)
+		}
 
-//		if(color eq null) {
-// //			color = Rgba.randomHue(0.7, 1.0)
-//			color = Rgba.randomHueAndSaturation(1.0)
-//		}
+		if(self.hasLayer) {
+			if(self.renderChanged) {
+				pushLayer
+					self.renderSubs
+				popLayer
+			}
 
-		space.pushSubSpace
-//			fill
-			//text.font("Ubuntu-M.ttf", 15)
-//			text.font("LTe50136.ttf", cmToPoints(1).toInt)
-//			text.color(Rgba.Black)
-//			text.string("Hello", sizex*0.1, sizey*0.9, 0, screen.space)
-			self.renderSubs
-		space.popSubSpace
+			space.pushSubSpace
+				renderLayer
+			space.popSubSpace
+		} else {
+			space.pushSubSpace
+				self.renderSubs
+			space.popSubSpace
+		}
 
 		self.spaceChanged = false
 		self.renderChanged = false
@@ -244,7 +246,7 @@ class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with 
 
 
 class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
- 	var scale1cm = 1.0
+// 	var scale1cm = 1.0
 
  	var itemSize = 1.5	// cm
 
@@ -411,7 +413,7 @@ class UIAvatarSpaceList(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
-	var scale1cm = 1.0
+//	var scale1cm = 1.0
 
 	var fromSpace = new Box3From {
 		from.set(0, 0, 0)
@@ -454,5 +456,11 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	override def popSubSpace() {
 		self.screen.space.pop
+	}
+
+	override def subSpaceLayer() {
+		val ratiohw = toSpace.sizey / toSpace.sizex
+		self.screen.space.translate(-1, 1, 0)
+		self.screen.space.scale(2, -2 / ratiohw, 1)
 	}
 }

@@ -5,7 +5,7 @@ import akka.actor.{ActorRef}
 
 import org.sofa.math.{Vector3, Point3, NumberSeq3, Rgba}
 import org.sofa.collection.{SpatialCube, SpatialHash, SpatialHashException}
-import org.sofa.gfx.{Space}
+import org.sofa.gfx.{Space, TextureFramebuffer}
 import org.sofa.gfx.transforms.{SpaceTransform}
 
 
@@ -77,6 +77,16 @@ abstract class Avatar(
 	  * to false at the end of the render phase (therefore usable by sub-avatars to know
 	  * if their parent render changed). */
 	var spaceChanged = true
+
+	/** Some avatars draw inside their parent layer (recursively), others have their
+	  * own rendering layer that can be composited onto the parent one. Layers allow
+	  * to store the rendering in an offscreen buffer that can conveniently be reused
+	  * as long as the sub-avatar hierarchy is not invalidated. See [[AvatarRender]]
+	  * `pushLayer()`, `popLayer()` and `disposeLayer()`. */
+	var hasLayer:Boolean = false
+
+	/** The optionnal render layer. See `hasLayer`. */
+	var layer:TextureFramebuffer = null
 
 // Access to components
 

@@ -102,6 +102,10 @@ Game
 
 ## UI
 
+* The way avatars know they must be rendered anew or layout anew is still to refine.
+    - It worked as long as avatars dediced to render themselves only or not, but with render layers, a parent avatar may  buffer a whole hierarchy of sub-avatars. Therefore when one of the sub-avatars change, we need a way to re-render the hierarchy at least from the closest parent that have a layer.
+* A way to tell if an avatar is opaque or not ?
+* A way to choose if a glClear is needed or not. Most of the time the whole UI fills the screen.
 * An "action bar" à la Android ?
 * Lists should indicate we cannot scroll more.
 * UI avatars should have visual transitions to appear and end.

@@ -29,7 +29,7 @@ trait Space {
     val mvp = new Matrix4()
 
     /** View port size in pixels. */
-    var viewportPx = Vector2(800, 600)
+    var vp = new scala.collection.mutable.ArrayBuffer[Vector2](); pushViewport(800, 600)//vp += Vector2(800, 600)
     
     /** Maximum depth of the view (far clip-plane position). */
     var maxDepth = 100.0
@@ -40,29 +40,21 @@ trait Space {
     /** Flag indicating if the modelview or projection changed since the last MVP compute. */
     protected[this] var needRecomputeMVP = true
         
-    /** Viewport width in pixels. */
-    def viewportWidth:Double = viewportPx.x
-
-    /** Change the viewport width in pixels. */
-    def viewportWidth_= (value:Double):Unit = { viewportPx.x = value } 
-
-    /** Viewport height in pixels. */
-    def viewportHeight:Double = viewportPx.y
-
-    /** Change the viewport height in pixels. */
-    def viewportHeight_= (value:Double):Unit = { viewportPx.y = value }
-
     /** The viewport in pixels. */
-    def viewport:(Double,Double) = (viewportPx.x, viewportPx.y)
+    def viewport:Vector2 = vp(vp.length-1)
 
     /** Change the viewport in pixels. */
-    def viewport_=(values:(Double,Double)):Unit = { viewportPx.set(values._1, values._2) }
+    def viewport_=(values:(Double,Double)):Unit = { vp(vp.length-1).set(values._1, values._2) }
     
     /** Set the width and height of the output view-port in pixels. */
-    def viewportPx(width:Double, height:Double) { viewportPx.set(width, height) }
+    def viewport(width:Double, height:Double) { vp(vp.length-1).set(width, height) }
     
     /** Obtain the current view-port width / height ratio. */
-    def viewportRatio:Double = viewportPx.x / viewportPx.y
+    def viewportRatio:Double = { val v = vp(vp.length-1); v.x / v.y }
+
+    def pushViewport(width:Double, height:Double) { vp += Vector2(width, height) }
+
+    def popViewport() { vp.trimEnd(1) }
 
     /** Erase the projection matrix with a new projection using the given frustum
       * specifications. */
@@ -102,7 +94,12 @@ trait Space {
     def orthographicPixels(near:Double = 1, far:Double = -1) {
     	projection.setIdentity
     	maxDepth = far
-    	projection.orthographic(0, viewportPx.x, 0, viewportPx.y, near, far)
+    	projection.orthographic(0, viewport.x, 0, viewport.y, near, far)
+    	needRecomputeMVP = true
+    }
+
+    def projectionIdentity() {
+    	projection.setIdentity
     	needRecomputeMVP = true
     }
 

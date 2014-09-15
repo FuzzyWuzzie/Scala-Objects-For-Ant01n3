@@ -94,7 +94,7 @@ class UIAvatarSpacePerspective(avatar: Avatar) extends UIAvatarSpace(avatar) {
 
 	val camera = new CameraSpace
 
-	var scale1cm = 1.0
+//	var scale1cm = 1.0
 
 	protected val fromSpace = new Box3Default {
 		pos.set(0, 0, 0)

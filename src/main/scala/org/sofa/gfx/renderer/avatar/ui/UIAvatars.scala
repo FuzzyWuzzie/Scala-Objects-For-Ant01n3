@@ -86,8 +86,8 @@ abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarCom
 			val from     = space.project(Point4(0, 0, 0, 1))
 			val to       = space.project(Point4(this.space.subSpace.sizex, this.space.subSpace.sizey, 0, 1))
 			val origPos  = sevent.position()
-			val w:Double = space.viewportPx(0)
-			val h:Double = space.viewportPx(1)
+			val w:Double = space.viewport(0)
+			val h:Double = space.viewport(1)
 
 			// // project yield elements in [-1:1] along X and Y, convert to pixels:
 
@@ -128,6 +128,9 @@ object UIrenderUtils {
 	/** A square line plainRect to stroke a rectangular area. */
 	var strokeRect:LinesMesh = null
 
+	/** A quad mesh to fill a rectangulare area with a texture. */
+	var texRect:TrianglesMesh = null
+
 	/** A quad mesh with the two upper vertices black and the two lower vertices transparent. */
 	var shadowUnderRect:TrianglesMesh = null
 
@@ -137,6 +140,9 @@ object UIrenderUtils {
 	/** A shader that waits color information on each vertex, and allows a `transparency`
 	  * uniform to make it more or less transparent. */
 	var shaderColor:ShaderProgram = null
+
+	/** A shader that waits tex coords on each vertex. */
+	var shaderTex:ShaderProgram = null
 }
 
 
@@ -164,6 +170,15 @@ trait UIrenderUtils {
 		UIrenderUtils.shaderColor
 	}
 
+	def shaderTex:ShaderProgram = {
+		if(UIrenderUtils.shaderTex eq null) {
+			UIrenderUtils.shaderTex = self.screen.libraries.shaders.addAndGet(self.screen.gl,
+				"image-shader",
+				ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
+		}
+		UIrenderUtils.shaderTex
+	}
+
 	def plainRect:TrianglesMesh = {
 		if(UIrenderUtils.plainRect eq null) {
 			import VertexAttribute._	
@@ -180,6 +195,24 @@ trait UIrenderUtils {
 		}
 
 		UIrenderUtils.plainRect
+	}
+
+	def texRect:TrianglesMesh = {
+		if(UIrenderUtils.texRect eq null) {
+			import VertexAttribute._	
+			val gl = self.screen.gl
+
+			UIrenderUtils.texRect = new TrianglesMesh(2)
+			UIrenderUtils.texRect v(0) xyz(0, 0, 0) uv(0, 1)
+			UIrenderUtils.texRect v(1) xyz(1, 0, 0) uv(1, 1)
+			UIrenderUtils.texRect v(2) xyz(1, 1, 0) uv(1, 0)
+			UIrenderUtils.texRect v(3) xyz(0, 1, 0) uv(0, 0)
+			UIrenderUtils.texRect.setTriangle(0, 0, 1, 2)
+			UIrenderUtils.texRect.setTriangle(1, 0, 2, 3)
+			UIrenderUtils.texRect.newVertexArray(gl, shaderTex, Vertex -> "position", TexCoord -> "texCoords")
+		}
+
+		UIrenderUtils.texRect
 	}
 
 	def strokeRect:LinesMesh = {
@@ -306,6 +339,21 @@ trait UIrenderUtils {
 		
 		shadowAtDP.render(gl)
 	}
+
+	def renderLayer() {
+		val space = self.space
+		val sp = self.screen.space
+		sp.pushpop {
+			sp.translate(space.subSpace.posx, space.subSpace.posy, 0)
+			sp.scale(space.subSpace.sizex, space.subSpace.sizey, 1)
+			shaderTex.use
+			self.layer.bindColorTexture
+			shaderTex.uniformTexture(self.layer.colorTexture, "texColor")
+			//shaderTex.uniformMatrix("MVP", space.top)
+			sp.uniformMVP(shaderTex)
+			texRect.draw(self.screen.gl)			
+		}
+	}
 }
 
 
@@ -318,6 +366,8 @@ class UIAvatarRender(var self:Avatar) extends AvatarRender {
 
 
 abstract class UIAvatarSpace(var self:Avatar) extends AvatarSpace {
+
+ 	var scale1cm = 1.0
 
 	/** An independant layout algorithm, eventually shared between instances, if
 	  * the space does not already acts as a layout. */

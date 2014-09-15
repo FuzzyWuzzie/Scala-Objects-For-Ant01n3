@@ -35,8 +35,8 @@ class ScissorStack {
 		space.projectInPlace(p0)
 		space.projectInPlace(p1)
 
-		val w  = space.viewportPx(0)
-		val h  = space.viewportPx(1)
+		val w  = space.viewport(0)
+		val h  = space.viewport(1)
 		val X0 = ceil(p0.x / 2 * w + w / 2).toInt
 		val Y1 = ceil(p0.y / 2 * h + h / 2).toInt
 		val X1 = ceil(p1.x / 2 * w + w / 2).toInt

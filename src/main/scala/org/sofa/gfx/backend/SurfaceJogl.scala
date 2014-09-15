@@ -80,7 +80,7 @@ class SurfaceNewt(
              expectedFps:Int = 30,
              decorated:Boolean = true,
              fullScreen:Boolean = false) { 
-    	this(renderer, camera.viewportPx.x.toInt, camera.viewportPx.y.toInt,
+    	this(renderer, camera.viewport.x.toInt, camera.viewport.y.toInt,
     		 title, caps, backend, expectedFps, decorated, fullScreen)
     }	
 

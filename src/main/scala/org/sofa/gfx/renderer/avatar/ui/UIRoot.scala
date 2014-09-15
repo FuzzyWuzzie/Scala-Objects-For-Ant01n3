@@ -21,8 +21,8 @@ class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) with UIr
 // if(self.spaceChanged)
 // 	println("# %s space changed".format(self.name))
 
-		gl.clearColor(Rgba.White)
-		//gl.clear(gl.COLOR_BUFFER_BIT)
+		gl.clearColor(Rgba.Red)
+		gl.clear(gl.COLOR_BUFFER_BIT)	// TODO remove it !!
 
 		//gl.lineWidth(1f)
 		gl.disable(gl.DEPTH_TEST)
@@ -51,7 +51,7 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 	  * are the width and height of the surface, and third is the dpc. */
 	protected[this] val oldSurface = Point3(0, 0, 0)
 
-	var scale1cm = 1.0
+	//var scale1cm = 1.0
 
 	protected val fromSpace = new Box3Default {
 		pos.set(0, 0, 0)

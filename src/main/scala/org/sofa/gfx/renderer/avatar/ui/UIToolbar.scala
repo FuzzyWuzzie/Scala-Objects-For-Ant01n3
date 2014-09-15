@@ -55,7 +55,7 @@ class UIAvatarRenderToolbar(avatar:Avatar) extends UIAvatarRender(avatar) with U
 
 
 class UIAvatarSpaceToolbar(avatar:Avatar) extends UIAvatarSpace(avatar) {
-	var scale1cm = 1.0
+//	var scale1cm = 1.0
 
 	var fromSpace = new Box3From {
 		from.set(0,0,0)

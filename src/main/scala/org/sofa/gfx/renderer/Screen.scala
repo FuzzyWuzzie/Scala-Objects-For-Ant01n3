@@ -203,7 +203,7 @@ Timer.timer.measure("screen.renderText") {
 	/** By default sets the size of the viewport to the size in pixels of the surface. */
 	def reshape() {
 		if(rendering) {
-			space.viewportPx(surface.width, surface.height)
+			space.viewport(surface.width, surface.height)
 			gl.viewport(0, 0, surface.width, surface.height) 
 			if(text2 ne null) text2.reshape(surface.width, surface.height)
 		}
