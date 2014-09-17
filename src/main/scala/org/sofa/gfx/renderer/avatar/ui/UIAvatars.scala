@@ -4,6 +4,7 @@ import scala.math.{min, max}
 
 import org.sofa.math.{Point3, Point4, Vector3, Matrix4, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
 import org.sofa.gfx.{ShaderResource}
+import org.sofa.gfx.text.{GLFont}
 import org.sofa.gfx.renderer.{Screen}
 import org.sofa.gfx.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState}
 import org.sofa.gfx.surface.event._
@@ -155,7 +156,7 @@ trait UIrenderUtils {
 
 	def shaderUniform:ShaderProgram = {
 		if(UIrenderUtils.shaderUniform eq null)
-			UIrenderUtils.shaderUniform = self.screen.libraries.shaders.addAndGet(self.screen.gl,
+			UIrenderUtils.shaderUniform = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
 				"uniform-color-shader",
 				ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		UIrenderUtils.shaderUniform
@@ -163,7 +164,7 @@ trait UIrenderUtils {
 
 	def shaderColor:ShaderProgram = {
 		if(UIrenderUtils.shaderColor eq null) {
-			UIrenderUtils.shaderColor = self.screen.libraries.shaders.addAndGet(self.screen.gl,
+			UIrenderUtils.shaderColor = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
 				"color-shader",
 				ShaderResource("color-shader", "plain_shader.vert.glsl", "plain_shader.frag.glsl"))
 		}
@@ -172,7 +173,7 @@ trait UIrenderUtils {
 
 	def shaderTex:ShaderProgram = {
 		if(UIrenderUtils.shaderTex eq null) {
-			UIrenderUtils.shaderTex = self.screen.libraries.shaders.addAndGet(self.screen.gl,
+			UIrenderUtils.shaderTex = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
 				"image-shader",
 				ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
 		}

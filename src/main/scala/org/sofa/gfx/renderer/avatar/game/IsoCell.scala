@@ -55,12 +55,12 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 		ground = new TrianglesMesh(2)
 		underground = new TrianglesMesh(2)
 		
-		isoShader = screen.libraries.shaders.addAndGet(gl, "iso-shader", ShaderResource("iso-shader", "iso.vert.glsl", "iso.frag.glsl"))
+		isoShader = screen.libraries.shaders.getOrAdd(gl, "iso-shader", ShaderResource("iso-shader", "iso.vert.glsl", "iso.frag.glsl"))
 		
-		groundColor      = screen.libraries.textures.addAndGet(gl, "ground-color-1",      TextureResource("ground-color-1",      "IsoTemplate_1024_Ground.png",           TexParams()))
-		undergroundColor = screen.libraries.textures.addAndGet(gl, "underground-color-1", TextureResource("underground-color-1", "IsoTemplate_1024_Underground.png",      TexParams()))
-		groundMask       = screen.libraries.textures.addAndGet(gl, "ground-mask-1",       TextureResource("ground-mask-1",       "IsoTemplate_1024_Ground-Mask.png",      TexParams()))
-		undergroundMask  = screen.libraries.textures.addAndGet(gl, "underground-mask-1",  TextureResource("underground-mask-1",  "IsoTemplate_1024_Underground-Mask.png", TexParams()))
+		groundColor      = screen.libraries.textures.getOrAdd(gl, "ground-color-1",      TextureResource("ground-color-1",      "IsoTemplate_1024_Ground.png",           TexParams()))
+		undergroundColor = screen.libraries.textures.getOrAdd(gl, "underground-color-1", TextureResource("underground-color-1", "IsoTemplate_1024_Underground.png",      TexParams()))
+		groundMask       = screen.libraries.textures.getOrAdd(gl, "ground-mask-1",       TextureResource("ground-mask-1",       "IsoTemplate_1024_Ground-Mask.png",      TexParams()))
+		undergroundMask  = screen.libraries.textures.getOrAdd(gl, "underground-mask-1",  TextureResource("underground-mask-1",  "IsoTemplate_1024_Underground-Mask.png", TexParams()))
 
 		// Underground:
 		//     Width:  4*sqrt(3)

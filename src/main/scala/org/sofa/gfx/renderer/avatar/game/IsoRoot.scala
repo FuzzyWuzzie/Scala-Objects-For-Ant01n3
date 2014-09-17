@@ -50,7 +50,7 @@ trait IsoRenderUtils {
 		val gl     = screen.gl
 
 		if(uniformColorShader eq null) {
-			uniformColorShader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
+			uniformColorShader = screen.libraries.shaders.getOrAdd(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		}
 
 		if(unitSquare eq null) {
@@ -97,7 +97,7 @@ trait IsoRenderUtils {
 		val gl     = screen.gl
 
 		if(uniformColorShader eq null) {
-			uniformColorShader = screen.libraries.shaders.addAndGet(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
+			uniformColorShader = screen.libraries.shaders.getOrAdd(gl, "uniform-color-shader", ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
 		}
 
 		if(unitSquare eq null) {

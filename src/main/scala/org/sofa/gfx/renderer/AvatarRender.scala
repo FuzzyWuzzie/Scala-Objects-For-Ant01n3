@@ -64,14 +64,21 @@ trait AvatarRender {
 				self.layer = new TextureFramebuffer(screen.gl, width.toInt, height.toInt, true)
 			}
 			
-			val space = screen.space
-			val layer = self.layer
+			val space  = screen.space
+			val pixels = screen.pixelSpace
+			val layer  = self.layer
 			
 			space.push
 			space.pushProjection
 			space.pushViewport(layer.width, layer.height)
 			space.projectionIdentity
 			space.viewIdentity
+
+			pixels.push
+			pixels.pushProjection
+			pixels.pushViewport(layer.width, layer.height)
+			pixels.orthographicPixels()
+			pixels.viewIdentity
 
 			self.space.subSpaceLayer
 			layer.bind
@@ -81,13 +88,19 @@ trait AvatarRender {
 	/** Restore the state of the rendering and space after a call to `pushLayer()`. */
 	def popLayer() {
 		if(self.hasLayer) {
-			val sp = screen.space
+			val space  = screen.space
+			val pixels = screen.pixelSpace
 			
-			sp.popProjection
-			sp.pop
+			pixels.popViewport
+			pixels.popProjection
+			pixels.pop
+
+			space.popViewport
+			space.popProjection
+			space.pop
+
 			self.layer.unbind
-			sp.popViewport
-			screen.gl.viewport(0, 0, sp.viewport(0).toInt, sp.viewport(1).toInt)
+			screen.gl.viewport(0, 0, space.viewport(0).toInt, space.viewport(1).toInt)
 		}
 	}
 

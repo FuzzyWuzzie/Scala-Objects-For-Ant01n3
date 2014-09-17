@@ -5,10 +5,10 @@ import akka.actor.{ActorRef}
 
 import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3}
 import org.sofa.collection.{SpatialHash, SpatialObject, SpatialPoint}
-import org.sofa.gfx.{Space, ShaderResource, ScissorStack}
+import org.sofa.gfx.{Space, ShaderResource, ScissorStack, TypeFaceResource}
 import org.sofa.gfx.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
 import org.sofa.gfx.surface.event.{Event, MotionEvent}
-import org.sofa.gfx.text.TextLayer
+import org.sofa.gfx.text.{TextLayer, GLFont, GLTypeFace}
 
 import org.sofa.Timer
 
@@ -79,9 +79,12 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Frame buffer. */
 	val surface = renderer.surface
 
-	/** The space where things are rendered, this is a way to tell were is the origin and how
+	/** The space where avatars are rendered, this is a way to tell were is the origin and how
 	  * avatar coordinates are considered. */
 	val space = new ScreenSpace()
+
+	/** A special space where integer coordinates directly map to pixels. */
+	val pixelSpace = new ScreenSpace()
 
 	/** Set of avatars in the active selection. */
 	val selection = new AvatarSelection
@@ -148,6 +151,20 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 	/** Dots per centimeters (how many device pixels per centimeters). */
 	def dpc:Double = surface.dpc * ratio
 
+	/** Retrieve a font of the given `typeFace` at a `size` given in millimeters. The actual size of
+	  * the returned font in pixels may vary for the same `size` argument in millimeters if the 
+	  * screen surface changed from one physical screen to another that have difference dots-per-centimeter. */
+	def font(typeFace:String, size:Int):GLFont = {
+		val sz = mmToFontSize(size)
+		val tf = libraries.typeFaces.getOrAdd(gl, typeFace) { (gl, name) => 
+				val shader = screen.libraries.shaders.getOrAdd(gl, "color-text-shader") { (gl, name) => 
+					ShaderResource(name, "colortext.vert.glsl", "colortext.frag.glsl")
+				}
+				TypeFaceResource(name, "%s.ttf".format(name), shader) 
+			}
+		tf.font(sz)
+	}
+
 // Interaction Events
 
 	/** Propagate an event to sub avatars. 
@@ -204,6 +221,9 @@ Timer.timer.measure("screen.renderText") {
 	def reshape() {
 		if(rendering) {
 			space.viewport(surface.width, surface.height)
+			pixelSpace.viewport(surface.width, surface.height)
+			pixelSpace.viewIdentity
+			pixelSpace.orthographicPixels()
 			gl.viewport(0, 0, surface.width, surface.height) 
 			if(text2 ne null) text2.reshape(surface.width, surface.height)
 		}

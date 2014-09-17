@@ -6,7 +6,7 @@ import java.net.URL
 import scala.collection.mutable.HashMap
 
 import org.sofa.{FileLoader, Timer}
-import org.sofa.gfx.text.{GLFont, GLString}
+import org.sofa.gfx.text.{GLFont, GLTypeFace, GLText, GLString}
 import org.sofa.gfx.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
 import org.sofa.gfx.armature.{Armature, Joint}
 import org.sofa.behavior.{Behavior, Wait, InParallel, InSequence, Loop}
@@ -123,22 +123,24 @@ object ModelLibrary { def apply(gl:SGL):ModelLibrary = new ModelLibrary(gl) }
 class ModelLibrary(gl:SGL) extends Library[Mesh](gl)
 
 
-// == Fonts ============================================
+// == Type faces & Fonts ============================================
 
 
-/** A resource descriptor for fonts. */
-case class FontResource(override val id:String, fontName:String, size:Int) extends ResourceDescriptor[GLFont](id) {
-	private[this] var data:GLFont = null
+/** A resource descriptor for type faces. */
+case class TypeFaceResource(override val id:String, fontName:String, shader:ShaderProgram) extends ResourceDescriptor[GLTypeFace](id) {
+	private[this] var data:GLTypeFace = null
 
-	def value(gl:SGL):GLFont = {
-		throw NoSuchResourceException("TODO")
+	def value(gl:SGL):GLTypeFace = {
+		if(data eq null)
+			data = new GLTypeFace(gl, fontName, shader)
+		data
 	}
 }
 
-object FontLibrary { def apply(gl:SGL):FontLibrary = new FontLibrary(gl) }
+object TypeFaceLibrary { def apply(gl:SGL):TypeFaceLibrary = new TypeFaceLibrary(gl) }
 
 /** A set of fonts. */
-class FontLibrary(gl:SGL) extends Library[GLFont](gl)
+class TypeFaceLibrary(gl:SGL) extends Library[GLTypeFace](gl)
 
 
 // == Armatures ========================================

@@ -1,6 +1,6 @@
 package org.sofa.gfx.text
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.math._
 
 import java.awt.{Font => AWTFont, Color => AWTColor, RenderingHints => AWTRenderingHints, Graphics2D => AWTGraphics2D}
@@ -72,6 +72,23 @@ object GLFont {
 }
 
 
+/** A set of the same type face fonts at various sizes.
+  *
+  * This object should handle both style, weight and sizes, but only size is handled actually. */
+class GLTypeFace(val gl:SGL, val fileName:String, val shader:ShaderProgram) {
+
+	/** The set of already allocated fonts. */
+	protected val fonts = new HashMap[Int, GLFont]()
+
+	/** Retrieve or allocate a font of this type face at a given `size` in points. */
+	def font(size:Int):GLFont = fonts.get(size).getOrElse {
+		val font = new GLFont(gl, fileName, size, shader, false, false, false)
+		fonts += (size -> font)
+		font
+	}
+}
+
+
 /** A font allowing to draw text in OpenGL.
   *
   * The file indicate a file that appears in the font path. The size is the size 
@@ -94,6 +111,10 @@ object GLFont {
   *
   * This code is derived and largely inspired by the implementation of Fractious:
   * http://fractiousg.blogspot.fr/2012/04/rendering-text-in-opengl-on-android.html
+  *
+  * @param file The filename of the font.
+  * @param size The size in points as used by the system.
+  * @param shader The shader used to render text, used to allocate the vertex arrays.
   */
 class GLFont(val gl:SGL, val file:String, val size:Int, val shader:ShaderProgram, val isMipMapped:Boolean = false, rasterizeMipMaps:Boolean = true, optimizeFor3D:Boolean = false) {
 	/** Font height (actual, pixels). */

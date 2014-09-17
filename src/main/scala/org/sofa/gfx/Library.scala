@@ -71,7 +71,7 @@ abstract class Library[T](val gl:SGL) extends Iterable[(String,ResourceDescripto
 	}
 
 	/** Retrieve a resource if it already exists, else add it via a description and return it. */
-	def addAndGet(gl:SGL, name:String, newResource:ResourceDescriptor[T]):T = library.get(name) match {
+	def getOrAdd(gl:SGL, name:String, newResource:ResourceDescriptor[T]):T = library.get(name) match {
 		case Some(res) => res.value(gl)
 		case None => {
 			add(newResource, true)
@@ -144,8 +144,8 @@ class Libraries(gl:SGL) {
 	/** Model resources. */
 	val models = ModelLibrary(gl)
 
-	/** Font resources. */
-	val fonts = FontLibrary(gl)
+	/** Type faces & font resources. */
+	val typeFaces = TypeFaceLibrary(gl)
 
 	/** Armature resources. */
 	val armatures = ArmatureLibrary(gl)
@@ -159,7 +159,7 @@ class Libraries(gl:SGL) {
 			case r:ShaderResource   ⇒ shaders.add(r)
 			case r:TextureResource  ⇒ textures.add(r)
 			case r:ModelResource    ⇒ models.add(r)
-			case r:FontResource     ⇒ fonts.add(r)
+			case r:TypeFaceResource ⇒ typeFaces.add(r)
 			case r:ArmatureResource ⇒ armatures.add(r)
 			case r:BehaviorResource ⇒ behaviors.add(r)
 			case _ ⇒ throw NoSuchResourceException("unknown kind of resource %s".format(res))
@@ -397,12 +397,12 @@ class Libraries(gl:SGL) {
 	override def toString():String = {
 		val result = new StringBuilder()
 
-		result ++= "shaders   (%d)%n".format(shaders.size)
-		result ++= "textures  (%d)%n".format(textures.size)
-		result ++= "models    (%d)%n".format(models.size)
-		result ++= "fonts     (%d)%n".format(fonts.size)
-		result ++= "behaviors (%d)%n".format(behaviors.size)
-		result ++= "armatures (%d)%n".format(armatures.size)
+		result ++= "shaders    (%d)%n".format(shaders.size)
+		result ++= "textures   (%d)%n".format(textures.size)
+		result ++= "models     (%d)%n".format(models.size)
+		result ++= "type faces (%d)%n".format(typeFaces.size)
+		result ++= "behaviors  (%d)%n".format(behaviors.size)
+		result ++= "armatures  (%d)%n".format(armatures.size)
 
 		result.toString
 	}

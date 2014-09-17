@@ -20,11 +20,11 @@ object GLText {
 
 	protected[this] var theShader:ShaderProgram = null
 
-	private[this] var ff:Int  = -1
-	private[this] var src:Int = -1
-	private[this] var dst:Int = -1
-	private[this] var blend   = true
-	private[this] var depth   = true
+	// private[this] var ff:Int  = -1
+	// private[this] var src:Int = -1
+	// private[this] var dst:Int = -1
+	// private[this] var blend   = true
+	// private[this] var depth   = true
 
 	// def shader(gl:SGL):ShaderProgram = {
 	// 	if(theShader eq null) {
@@ -40,21 +40,19 @@ object GLText {
 		currentFont = font
 		val gl = font.gl
 
-		ff    = gl.getInteger(gl.FRONT_FACE)
-		src   = gl.getInteger(gl.BLEND_SRC) 
-		dst   = gl.getInteger(gl.BLEND_DST)
-		blend = gl.isEnabled(gl.BLEND)
-		depth = gl.isEnabled(gl.DEPTH_TEST)
+		// ff    = gl.getInteger(gl.FRONT_FACE)
+		// src   = gl.getInteger(gl.BLEND_SRC) 
+		// dst   = gl.getInteger(gl.BLEND_DST)
+		// blend = gl.isEnabled(gl.BLEND)
+		// depth = gl.isEnabled(gl.DEPTH_TEST)
 
 		gl.enable(gl.BLEND)
 		gl.disable(gl.DEPTH_TEST)
 		gl.frontFace(gl.CCW)
 
-		if(font.isAlphaPremultiplied) {
-			 gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-	 	} else {
-	 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-	 	}
+		if(font.isAlphaPremultiplied)
+		     gl.blendFunc(gl.ONE,       gl.ONE_MINUS_SRC_ALPHA)
+	 	else gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
 		font.shader.use
 		font.texture.bindTo(gl.TEXTURE0)
@@ -64,17 +62,17 @@ object GLText {
 		if(currentFont eq null)
 			throw new RuntimeException("endRender() whithout beginRender()")
 
-		val gl = currentFont.gl
+		// val gl = currentFont.gl
+ 
+		// gl.blendFunc(src, dst)
+		// gl.frontFace(ff)		
 
-		gl.blendFunc(src, dst)
-		gl.frontFace(ff)		
+		// if(!blend) gl.disable(gl.BLEND)
+		// if(depth) gl.enable(gl.DEPTH_TEST)
 
-		if(!blend) gl.disable(gl.BLEND)
-		if(depth) gl.enable(gl.DEPTH_TEST)
-
-		src = -1
-		dst = -1
-		ff  = -1
+		// src = -1
+		// dst = -1
+		// ff  = -1
 
 		currentFont = null
 	}
@@ -99,7 +97,7 @@ object GLText {
   * operations to draw strings centered around a point or at left or right for
   * example.
   */
-class GLText(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
+class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	/** Mesh used to build the quads of the batch. */
 	protected[this] val batchMesh = new TrianglesMesh(maxCharCnt * 2)
 	// Cannot use triangle strips, since chars can overlap (kerning), and
@@ -174,6 +172,24 @@ class GLText(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
 	}
 
+	def renderAt(x:Double, y:Double, z:Double, space:Space, textSpace:Space) {
+		gl.checkErrors
+		val vp = space.viewport
+		val p = org.sofa.gfx.dl.TextDL.tmppos
+		p.set(x, y, z, 1)
+		space.projectInPlace(p)
+		p.perspectiveDivide
+		gl.checkErrors
+		val w = vp(0)
+		val h = vp(1)
+		p.set(p.x/2*w+w/2, p.y/2*h+h/2, 0, 1)
+		gl.checkErrors
+		textSpace.translate(p.x, p.y, 0)
+		render(textSpace)
+		textSpace.translate(-p.x, -p.y, 0)
+		gl.checkErrors
+	}
+
 	/** Draw the string with the baseline at (0,0). Use the current translation of the camera.
 	  * This in fact calls `GLFont.beginRender`, `render` and finally `GLFont.endRender`. */
 	def draw(camera:Camera) {
@@ -198,6 +214,12 @@ class GLText(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		GLText.endRender
 	}
 
+	def drawAt(x:Double, y:Double, z:Double, space:Space, textSpace:Space) {
+		GLText.beginRender(font)
+		renderAt(x, y, z, space, textSpace)
+		GLText.endRender
+	}
+
 	/** Start the definition of a new string. This must be called before any call to char(Char).
 	  * When finished the end() method must be called. The string is located at
 	  * (`xStart`, `yStart`, 0), on the XY plane. The point at the origin is at the baseline of
@@ -212,8 +234,20 @@ class GLText(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		y = 0
 	}
 
+	/** Like begin but also changes the font. The font can only be changed if they have the same shader. */
+	def begin(font:GLFont) {
+		if(font.shader ne this.font.shader) {
+			throw new RuntimeException("the font can be changed only if they share the same shader")
+		}
+		this.font = font
+		begin
+	}
+
 	/** Replace a call to `begin` / `end`. */
 	def compose(code:(GLText)=>Unit) { begin; code(this); end }
+
+	/** Replace a call to `begin(font)` / `end`. */
+	def compose(font:GLFont)(code:(GLText)=>Unit) { begin(font); code(this); end }
 
 	def chars(s:String):GLText = {
 		var i = 0
