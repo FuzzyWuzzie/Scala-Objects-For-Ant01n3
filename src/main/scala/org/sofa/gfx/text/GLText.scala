@@ -155,7 +155,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
-	  * called `font.beginRender()` before and you must call `font.endRender()`
+	  * called `GLText.beginRender()` before and you must call `GLText.endRender()`
 	  * after. This is used for bulk processing, when several strings of the same
 	  * font have to be rendered. */
 	def render(mvp:Matrix4) {
@@ -164,7 +164,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
-	  * called `font.beginRender()` before and you must call `font.endRender()`
+	  * called `GLText.beginRender()` before and you must call `GLText.endRender()`
 	  * after. This is used for bulk processing, when several strings of the same
 	  * font have to be rendered. */
 	def render(space:Space) {
@@ -172,7 +172,13 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
 	}
 
-	def renderAt(x:Double, y:Double, z:Double, space:Space, textSpace:Space) {
+	/** Render the text at a given position in `space` but inside the given `pixelSpace`. This
+	  * is used when rendering a single string and ensures the text will not be scalled or
+	  * rotated by `space`. If you render several strings, you should
+	  * setup a special space once and render all text after. This method needs
+	  * `GLText.beginRender()` to be called before and `GLText.endRender()`to be called
+	  * after. */
+	def renderAt(x:Double, y:Double, z:Double, space:Space, pixelSpace:Space) {
 		gl.checkErrors
 		val vp = space.viewport
 		val p = org.sofa.gfx.dl.TextDL.tmppos
@@ -184,9 +190,9 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 		val h = vp(1)
 		p.set(p.x/2*w+w/2, p.y/2*h+h/2, 0, 1)
 		gl.checkErrors
-		textSpace.translate(p.x, p.y, 0)
-		render(textSpace)
-		textSpace.translate(-p.x, -p.y, 0)
+		pixelSpace.translate(p.x, p.y, 0)
+		render(pixelSpace)
+		pixelSpace.translate(-p.x, -p.y, 0)
 		gl.checkErrors
 	}
 
@@ -214,6 +220,12 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 		GLText.endRender
 	}
 
+	/** Draw the text at a given position in `space` but inside the given `pixelSpace`. This
+	  * is used when rendering a single string and ensures the text will not be scalled or
+	  * rotated by `space`. If you render several strings, you should
+	  * setup a special space once and render all text after. This method needs
+	  * `GLText.beginRender()` to be called before and `GLText.endRender()`to be called
+	  * after. */
 	def drawAt(x:Double, y:Double, z:Double, space:Space, textSpace:Space) {
 		GLText.beginRender(font)
 		renderAt(x, y, z, space, textSpace)

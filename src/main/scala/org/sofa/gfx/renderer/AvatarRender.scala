@@ -1,5 +1,6 @@
 package org.sofa.gfx.renderer
 
+import scala.math._
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import akka.actor.{ActorRef}
 
@@ -59,9 +60,9 @@ trait AvatarRender {
 				val space  = self.space
 				val dpc    = screen.dpc
 				val s1cm   = space.scale1cm
-				val width  = (space.subSpace.sizex / s1cm) * dpc
-				val height = (space.subSpace.sizey / s1cm) * dpc
-				self.layer = new TextureFramebuffer(screen.gl, width.toInt, height.toInt, true)
+				val width  = round((space.subSpace.sizex / s1cm) * dpc).toInt
+				val height = round((space.subSpace.sizey / s1cm) * dpc).toInt
+				self.layer = new TextureFramebuffer(screen.gl, width, height, true)
 			}
 			
 			val space  = screen.space

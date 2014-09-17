@@ -148,6 +148,7 @@ Game
     - The giant string would position directly texts at their position on a pixel surface,
     - Each point would have a color associated, allowing to create text effect,
     - The counterpart would be that we cannot reuse strings, we would have to recreate it, each time.
+* FBO and glBlitFrameBufer may be far faster when compositing text, however glBlitFrameBuffer is supported only in ES 3.0.
 
 
 ## CSS

@@ -39,7 +39,7 @@ object UIList {
 
 	final val FlingDecreaseRate = 0.95
 
-	final val FlingOffsetBase = 0.01
+	final val FlingOffsetBase = 0.05
 
 	final val FlingStopUnder = 0.05
 }
