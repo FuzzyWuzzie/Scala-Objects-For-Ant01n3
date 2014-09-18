@@ -39,6 +39,9 @@ abstract trait Surface {
     /** Dots per centimeter of the current rendering device. */
     def dpc:Double
 
+    /** If the surface provides multi-sampling anti-aliasing, this indicates the number of samples used. */
+    def multiSampling:Int
+
     /** Convert a value in milimeters to a font size suitable for the actual screen
       * and system. Millimeters are more practical than centimeters for fonts. The
       * returned value has no unit, since distinct systems use distinct units to

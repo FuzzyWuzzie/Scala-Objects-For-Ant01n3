@@ -296,16 +296,21 @@ object Texture {
 /** Define a new 1D, 2D or 3D texture.
   * 
   * The binding of the texture is not automatic. You must bind it yourself before doing any
-  * operation on it.
+  * operation on it. The texture class handles a global field to avoid rebinding the same
+  * texture again and again. This is why texture cannot be used in a multi-threaded context.
   *
-  * The use of the default constructor will not upload any image data to the texture, it is only
-  * declared and bindable. In this case the width and height are only indicative, and you have to
-  * upload the image by yourself using glTexImage2D or using a [[TextureImage]].
-  *
-  * The use of the two other constructors will load an image or use a given [[TextureImage]]
-  * according to given texture parameters. The parameters will describe if the image
-  * is mip-mapped, if the mip-map must be automatically generated or loaded from several files, if
-  * the alpha channel is premultiplied, how to wrap the texture, and how to magnify or minify it.
+  * The texture class provides several ways to be built, according to various uses:
+  *   - If you just want to declare a texture, and handle its contents by yourself, you
+  *     can use the default constructor. It will only declare and bind the texture with the
+  *     indicative width and height given.
+  *   - If you want to declare a texture and upload an image, use the constructors taking as
+  *     argument a [[TextureImage]], this class is able to load several image formats and will
+  *     upload them in thexture. [[TexParams]] will allow to setup texture parameters like
+  *     filtering and often loading parameters (not directly tied to textures in OpenGL, like
+  *     alpha premultiplication, or the creation of mip-maps).
+  *   - If you want to create an empty texture for later use, for example to create a buffer
+  *     or frame buffer for off-screen rendering, you can use the parmater describing the storage
+  *     format, the storage type and optional mutlisampling parameters.
   */
 class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int) extends OpenGLObject(gl) {
     import gl._
@@ -346,14 +351,25 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
       * @param ttype Type of storage gl.UNSIGNED_BYTE or gl.UNSIGNED_SHORT for example.
       * @param width The texture width in pixels.
       * @param height The texture height in pixels.
-      * @param params the Texture parameters. */
-    def this(gl:SGL, format:Int, ttype:Int, width:Int, height:Int, params:TexParams) {
-    	this(gl, gl.TEXTURE_2D, width, height, 0) 
-    	texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, format, ttype, null)
+      * @param params the Texture parameters.
+      * @param multiSample if greater than 1, and multisampling is supported for textures,
+      *                    `glTexImage2DMultisample` is used instead of `glTexImage2D`. In
+      *                    this case the format MUST be `GL_RGBA8`. */
+    def this(gl:SGL, format:Int, ttype:Int, width:Int, height:Int, params:TexParams, multiSample:Int=1) {
+    	this(gl, if(multiSample > 1 && gl.hasTexImage2DMultisample) gl.TEXTURE_2D_MULTISAMPLE else gl.TEXTURE_2D, width, height, 0) 
 
-    	minFilter(params.minFilter)
-    	magFilter(params.magFilter)
-    	wrap(params.wrap)
+    	if(multiSample > 1 && gl.hasTexImage2DMultisample) {
+    		texImage2DMultisample(gl.TEXTURE_2D_MULTISAMPLE, multiSample, format, width, height, false)
+
+    		// No filtering for multisample textures.
+    	} else {
+    		texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, format, ttype, null)
+
+	    	minFilter(params.minFilter)
+    		magFilter(params.magFilter)
+    		wrap(params.wrap)
+    	}
+
     	checkErrors
     }
     

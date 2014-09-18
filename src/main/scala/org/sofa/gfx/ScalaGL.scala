@@ -33,6 +33,7 @@ abstract class SGL {
     val UNPACK_ALIGNMENT:Int
 
     val TEXTURE_2D:Int
+    val TEXTURE_2D_MULTISAMPLE:Int
     val TEXTURE0:Int
     val TEXTURE1:Int
     val TEXTURE2:Int
@@ -77,6 +78,7 @@ abstract class SGL {
     val FLOAT:Int
     val DOUBLE:Int
     val RGBA:Int
+    val RGBA8:Int
     val LUMINANCE:Int
     val LUMINANCE_ALPHA:Int
     val ALPHA:Int
@@ -141,6 +143,8 @@ abstract class SGL {
 	def texImage1D(target:Int, level:Int, internalFormat:Int, width:Int, border:Int, format:Int, theType:Int, data:ByteBuffer)
 	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer)
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer)
+    def hasTexImage2DMultisample:Boolean
+    def texImage2DMultisample(target:Int, samples:Int, internalFormat:Int, width:Int, height:Int, fixedSampleLocations:Boolean)
     def generateMipmaps(target:Int)
 
     def createFramebuffer:AnyRef

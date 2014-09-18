@@ -14,37 +14,28 @@ import org.sofa.gfx.backend.{TextureImageAwt}
 import org.sofa.gfx.mesh.{TrianglesMesh, VertexAttribute}
 
 
+/** GLText companion object.
+  *
+  * Provides methods to make batch processing of several [[GLText]]
+  * instances using the same font faster. */
 object GLText {
 
+	/** Allows to check wrongly nested calls to `beginRender` and `endRender`. */
 	protected[this] var currentFont:GLFont = null
 
-	protected[this] var theShader:ShaderProgram = null
-
-	// private[this] var ff:Int  = -1
-	// private[this] var src:Int = -1
-	// private[this] var dst:Int = -1
-	// private[this] var blend   = true
-	// private[this] var depth   = true
-
-	// def shader(gl:SGL):ShaderProgram = {
-	// 	if(theShader eq null) {
-	// 		theShader = ShaderProgram(gl, "gltext-shader", "colortext.vert.glsl", "colortext.frag.glsl")
-	// 	}
-	// 	theShader
-	// }
-
+	/** When doing batch processing of several spans of text with the same font
+	  * event if using several [[GLText]] instances, you can use this method to
+	  * prepare rendering and therefore avoid to redo it. It binds the shader and
+	  * texture, and setup OpenGL for rendering. The [[GLText]] class provides
+	  * `render` methods that will not invoke `beginRender` nor `endRender`
+	  * contrary to `draw` methods. When the rendering is finished, or to change
+	  * font, you must call `endRender`. */
 	def beginRender(font:GLFont) {
 		if(currentFont ne null)
 			throw new RuntimeException("nested, beginRender(), call endRender() first")
 
 		currentFont = font
 		val gl = font.gl
-
-		// ff    = gl.getInteger(gl.FRONT_FACE)
-		// src   = gl.getInteger(gl.BLEND_SRC) 
-		// dst   = gl.getInteger(gl.BLEND_DST)
-		// blend = gl.isEnabled(gl.BLEND)
-		// depth = gl.isEnabled(gl.DEPTH_TEST)
 
 		gl.enable(gl.BLEND)
 		gl.disable(gl.DEPTH_TEST)
@@ -58,31 +49,24 @@ object GLText {
 		font.texture.bindTo(gl.TEXTURE0)
 	}
 
+	/** Must be called after a rendering started with `beginRender`. */
 	def endRender() {
 		if(currentFont eq null)
 			throw new RuntimeException("endRender() whithout beginRender()")
-
-		// val gl = currentFont.gl
- 
-		// gl.blendFunc(src, dst)
-		// gl.frontFace(ff)		
-
-		// if(!blend) gl.disable(gl.BLEND)
-		// if(depth) gl.enable(gl.DEPTH_TEST)
-
-		// src = -1
-		// dst = -1
-		// ff  = -1
 
 		currentFont = null
 	}
 }
 
 
-/** A set of glyphs at arbitrary positions (not only on a line) with colors.
+/** A set of glyphs at arbitrary positions with colors.
+  *
+  * This allows to prepare and draw text, with postionning of sub-strings, and
+  * changes of color. The text is not necesarilly on the same baseline, and
+  * color can vary per-character.
   * 
-  * At the contrary to a string that are a linear sequence of glyphes, all with
-  * the same color, a text is a set of glyphs that can be positionned everywhere,
+  * At the contrary to a string that are a linear sequence of characters, all with
+  * the same color, a text is a set of characters that can be positionned everywhere,
   * have each their own color.
   *
   * More formally here are the differences:
@@ -90,18 +74,32 @@ object GLText {
   *   - but also colors values for each vertex.
   *
   * This means you can change the color of each glyph independantly, but you cannot
-  * reuse the text and change its whole color.
+  * reuse the text and change its whole color. This also means it does not use the
+  * same shader as [[GLString]].
   *
   * Furthermore, at the contrary of
   * strings that are always at (0,0) and must be translated, it supports composition
   * operations to draw strings centered around a point or at left or right for
   * example.
+  *
+  * There are two parts in the GLText API, one for compositing the text, one for drawing
+  * it.
+  *
+  * The drawing must usually be done in "pixel space". This means that each pixel of the
+  * font texture will directly map to a pixel of the rendering space. However there are
+  * commands to draw text in arbitrary space, although they involve more calculus and are
+  * therefore a bit slower.
   */
 class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
+
+// Text storage
+
 	/** Mesh used to build the quads of the batch. */
 	protected[this] val batchMesh = new TrianglesMesh(maxCharCnt * 2)
 	// Cannot use triangle strips, since chars can overlap (kerning), and
 	// may not follow each others.
+
+// Used during text composition.
 
 	/** Current color, used for each following glyph. */
 	protected[this] var color = Rgba.Black
@@ -118,6 +116,8 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	/** Current y. */
 	protected[this] var y = 0f
 
+// Creation
+
 	init
 
 	protected def init() {
@@ -133,6 +133,8 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	/** Release the resources of this string, the string is no more usable after this. */
 	def dispose() { batchMesh.dispose }
 
+// Access
+
 	/** Maximum number of characters composable in the text. */
 	def maxLength:Int = maxCharCnt
 
@@ -145,10 +147,12 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	/** Descent of a glyph. */
 	def descent:Float = font.descent
 
+// Rendering in pixel space
+
 	/** Render only this text, but do not setup the font before, you must have
 	  * called `GLText.beginRender()` before and you must call `GLText.endRender()`
 	  * after. This is used for bulk processing, when several texts of the same
-	  * font have to be rendered. */
+	  * font have to be rendered. The `camera` space is considered to match pixels. */
 	def render(camera:Camera) {
 	    camera.uniformMVP(font.shader)
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
@@ -157,7 +161,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	/** Render only this string, but do not setup the font before, you must have
 	  * called `GLText.beginRender()` before and you must call `GLText.endRender()`
 	  * after. This is used for bulk processing, when several strings of the same
-	  * font have to be rendered. */
+	  * font have to be rendered. The `mvp` space is considered to match pixels. */
 	def render(mvp:Matrix4) {
 		font.shader.uniformMatrix("MVP", mvp)
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)	
@@ -166,34 +170,10 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	/** Render only this string, but do not setup the font before, you must have
 	  * called `GLText.beginRender()` before and you must call `GLText.endRender()`
 	  * after. This is used for bulk processing, when several strings of the same
-	  * font have to be rendered. */
+	  * font have to be rendered. The `space` is considered to match pixels. */
 	def render(space:Space) {
 		space.uniformMVP(font.shader)
 		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
-	}
-
-	/** Render the text at a given position in `space` but inside the given `pixelSpace`. This
-	  * is used when rendering a single string and ensures the text will not be scalled or
-	  * rotated by `space`. If you render several strings, you should
-	  * setup a special space once and render all text after. This method needs
-	  * `GLText.beginRender()` to be called before and `GLText.endRender()`to be called
-	  * after. */
-	def renderAt(x:Double, y:Double, z:Double, space:Space, pixelSpace:Space) {
-		gl.checkErrors
-		val vp = space.viewport
-		val p = org.sofa.gfx.dl.TextDL.tmppos
-		p.set(x, y, z, 1)
-		space.projectInPlace(p)
-		p.perspectiveDivide
-		gl.checkErrors
-		val w = vp(0)
-		val h = vp(1)
-		p.set(p.x/2*w+w/2, p.y/2*h+h/2, 0, 1)
-		gl.checkErrors
-		pixelSpace.translate(p.x, p.y, 0)
-		render(pixelSpace)
-		pixelSpace.translate(-p.x, -p.y, 0)
-		gl.checkErrors
 	}
 
 	/** Draw the string with the baseline at (0,0). Use the current translation of the camera.
@@ -220,17 +200,42 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 		GLText.endRender
 	}
 
-	/** Draw the text at a given position in `space` but inside the given `pixelSpace`. This
-	  * is used when rendering a single string and ensures the text will not be scalled or
-	  * rotated by `space`. If you render several strings, you should
+// Rendering in arbitrary space
+
+	/** Render the text from an arbitrary position in an arbitrary space. The given position
+	  * is projected in `pixelSpace` then this space is setup and `render` is called.
+	  * This ensures the text will not be scalled or rotated by `space` but that the given
+	  * position will match both in `space` and `pixelSpace`. If you render several strings, you should
 	  * setup a special space once and render all text after. This method needs
 	  * `GLText.beginRender()` to be called before and `GLText.endRender()`to be called
 	  * after. */
+	def renderAt(x:Double, y:Double, z:Double, space:Space, pixelSpace:Space) {
+		gl.checkErrors
+		val vp = space.viewport
+		val p = org.sofa.gfx.dl.TextDL.tmppos
+		p.set(x, y, z, 1)
+		space.projectInPlace(p)
+		p.perspectiveDivide
+		gl.checkErrors
+		val w = vp(0)
+		val h = vp(1)
+		p.set(p.x/2*w+w/2, p.y/2*h+h/2, 0, 1)
+		gl.checkErrors
+		pixelSpace.translate(p.x, p.y, 0)
+		render(pixelSpace)
+		pixelSpace.translate(-p.x, -p.y, 0)
+		gl.checkErrors
+	}
+
+	/** Like `renderAt` but first call `GLText.beginRender`, then `renderAt` and
+	  * finally `GLText.endRender`. */
 	def drawAt(x:Double, y:Double, z:Double, space:Space, textSpace:Space) {
 		GLText.beginRender(font)
 		renderAt(x, y, z, space, textSpace)
 		GLText.endRender
 	}
+
+// Text composition
 
 	/** Start the definition of a new string. This must be called before any call to char(Char).
 	  * When finished the end() method must be called. The string is located at

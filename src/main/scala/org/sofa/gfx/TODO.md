@@ -31,7 +31,7 @@ Game
 * backup a float buffer by a java array with faster read/write accesses.
     - When the buffer is requested, copy back all non data to the corresponding NIO buffer.
     - Make tests to see if this is faster.
-    - NIO buffers are such a pain, why does java arrays are not usable with native methods ?!!
+    - NIO buffers are such a pain...
 
 ## Avatars
 
@@ -69,6 +69,7 @@ Game
     The current way is to put a "InParallel" in a "Loop", but this forces to wait for the end
     of the longest behavior in the "InParallel" behavior.
 * Add `FromVariable` behavior that scale a value (scale, translation, angle) to an external variable. Question : how to specify how to reach/read the variable. (via an interface on objects that can be named in the library ? --> AnimatedValues ?)
+* Uses the new TextureFramebuffer of AvatarRender to store the armature result when non-animating ?
 
 ## Library/Resources
 
@@ -103,39 +104,38 @@ Game
 ## UI
 
 * The way avatars know they must be rendered anew or layout anew is still to refine.
-    - It worked as long as avatars dediced to render themselves only or not, but with render layers, a parent avatar may  buffer a whole hierarchy of sub-avatars. Therefore when one of the sub-avatars change, we need a way to re-render the hierarchy at least from the closest parent that have a layer.
+    - It worked as long as avatars dediced to render themselves only or not, but with layers and off-screen buffers, a parent avatar may  buffer a whole hierarchy of sub-avatars. Therefore when one of the sub-avatars change, we need a way to re-render the hierarchy at least from the closest parent that have a layer.
+        + This could be done by going up to the hierarchy until the first "layer" parent. But what if there is no such parent ?
+        + This could be done as in Android with an invalidation of an area and the re-render of all elements that intersect this area ?
+        + Each sub-avatar may know the closest parent that have a layer ? Hacky.
 * A way to tell if an avatar is opaque or not ?
-* A way to choose if a glClear is needed or not. Most of the time the whole UI fills the screen.
+* A way to choose if a `glClear` is needed or not. Most of the time the whole UI fills the screen.
 * An "action bar" à la Android ?
 * Lists should indicate we cannot scroll more.
 * UI avatars should have visual transitions to appear and end.
     - More than this an animation is needed -> behaviors ?
 * Be able to create interfaces using a dedicated JSON format or some other DSL.
     - Add a message to the RendererActor that handles such things, maybe from a separate JSON, but also using a DSL.
-* Use `TextureFrameBuffer`s as a render layer under some elements to avoid redrawing them. This should be an option, some avatars should draw using display lists, other with a render layer, according to usage. For example for the list, we could back items by a render layer, but not necessarily the list. The choice will probably depend on lots of tests... :(
 
 
 ## Display lists
 
-* Use the idea of "Display Lists" (Android, OpenGL).
-    - The main idea is that once a MVP is built for an object that does not move, and as long as the parents do not move the matrix can be conserved.
-    - This is the same for the displayed "things", once setup, we can conserve them.
 * When drawing, one can either draw the things if they changed, and doing this memorize the resulting drawing commands, or use this memory of previously issued commands to draw faster (avoiding to recompute transformation matrices, graphic code, etc.).
     - The basis for this could be a `DisplayList` trait (DL) that allows to firt compile an object, then redraw it faster.
     - Such objects are stored in the avatar renderers directly.
     - This is the renderer that decides when to compile/udapte the DL or to use it to redraw.
-* For text, as we allow "out-of-order" display, we could place DisplayList text elements into another kind of TextLayer that is used at the end or rendering only. The advantage would be to use the new GLText instead of simply GLStrings, to record more complex text displays. This TextLayer would not cache strings, each avatar would still be responsible for its text DL, but it would remember their order and allow to display them in one big step at the end (thus avoiding shader/texture context switches).
 
 
 ## Math
 
 * A way to avoid a "Matrix4.toFloatArray" ???
-    - Maybe with specialized, we could have both matrices in Float or Doubles ?
+    - Maybe with `@specialized`, we could have both matrices in Float or Doubles ?
 
 
 ## OpenGL
 
-* Add buffers for some often used glGet.
+* Provide a new SGLAndroid for ES 3.0 and make new features testable (we woul need multi-sampling and glBlit for example to speed up text a log).
+* Add buffers for some often used `glGet` inside the SGL implementations, mays pushs and pops ?.
 * TextureFrameBuffer may allocate a depht buffer per frame buffer, however depth buffers can be shared.
     - The problem is the size of this depth buffer. 
     - Allocate only one such buffer large enough ?
@@ -143,11 +143,7 @@ Game
 
 ## Text
 
-* We probably can improve a lot text layer by avoiding to redo the same things (mvp, color, etc) at each string.
-* A way to do this, maybe, is to create a giant string for each font, since we know we will have to draw the text in one pass at the end.
-    - The giant string would position directly texts at their position on a pixel surface,
-    - Each point would have a color associated, allowing to create text effect,
-    - The counterpart would be that we cannot reuse strings, we would have to recreate it, each time.
+* GLText draw/render and drawAt/renderAt distinction is not very good. They are completely distinct though. The various `render` and `draw` implemenations always draw in "pixel" space, whereas the `drawAt` and `renderAt` draw in any space.
 * FBO and glBlitFrameBufer may be far faster when compositing text, however glBlitFrameBuffer is supported only in ES 3.0.
 
 

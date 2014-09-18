@@ -11,8 +11,17 @@ object TextureFramebuffer {
 
 
 
-/** An alternate frame buffer that renders in a texture that can then be used onto onto objects. */
-class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val useDepth:Boolean, params:TexParams) extends OpenGLObject(gl) {
+/** An alternate frame buffer that renders in a texture that can then be used onto onto objects.
+  *
+  * @param gl Graphics library.
+  * @param width Width of the frame buffer.
+  * @param height Height of the frame buffer.
+  * @param useDepth If true add a buffer for the depth test.
+  * @param multiSample If larger than 1, tries if available, to create a multisample render target, both
+  *                    for the color frame buffer but also for the depth buffer is one is created. 
+  * @param params Filtering parameters for the textures bound to the frame buffer if no multisampleing is used,
+  *               if multisampling is used, filtering is not available and the parameters will be ignored. */
+class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val useDepth:Boolean, val multiSample:Int=1, params:TexParams) extends OpenGLObject(gl) {
     import gl._
 
     //protected var colorid:AnyRef = null
@@ -23,21 +32,32 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val useDepth:Boo
 
     init
 
-    def this(gl:SGL, width:Int, height:Int) { this(gl, width, height, true, TexParams(minFilter=TexMin.Nearest, magFilter=TexMag.Nearest, wrap=TexWrap.Clamp)) }
+    /** A frame buffer with a color and depth buffers and no multisampling. */
+    def this(gl:SGL, width:Int, height:Int) { this(gl, width, height, true, 1, TexParams(minFilter=TexMin.Nearest, magFilter=TexMag.Nearest, wrap=TexWrap.Clamp)) }
 
-    def this(gl:SGL, width:Int, height:Int, useDepth:Boolean) { this(gl, width, height, useDepth, TexParams(minFilter=TexMin.Nearest, magFilter=TexMag.Nearest)) }
+    /** A frame buffer with a color buffer and optional depth buffer and no multisampling. */
+    def this(gl:SGL, width:Int, height:Int, useDepth:Boolean) { this(gl, width, height, useDepth, 1, TexParams(minFilter=TexMin.Nearest, magFilter=TexMag.Nearest)) }
+
+    /** A frame buffer with a color and depth buffers an optional multisampling. */
+    def this(gl:SGL, width:Int, height:Int, multiSample:Int) { this(gl, width, height, true, multiSample, TexParams(minFilter=TexMin.Nearest, magFilter=TexMag.Nearest)) }
+
+    /** A frame buffer with a color buffer and optional depth buffer and multisampling. */
+    def this(gl:SGL, width:Int, height:Int, useDepth:Boolean, multiSample:Int) { this(gl, width, height, useDepth, multiSample, TexParams(minFilter=TexMin.Nearest, magFilter=TexMag.Nearest)) }
 
     protected def init() {
         super.init(createFramebuffer)
         
         // Generate a texture to hold the colour buffer.
 
-        color = new Texture(gl, gl.RGBA, gl.UNSIGNED_BYTE, width, height, params)
+        if(gl.hasTexImage2DMultisample && multiSample > 1)
+             color = new Texture(gl, gl.RGBA8, gl.UNSIGNED_BYTE, width, height, params, multiSample)
+        else color = new Texture(gl, gl.RGBA, gl.UNSIGNED_BYTE, width, height, params)
 
         if(useDepth) {
         	// Create a texture to hold the depth buffer.
-
-			depth = new Texture(gl, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, width, height, params)    
+        	if(gl.hasTexImage2DMultisample && multiSample > 1)
+			     depth = new Texture(gl, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, width, height, params, multiSample)
+			else depth = new Texture(gl, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, width, height, params)
         }
     }
 
@@ -50,10 +70,15 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val useDepth:Boo
 
 	        viewport(0, 0, width, height)
 
-	        framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, color.id, 0)
+	        if(gl.hasTexImage2DMultisample && multiSample > 1) 
+	             framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D_MULTISAMPLE, color.id, 0)
+	        else framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, color.id, 0)
 	        
-	        if(useDepth)
-	        	framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depth.id, 0)
+	        if(useDepth) {
+	        	if(gl.hasTexImage2DMultisample && multiSample > 1)
+	        	     framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D_MULTISAMPLE, depth.id, 0)
+	        	else framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depth.id, 0)
+	        }
 
 	        // Check FBO status.    
 

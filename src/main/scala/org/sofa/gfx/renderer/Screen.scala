@@ -95,9 +95,9 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 // Hiden variable fields
 
 	/** Layer of text above the screen. */
-	protected[this] var text:TextLayer = null
+	protected[this] var text:TextLayer = null 					// TODO
 
-	protected[this] var text2:org.sofa.gfx.dl.TextLayer = null
+	protected[this] var text2:org.sofa.gfx.dl.TextLayer = null	// TODO
 
 	/** Set to true after begin() and reset to false after end(). */
 	protected[this] var rendering = false
@@ -134,7 +134,7 @@ abstract class Screen(val name:String, val renderer:Renderer) extends Renderable
 		text
 	}
 
-	def textLayerDL:org.sofa.gfx.dl.TextLayer = {
+	def textLayerDL:org.sofa.gfx.dl.TextLayer = {	// TODO
 		if(!rendering) throw new ScreenNotCurrentException("cannot use the text layer if the screen is not current")
 
 		if(text2 eq null) {

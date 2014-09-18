@@ -63,7 +63,8 @@ class SurfaceNewt(
     protected[this] val backend:SurfaceNewtGLBackend.Value,
     protected[this] var expectedFps:Int,
     protected[this] var decorated:Boolean,
-    protected[this] var fullScreen:Boolean)
+    protected[this] var fullScreen:Boolean,
+    protected[this] val multiSample:Int)
 	extends Surface
 	with    JoglWindowListener
 	with    JoglKeyListener
@@ -79,9 +80,10 @@ class SurfaceNewt(
              backend:SurfaceNewtGLBackend.Value,
              expectedFps:Int = 30,
              decorated:Boolean = true,
-             fullScreen:Boolean = false) { 
+             fullScreen:Boolean = false,
+             multiSample:Int = 1) { 
     	this(renderer, camera.viewport.x.toInt, camera.viewport.y.toInt,
-    		 title, caps, backend, expectedFps, decorated, fullScreen)
+    		 title, caps, backend, expectedFps, decorated, fullScreen, multiSample)
     }	
 
 	/** Synchronized queue for events coming from the EDT (event dispatching thread), as
@@ -172,7 +174,7 @@ class SurfaceNewt(
     def gl:SGL = {
     	if(sgl eq null) {
     		sgl = backend match {
-        		case SurfaceNewtGLBackend.GL2ES2 => new SGLJogl2ES2(win.getGL.getGL2ES2, GLU.createGLU, win.getContext.getGLSLVersionString)
+        		case SurfaceNewtGLBackend.GL2ES2 => new SGLJogl2ES2(win.getGL.getGL3, GLU.createGLU, win.getContext.getGLSLVersionString)
         		case SurfaceNewtGLBackend.GL3    => new SGLJogl3(win.getGL.getGL3, GLU.createGLU, win.getContext.getGLSLVersionString)
     		}
     	}
@@ -235,6 +237,8 @@ class SurfaceNewt(
     def width = w
     
     def height = h
+
+    def multiSampling:Int = multiSample
 
     protected[this] var savedDpc = 0.0
     protected[this] var dpcAsked = 0

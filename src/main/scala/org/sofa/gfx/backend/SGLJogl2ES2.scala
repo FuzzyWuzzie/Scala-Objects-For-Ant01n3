@@ -8,14 +8,18 @@ import javax.media.opengl._
 import org.sofa.nio._
 import GL._
 import GL2._
+import GL2GL3._
+import GL2ES1._
 import GL2ES2._
+import GL3._
+
 
 /** Wrapper around a GL version ES 2 instance.
   * 
   * The goal is to provide an easy access to some OpenGL methods, facilitating the use of NIO
   * buffers for example.
   */
-class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends SGL {
+class SGLJogl2ES2(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
 	private[this] val ib1 = NioIntBuffer.allocate(1)
 	
 	import gl._
@@ -55,6 +59,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	val ALWAYS:Int = GL.GL_ALWAYS
 
     val TEXTURE_2D:Int = GL.GL_TEXTURE_2D
+    val TEXTURE_2D_MULTISAMPLE:Int = GL3.GL_TEXTURE_2D_MULTISAMPLE
     val TEXTURE0:Int = GL.GL_TEXTURE0
     val TEXTURE1:Int = GL.GL_TEXTURE1
     val TEXTURE2:Int = GL.GL_TEXTURE2
@@ -90,6 +95,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
     val FLOAT:Int = GL.GL_FLOAT
     val DOUBLE:Int = -1
     val RGBA:Int = GL.GL_RGBA
+    val RGBA8:Int = GL.GL_RGBA8
     val LUMINANCE:Int = GL.GL_LUMINANCE
     val LUMINANCE_ALPHA:Int = GL.GL_LUMINANCE_ALPHA
     val ALPHA:Int = GL.GL_ALPHA
@@ -161,6 +167,8 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	def texImage1D(target:Int, level:Int, internalFormat:Int, width:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = throw new RuntimeException("no texImage1D in GL ES 2.0 too bad")
 	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, if(data ne null) data.buffer.asInstanceOf[java.nio.ByteBuffer] else null)
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, if(data ne null) data.asInstanceOf[java.nio.ByteBuffer] else null)
+    def hasTexImage2DMultisample:Boolean = true
+    def texImage2DMultisample(target:Int, samples:Int, internalFormat:Int, width:Int, height:Int, fixedSampleLocations:Boolean) = glTexImage2DMultisample(target, samples, internalFormat, width, height, fixedSampleLocations)
     def generateMipmaps(target:Int) = glGenerateMipmap(target)
     
     def createFramebuffer:AnyRef = {

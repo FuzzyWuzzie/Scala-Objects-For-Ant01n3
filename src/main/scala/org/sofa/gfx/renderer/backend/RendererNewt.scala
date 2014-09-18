@@ -24,7 +24,7 @@ class RendererFactoryNewt extends RendererFactory {
 class RendererNewt(factory:AvatarFactory=null) extends Renderer(factory) {
 
 	protected def newSurface(renderer:SurfaceRenderer, width:Int, height:Int,
-		title:String, fps:Int, decorated:Boolean, fullscreen:Boolean, overSample:Int):Surface = {	    
+		title:String, fps:Int, decorated:Boolean, fullscreen:Boolean, multiSample:Int):Surface = {	    
 		
 		// println("GL2    %s".format(GLProfile.isAvailable(GLProfile.GL2)))
 		// println("GL2ES2 %s".format(GLProfile.isAvailable(GLProfile.GL2ES2)))
@@ -37,12 +37,12 @@ class RendererNewt(factory:AvatarFactory=null) extends Renderer(factory) {
 
 		caps.setDoubleBuffered(true)
 		caps.setHardwareAccelerated(true)
-		caps.setSampleBuffers(overSample > 1)
-		caps.setNumSamples(overSample)
+		caps.setSampleBuffers(multiSample > 1)
+		caps.setNumSamples(multiSample)
 
 	    new org.sofa.gfx.backend.SurfaceNewt(this,
 	    		width, height, title, caps,
 	    		org.sofa.gfx.backend.SurfaceNewtGLBackend.GL2ES2,
-	    		fps, decorated, fullscreen)
+	    		fps, decorated, fullscreen, multiSample)
 	}
 }

@@ -53,6 +53,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	val ALWAYS:Int = GLES20.GL_ALWAYS
     
     val TEXTURE_2D:Int = GLES20.GL_TEXTURE_2D
+    val TEXTURE_2D_MULTISAMPLE:Int = -1	// Supported only for ES >= 3
     val TEXTURE0:Int = GLES20.GL_TEXTURE0
     val TEXTURE1:Int = GLES20.GL_TEXTURE1
     val TEXTURE2:Int = GLES20.GL_TEXTURE2
@@ -88,6 +89,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     val FLOAT:Int = GLES20.GL_FLOAT
     val DOUBLE:Int = -1
     val RGBA:Int = GLES20.GL_RGBA
+    val RGBA8:Int = -1
     val LUMINANCE:Int = GLES20.GL_LUMINANCE
     val LUMINANCE_ALPHA:Int = GLES20.GL_LUMINANCE_ALPHA
     val ALPHA:Int = GLES20.GL_ALPHA
@@ -156,6 +158,8 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	def texImage1D(target:Int, level:Int, internalFormat:Int, width:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = throw new RuntimeException("no texImage1D in GL ES 2.0, too bad")
 	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = GLES20.glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, data)
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = throw new RuntimeException("no texImage3D in GL ES 2.0, too bad")
+    def hasTexImage2DMultisample:Boolean = false	// Supported only for ES >= 3
+    def texImage2DMultisample(target:Int, samples:Int, internalFormat:Int, width:Int, height:Int, fixedSampleLocations:Boolean) { throw new RuntimeException("texImage2DMultisample is supported only for ES >= 3.0") }
     def generateMipmaps(target:Int) = GLES20.glGenerateMipmap(target)
 
     def createFramebuffer:AnyRef = {

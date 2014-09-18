@@ -129,8 +129,11 @@ object UIrenderUtils {
 	/** A square line plainRect to stroke a rectangular area. */
 	var strokeRect:LinesMesh = null
 
-	/** A quad mesh to fill a rectangulare area with a texture. */
+	/** A quad mesh to fill a rectangular area with a texture. */
 	var texRect:TrianglesMesh = null
+
+	/** A quad mesh to fill a rectangular area with a texture for off-screen layers. */
+	var layerRect:TrianglesMesh = null
 
 	/** A quad mesh with the two upper vertices black and the two lower vertices transparent. */
 	var shadowUnderRect:TrianglesMesh = null
@@ -144,6 +147,9 @@ object UIrenderUtils {
 
 	/** A shader that waits tex coords on each vertex. */
 	var shaderTex:ShaderProgram = null
+
+	/** A shader dedicated to rending off-screen layers from FBO. */
+	var shaderLayer:ShaderProgram = null
 }
 
 
@@ -180,6 +186,20 @@ trait UIrenderUtils {
 		UIrenderUtils.shaderTex
 	}
 
+	def shaderLayer:ShaderProgram = {
+		if(UIrenderUtils.shaderLayer eq null) {
+			UIrenderUtils.shaderLayer = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
+				"layer-shader",
+				if(self.screen.gl.hasTexImage2DMultisample && self.screen.surface.multiSampling > 1) {
+					val ms = self.screen.surface.multiSampling
+					ShaderResource("layer-shader", "multisample%d_image_shader.vert.glsl".format(ms), "multisample%d_image_shader.frag.glsl".format(ms))
+				} else {
+					ShaderResource("layer-shader", "image_shader.vert.glsl", "image_shader.frag.glsl")
+				})
+		}
+		UIrenderUtils.shaderLayer
+	}
+
 	def plainRect:TrianglesMesh = {
 		if(UIrenderUtils.plainRect eq null) {
 			import VertexAttribute._	
@@ -214,6 +234,24 @@ trait UIrenderUtils {
 		}
 
 		UIrenderUtils.texRect
+	}
+
+	def layerRect:TrianglesMesh = {
+		if(UIrenderUtils.layerRect eq null) {
+			import VertexAttribute._	
+			val gl = self.screen.gl
+
+			UIrenderUtils.layerRect = new TrianglesMesh(2)
+			UIrenderUtils.layerRect v(0) xyz(0, 0, 0) uv(0, 1)
+			UIrenderUtils.layerRect v(1) xyz(1, 0, 0) uv(1, 1)
+			UIrenderUtils.layerRect v(2) xyz(1, 1, 0) uv(1, 0)
+			UIrenderUtils.layerRect v(3) xyz(0, 1, 0) uv(0, 0)
+			UIrenderUtils.layerRect.setTriangle(0, 0, 1, 2)
+			UIrenderUtils.layerRect.setTriangle(1, 0, 2, 3)
+			UIrenderUtils.layerRect.newVertexArray(gl, shaderTex, Vertex -> "position", TexCoord -> "texCoords")
+		}
+
+		UIrenderUtils.layerRect
 	}
 
 	def strokeRect:LinesMesh = {
@@ -347,12 +385,12 @@ trait UIrenderUtils {
 		sp.pushpop {
 			sp.translate(space.subSpace.posx, space.subSpace.posy, 0)
 			sp.scale(space.subSpace.sizex, space.subSpace.sizey, 1)
-			shaderTex.use
+			shaderLayer.use
 			self.layer.bindColorTexture
-			shaderTex.uniformTexture(self.layer.colorTexture, "texColor")
-			//shaderTex.uniformMatrix("MVP", space.top)
-			sp.uniformMVP(shaderTex)
-			texRect.draw(self.screen.gl)			
+			shaderLayer.uniformTexture(self.layer.colorTexture, "texColor")
+			//shaderLayer.uniformMatrix("MVP", space.top)
+			sp.uniformMVP(shaderLayer)
+			layerRect.draw(self.screen.gl)			
 		}
 	}
 }

@@ -179,7 +179,7 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 	def setController(controlActor:ActorRef) { controller = controlActor }
 
 	/** Only method to implement in descendant classes to create a surface that suits the system. */
-	protected def newSurface(renderer:SurfaceRenderer, width:Int, height:Int, title:String, fps:Int, decorated:Boolean, fullscreen:Boolean, overSample:Int):Surface
+	protected def newSurface(renderer:SurfaceRenderer, width:Int, height:Int, title:String, fps:Int, decorated:Boolean, fullscreen:Boolean, multiSample:Int):Surface
 
 	/** Completely stop the renderer and release resources. The renderer will
 	  * not be reusable. */

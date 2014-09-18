@@ -123,6 +123,7 @@ class SurfaceAndroidES20(
     def width:Int = w
     def height:Int = h
     def fps:Int = expectedFps
+    def multiSampling:Int = 1
     def dpc:Double = {
     	// Some android devices may change screen, for example phones that dock to tablets.
 
