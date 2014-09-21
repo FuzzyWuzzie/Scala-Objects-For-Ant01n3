@@ -3,7 +3,7 @@ package org.sofa.gfx.renderer.avatar.ui
 import scala.math.{min, max}
 
 import org.sofa.math.{Point3, Point4, Vector3, Matrix4, Rgba, Box3, Box3From, Box3PosCentered, Box3Default}
-import org.sofa.gfx.{ShaderResource}
+import org.sofa.gfx.{ShaderResource, TextureFramebuffer}
 import org.sofa.gfx.text.{GLFont}
 import org.sofa.gfx.renderer.{Screen}
 import org.sofa.gfx.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState}
@@ -192,7 +192,7 @@ trait UIrenderUtils {
 				"layer-shader",
 				if(self.screen.gl.hasTexImage2DMultisample && self.screen.surface.multiSampling > 1) {
 					val ms = self.screen.surface.multiSampling
-					ShaderResource("layer-shader", "multisample%d_image_shader.vert.glsl".format(ms), "multisample%d_image_shader.frag.glsl".format(ms))
+					ShaderResource("layer-shader", "multisample_image_shader.vert.glsl", "multisample%d_image_shader.frag.glsl".format(ms))
 				} else {
 					ShaderResource("layer-shader", "image_shader.vert.glsl", "image_shader.frag.glsl")
 				})
@@ -316,6 +316,7 @@ trait UIrenderUtils {
 		def updateSpace(mvp:Matrix4, width:Double, height:Double) {
 			this.mvp.copy(mvp)
 			this.mvp.scale(width, height, 1)
+println("%s.shadow (%f, %f)".format(self.name, width, height))
 		}
 		def render(gl:SGL) {
 			shaderUniform.use
@@ -379,19 +380,42 @@ trait UIrenderUtils {
 		shadowAtDP.render(gl)
 	}
 
-	def renderLayer() {
-		val space = self.space
-		val sp = self.screen.space
-		sp.pushpop {
-			sp.translate(space.subSpace.posx, space.subSpace.posy, 0)
-			sp.scale(space.subSpace.sizex, space.subSpace.sizey, 1)
-			shaderLayer.use
-			self.layer.bindColorTexture
-			shaderLayer.uniformTexture(self.layer.colorTexture, "texColor")
-			//shaderLayer.uniformMatrix("MVP", space.top)
-			sp.uniformMVP(shaderLayer)
-			layerRect.draw(self.screen.gl)			
+	class LayerDP extends DisplayList {
+		val mvp = Matrix4()
+		var layer:TextureFramebuffer = null
+		def compile(layer:TextureFramebuffer, mvp:Matrix4, x:Double, y:Double, width:Double, height:Double) {
+			this.layer = layer
+			updateSpace(mvp, x, y, width, height)
 		}
+		def updateSpace(mvp:Matrix4, x:Double, y:Double, width:Double, height:Double) {
+			this.mvp.copy(mvp)
+			this.mvp.translate(x, y, 0)
+			this.mvp.scale(width, height, 1)
+		}
+		def render(gl:SGL) {
+			shaderLayer.use
+			layer.bindColorTexture
+			shaderLayer.uniformTexture(layer.colorTexture, "texColor")
+			shaderLayer.uniformMatrix("MVP", mvp)
+			layerRect.draw(gl)
+		}
+		def dispose(gl:SGL) {}
+	}
+
+	protected[this] var layerDP:LayerDP = null
+
+	def renderLayer() {
+		val gl = self.screen.gl
+
+		if(self.spaceChanged || self.renderChanged) {
+			if(layerDP eq null) layerDP = new LayerDP()
+
+			val subSpace = self.space.subSpace
+
+			layerDP.compile(self.layer, self.screen.space.top, subSpace.posx, subSpace.posy, subSpace.sizex, subSpace.sizey)
+		}	
+
+		layerDP.render(gl)
 	}
 }
 

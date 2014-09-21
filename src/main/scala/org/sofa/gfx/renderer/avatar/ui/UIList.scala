@@ -452,6 +452,7 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
  		space.push
  		space.translate(thisSpace.posx, thisSpace.posy, 0)
+//println("%s.pushSubSpace(translate(%f, %f))".format(self.name, thisSpace.posx, thisSpace.posy))
 	}
 
 	override def popSubSpace() {
@@ -460,7 +461,9 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
 	override def subSpaceLayer() {
 		val ratiohw = toSpace.sizey / toSpace.sizex
+		
 		self.screen.space.translate(-1, 1, 0)
 		self.screen.space.scale(2, -2 / ratiohw, 1)
+//println("%s.subSpaceLayer(%f, %f)".format(self.name, 1.0, ratiohw))
 	}
 }

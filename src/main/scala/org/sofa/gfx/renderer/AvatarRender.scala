@@ -60,8 +60,8 @@ trait AvatarRender {
 				val space  = self.space
 				val dpc    = screen.dpc
 				val s1cm   = space.scale1cm
-				val width  = round((space.subSpace.sizex / s1cm) * dpc).toInt
-				val height = round((space.subSpace.sizey / s1cm) * dpc).toInt
+				val width  = ceil((space.subSpace.sizex / s1cm) * dpc).toInt	// make it larger of one 
+				val height = ceil((space.subSpace.sizey / s1cm) * dpc).toInt	// pixel if needed.
 				self.layer = new TextureFramebuffer(screen.gl, width, height, true, screen.surface.multiSampling)
 			}
 			

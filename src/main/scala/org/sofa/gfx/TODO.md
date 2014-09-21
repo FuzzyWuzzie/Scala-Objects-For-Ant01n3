@@ -116,7 +116,9 @@ Game
     - More than this an animation is needed -> behaviors ?
 * Be able to create interfaces using a dedicated JSON format or some other DSL.
     - Add a message to the RendererActor that handles such things, maybe from a separate JSON, but also using a DSL.
-
+* Fix the layer bug with integer pixels for areas that are do not fit.
+    - Identify the error ?? How ?
+* All layers must be invalidated and rebuild if the surface is resized.
 
 ## Display lists
 
@@ -144,7 +146,9 @@ Game
 ## Text
 
 * GLText draw/render and drawAt/renderAt distinction is not very good. They are completely distinct though. The various `render` and `draw` implemenations always draw in "pixel" space, whereas the `drawAt` and `renderAt` draw in any space.
-* FBO and glBlitFrameBufer may be far faster when compositing text, however glBlitFrameBuffer is supported only in ES 3.0.
+* I realize that this is not the rendering of text that takes so much time, but *preparation* to render text, building of the vertex arrays of text, updating, changing space and computing MVP matrix. 
+    - FBO and glBlitFrameBufer may be far faster when compositing text, however glBlitFrameBuffer is supported only in ES 3.0.
+    - We could try an experimental way to do this as another interface to GLText when the ES 3.0 implementation of android SGL is ready ?
 
 
 ## CSS
