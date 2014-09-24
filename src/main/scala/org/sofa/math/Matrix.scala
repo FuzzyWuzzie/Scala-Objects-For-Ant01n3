@@ -2,11 +2,13 @@ package org.sofa.math
 
 import org.sofa.nio._
 
+
 class Matrix(val width:Int, val height:Int) extends NumberGrid {
     type ReturnType = Matrix
     val data = new Array[Double](width*height)
     def newInstance(w:Int, h:Int) = new Matrix(w, h)
 }
+
 
 object Matrix {
     def apply(rows:Seq[Double]*):Matrix = {
@@ -38,7 +40,9 @@ object Matrix {
     }
 }
 
+
 //==================================================================================================
+
 
 class Matrix3 extends NumberGrid3 {
     type ReturnType = Matrix3
@@ -67,16 +71,32 @@ object Matrix3 {
     }
 }
 
+
 //==================================================================================================
+
 
 class Matrix4 extends NumberGrid4 {
     type ReturnType = Matrix4
     //val data = new Array[Double](16)
     def newInstance(w:Int, h:Int) = new Matrix4()
-    def top3x3:Matrix3 = Matrix3((this(0,0), this(0,1), this(0,2)),
-                                 (this(1,0), this(1,1), this(1,2)),
-                                 (this(2,0), this(2,1), this(2,2)))
+    def top3x3:Matrix3 = {
+    	val m    = new Matrix3()
+    	val odat = m.data
+    	val dat  = data
+
+    	odat(0) = dat(0);  odat(4) = dat(4);  odat(8)  = dat(8)
+    	odat(1) = dat(1);  odat(5) = dat(5);  odat(9)  = dat(9)
+    	odat(2) = dat(2);  odat(6) = dat(6);  odat(10) = dat(10)
+    	odat(3) = dat(3);  odat(7) = dat(7);  odat(11) = dat(11)
+
+    	m
+    }
+
+    // Matrix3((this(0,0), this(0,1), this(0,2)),
+    //                              (this(1,0), this(1,1), this(1,2)),
+    //                              (this(2,0), this(2,1), this(2,2)))
 }
+
 
 object Matrix4 {
     def apply(row0:(Double,Double,Double,Double),

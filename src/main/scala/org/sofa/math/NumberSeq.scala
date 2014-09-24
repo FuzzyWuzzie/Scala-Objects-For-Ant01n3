@@ -2,10 +2,12 @@ package org.sofa.math
 
 import org.sofa.nio._
 import scala.math._
+import scala.compat.Platform
+
 
 /** Simple sequence of numbers.
   * 
-  * This is the basis for vectors or any size, points or any kind of set of
+  * This is the basis for vectors or any size, points or any kind or set of
   * numbers.
   * 
   * ==A note on the design of the math library==
@@ -13,12 +15,26 @@ import scala.math._
   * The choice in designing the math library was to always use double real numbers instead of
   * creating a version of each class for floats or doubles, or using type parameters. This
   * design choice  implies that sometimes one will have to copy an array in a given format to
-  * another. 
+  * another (doubles to float).
+  *
+  * There exist @specialized or even @miniboxed annotation and [[Numeric]], [[Fractional]],
+  * [[Intergral]] types that may help, but at a (small) cost and with an awfull syntax that,
+  * furthermore, will probably change. Using double on all modern architectures (even on phones
+  * or such devices) is now as fast as using floats. The only cost is therefore the one of the
+  * copy to another format. This is particularly true on Android for some shaders that only
+  * handle floats.
   *
   * == Operators ==
   *
   * Be careful, operators like += for example do not work like for collections, here +=
-  * means arithmetic add.
+  * means arithmetic add. Be also careful with the `length` method that returns the number
+  * of components in the sequence, not, for example, the cartesian length, see `norm`.
+  *
+  * == Optimisation ==
+  *
+  * The methods provided here are general, and work for any number of values inside
+  * this sequence. Dedicated version for 2, 3 and 4 components, (vectors and points)
+  * are provided with implementations of the methods that are optimized.
   */
 trait NumberSeq extends IndexedSeq[Double] {
     
@@ -41,7 +57,7 @@ trait NumberSeq extends IndexedSeq[Double] {
     def length:Int = data.length
 
     /** `i`-th element. */
-    def apply(i:Int):Double = data(i)
+    final def apply(i:Int):Double = data(i)
 	
     /** True if all components are zero. */
 	def isZero:Boolean = {
@@ -69,6 +85,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	    buf.toString
 	}
 
+	/** Compact string representation. */
 	def toShortString():String = {
 		val buf = new StringBuffer
 
@@ -87,12 +104,17 @@ trait NumberSeq extends IndexedSeq[Double] {
 	/** New number sequence of the same size as this. This is not a copy of the element of this. */
 	protected[math] def newInstance():ReturnType
 
+	/** New number sequence of the same size as this with a copy of this. */
+	def newClone():ReturnType = { val res = newInstance; res.copy(this); res }
+
 // Conversion
 
     /** This sequence as an array of doubles. There is no convertion, since this is the native format. */
     def toDoubleArray:Array[Double] = data
     
-    /** This sequence converted as an array of floats. */
+    /** This sequence converted as an array of floats. Be careful, this may
+     * return the same array several times with updated data for efficiency
+     * reasons. T */
     def toFloatArray:Array[Float] = {
         val n     = data.length
         var i     = 0
@@ -105,35 +127,15 @@ trait NumberSeq extends IndexedSeq[Double] {
     }
     
     /** This sequence converted as a NIO buffer of doubles. */
-    def toDoubleBuffer:DoubleBuffer = {
-        val n   = data.length
-        var i   = 0
-        val buf = DoubleBuffer(n)
-        while(i < n) {
-            buf(i) = data(i).toDouble
-            i += 1
-        }
-//        buf.rewind
-        buf
-    }
-    
+    def toDoubleBuffer:DoubleBuffer = DoubleBuffer(data)
+
     /** This sequence converted  as a NIO buffer of floats. */
-    def toFloatBuffer:FloatBuffer = {
-        val n   = data.length
-        var i   = 0
-        val buf = FloatBuffer(n)
-        while(i < n) {
-            buf(i) = data(i).toFloat
-            i += 1
-        }
-//        buf.rewind
-        buf
-    }
+    def toFloatBuffer:FloatBuffer = FloatBuffer(toFloatArray)
     
 // Modification
 
     /** Is the size of `other` the same as this ? If not throw a `RuntimeException`. */
-    protected def checkSizes(other:NumberSeq) {
+    final protected def checkSizes(other:NumberSeq) {
     	if(other.size != size) throw new RuntimeException("operation available on number sequences of same size only")
     }
     
@@ -144,40 +146,43 @@ trait NumberSeq extends IndexedSeq[Double] {
       * 
       * The size of the smallest sequence determine the number of elements copied. */
     def copy(data:Traversable[Double]) {
-        val n = math.min(size, data.size) 
-        var i = 0
-        
-        data.foreach { item =>
-            if(i < n) {
-            	this.data(i) = item
-            }
-            i += 1
-        }
+    	data match {
+    		case o:NumberSeq => {
+    			Platform.arraycopy(o.data, 0, data, 0, math.min(size, o.size))		
+    		}
+    		case _ => {
+		        val n = math.min(size, data.size) 
+		        var i = 0
+		        
+		        data.foreach { item =>
+		            if(i < n) {
+		            	this.data(i) = item
+		            }
+		            i += 1
+		        }
+    		}
+    	}
     }
 
     /** Copy the content of `other` in this.
       *
       * The size of the smallest sequence determine the number of elements copied. */
     def copy(other:NumberSeq) {
-    	// Much faster than the general copy(Traversable), no foreach.
-    	val n = math.min(size, other.size)
-    	var i = 0
-    	var o = other.data
-
-    	while(i < n) {
-    		this.data(i) = o(i)
-    		i += 1
-    	}
+    	Platform.arraycopy(other.data, 0, data, 0, math.min(size, other.size))
     }
 
 	/** Copy `value` in each component. */
 	def fill(value:Double) {
-	    val n = size
-	    var i = 0
-	    while(i < n) {
-	    	data(i) = value
-	    	i += 1
-	    }
+		// if(value == 0) {
+		// 	Platform.arrayclear(data)	// Works only on integers :'(
+		// } else {
+			val n = size
+	    	var i = 0
+	    	while(i < n) {
+	    		data(i) = value
+	    		i += 1
+	    	}
+//	    }
 	}
 
 	/** Add each element of `other` to the corresponding element of this.
@@ -229,24 +234,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * 
 	  * @return a new number sequence result of the addition.
 	  */
-    def +(other:NumberSeq):ReturnType = {
-        checkSizes(other)
-        val result = newInstance
-        result.copy(this)
-        result.addBy(other)
-        result
-    }
+    def +(other:NumberSeq):ReturnType = newClone.addBy(other).asInstanceOf[ReturnType]
     
     /** Result of the addition of value to each element of this.
       * 
       * @return a new number sequence result of the addition. 
       */
-    def +(value:Double):ReturnType = {
-        val result = newInstance
-        result.copy(this)
-        result.addBy(value)
-        result
-    }
+    def +(value:Double):ReturnType = newClone.addBy(value).asInstanceOf[ReturnType]
 
 	/** Subtract each element of `other` to the corresponding element of this.
 	  *
@@ -297,24 +291,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * 
 	  * @return a new number sequence result of the subtraction.
 	  */
-    def -(other:NumberSeq):ReturnType = {
-        checkSizes(other)
-        val result = newInstance
-        result.copy(this)
-        result.subBy(other)
-        result
-    }
+    def -(other:NumberSeq):ReturnType = newClone.subBy(other).asInstanceOf[ReturnType]
     
     /** Result of the subtraction of value to each element of this.
       * 
       * @return a new number sequence result of the subtraction. 
       */
-    def -(value:Double):ReturnType = {
-        val result = newInstance
-        result.copy(this)
-        result.subBy(value)
-        result
-    }
+    def -(value:Double):ReturnType = newClone.subBy(value).asInstanceOf[ReturnType]
 	
 	/** Multiply each element of `other` with the corresponding element of this.
 	  * 
@@ -369,24 +352,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * 
 	  * @return a new number sequence result of the multiplication.
 	  */
-	def *(other:NumberSeq):ReturnType = {
-	    checkSizes(other)
-	    val result = newInstance
-	    result.copy(this)
-	    result.multBy(other)
-	    result
-	}
+	def *(other:NumberSeq):ReturnType = newClone.multBy(other).asInstanceOf[ReturnType]
 	
 	/** Result of the multiplication of each element of this by `value`.
 	  * 
 	  * @return a new number sequence result of the multiplication.
 	  */
-	def *(value:Double):ReturnType = {
-	    val result = newInstance
-	    result.copy(this)
-	    result.multBy(value)
-	    result
-	}
+	def *(value:Double):ReturnType = newClone.multBy(value).asInstanceOf[ReturnType]
 	
 	/** Divide each element of this by the corresponding element of `other`.
 	  * 
@@ -442,24 +414,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * 
 	  * @return a new number sequence result of the division.
 	  */
-	def /(other:NumberSeq):ReturnType = {
-	    checkSizes(other)
-	    val result = newInstance
-	    result.copy(this)
-	    result.divBy(other)
-	    result
-	}
+	def /(other:NumberSeq):ReturnType = newClone.divBy(other).asInstanceOf[ReturnType]
 
 	/** Result of the division of each element of this by `value`.
 	  * 
 	  * @return a new number sequence result of the division.
 	  */
-	def /(value:Double):ReturnType = {
-	    val result = newInstance
-	    result.copy(this)
-	    result.divBy(value)
-	    result
-	}
+	def /(value:Double):ReturnType = newClone.divBy(value).asInstanceOf[ReturnType]
 	
 	/** Dot product of this by the set of `values`.
 	  * 
@@ -536,9 +497,8 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * @see [[normalize]]
 	  */
 	def normalized():ReturnType = {
-	    val result = newInstance
-	    result.copy(this)
-	    result.normalize
+		val result = newClone
+		result.normalize
 	    result
 	}
 	
@@ -554,7 +514,6 @@ trait NumberSeq extends IndexedSeq[Double] {
 
 	/** Store in this number seq the maximum value component-wise with `other`. */
 	def maxBy(other:NumberSeq):ReturnType = {
-		checkSizes(other)
 	    val n = math.min(size, other.size)
 	    var i = 0
 	    while(i < n) {
@@ -567,7 +526,6 @@ trait NumberSeq extends IndexedSeq[Double] {
 	
 	/** Store in this number seq the minimum value component-wise with `other`. */
 	def minBy(other:NumberSeq):ReturnType = {
-		checkSizes(other)
 	    val n = math.min(size, other.size)
 	    var i = 0
 	    while(i<n) {
@@ -584,7 +542,7 @@ trait NumberSeq extends IndexedSeq[Double] {
 	def inside(from:NumberSeq, to:NumberSeq):Boolean = {
 		var inside = true
 		var dim = 0
-		val n = scala.math.min(data.length, scala.math.min(from.data.length, to.data.length))
+		val n = math.min(data.length, math.min(from.data.length, to.data.length))
 		
 		while(dim < n && inside) {
 			inside = (data(dim)>= from.data(dim) && data(dim) <= to.data(dim))
@@ -602,12 +560,11 @@ trait NumberSeq extends IndexedSeq[Double] {
 	def insideOneOrAnother(first:NumberSeq, second:NumberSeq):Boolean = {
 		var inside = true
 		var dim = 0
-		val n = scala.math.min(data.length, scala.math.min(first.data.length, second.data.length))
+		val n = math.min(data.length, math.min(first.data.length, second.data.length))
 		
 		while(dim < n && inside) {
-//println("%d  %f <> (%f, %f)".format(dim, data(dim), scala.math.min(first.data(dim), second.data(dim)), scala.math.max(first.data(dim), second.data(dim))))
-			inside = (data(dim) >= scala.math.min(first.data(dim), second.data(dim)) &&
-				      data(dim) <= scala.math.max(first.data(dim), second.data(dim)))
+			inside = (data(dim) >= math.min(first.data(dim), second.data(dim)) &&
+				      data(dim) <= math.max(first.data(dim), second.data(dim)))
 			dim += 1
 		}
 
@@ -615,7 +572,9 @@ trait NumberSeq extends IndexedSeq[Double] {
 	}
 }
 
+
 //===================================================
+
 
 trait NumberSeq2 extends NumberSeq {
     final def x:Double = data(0)
@@ -731,7 +690,9 @@ trait NumberSeq2 extends NumberSeq {
     }
 }
 
+
 //===================================================
+
 
 trait NumberSeq3 extends NumberSeq2 {
 	final def z:Double = data(2)

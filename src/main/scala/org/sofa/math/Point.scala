@@ -169,53 +169,21 @@ class Point3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
 		abs(sqrt((xx * xx) + (yy * yy) + (zz * zz)))
 	}
 
-    def +(other:Point3):ReturnType = {
-        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
-        result.addBy(other)
-        result
-    }
+    def +(other:Point3):ReturnType = (new Point3(data(0), data(1), data(2))).addBy(other)   // Faster than using apply
     
-    override def +(value:Double):ReturnType = {
-        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
-        result.addBy(value)
-        result
-    }
+    override def +(value:Double):ReturnType = (new Point3(data(0), data(1), data(2))).addBy(value)   // Faster than using apply
 
-    def -(other:Point3):ReturnType = {
-        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
-        result.subBy(other)
-        result
-    }
+    def -(other:Point3):ReturnType = (new Point3(data(0), data(1), data(2))).subBy(other)   // Faster than using apply
     
-    override def -(value:Double):ReturnType = {
-        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
-        result.subBy(value)
-        result
-    }
+    override def -(value:Double):ReturnType = (new Point3(data(0), data(1), data(2))).subBy(value)   // Faster than using apply
 
-    def *(other:Point3):ReturnType = {
-        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
-        result.multBy(other)
-        result
-    }
+    def *(other:Point3):ReturnType = (new Point3(data(0), data(1), data(2))).multBy(other)   // Faster than using apply
     
-    override def *(value:Double):ReturnType = {
-        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
-        result.multBy(value)
-        result
-    }
+    override def *(value:Double):ReturnType = (new Point3(data(0), data(1), data(2))).multBy(value)   // Faster than using apply
 
-    def /(other:Point3):ReturnType = {
-        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
-        result.divBy(other)
-        result
-    }
+    def /(other:Point3):ReturnType = (new Point3(data(0), data(1), data(2))).divBy(other)   // Faster than using apply
     
-    override def /(value:Double):ReturnType = {
-        val result = new Point3(data(0), data(1), data(2))   // Faster than using apply
-        result.divBy(value)
-        result
-    }
+    override def /(value:Double):ReturnType = (new Point3(data(0), data(1), data(2))).divBy(value)   // Faster than using apply
 
     /** Vector between this and an `other` point. 
       *
@@ -315,53 +283,21 @@ class Point4(xInit:Double, yInit:Double, zInit:Double, wInit:Double) extends Num
 		abs(sqrt((xx * xx) + (yy * yy) + (zz * zz) + (ww * ww)))
 	}
 
-    def +(other:Point4):ReturnType = {
-        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
-        result.addBy(other)
-        result
-    }
+    def +(other:Point4):ReturnType = (new Point4(data(0), data(1), data(2), data(3))).addBy(other)   // Faster than using apply
     
-    override def +(value:Double):ReturnType = {
-        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
-        result.addBy(value)
-        result
-    }
+    override def +(value:Double):ReturnType = (new Point4(data(0), data(1), data(2), data(3))).addBy(value)   // Faster than using apply
 
-    def -(other:Point4):ReturnType = {
-        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
-        result.subBy(other)
-        result
-    }
+    def -(other:Point4):ReturnType = (new Point4(data(0), data(1), data(2), data(3))).subBy(other)   // Faster than using apply
     
-    override def -(value:Double):ReturnType = {
-        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
-        result.subBy(value)
-        result
-    }
+    override def -(value:Double):ReturnType = (new Point4(data(0), data(1), data(2), data(3))).subBy(value)   // Faster than using apply
 
-    def *(other:Point4):ReturnType = {
-        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
-        result.multBy(other)
-        result
-    }
+    def *(other:Point4):ReturnType = (new Point4(data(0), data(1), data(2), data(3))).multBy(other)   // Faster than using apply
     
-    override def *(value:Double):ReturnType = {
-        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
-        result.multBy(value)
-        result
-    }
+    override def *(value:Double):ReturnType = (new Point4(data(0), data(1), data(2), data(3))).multBy(value)   // Faster than using apply
 
-    def /(other:Point4):ReturnType = {
-        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
-        result.divBy(other)
-        result
-    }
+    def /(other:Point4):ReturnType = (new Point4(data(0), data(1), data(2), data(3))).divBy(other)   // Faster than using apply
     
-    override def /(value:Double):ReturnType = {
-        val result = new Point4(data(0), data(1), data(2), data(3))   // Faster than using apply
-        result.divBy(value)
-        result
-    }
+    override def /(value:Double):ReturnType = (new Point4(data(0), data(1), data(2), data(3))).divBy(value)   // Faster than using apply
 
     def perspectiveDivide() {
     	data(0) /= data(3)

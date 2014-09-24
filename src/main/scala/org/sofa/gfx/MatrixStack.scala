@@ -46,11 +46,11 @@ class MatrixStack[M<:Matrix4](initialMatrix:M) {
     
     /** Make a copy of the top matrix and push it on the top of the stack. */
     def push() {
-        //stack.push(current)
-        //current = current.newClone.asInstanceOf[M]
+    	// Avoid re-allocating a matrix in the stack,
+    	// instead of pushing, we merely copy matrices.
+
         if(stack.size == (end+1)) {
-            val m  = stack(end).newClone.asInstanceOf[M]
-            stack += m
+            stack += stack(end).newClone.asInstanceOf[M]
             end   += 1
         } else {
             end += 1

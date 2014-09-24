@@ -1,9 +1,11 @@
 package org.sofa.gfx
 
 import scala.math._
+import scala.collection.mutable.{ArrayBuffer => ScalaArrayBuffer}
 
 import org.sofa.math._
 import org.sofa.math.Axis._
+
 
 /** Define a stack of projection and model-view matrices.
   *
@@ -29,7 +31,7 @@ trait Space {
     val mvp = new Matrix4()
 
     /** View port size in pixels. */
-    var vp = new scala.collection.mutable.ArrayBuffer[Vector2](); pushViewport(800, 600)//vp += Vector2(800, 600)
+    var vp = new ScalaArrayBuffer[Vector2](); pushViewport(800, 600)
     
     /** Maximum depth of the view (far clip-plane position). */
     var maxDepth = 100.0
@@ -52,14 +54,20 @@ trait Space {
     /** Obtain the current view-port width / height ratio. */
     def viewportRatio:Double = { val v = vp(vp.length-1); v.x / v.y }
 
+    /** Install a viewport on the viewport stack with dimensions (`width`, `height`). The old
+      * viewport will be restored using `popViewport()`. */
     def pushViewport(width:Double, height:Double) { vp += Vector2(width, height) }
 
-    def popViewport() { vp.trimEnd(1) }
+    /** Install the viewport used before the last all to `pushViewport()`. */
+    def popViewport() { 
+    	if(vp.size > 0)
+    		vp.trimEnd(1)
+    	else throw new RuntimeException("cannot pop viewport, empty stack")
+    }
 
     /** Erase the projection matrix with a new projection using the given frustum
       * specifications. */
     def frustum(axes:Axes) {
-        projection.setIdentity
         maxDepth = axes.z.from
         projection.frustum(axes.x.from, axes.x.to, axes.y.from, axes.y.to, axes.z.to, axes.z.from)
         needRecomputeMVP = true
@@ -68,7 +76,6 @@ trait Space {
     /** Erase the projection matrix with a new projection using the given frustum
       * specifications. */
     def frustum(left:Double, right:Double, bottom:Double, top:Double, near:Double) {
-        projection.setIdentity
         projection.frustum(left, right, bottom, top, near, maxDepth)
         needRecomputeMVP = true
     }
@@ -76,7 +83,6 @@ trait Space {
     /** Erase the projection matrix with a new projection using the given orthographic
       * specifications. */
     def orthographic(axes:Axes) {
-    	projection.setIdentity
     	maxDepth = axes.z.from
     	projection.orthographic(axes.x.from, axes.x.to, axes.y.from, axes.y.to, axes.z.to, axes.z.from)
         needRecomputeMVP = true
@@ -85,14 +91,12 @@ trait Space {
     /** Erase the projection matrix with a new projection using the given orthographic
       * specifications. */
     def orthographic(left:Double, right:Double, bottom:Double, top:Double, near:Double, far:Double) {
-        projection.setIdentity
         maxDepth = far
         projection.orthographic(left, right, bottom, top, near, far)
         needRecomputeMVP = true
     }
 
     def orthographicPixels(near:Double = 1, far:Double = -1) {
-    	projection.setIdentity
     	maxDepth = far
     	projection.orthographic(0, viewport.x, 0, viewport.y, near, far)
     	needRecomputeMVP = true
@@ -241,7 +245,6 @@ trait Space {
       * 
       * This method does not empty the model-view matrix stack. */
     def lookAt(eye:Vector3, focusPoint:Vector3, up:Vector3) {
-        modelview.setIdentity
         modelview.lookAt(eye, focusPoint, up)
         needRecomputeMVP = true
     }

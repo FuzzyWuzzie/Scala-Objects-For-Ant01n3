@@ -5,24 +5,26 @@ import scala.math._
 import scala.compat.Platform
 import org.sofa.math.Axis._
 
-/** A 2D grid of numbers.
-  * 
-  * ==Ordering==
-  * 
-  * This grid is organized as a linear sequence of numbers. This sequence must be
-  * considered in column major order, this means elements are organized by example
-  * with a 4x4 grid as follows:
-  * {{{
-  *      | 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 |
-  * 
-  *      =   | 0  4  8 12 |
-  *          | 1  5  9 13 |
-  *          | 2  6 10 14 |
-  *          | 3  7 11 15 |
-  * }}}
-  * This is not common in math, but has been chosen to be directly compatible with
-  * graphics library like OpenGL for example.
-  */
+
+ /** An arbitrary sized 2D grid of float numbers.
+   * 
+   * == Ordering ==
+   * 
+   * This grid is internally organized as a linear sequence of numbers. This sequence 
+   * must be considered in column major order, this means elements are organized by
+   * example with a 4x4 grid as follows:
+   * {{{
+   *      | 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 |
+   * 
+   *      =   | 0  4  8 12 |
+   *          | 1  5  9 13 |
+   *          | 2  6 10 14 |
+   *          | 3  7 11 15 |
+   * }}}
+   * This is not common in math, but has been chosen to be directly compatible with
+   * graphics library like OpenGL for example that expect a linear array of value
+   * organized in this order. This avoids conversions.
+   */
 trait NumberGrid extends IndexedSeq[Double] {
 // Attribute
 	
@@ -30,7 +32,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	type ReturnType <: NumberGrid
 	
 	/** The real storage. */
-	protected[this] val data:Array[Double]
+	protected[math] val data:Array[Double]
 
 	/** A reference to a temporary array, to avoid reallocate it constantly. */
     protected var tmpFltArr:Array[Float] = null
@@ -39,7 +41,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 
 // Access
 	
-	/** Number of numbers in the grid. */
+	/** Number of components in the grid. */
 	def length:Int = data.length
 	
 	/** Number of columns. */
@@ -56,7 +58,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	def apply(i:Int):Double = data(i)
 	
 	/** Access to element at (`row`, `col`). */
-	def apply(row:Int, col:Int):Double = data(row+col*height)
+	def apply(row:Int, col:Int):Double = data(row + col * height)
 	
 	override def toString():String = {
 		val buf = new StringBuffer
@@ -107,7 +109,9 @@ trait NumberGrid extends IndexedSeq[Double] {
     
     /** This sequence converted of numbers as an array of floats.
       *
-      * If the sequence is not backed by a float array, a conversion occurs.
+      * If the sequence is not backed by a float array, a conversion occurs. For
+      * efficiency reasons, the returned array may be always the same. You cannot
+      * keep the reference to this array and consider it immutable.
       */
     def toFloatArray:Array[Float] = {
         val n     = data.length
@@ -128,14 +132,13 @@ trait NumberGrid extends IndexedSeq[Double] {
       *
       * If the sequence is not backed by a NIO buffer of doubles, a conversion occurs.
       */
-    def toDoubleBuffer:DoubleBuffer = {
-        val buf = DoubleBuffer(data)
-        buf
-    }
+    def toDoubleBuffer:DoubleBuffer = DoubleBuffer(data)
     
     /** This sequence converted of numbers as a NIO buffer of floats.
       *
-      * If the sequence is not backed by a NIO buffer of floats, a conversion occurs.
+      * If the sequence is not backed by a NIO buffer of floats, a conversion occurs. For
+      * efficiency reasons, the returned buffer may be always the same. You cannot
+      * keep the reference to this buffer and consider it immutable.
       */
     def toFloatBuffer:FloatBuffer = {
         val n   = data.length
@@ -158,7 +161,7 @@ trait NumberGrid extends IndexedSeq[Double] {
     def update(i:Int, value:Double) = data(i) = value
     
     /** Assign `value` to the element at (`row`,`col`). */
-    def update(row:Int, col:Int, value:Double) = data(row+col*height) = value
+    def update(row:Int, col:Int, value:Double) = data(row + col * height) = value
 
     /** Copy the content of `other` in this.
       * 
@@ -182,23 +185,21 @@ trait NumberGrid extends IndexedSeq[Double] {
     }
 
     def copy(doubles:Array[Double], offset:Int) {
-    	if(doubles.length-offset >= 16) {
-    		var i = 0
-    		while(i < 16) {
-    			data(i) = doubles(i+offset)
-    			i += 1
-    		}
-    	}
+    	Platform.arraycopy(doubles, offset, data, 0, math.min(16, doubles.length-offset))
     }
 
 	/** Copy `value` in each component. */
 	def fill(value:Double) {
-	   	val n = size
-	   	var i = 0
-	   	while(i < n) {
-	   		data(i) = value
-	   		i += 1
-	   	}
+//		if(value == 0) {
+//			Platform.arrayclear(data)	// Works only on integers :'(
+//		} else {
+		   	val n = size
+		   	var i = 0
+		   	while(i < n) {
+		   		data(i) = value
+		   		i += 1
+		   	}
+//		}
 	}
 
 	def setIdentity() {
@@ -217,7 +218,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	  * 
 	  * The modification is made in place.
 	  */
-	def addBy(other:NumberGrid) {
+	def addBy(other:NumberGrid):ReturnType = {
 	    var w = math.min(width, other.width)
 	    var h = math.min(height, other.height)
 	   	var x = 0
@@ -226,19 +227,14 @@ trait NumberGrid extends IndexedSeq[Double] {
 
 	   	while(y < h) {
 	   		x = 0
-	   		var Y = y*w;
+	   		val Y = y*w;
 	   		while(x < w) {
 	   			data(Y+x) += otherData(Y+x)
 	   			x += 1
 	   		}
 	   		y += 1
 	   	}
-
-	    // for(row <- 0 until h) {
-	    //     for(col <- 0 until w) {
-	    //         this(row, col) += other(row, col)
-	    //     }
-	    // }
+	   	this.asInstanceOf[ReturnType]
 	}
 	
 	/** Add each element of `other` to the corresponding element of this. 
@@ -254,27 +250,30 @@ trait NumberGrid extends IndexedSeq[Double] {
 	  *  
 	  * @return A new number grid result of the addition.
 	  */
-	def +(other:NumberGrid):ReturnType = {
-	    val result = newInstance(width, height)
-	    result.copy(this)
-	    result.addBy(other)
-	    result
-	}
+	def +(other:NumberGrid):ReturnType = newClone.addBy(other).asInstanceOf[ReturnType]
 
 	/** Subtract each element of `other` to the corresponding element of this. 
 	  * 
 	  * The modification is made in place.
 	  */
-	def subBy(other:NumberGrid) {
+	def subBy(other:NumberGrid):ReturnType = {
 	    var w = scala.math.min(width, other.width)
 	    var h = scala.math.min(height, other.height)
-	   
-// TODO 
-	    for(row <- 0 until h) {
-	        for(col <- 0 until w) {
-	            this(row, col) -= other(row, col)
-	        }
-	    }
+	   	var x = 0
+	   	var y = 0
+	   	val otherData = other.getData
+
+	   	while(y < h) {
+	   		x = 0
+	   		val Y = y*w
+	   		while(x < w) {
+	   			data(Y+x) -= otherData(Y+x)
+	   			x += 1
+	   		}
+	   		y += 1
+	   	}
+
+	   	this.asInstanceOf[ReturnType]
 	}
 	
 	/** Subtract each element of `other` to the corresponding element of this. 
@@ -290,12 +289,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	  *  
 	  * @return A new number grid result of the subtraction.
 	  */
-	def -(other:NumberGrid):ReturnType = {
-	    val result = newInstance(width, height)
-	    result.copy(this)
-	    result.subBy(other)
-	    result
-	}
+	def -(other:NumberGrid):ReturnType = newClone.subBy(other).asInstanceOf[ReturnType]
 	
 	/** Result of the multiplication of this by `other` using usual matrix multiplication.
 	  * 
@@ -348,7 +342,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	def *[T<:NumberSeq] (other:T):T = mult(other)
 	
 	/** Transpose in place. */
-	def transpose() = {
+	def transpose():ReturnType = {
 		var t = 0.0
 		var y = 1
 		
@@ -365,16 +359,11 @@ trait NumberGrid extends IndexedSeq[Double] {
 			
 			y += 1
 		}
+		this.asInstanceOf[ReturnType]
 	}
 	
 	/** Result of the transposition of this. */
-	def transposed():ReturnType = {
-	    val result = newInstance(width, height)
-	    result.copy(this)
-	    result.transpose()
-	    result
-	}
-	
+	def transposed():ReturnType = newClone.transpose().asInstanceOf[ReturnType]	
 		
 	/** Submatrix of this matrix excepted the given `row` and ` col`umn. 
 	  * 
@@ -1317,6 +1306,16 @@ abstract class NumberGrid4 extends NumberGrid {
 	        }
 	    }
 	}
+
+	def subMatrixTopLeft(result:NumberGrid3) {
+		val dat = data
+		val odat = result.data
+
+		odat(0) = dat(0);  odat(4) = dat(4);  odat(8)  = dat(8)
+		odat(1) = dat(1);  odat(5) = dat(5);  odat(9)  = dat(9)
+		odat(2) = dat(2);  odat(6) = dat(6);  odat(10) = dat(10)
+		odat(3) = dat(3);  odat(7) = dat(7);  odat(11) = dat(11)
+	} 
 	
 	/** Determinant of this. */
 	def det:Double = {

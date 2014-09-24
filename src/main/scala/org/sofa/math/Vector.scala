@@ -21,6 +21,7 @@ object Vector {
     def apply(size:Int) = new Vector(size)
 }
 
+
 class Vector(size:Int) extends NumberSeq {
     type ReturnType = Vector
     
@@ -29,7 +30,9 @@ class Vector(size:Int) extends NumberSeq {
     def newInstance = new Vector(size)
 }
 
+
 //===================================================
+
 
 object Vector2 {
     implicit def vector2ToTuple(v:Vector2):(Double, Double) = (v.x, v.y)
@@ -47,6 +50,7 @@ object Vector2 {
     def apply(fill:Double) = new Vector2(fill, fill)
 }
 
+
 class Vector2(xInit:Double, yInit:Double) extends NumberSeq2 {
     type ReturnType = Vector2
     
@@ -57,7 +61,9 @@ class Vector2(xInit:Double, yInit:Double) extends NumberSeq2 {
     override final def size:Int = 2
 }
 
+
 //===================================================
+
 
 object Vector3 {
     implicit def vector3ToTuple(v:Vector3):(Double, Double, Double) = (v.x, v.y, v.z)
@@ -79,6 +85,7 @@ object Vector3 {
     def apply(x:Double, yz:(Double, Double)) = new Vector3(x, yz._1, yz._2)
     def apply(fill:Double) = new Vector3(fill, fill, fill)
 }
+
 
 class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
     /** Set this to the cross product of this and vector (`x`, `y`, `z`).
@@ -109,7 +116,7 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
       *
       * This operation works in place, modifying this vector.
       */
-	def cross(other:Vector3) {
+	def cross(other:Vector3):ReturnType = {
 		var xx = 0.0
 		var yy = 0.0
         val o = other.data
@@ -119,18 +126,15 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
 		data(2) = (data(0) * o(1)) - (data(1) * o(0));
 		data(0) = xx
 		data(1) = yy
+
+		this
 	}
 	
 	/** Result of the cross product between this and an `other` vector.
 	  * 
 	  * @return A new vector result of the cross product. 
 	  */
-	def X(other:Vector3):ReturnType = {
-	    val result = newInstance.asInstanceOf[Vector3]
-	    result.copy(this)
-	    result.cross(other)
-	    result.asInstanceOf[ReturnType]
-	}
+	def X(other:Vector3):ReturnType = newClone.cross(other).asInstanceOf[ReturnType]
 
     def copy(other:Vector3) {
         // Much faster than original on n elements.
@@ -140,10 +144,7 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
         data(2) = o(2)
     }
 
-    override def norm:Double = {
-        // Much faster than original on n elements.
-        math.sqrt(data(0)*data(0) + data(1)*data(1) + data(2)*data(2))
-    }
+    override def norm:Double = math.sqrt(data(0)*data(0) + data(1)*data(1) + data(2)*data(2))
     
     override def normalize():Double = {
         // Much faster than original on n elements.
@@ -169,53 +170,21 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
     	data(2) = z
     }
 
-    def +(other:Vector3):ReturnType = {
-        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
-        result.addBy(other)
-        result
-    }
+    def +(other:Vector3):ReturnType = (new Vector3(data(0), data(1), data(2))).addBy(other)   // Faster than using apply
     
-    override def +(value:Double):ReturnType = {
-        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
-        result.addBy(value)
-        result
-    }
+    override def +(value:Double):ReturnType = (new Vector3(data(0), data(1), data(2))).addBy(value)   // Faster than using apply
 
-    def -(other:Vector3):ReturnType = {
-        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
-        result.subBy(other)
-        result
-    }
+    def -(other:Vector3):ReturnType = (new Vector3(data(0), data(1), data(2))).subBy(other)   // Faster than using apply
     
-    override def -(value:Double):ReturnType = {
-        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
-        result.subBy(value)
-        result
-    }
+    override def -(value:Double):ReturnType = (new Vector3(data(0), data(1), data(2))).subBy(value)   // Faster than using apply
 
-    def *(other:Vector3):ReturnType = {
-        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
-        result.multBy(other)
-        result
-    }
+    def *(other:Vector3):ReturnType = (new Vector3(data(0), data(1), data(2))).multBy(other)   // Faster than using apply
     
-    override def *(value:Double):ReturnType = {
-        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
-        result.multBy(value)
-        result
-    }
+    override def *(value:Double):ReturnType = (new Vector3(data(0), data(1), data(2))).multBy(value)   // Faster than using apply
 
-    def /(other:Vector3):ReturnType = {
-        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
-        result.divBy(other)
-        result
-    }
+    def /(other:Vector3):ReturnType = (new Vector3(data(0), data(1), data(2))).divBy(other)   // Faster than using apply
     
-    override def /(value:Double):ReturnType = {
-        val result = new Vector3(data(0), data(1), data(2))   // Faster than using apply
-        result.divBy(value)
-        result
-    }
+    override def /(value:Double):ReturnType = (new Vector3(data(0), data(1), data(2))).divBy(value)   // Faster than using apply
     
     def dot(other:Vector3):Double = {
         // Much faster than original on n elements.
@@ -235,14 +204,19 @@ class Vector3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
     type ReturnType = Vector3
     
     protected[math] final val data = Array[Double](xInit, yInit, zInit)
+    
     def this(other:Vector3) = this(other.x, other.y, other.z)
+    
     def this() = this(0, 0, 0)
+    
     def newInstance = new Vector3
+    
     override final def size:Int = 3
 }
 
 
 //===================================================
+
 
 object Vector4 {
     implicit def vector4ToTuple(v:Vector4):(Double, Double, Double, Double) = (v.x, v.y, v.z, v.w)
@@ -266,6 +240,7 @@ object Vector4 {
     def apply(x:Double, yzw:(Double, Double, Double)) = new Vector4(x, yzw._1, yzw._2, yzw._3)
     def apply(fill:Double) = new Vector4(fill, fill, fill, fill)
 }
+
 
 class Vector4(xInit:Double, yInit:Double, zInit:Double, wInit:Double) extends NumberSeq4 {
     type ReturnType = Vector4
