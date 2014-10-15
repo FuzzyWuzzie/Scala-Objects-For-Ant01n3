@@ -6,7 +6,7 @@ import org.sofa.math.{Point3, Point4, Vector3, Matrix4, Rgba, Box3, Box3From, Bo
 import org.sofa.gfx.{ShaderResource, TextureFramebuffer}
 import org.sofa.gfx.text.{GLFont}
 import org.sofa.gfx.renderer.{Screen}
-import org.sofa.gfx.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState}
+import org.sofa.gfx.renderer.{Avatar, AvatarLayer, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState}
 import org.sofa.gfx.surface.event._
 import org.sofa.gfx.renderer.{NoSuchAvatarException}
 
@@ -43,6 +43,7 @@ object UIAvatar {
 }
 
 
+/** Base class for a hierarchy of avatar allowing to build user interfaces. */
 abstract class UIAvatar(name:AvatarName, screen:Screen) extends DefaultAvatarComposed(name, screen) {
 
 	/** Another consumeOrPropagateEvent that looks if an avatar is visible to propagate the
@@ -154,6 +155,7 @@ object UIrenderUtils {
 
 
 trait UIrenderUtils {
+
 	var color = Rgba.Cyan
 
 	var lineColor = Rgba.Red
@@ -316,7 +318,6 @@ trait UIrenderUtils {
 		def updateSpace(mvp:Matrix4, width:Double, height:Double) {
 			this.mvp.copy(mvp)
 			this.mvp.scale(width, height, 1)
-println("%s.shadow (%f, %f)".format(self.name, width, height))
 		}
 		def render(gl:SGL) {
 			shaderUniform.use
@@ -382,20 +383,26 @@ println("%s.shadow (%f, %f)".format(self.name, width, height))
 
 	class LayerDP extends DisplayList {
 		val mvp = Matrix4()
-		var layer:TextureFramebuffer = null
-		def compile(layer:TextureFramebuffer, mvp:Matrix4, x:Double, y:Double, width:Double, height:Double) {
+		var layer:AvatarLayer = null
+		def compile(layer:AvatarLayer, mvp:Matrix4, x:Double, y:Double, width:Double, height:Double) {
 			this.layer = layer
 			updateSpace(mvp, x, y, width, height)
 		}
 		def updateSpace(mvp:Matrix4, x:Double, y:Double, width:Double, height:Double) {
 			this.mvp.copy(mvp)
 			this.mvp.translate(x, y, 0)
-			this.mvp.scale(width, height, 1)
+			// Account for the fact the layer pixels are integers, but the area
+			// inside it is smaller (the correct real size).
+			this.mvp.scale(width * layer.scalex, height * layer.scaley, 1)
+//			this.mvp.scale(width, height, 1)
+//println("** layerDP (%f, %f)".format(width * layer.scalex, height * layer.scaley))
 		}
 		def render(gl:SGL) {
 			shaderLayer.use
-			layer.bindColorTexture
-			shaderLayer.uniformTexture(layer.colorTexture, "texColor")
+//			if(layer.fb.isMultiSampled)
+//				shaderLayer.uniform("texSize", (layer.fb.width * layer.scalex).toFloat, (layer.fb.height * layer.scaley).toFloat, 0)
+			layer.fb.bindColorTexture
+			shaderLayer.uniformTexture(layer.fb.colorTexture, "texColor")
 			shaderLayer.uniformMatrix("MVP", mvp)
 			layerRect.draw(gl)
 		}

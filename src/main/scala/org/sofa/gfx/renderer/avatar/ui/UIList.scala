@@ -12,8 +12,8 @@ import org.sofa.gfx.renderer.{Avatar, DefaultAvatar, DefaultAvatarComposed, Avat
 import org.sofa.gfx.surface.event._
 import org.sofa.gfx.renderer.{NoSuchAvatarException}
 
-import org.sofa.gfx.{SGL, ShaderProgram}//, Camera, VertexArray, Texture, HemisphereLight, ResourceDescriptor, Libraries}
-import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}//, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
+import org.sofa.gfx.{SGL, ShaderProgram}
+import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}
 
 import org.sofa.Timer
 
@@ -463,7 +463,11 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 		val ratiohw = toSpace.sizey / toSpace.sizex
 		
 		self.screen.space.translate(-1, 1, 0)
-		self.screen.space.scale(2, -2 / ratiohw, 1)
+		self.screen.space.scale(2, (-2 / ratiohw), 1)
+
+		// Account for the switch from real number sizes to integer pixels of the layer.
+
+		self.screen.space.scale(self.layer.scalex, self.layer.scaley, 1)
 //println("%s.subSpaceLayer(%f, %f)".format(self.name, 1.0, ratiohw))
 	}
 }

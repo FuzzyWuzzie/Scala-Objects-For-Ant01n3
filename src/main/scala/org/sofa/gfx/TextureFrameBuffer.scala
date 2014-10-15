@@ -61,6 +61,9 @@ class TextureFramebuffer(gl:SGL, val width:Int, val height:Int, val useDepth:Boo
         }
     }
 
+    /** True if multisampling is enabled and available. */
+    def isMultiSampled:Boolean = (multiSample > 1 && gl.hasTexImage2DMultisample)
+
     /** Bind a new frame buffer that render in a texture. Set the viewport of the size of the texture. */
     def bind() {
     	if(TextureFramebuffer.currentlyBound ne this) {

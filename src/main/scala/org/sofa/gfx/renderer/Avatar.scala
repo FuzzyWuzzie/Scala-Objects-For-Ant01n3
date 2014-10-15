@@ -21,21 +21,31 @@ case class NoSuchAvatarException(msg:String) extends Exception(msg)
 case class NoSuchAvatarStateException(state:AvatarState) extends Exception(state.toString)
 
 
+/** Represents the layer framebuffer / bitmap where the avatar may be rendered 
+  * so that the layer is used instead of redrawing the avatar constantly.
+  * @param fb The framebuffer object.
+  * @param scalex The scaling factor to pass from the avatar width and
+           the integer width in pixels of the framebuffer.
+  * @param scaley Same as scalex for the avatar and framebuffer height. */
+case class AvatarLayer(fb:TextureFramebuffer, scalex:Double, scaley:Double) {}
+
+
 /** Graphical representation of an actor in the renderer.
   *
   * Avatars have a name (a path) that identify them uniquely in the hierarchy of
   * avatars. They also know the screen they are attached to actually.
   *
-  * Avatars are, containers for other avatars. This forms a hierarchy of
+  * Avatars are containers for other avatars. This forms a hierarchy of
   * nested graphical elements.
   *
-  * Avatars also maintain a set of "acquaintances" that is actor refs where
+  * Avatars also maintain a set of "acquaintances", actor refs where
   * they can directly send events when interacted upon.
   *
   * Avatars also define their position and size as an [[AvatarSpace]] that can
   * be specific to each avatar. This space both defines the size and position
-  * of the avatar inside its parent, and a "sub-space" for sub-avatars. It can
-  * receive "animate()" calls, and is therefore able to layout sub-avatars.
+  * of the avatar inside its parent, and a "sub-space" for sub-avatars. Both
+  * spaces can be the same. It can receive "animate()" calls, and is therefore
+  * able to layout sub-avatars.
   *
   * Finally, avatars also define an [[AvatarRender]] object that is in charge of
   * representing the avatar on screen.
@@ -86,7 +96,7 @@ abstract class Avatar(
 	var hasLayer:Boolean = false
 
 	/** The optionnal render layer. See `hasLayer`. */
-	var layer:TextureFramebuffer = null
+	var layer:AvatarLayer = null
 
 // Access to components
 

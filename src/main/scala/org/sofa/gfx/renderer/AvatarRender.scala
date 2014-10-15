@@ -57,32 +57,63 @@ trait AvatarRender {
 	def pushLayer() {
 		if(self.hasLayer) {
 			if(self.layer eq null) {
-				val space  = self.space
-				val dpc    = screen.dpc
-				val s1cm   = space.scale1cm
-				val width  = ceil((space.subSpace.sizex / s1cm) * dpc).toInt	// make it larger of one 
-				val height = ceil((space.subSpace.sizey / s1cm) * dpc).toInt	// pixel if needed.
-				self.layer = new TextureFramebuffer(screen.gl, width, height, true, screen.surface.multiSampling)
+				val space    = self.space
+				val dpc      = screen.dpc
+				val s1cm     = space.scale1cm
+				val width    = (space.subSpace.sizex / s1cm) * dpc
+				val height   = (space.subSpace.sizey / s1cm) * dpc
+				val widthPx  = ceil(width).toInt
+				val heightPx = ceil(height).toInt
+				
+				self.layer = new AvatarLayer(new TextureFramebuffer(screen.gl, widthPx, heightPx, true, screen.surface.multiSampling),
+									widthPx/width, heightPx/height)
+
+				println("* %s fb fpx(%f, %f) -> px(%d, %d) -> factor(%f, %f)".format(self.name, width, height, widthPx, heightPx, self.layer.scalex, self.layer.scaley))
 			}
 			
 			val space  = screen.space
 			val pixels = screen.pixelSpace
-			val layer  = self.layer
+			val fb     = self.layer.fb
 			
+			// XXX Problem :
+			//
+			// we go from a space with (w,h) size in real numbers to a buffer
+			// with (wpx, hpx) size in integer pixels. To find the size in pixels,
+			// we use the dpc of the screen and the size in cm of the avatar.
+			//
+			// Naturally converting reals to integers will introduce a rounding
+			// error. We ensure with a "ceil" that the size in pixels is always
+			// larger.
+			//
+			// Now, how do we handle the fact we draw on a slightly larger area ?
+			//
+			// Proposition 1:
+			//	Introduce a scaling in the "space" from the real size to the new size
+			//  to reduce the drawing space.
+			//  Then when drawing the quad that represent the avatar, augment it by
+			//  the same scale factors..
+
 			space.push
 			space.pushProjection
-			space.pushViewport(layer.width, layer.height)
+			space.pushViewport(fb.width, fb.height)
 			space.projectionIdentity
 			space.viewIdentity
 
+//println("** pushlayer (%f, %f)".format(1.0/self.layer.scalex, 1.0/self.layer.scaley))
+			//space.scale(1.0/self.layer.scalex, 1.0/self.layer.scaley, 1)
+
+			
 			pixels.push
 			pixels.pushProjection
-			pixels.pushViewport(layer.width, layer.height)
+			pixels.pushViewport(fb.width, fb.height)
 			pixels.orthographicPixels()
 			pixels.viewIdentity
 
 			self.space.subSpaceLayer
-			layer.bind
+			fb.bind
+//			screen.gl.clearColor(Rgba.None)
+//			screen.gl.clearColor(Rgba.Green)
+//			screen.gl.clear(screen.gl.COLOR_BUFFER_BIT)
 		} 
 	}
 
@@ -100,7 +131,7 @@ trait AvatarRender {
 			space.popProjection
 			space.pop
 
-			self.layer.unbind
+			self.layer.fb.unbind
 			screen.gl.viewport(0, 0, space.viewport(0).toInt, space.viewport(1).toInt)
 		}
 	}
@@ -109,7 +140,7 @@ trait AvatarRender {
 	  * See [[Avatar]] `hasLayer`. */
 	def disposeLayer() {
 		if(self.layer ne null) {
-			self.layer.dispose
+			self.layer.fb.dispose
 			self.layer = null
 		}
 	}

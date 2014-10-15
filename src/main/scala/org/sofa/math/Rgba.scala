@@ -23,6 +23,7 @@ object Rgba {
     final val Grey70  = new Rgba(0.7, 0.7, 0.7, 1)
     final val Grey80  = new Rgba(0.8, 0.8, 0.8, 1)
     final val Grey90  = new Rgba(0.9, 0.9, 0.9, 1)
+    final val None    = new Rgba(0, 0, 0, 0)
 
     def apply(from:Rgba):Rgba = new Rgba(from.red, from.green, from.blue, from.alpha)
 
@@ -205,9 +206,30 @@ class Rgba(
 		if(alpha > 1) alpha = 1.0 else if(alpha < 0) alpha = 0.0
 	}
 
-	// def mixWith(other:Rgva, factor:Double) {
-	//		
-	// }
+	/** Convert this color to its HSV representation. The hue is in radians, the
+	  * saturation and value are between 0 and 1. The returned triplet is in this
+	  * order (hue, saturation, value). */
+	def toHSV:(Double,Double,Double) = {
+		val cmax = max(red, max(green, blue))
+		val cmin = min(red, min(green, blue))
+		val delta = cmax - cmin
+		
+		if(delta != 0) {
+			val saturation = if(delta == 0) 0 else delta / cmax
+			val value = cmax
+			val hue = if(cmax == red) {
+				(Pi/3.0) * (((green - blue) / delta) % 6) 
+			} else if(cmax == green) {
+				(Pi/3.0) * ((blue - red) / delta + 2)
+			} else {
+				(Pi/3.0) * ((red - green) / delta + 4)
+			}
+
+			(hue, saturation, value)
+		} else {
+			(0.0, 0.0, red) // white, grey or black, all components the same value.
+		}
+	}
 
 	override def toString():String = "RGBA[%.3f %.3f %.3f %.3f]".format(red, green, blue, alpha)
 }
