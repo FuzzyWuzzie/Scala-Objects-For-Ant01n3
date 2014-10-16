@@ -4,9 +4,10 @@
 
 UI
 
-0. dirtyRender & dirtyPosition
+0. A layer in UIList that allows to scroll easily.
+1. dirtyRender & dirtyPosition
     - Make this more general in Avatars ?
-1. Display Lists
+2. Display Lists
 
 Game
 

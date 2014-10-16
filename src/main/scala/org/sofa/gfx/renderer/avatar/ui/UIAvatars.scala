@@ -391,16 +391,16 @@ trait UIrenderUtils {
 		def updateSpace(mvp:Matrix4, x:Double, y:Double, width:Double, height:Double) {
 			this.mvp.copy(mvp)
 			this.mvp.translate(x, y, 0)
+			
 			// Account for the fact the layer pixels are integers, but the area
-			// inside it is smaller (the correct real size).
+			// inside it is smaller (the correct real size). Therefore we must enlarge
+			// the layer a bit by the factors stored inside the layer. As we are in
+			// a coordinate system where the upper-left corner is the origin, his works.
+			
 			this.mvp.scale(width * layer.scalex, height * layer.scaley, 1)
-//			this.mvp.scale(width, height, 1)
-//println("** layerDP (%f, %f)".format(width * layer.scalex, height * layer.scaley))
 		}
 		def render(gl:SGL) {
 			shaderLayer.use
-//			if(layer.fb.isMultiSampled)
-//				shaderLayer.uniform("texSize", (layer.fb.width * layer.scalex).toFloat, (layer.fb.height * layer.scaley).toFloat, 0)
 			layer.fb.bindColorTexture
 			shaderLayer.uniformTexture(layer.fb.colorTexture, "texColor")
 			shaderLayer.uniformMatrix("MVP", mvp)

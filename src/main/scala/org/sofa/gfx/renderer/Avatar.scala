@@ -23,6 +23,20 @@ case class NoSuchAvatarStateException(state:AvatarState) extends Exception(state
 
 /** Represents the layer framebuffer / bitmap where the avatar may be rendered 
   * so that the layer is used instead of redrawing the avatar constantly.
+  *
+  * Keep in mind that avatars have a tri-dimensional size in real numbers.
+  * The layer is a frame-buffer in two dimensions with integer (pixel)
+  * size.
+  *
+  * Often the X and Y axis are used to find the size of the framebuffer using
+  * dpc. Most of the time the size is rounded to the closest larger integer value (ceil),
+  * meaning that the size of the layer is alway the same or larger. The scaling
+  * factors to pass from the original size to the size of the frame-buffer are
+  * stored in `scalex` and `scaley`. These scales are not directly factors from
+  * the real size (in whatever unit it is) toward pixels, it is a ratio from the size
+  * to another size (in the same unknown units) that represent the enlarged version of
+  * the avatar to fit the new frame-buffer.
+  *
   * @param fb The framebuffer object.
   * @param scalex The scaling factor to pass from the avatar width and
            the integer width in pixels of the framebuffer.

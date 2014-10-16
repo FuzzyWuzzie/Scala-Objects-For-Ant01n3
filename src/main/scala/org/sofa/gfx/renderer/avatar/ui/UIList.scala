@@ -452,7 +452,6 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 
  		space.push
  		space.translate(thisSpace.posx, thisSpace.posy, 0)
-//println("%s.pushSubSpace(translate(%f, %f))".format(self.name, thisSpace.posx, thisSpace.posy))
 	}
 
 	override def popSubSpace() {
@@ -466,8 +465,9 @@ class UIAvatarSpaceListItem(avatar:Avatar) extends UIAvatarSpace(avatar) {
 		self.screen.space.scale(2, (-2 / ratiohw), 1)
 
 		// Account for the switch from real number sizes to integer pixels of the layer.
+		// We ensure the area is a little smaller than the normal area by factors given
+		// in the layer (factors allowing to pass from real size to integer pixel size).
 
 		self.screen.space.scale(self.layer.scalex, self.layer.scaley, 1)
-//println("%s.subSpaceLayer(%f, %f)".format(self.name, 1.0, ratiohw))
 	}
 }
