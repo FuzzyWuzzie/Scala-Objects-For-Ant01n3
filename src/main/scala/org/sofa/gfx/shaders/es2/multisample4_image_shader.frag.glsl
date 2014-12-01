@@ -7,7 +7,7 @@ uniform sampler2DMS texColor;
 
 void main(void) {
 	ivec2 s = textureSize(texColor);	// integral texture size, often we use only a smaller part of the framebuffer.
-	ivec2 p = ivec2(vTexCoords.x * (s.x), vTexCoords.y * (s.y));
+	ivec2 p = ivec2(vTexCoords.x * s.x, vTexCoords.y * s.y);
 //	ivec2 p = ivec2(vTexCoords.x * (texSize.x - 1), vTexCoords.y * (texSize.y - 1));
 //	ivec2 p = ivec2(gl_FragCoord.xy)	// efficient, but works only for fullscreen
 

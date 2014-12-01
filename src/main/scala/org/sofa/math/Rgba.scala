@@ -232,4 +232,10 @@ class Rgba(
 	}
 
 	override def toString():String = "RGBA[%.3f %.3f %.3f %.3f]".format(red, green, blue, alpha)
+
+	/** Convert the color to its RGB(A) hexadecimal string representation,
+	  * as used by HTML for example. */
+	def toHexString(addAlpha:Boolean = false):String = if(addAlpha)
+         "#%02X%02X%02X%02X".format((red*255).toInt, (green*255).toInt, (blue*255).toInt, (alpha*255).toInt)
+    else "#%02X%02X%02X".format((red*255).toInt, (green*255).toInt, (blue*255).toInt)
 }
