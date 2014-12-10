@@ -506,8 +506,8 @@ trait Mesh {
     	beforeNewVertexArray
 
     	val locs = new Array[Tuple4[String,Int,Int,NioBuffer]](locations.size)
-    	var pos = 0
-    	
+    	var pos  = 0
+
     	locations.foreach { value => 
     		locs(pos) = (value._1, value._2, components(value._1), attribute(value._1))
     		pos += 1

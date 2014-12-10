@@ -175,14 +175,14 @@ trait MultiMesh extends Mesh {
     		vas = new Array[VertexArray](subMeshCount)
 
 		val locs = new Array[Tuple3[String,Int,ArrayBuffer]](locations.size)
-    	var pos = 0
-    	
+    	var pos  = 0
+
     	locations.foreach { value =>
     		val attribute   = value._1
     		val location    = value._2
     		val arrayBuffer = createOrReuseArrayBuffer(gl, attribute, drawMode)
     		locs(pos)       = (attribute, location, arrayBuffer)
-    		pos            += 1
+    		pos += 1
     	}
 
     	vas(subMesh) = new VertexArray(gl, ElementBuffer(gl, elements(subMesh)), locs:_*)
