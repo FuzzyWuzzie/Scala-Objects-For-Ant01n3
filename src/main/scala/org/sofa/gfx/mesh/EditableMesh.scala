@@ -439,7 +439,7 @@ class EditableMesh extends Mesh {
 	
     override def attribute(name:String):FloatBuffer = getNioCache(name)
 
-    override def indices:IntBuffer = {
+    override def elements:IntBuffer = {
 		if(indexBuffer ne null) {
 			if(indexNioCache eq null)
 				indexNioCache = IntBuffer(indexBuffer)
@@ -474,7 +474,7 @@ class EditableMesh extends Mesh {
 
     override def has(name:String):Boolean = buffers.contains(name)
     
-    override def hasIndices:Boolean = (indexBuffer ne null)
+    override def hasElements:Boolean = (indexBuffer ne null)
 }
 
 /** A buffer of elements each made of `components` float values, represents a vertex attribute set.

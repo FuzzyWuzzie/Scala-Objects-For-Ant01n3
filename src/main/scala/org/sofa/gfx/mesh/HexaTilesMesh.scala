@@ -271,9 +271,9 @@ class HexaTilesMesh(
 
     override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.TexCoord.toString) ++ super.attributes
         
-	override def indices:IntBuffer = I
+	override def elements:IntBuffer = I
 		
-	override def hasIndices = true
+	override def hasElements = true
 
     override def components(name:String):Int = {
     	VertexAttribute.withName(name) match {

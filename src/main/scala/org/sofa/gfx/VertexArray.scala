@@ -83,7 +83,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     }
     
     /** Create a vertex array without indices, only made of vertices, colors, normals, etc.
-      * The `data` must be a tuple with four values, first the attribute name, then the attribute index, then
+      * The `attributes` must be a tuple with four values, first the attribute name, then the attribute index, then
       * the attribute number of component per element(for example vertices have 3 components
       * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
@@ -97,7 +97,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     /** Create a vertex array with indices, made of vertices, colors, normals, etc.
       * The `indices` must be a set of integers defining which element to use in the `data`. The
       * use of the indices depends on the way elements are drawn (triangles, lines, etc.). 
-      * The `data` must be a tuple with four values, first the attribute name, then the attribute index, then
+      * The `attributes` must be a tuple with four values, first the attribute name, then the attribute index, then
       * the attribute number of component per element(for example vertices have 3 components
       * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
@@ -109,7 +109,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     }
     
     /** Create a vertex array without indices, only made of vertices, colors, normals, etc.
-      * The `data` must be a tuple with four values, first the attribute name, then the attribute index, then
+      * The `attributes` must be a tuple with four values, first the attribute name, then the attribute index, then
       * the attribute number of component per element(for example vertices have 3 components
       * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
@@ -122,7 +122,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     /** Create a vertex array with indices, made of vertices, colors, normals, etc.
       * The `indices` must be a set of integers defining which element to use in the `data`. The
       * use of the indices depends on the way elements are drawn (triangles, lines, etc.). 
-      * The `data` must be a tuple with four values, first the attribute name, then the attribute index, then
+      * The `attributes` must be a tuple with four values, first the attribute name, then the attribute index, then
       * the attribute number of component per element(for example vertices have 3 components
       * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
@@ -145,13 +145,14 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * The `indices` must be a set of integers defining which element to use in the `data`. The
       * use of the indices depends on the way elements are drawn (triangles, lines, etc.). 
       * The `indices` array may be null if no indices are used.
-      * The `data` must be a tuple with three values, first the attribute name, then the attribute index, then
-      * the attribute data as an array buffer already allocated and bindable. */
-    def this(gl:SGL, indices:ElementBuffer, attributes:(String, Int,ArrayBuffer)*) {
+      * The `attributes` must be a tuple with three values, first the attribute name, then
+      * the attribute index, then the attribute data as an array buffer already allocated
+      * and bindable. */
+    def this(gl:SGL, indices:ElementBuffer, attributes:(String, Int, ArrayBuffer)*) {
     	this(gl)
     	storeData(gl, indices, attributes:_*)
     }
-    
+
     override def dispose() {
         checkId
         buffers.foreach { _._2.dispose }

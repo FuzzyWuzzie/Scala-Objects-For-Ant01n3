@@ -33,7 +33,7 @@ class RendererNewt(factory:AvatarFactory=null) extends Renderer(factory) {
 		// println("GL4bc  %s".format(GLProfile.isAvailable(GLProfile.GL4bc)))
 		// val caps = new GLCapabilities(GLProfile.get(GLProfile.GL3bc))
 
-	    val caps = new GLCapabilities(GLProfile.get(GLProfile.GL2ES2))
+	    val caps = new GLCapabilities(GLProfile.get(GLProfile.GL3))
 
 		caps.setDoubleBuffered(true)
 		caps.setHardwareAccelerated(true)

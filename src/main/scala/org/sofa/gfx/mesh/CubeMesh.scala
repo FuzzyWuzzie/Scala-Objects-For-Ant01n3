@@ -60,7 +60,7 @@ class CubeMesh(val side:Float) extends Mesh {
     	}
     }
 
-    override def indices:IntBuffer = I
+    override def elements:IntBuffer = I
 
     override def attributeCount():Int = 5 + super.attributeCount
 
@@ -89,7 +89,7 @@ class CubeMesh(val side:Float) extends Mesh {
     	}
 	}
 
-    override def hasIndices():Boolean = true
+    override def hasElements():Boolean = true
     
     def drawAs(gl:SGL):Int = gl.TRIANGLES    
 

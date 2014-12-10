@@ -217,7 +217,7 @@ abstract class Renderer(var factory:AvatarFactory = null) extends SurfaceRendere
 	def onStart(rendererActor:ActorRef) {
 		this.rendererActor = rendererActor
 
-		if(controller ne null) controller ! RendererController.Start(rendererActor)
+		if(controller ne null) controller ! RendererController.Started(rendererActor)
 	}
 
 	def onClose(surface:Surface) {

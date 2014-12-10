@@ -142,7 +142,7 @@ As we do not know by advance what we will add style to, we also do not know the 
 FAQ
 ---
 
-* _Why using only classes and no selectors ?_: Because we do not know by advance to wich kinds of elements we will apply styles to.
+* _Why using only classes and no selectors ?_: Because we do not know by advance to wich kinds of elements we will apply styles to. Therefore, creating a class for each element selector is equivalent. The notation in the CSS can stay, but internally, they are the same.
 
 Open questions:
 ---------------
@@ -151,4 +151,4 @@ Open questions:
 * In fact, do we really need the parenting ?
 * The stylable will have to maintain a list of classes. Why not using this list of classes to define the precedence ?
 * Do we introduce the notion of precedence for several style sheets ?
-* How are "events" represented ?
+* The 1M€ question : how are "events" represented ?

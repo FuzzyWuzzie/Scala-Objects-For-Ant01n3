@@ -7,11 +7,6 @@ import org.sofa.nio._
 import org.sofa.gfx._
 import org.sofa.gfx.io.collada.ColladaFile
 
-// import javax.media.opengl._
-// import GL._
-// import GL2._
-// import GL2ES2._
-// import GL3._ 
 import scala.collection.mutable.HashMap
 
 
@@ -92,15 +87,20 @@ object Mesh {
 
 /** A mesh is a set of vertex data.
   * 
-  * A mesh is a set of vertex attribute data. They are roughly composed of one or
-  * more arrays of floats associated with an optionnal set of indices in these
-  * attributes to tell how to draw the data.
+  * A mesh is a set of vertex attribute data (array buffers in the OpenGL terminology).
+  * They are roughly composed of one or more arrays of floats associated with an
+  * optionnal set of indices in these attributes to tell how to draw the data (an element
+  * buffer in OpenGL jargon).
   *
   * The mesh is not usable as is in an OpenGL program, you must transform it into a
-  * [[org.sofa.gfx.VertexArray]]. The mesh acts as a factory to produce vertex arrays. You can create
-  * as many vertex arrays as you need with one mesh. However dynamic meshes, that is
-  * meshes that are able to update their attribute data in time, always remember the
-  * last produced vertex array to allow to update it. */
+  * [[org.sofa.gfx.VertexArray]]. The mesh acts as a factory to produce vertex arrays.
+  * You can create as many vertex arrays as you need with one mesh. However dynamic
+  * meshes, that is meshes that are able to update their attribute data in time,
+  * always remember the last produced vertex array to allow to update this last one
+  * only. 
+  *
+  * Often, a mesh can replace the vertex array to draw a model. In this case use the mesh
+  * to create one vertex array only. This one will be stored and reused. */
 trait Mesh {
 	import VertexAttribute._
 
@@ -180,14 +180,14 @@ trait Mesh {
 		}
 	}
 
-	/** Same role as [[MeshAttribute]] for the index of primitives to draw.
+	/** Same role as [[MeshAttribute]] for the index of elements to draw primitives.
 	  * 
 	  * You are responsible for creating and maintaining an instance of this
 	  * class in sub-classes of [[Mesh]], this cannot be done automatically.
 	  *
 	  * @param primCount the number of primitives.
-	  * @param verticesPerPrim the number of vertices for one primitive. */
-	class MeshIndex(val primCount:Int, val verticesPerPrim:Int) {
+	  * @param verticesPerPrim the number of vertices (or elements) for one primitive. */
+	class MeshElement(val primCount:Int, val verticesPerPrim:Int) {
 		
 		var theData = IntBuffer(primCount * verticesPerPrim)
 
@@ -334,8 +334,9 @@ trait Mesh {
     	}
     }
 
-    /** Indices in the attributes array, draw order. */
-    def indices:IntBuffer = throw new InvalidPrimitiveException("no indices in this mesh")
+    /** Indices of the elements to draw in the attributes array, in draw order.
+      * The indices points at elements in each attribute array. */
+    def elements:IntBuffer = throw new InvalidPrimitiveException("no elements in this mesh")
 
     /** Number of components of the given vertex attribute. */
     def components(name:String):Int = {
@@ -362,8 +363,8 @@ trait Mesh {
     /** True if the vertex attribute whose name is given is defined in this mesh. */
     def has(name:VertexAttribute.Value):Boolean = has(name.toString)
     
-    /** True if the mesh has indices in the vertex attributes to define primitives. */
-    def hasIndices():Boolean = false
+    /** True if the mesh has elements indices in the vertex attributes to define primitives. */
+    def hasElements():Boolean = false
 
     /** How to draw the mesh (as points, lines, lines loops, triangles, etc.).
       * This depends on the way the data is defined. */
@@ -375,7 +376,7 @@ trait Mesh {
     def draw(gl:SGL) {
     	if(va ne null)
     		va.draw(drawAs(gl)) 
-    	else throw new NoVertexArrayException("Mesh: create a vertex array before draw")
+    	else throw new NoVertexArrayException("create a vertex array before draw")
     }
 
     /** Draw the `count` first primitives the last vertex array created. A
@@ -387,7 +388,7 @@ trait Mesh {
     def draw(gl:SGL, count:Int) {
     	if(va ne null)
     		va.draw(drawAs(gl), count * elementsPerPrimitive)
-    	else throw new NoVertexArrayException("Mesh: create a vertex array before draw")
+    	else throw new NoVertexArrayException("create a vertex array before draw")
     }
 
     /** Draw `count` primitives of the last vertex array created starting at `start`. A
@@ -401,7 +402,7 @@ trait Mesh {
     		val epp = elementsPerPrimitive
     		va.draw(drawAs(gl), start * epp, count * epp)
     	} else {
-    		throw new NoVertexArrayException("Mesh: create a vertex array before draw")
+    		throw new NoVertexArrayException("create a vertex array before draw")
     	}
     }
     
@@ -409,7 +410,7 @@ trait Mesh {
     	val attrs = attributes.map { item => (item, components(item)) }
 
     	"mesh(%s, attributes(%d) { %s })".format(
-    		if(hasIndices) "indexed" else "not indexed",
+    		if(hasElements) "elements array" else "no elements array",
     		attributeCount,
     		attrs.mkString(", ")
     	)
@@ -512,8 +513,8 @@ trait Mesh {
     		pos += 1
     	}
     	
-    	if(hasIndices)
-    	     va = new VertexArray(gl, indices, drawMode, locs:_*)
+    	if(hasElements)
+    	     va = new VertexArray(gl, elements, drawMode, locs:_*)
     	else va = new VertexArray(gl, drawMode, locs:_*)
 
     	afterNewVertexArray

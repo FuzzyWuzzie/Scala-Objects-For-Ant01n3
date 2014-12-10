@@ -99,7 +99,7 @@ class RealQuadsMesh(val size:Int) extends Mesh {
 		}
 	}
 
-	override def indices:IntBuffer = I
+	override def elements:IntBuffer = I
 
 	override def attributeCount():Int = 4 + super.attributeCount
 
@@ -130,7 +130,7 @@ class RealQuadsMesh(val size:Int) extends Mesh {
 		}
 	}
 
-    override def hasIndices():Boolean = true
+    override def hasElements():Boolean = true
 
 	def drawAs(gl:SGL):Int = throw new RuntimeException("no more gl.QUADS !!!")//gl.QUADS
 

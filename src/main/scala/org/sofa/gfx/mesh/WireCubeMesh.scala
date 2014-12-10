@@ -30,7 +30,7 @@ class WireCubeMesh(val side:Float) extends Mesh  {
     	}
     }
 
-    override def indices:IntBuffer = I
+    override def elements:IntBuffer = I
 
     override def attributeCount() = 2 + super.attributeCount
 
@@ -52,7 +52,7 @@ class WireCubeMesh(val side:Float) extends Mesh  {
     	}    	
     }
 
-    override def hasIndices():Boolean = true
+    override def hasElements():Boolean = true
 
     def drawAs(gl:SGL):Int = gl.LINES    
 

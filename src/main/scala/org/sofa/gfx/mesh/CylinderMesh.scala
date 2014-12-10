@@ -159,7 +159,7 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
     	}
     }
     
-    override def indices:IntBuffer = I
+    override def elements:IntBuffer = I
 
     override def attributeCount():Int = 6 + super.attributeCount
 
@@ -194,7 +194,7 @@ class CylinderMesh(val radius:Float, height:Float, val segments:Int, val section
     	}
     }
     
-    override def hasIndices = true
+    override def hasElements = true
 
     def drawAs(gl:SGL):Int = gl.TRIANGLES
 

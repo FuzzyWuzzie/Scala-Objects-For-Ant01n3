@@ -29,7 +29,7 @@ import org.sofa.gfx.akka.SurfaceExecutorService
 /** Represents the messages actors controling the renderer can receive from it. */
 object RendererController {
 	/** Sent when the renderer started and is ready to render. */
-	case class Start(rendererActor:ActorRef)
+	case class Started(rendererActor:ActorRef)
 
 	/** Request to exit the application: a window or screen is closed by the user. */
 	case class Closed()

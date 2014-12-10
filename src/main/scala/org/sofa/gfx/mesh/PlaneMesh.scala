@@ -111,9 +111,9 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     	}    	
     }
 
-    override def hasIndices():Boolean = true
+    override def hasElements():Boolean = true
     
-    override def indices:IntBuffer = I
+    override def elements:IntBuffer = I
     
     def drawAs(gl:SGL):Int = gl.TRIANGLES
 

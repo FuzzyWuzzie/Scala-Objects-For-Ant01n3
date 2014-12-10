@@ -83,5 +83,5 @@ class PieMesh(val segments:Int) extends Mesh {
     	}
     }
 
-    override def hasIndices():Boolean = false
+    override def hasElements():Boolean = false
 }

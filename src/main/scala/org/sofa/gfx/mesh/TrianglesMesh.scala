@@ -29,7 +29,7 @@ class TrianglesMesh(val size:Int) extends Mesh {
 	protected[this] lazy val T:MeshAttribute = addMeshAttribute(VertexAttribute.TexCoord, 2)
 
 	/** The mutable set of elements to draw. */
-	protected[this] lazy val I:MeshIndex = new MeshIndex(size, 3)
+	protected[this] lazy val I:MeshElement = new MeshElement(size, 3)
     	
 	// -- Mesh interface -----------------------------------------------------
 
@@ -39,9 +39,9 @@ class TrianglesMesh(val size:Int) extends Mesh {
 
 	def drawAs(gl:SGL):Int = gl.TRIANGLES
 
-	override def indices:IntBuffer = I.data
+	override def elements:IntBuffer = I.data
 
-    override def hasIndices():Boolean = true
+    override def hasElements():Boolean = true
 
 	// -- Constructive interface ---------------------------------------------------
 
