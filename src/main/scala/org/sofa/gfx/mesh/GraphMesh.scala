@@ -50,33 +50,46 @@ class GraphMesh(val nodeCount:Int, val edgeCount:Int) extends MultiMesh {
 
     // -- Constructive / Update interface --------------------------------------
 
-    def node(n:Int, x:Float, y:Float, z:Float) {
-    	val v = n * 3
+    def vertex(v:Int, x:Float, y:Float, z:Float) {
+    	val i = v * 3
     	val data = V.theData
 
-    	data(v+0) = x
-    	data(v+1) = y
-    	data(v+2) = z
+    	data(i+0) = x
+    	data(i+1) = y
+    	data(i+2) = z
 
-    	nodes.theData(n) = n
+		if(v   < V.beg) V.beg = v
+		if(v+1 > V.end) V.end = v + 1
+	}
 
-    }
-
-    def nodeColor(n:Int, rgba:Rgba) {
-    	val v = n * 3
+    def color(c:Int, rgba:Rgba) {
+    	val i = c * 3
     	val data = C.theData
 
-    	data(v+0) = rgba.red.toFloat
-    	data(v+1) = rgba.green.toFloat
-    	data(v+2) = rgba.blue.toFloat
-    	data(v+3) = rgba.alpha.toFloat
+    	data(i+0) = rgba.red.toFloat
+    	data(i+1) = rgba.green.toFloat
+    	data(i+2) = rgba.blue.toFloat
+    	data(i+3) = rgba.alpha.toFloat
+
+    	if(c   < C.beg) C.beg = c
+    	if(c+1 > C.end) C.end = c + 1
     }
 
-    def edge(e:Int, from:Int, to:Int) {
+	def node(n:Int, vertex:Int) {
+    	nodes.theData(n) = vertex
+
+    	if(n   < nodes.beg) nodes.beg = n
+    	if(n+1 > nodes.end) nodes.end = n + 1
+    }
+
+    def edge(e:Int, vertexFrom:Int, vertexTo:Int) {
     	val i = e * 2
 
-    	edges.theData(i+0) = from
-    	edges.theData(i+1) = to
+    	edges.theData(i+0) = vertexFrom
+    	edges.theData(i+1) = vertexTo
+
+    	if(e   < edges.beg) edges.beg = e
+    	if(e+1 > edges.end) edges.end = e + 1
     }
 
 	// -- Dynamic updating -----------------------------------------------------
