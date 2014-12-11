@@ -4,9 +4,12 @@ import java.nio.{Buffer, ByteBuffer=>NioByteBuffer, FloatBuffer=>NioFloatBuffer,
 import org.sofa.nio._
 import org.sofa.math.Rgba
 
-/** Wrapper around OpenGL to provide basic functions from 3.1 an ES2.
+/** Wrapper around OpenGL to provide basic functions from 3.1 an ES 3.
   * 
-  * The basic idea is to provide enough OpenGL to code both on the desktop and on Android. */
+  * The basic idea is to provide enough OpenGL to code both on the desktop and on Android. 
+  *
+  * Only one version is provided ! This is intentional the idea is to stay at a level where
+  * mainstream hardware is supported. Actually, OpenGL 3.1 and ES 3.0. */
 abstract class SGL {
 // Awful constants
     

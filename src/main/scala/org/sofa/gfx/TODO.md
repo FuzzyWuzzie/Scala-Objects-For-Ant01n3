@@ -55,8 +55,13 @@ Game
 
 ## Mesh
 
-* Update mesh and meshes to be generic on attributes -> example in TrianglesMesh.
-    - update the updateVertexArray() methods to take VertexAttributes or Strings as parameters for attribute names.
+* Mesh was always thought as a factory to produce vertex arrays. Two problems :
+    - With dynamic meshes, come the idea that the last produced vertex array can be updated with the changes occuring in the mesh. This is quite confusing.
+    - Meshes copy their data from Nio buffers to OpenGL buffers. However OpenGL allows to map a buffer to avoid copy, it would be far more efficient if the mesh buffers were maps from OpenGL buffers. -> this seems to be usable only on OpenGL ES 3.0. Therefore this has to be optionnal.
+* Wouldn't it be better if Mesh was tied to a hidden vertex array ?
+    - It would have draw methods.
+    - It would handle efficiently its data internally when possible.
+    - It would allocate its own vertex array when needed.
 
 ## Behaviors/Armature
 

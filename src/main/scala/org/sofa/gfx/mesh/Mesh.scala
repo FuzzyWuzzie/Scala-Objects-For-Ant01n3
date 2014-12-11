@@ -87,20 +87,35 @@ object Mesh {
 
 /** A mesh is a set of vertex data.
   * 
-  * A mesh is a set of vertex attribute data (array buffers in the OpenGL terminology).
-  * They are roughly composed of one or more arrays of floats associated with an
-  * optionnal set of indices in these attributes to tell how to draw the data (an element
-  * buffer in OpenGL jargon).
+  * A mesh is a set of vertex attribute data (array buffers or vertex buffers in
+  * the OpenGL terminology). They are roughly composed of one or more arrays of
+  * floats associated with an optionnal set of indices in these attributes to
+  * tell how to draw the data (an element buffer in OpenGL jargon).
   *
   * The mesh is not usable as is in an OpenGL program, you must transform it into a
-  * [[org.sofa.gfx.VertexArray]]. The mesh acts as a factory to produce vertex arrays.
-  * You can create as many vertex arrays as you need with one mesh. However dynamic
-  * meshes, that is meshes that are able to update their attribute data in time,
-  * always remember the last produced vertex array to allow to update this last one
-  * only. 
+  * [[org.sofa.gfx.VertexArray]]. A vertex array in the OpenGL langua is a set of
+  * array buffers and an optional element buffer with all the settings needed to
+  * render them as vertex data.
   *
-  * Often, a mesh can replace the vertex array to draw a model. In this case use the mesh
-  * to create one vertex array only. This one will be stored and reused. */
+  * The mesh acts as a factory to produce vertex arrays. You can create as many
+  * vertex arrays as you need with one mesh (TODO: actually but this could change in the
+  * future with the idea that a mesh is tied to its vertex array). However dynamic
+  * meshes, that is meshes that are able to update their attribute data at any time,
+  * always remember the last produced vertex array to allow to update this last one
+  * only. It is better therefore to allocate only one vertex array with the mesh.
+  *
+  * Most of the time, a mesh can replace the vertex array to draw a model. In this
+  * case use the mesh to create one vertex array only that will be stored in it.
+  * This one will reused if the mesh changes.
+  *
+  * TODO: The arrays stored by the mesh actually are Nio buffers. This means that the mesh
+  * owns its own memory to store vertex and element data, then needs to transfer it
+  * to OpenGL when creating a vertex array or updating it. This is coherent with the
+  * vision of mesh as a factory for vertex arrays. However if a mesh is tied to one 
+  * vertex array only, the internal arrays of the mesh could be mapping of real OpenGL
+  * buffers to avoid copy. This could easily be done by making MeshAttribute and MeshElement
+  * traits and creating concrete classes that either map or store data.
+  */
 trait Mesh {
 	import VertexAttribute._
 
