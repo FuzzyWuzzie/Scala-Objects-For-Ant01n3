@@ -133,6 +133,9 @@ trait MultiMesh extends Mesh {
     /** True if at least one vertex array was created. You can access it using `lastva()`. */
     override def hasva:Boolean = ((vas ne null) && vas.length > 0)
 
+    /** True if the given `subMesh` vertex array has been created. */
+    def hasva(subMesh:Int):Boolean = ((vas ne null) && (vas(subMesh) ne null))
+
     /** Always called before creating a new vertex array for `subMesh`. Hook for sub-classes.
       * The original `beforeNewVertewArray()` is also called. */
     protected def beforeNewVertexArray(subMesh:Int) {}

@@ -70,11 +70,8 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     	attributes.foreach { item =>
     		bufferNames += ((item._1, i))
     		buffers(i) = (item._2, item._3)
-    		if(!gl.isES) {
-    			item._3.bind
-    			item._3.vertexAttrib(item._2, true)
-    			i += 1
-    		}
+    		if(!gl.isES) item._3.vertexAttrib(item._2, true)
+    		i += 1
     	}
     	if(indices ne null) {
     		elements = indices

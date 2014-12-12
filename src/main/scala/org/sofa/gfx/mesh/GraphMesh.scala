@@ -10,9 +10,9 @@ import org.sofa.nio.{IntBuffer}
   * @param maxEdges The max number of edges. */
 class GraphMesh(val maxNodes:Int, val maxEdges:Int) extends MultiMesh {
 
-	protected[this] var nodeCount = 0
+	var nodeCount = 0
 
-	protected[this] var edgeCount = 0
+	var edgeCount = 0
 
 	/** The mutable set of coordinates. */
 	protected[this] val V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)
@@ -176,12 +176,12 @@ class GraphMesh(val maxNodes:Int, val maxEdges:Int) extends MultiMesh {
 	  * avoid moving data between the CPU and GPU. You may give a boolean for each buffer in the vertex array
 	  * that you want to update or not. */
 	def update(gl:SGL, updateVertices:Boolean=false, updateColors:Boolean=false, updateNodes:Boolean=false, updateEdges:Boolean=false) {
-		if(va ne null) {
-			if(updateVertices) V.update(va)
-			if(updateColors)   C.update(va)
-			if(updateNodes)    nodes.update(va)
-			if(updateEdges)    edges.update(va)
+		if(hasva) {
+			if(updateVertices) V.update(vas(0))
+			if(updateColors)   C.update(vas(0))
 		}
+		if(hasva(0)  && updateNodes) nodes.update(vas(0))
+		if(hasva(1) && updateEdges) edges.update(vas(1))
 	}
 
 	override def toString():String = {
