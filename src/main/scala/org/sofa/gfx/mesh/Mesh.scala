@@ -450,81 +450,84 @@ trait Mesh {
     /** Always called after creating a new vertex array. Hook for sub-classes. */
     protected def afterNewVertexArray() {}
 
-    /** Create a vertex array for the mesh. This method will create the vertex array with
-      * all the vertex attributes present in the mesh. Each one will have a location starting
-      * from 0. The order follows the one given by the list of attributes given by the
-      * `attributes()` method.
-      * 
-      * This is useful only for shaders having the possibility to associate locations
-      * with a vertex attribute (having the 'layout' qualifier (e.g. layout(location=1)),
-      * that is under OpenGL 3). The draw mode for the array buffers is STATIC_DRAW. 
-	  *
-      * The last created vertex array is remembered by the mesh and can be accessed later,
-      * and for some meshes updated from new data if the mesh is dynamic. */
-    def newVertexArray(gl:SGL):VertexArray = {
-    	var locs = new Array[(String,Int)](attributeCount)
-    	var i    = 0
+   //  /** Create a vertex array for the mesh. This method will create the vertex array with
+   //    * all the vertex attributes present in the mesh. Each one will have a location starting
+   //    * from 0. The order follows the one given by the list of attributes given by the
+   //    * `attributes()` method.
+   //    * 
+   //    * This is useful only for shaders having the possibility to associate locations
+   //    * with a vertex attribute (having the 'layout' qualifier (e.g. layout(location=1)),
+   //    * that is under OpenGL 3). The draw mode for the array buffers is STATIC_DRAW. 
+	  // *
+   //    * The last created vertex array is remembered by the mesh and can be accessed later,
+   //    * and for some meshes updated from new data if the mesh is dynamic. */
+   //  def newVertexArray(gl:SGL, shader:ShaderProgram):VertexArray = {
+   //  	var locs = new Array[(String,Int)](attributeCount)
+   //  	var i    = 0
     	
-    	attributes.foreach { name => locs(i) = (name, i); i+= 1 }
-    	newVertexArray(gl, locs:_*)
-    }
+   //  	attributes.foreach { name => locs(i) = (name, i); i+= 1 }
+   //  	newVertexArray(gl, shader, locs:_*)
+   //  }
     
-    /** Create a vertex array from the given map of attribute names / locations.
-      * The draw mode for the array buffers is STATIC_DRAW.
-      * 
-      * Example usage: newVertexArray(gl, ("vertices", 0), ("normals", 1))
-      * 
-      * Attribute names are case insensitive.
-	  *
-      * The last created vertex array is remembered by the mesh and can be accessed later,
-      * and for some meshes updated from new data if the mesh is dynamic. */
-    def newVertexArray(gl:SGL, locations:Tuple2[String,Int]*):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, locations:_*)
+   //  /** Create a vertex array from the given map of attribute names / locations.
+   //    * The draw mode for the array buffers is STATIC_DRAW.
+   //    * 
+   //    * Example usage: newVertexArray(gl, ("vertices", 0), ("normals", 1))
+   //    * 
+   //    * Attribute names are case insensitive.
+	  // *
+   //    * The last created vertex array is remembered by the mesh and can be accessed later,
+   //    * and for some meshes updated from new data if the mesh is dynamic. */
+   //  def newVertexArray(gl:SGL, shader:ShaderProgram, locations:Tuple2[String,Int]*):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, shader, locations:_*)
 
-    /** Create a vertex array from the given map of attribute name / shader attribute names.
+    /** Create a vertex array from the given `locations` map of attribute name -> shader attribute names.
       * The given `shader` is directly used to query the position of attribute names.
       * The draw mode for the array buffers is STATIC_DRAW.
       * 
-      * Example usage: newVertexArray(gl, gl.DYNAMIC_DRAW, myShader, ("vertices", "V"), ("normals", "N"))
-      * If the shader contains input attribute named V and N.
+      * Example usage: 
+      *
+      *    newVertexArray(gl, myShader, "vertices" -> "V", "normals" -> "N")
+      * 
+      * If the shader contains input attribute named V and N. Example 2:
+      *    
+      *    import VertexAttribute._
+      *    newVertexArray(gl, myShader, Vertex -> "V", Normal -> "N")
 	  *
       * The last created vertex array is remembered by the mesh and can be accessed later,
       * and for some meshes updated from new data if the mesh is dynamic. */
     def newVertexArray(gl:SGL, shader:ShaderProgram, locations:Tuple2[String,String]*):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, shader, locations:_*)
 
-    /** Create a vertex array from the given map of attribute name / shader attribute names.
+    /** Create a vertex array from the given `locations` map of attribute name -> shader attribute names.
       * The given `shader` is directly used to query the position of attribute names.
-      * You can specify the draw mode for the array buffers, either STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW.
+      * You can specify the `drawMode` for the array buffers, either STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW.
       * 
-      * Example usage: newVertexArray(gl, gl.DYNAMIC_DRAW, myShader, ("vertices", "V"), ("normals", "N"))
-      * If the shader contains input attribute named V and N.
+      * Example usage: 
+      *
+      *    newVertexArray(gl, gl.STATIC_DRAW, myShader, "vertices" -> "V", "normals" -> "N")
+      * 
+      * If the shader contains input attribute named V and N. Example 2:
+      *    
+      *    import VertexAttribute._
+      *    newVertexArray(gl, gl.STATIC_DRAW, myShader, Vertex -> "V", Normal -> "N")
 	  *
       * The last created vertex array is remembered by the mesh and can be accessed later,
       * and for some meshes updated from new data if the mesh is dynamic. */
     def newVertexArray(gl:SGL, drawMode:Int, shader:ShaderProgram, locations:Tuple2[String,String]*):VertexArray = {
-    	val locs = new Array[Tuple2[String,Int]](locations.length)
-    	var i = 0
-    	while(i < locations.length) {
-    		locs(i) = (locations(i)._1, shader.getAttribLocation(locations(i)._2))
-    		i += 1
-    	}
-    	newVertexArray(gl, drawMode, locs:_*)
-    }
+    	// val locs = new Array[Tuple2[String,Int]](locations.length)
+    	// var i = 0
+    	// while(i < locations.length) {
+    	// 	locs(i) = (locations(i)._1, shader.getAttribLocation(locations(i)._2))
+    	// 	i += 1
+    	// }
+//    	newVertexArray(gl, drawMode, shader, locs:_*)
 
-    /** Create a vertex array from the given map of attribute names / locations.
-      * You can specify the draw mode for the array buffers, either STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW.
-      * 
-      * Example usage: newVertexArray(gl, gl.DYNAMIC_DRAW, ("vertices", 0), ("normals", 1))
-	  *
-      * The last created vertex array is remembered by the mesh and can be accessed later,
-      * and for some meshes updated from new data if the mesh is dynamic. */
-    def newVertexArray(gl:SGL, drawMode:Int, locations:Tuple2[String,Int]*):VertexArray = {
     	beforeNewVertexArray
 
     	val locs = new Array[Tuple4[String,Int,Int,NioBuffer]](locations.size)
     	var pos  = 0
 
     	locations.foreach { value => 
-    		locs(pos) = (value._1, value._2, components(value._1), attribute(value._1))
+    		locs(pos) = (value._1, shader.getAttribLocation(value._2), components(value._1), attribute(value._1))
     		pos += 1
     	}
     	
@@ -536,4 +539,31 @@ trait Mesh {
 
     	va
     }
+
+   //  /** Create a vertex array from the given map of attribute names / locations.
+   //    * You can specify the draw mode for the array buffers, either STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW.
+   //    * 
+   //    * Example usage: newVertexArray(gl, gl.DYNAMIC_DRAW, ("vertices", 0), ("normals", 1))
+	  // *
+   //    * The last created vertex array is remembered by the mesh and can be accessed later,
+   //    * and for some meshes updated from new data if the mesh is dynamic. */
+   //  def newVertexArray(gl:SGL, drawMode:Int, shader:ShaderProgram, locations:Tuple2[String,Int]*):VertexArray = {
+    	// beforeNewVertexArray
+
+    	// val locs = new Array[Tuple4[String,Int,Int,NioBuffer]](locations.size)
+    	// var pos  = 0
+
+    	// locations.foreach { value => 
+    	// 	locs(pos) = (value._1, value._2, components(value._1), attribute(value._1))
+    	// 	pos += 1
+    	// }
+    	
+    	// if(hasElements)
+    	//      va = new VertexArray(gl, elements, drawMode, locs:_*)
+    	// else va = new VertexArray(gl, drawMode, locs:_*)
+
+    	// afterNewVertexArray
+
+    	// va
+//    }
 }

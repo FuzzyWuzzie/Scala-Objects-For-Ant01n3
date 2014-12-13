@@ -233,7 +233,7 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
     import gl._
 
     /** Kind of shader, vertex, fragment or geometry ? */
-    protected val shaderType:Int
+    val shaderType:Int
     
     /** Upload the source, compile it and check errors. */
     protected def init() {
@@ -291,13 +291,15 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
     		Console.err.print("          |   %s".format(source(line+1)))    	
     }
 
-    def shaderTypeString:String
+    def typeString:String
+
+    override def toString():String = "%s(%s)".format(typeString, name)
 }
 
 
 /** A vertex shader/ */
 class VertexShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl, name, source) {
-    protected val shaderType = gl.VERTEX_SHADER
+    val shaderType = gl.VERTEX_SHADER
     
     init
     
@@ -307,13 +309,13 @@ class VertexShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl,
     /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.VERTEX_SHADER))
 
-    def shaderTypeString:String = "vertex"
+    def typeString:String = "vertex"
 }
 
 
 /** A fragment shader. */
 class FragmentShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl, name, source) {
-    protected val shaderType = gl.FRAGMENT_SHADER
+    val shaderType = gl.FRAGMENT_SHADER
     
     init
     
@@ -323,13 +325,13 @@ class FragmentShader(gl:SGL, name:String, source:Array[String]) extends Shader(g
     /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.FRAGMENT_SHADER))
 
-    def shaderTypeString:String = "fragment"
+    def typeString:String = "fragment"
 }
 
 
 /** A geometry shader. */
 class GeometryShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl, name, source) {
-	protected val shaderType = gl.GEOMETRY_SHADER
+	val shaderType = gl.GEOMETRY_SHADER
 
 	init 
 
@@ -339,7 +341,7 @@ class GeometryShader(gl:SGL, name:String, source:Array[String]) extends Shader(g
     /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.GEOMETRY_SHADER))
 
-    def shaderTypeString:String = "geometry"
+    def typeString:String = "geometry"
 }
 
 
@@ -360,7 +362,7 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     
     protected def init() {
         super.init(createProgram)
-        shaders.foreach { shader => attachShader(oid, shader.id); println("attaching shader %s:%s".format(shader.name, shader.shaderTypeString)) }
+        shaders.foreach { shader => attachShader(oid, shader.id) }
         linkProgram(oid)
         
         if(! getProgramLinkStatus(oid)) {
