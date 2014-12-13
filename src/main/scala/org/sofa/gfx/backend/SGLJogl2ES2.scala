@@ -19,7 +19,7 @@ import GL3._
   * The goal is to provide an easy access to some OpenGL methods, facilitating the use of NIO
   * buffers for example.
   */
-class SGLJogl2ES2(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
+class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends SGL {
 	private[this] val ib1 = NioIntBuffer.allocate(1)
 	
 	import gl._
@@ -168,7 +168,7 @@ class SGLJogl2ES2(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL
 	def texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage2D(target, level ,internalFormat, width, height, border, format, theType, if(data ne null) data.buffer.asInstanceOf[java.nio.ByteBuffer] else null)
     def texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, theType:Int, data:ByteBuffer) = glTexImage3D(target, level, internalFormat, width, height, depth, border, format, theType, if(data ne null) data.asInstanceOf[java.nio.ByteBuffer] else null)
     def hasTexImage2DMultisample:Boolean = true
-    def texImage2DMultisample(target:Int, samples:Int, internalFormat:Int, width:Int, height:Int, fixedSampleLocations:Boolean) = glTexImage2DMultisample(target, samples, internalFormat, width, height, fixedSampleLocations)
+    def texImage2DMultisample(target:Int, samples:Int, internalFormat:Int, width:Int, height:Int, fixedSampleLocations:Boolean) = throw new RuntimeException("too bad, no glTexImage2DMultisample in GL ES 2.0") //glTexImage2DMultisample(target, samples, internalFormat, width, height, fixedSampleLocations)
     def generateMipmaps(target:Int) = glGenerateMipmap(target)
     
     def createFramebuffer:AnyRef = {

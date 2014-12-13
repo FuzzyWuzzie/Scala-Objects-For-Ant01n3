@@ -86,6 +86,7 @@ Game
 ## Surface/Renderer
 
 * Allow the renderer to choose if base/high-level events are sent, as in surfaces.
+* Actually the surface newt uses GL2ES2 ... should use GL3 -> bug in VertexArrays -> Bugs in SOFAtest
 
 ## Events
 

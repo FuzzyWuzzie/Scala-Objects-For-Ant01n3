@@ -25,7 +25,9 @@ object Shader {
     val IncludeMatcher = "#include\\s+<([^>]+)>\\s*".r
 
     /** A regular expression that matches the version and catches the number. */
-    val VersionMatcher = """#version\s+([0-9]+)\s*""".r
+    val VersionMatcher = """#version\s+([0-9]+).*\n?""".r
+
+    val VersionMatcher2 = """\s*([0-9]+).*\n?""".r
 
     val AttributeMatcher = """\s*attribute\s+(.+)""".r
 
@@ -72,7 +74,8 @@ object Shader {
         val src = new scala.io.BufferedSource(in)
         val version = gl.ShaderVersion match {
         	case VersionMatcher(number) => number.toInt
-        	case _ => throw new RuntimeException("cannot interpret gl context shader version %s".format(gl.ShaderVersion))
+        	case VersionMatcher2(number) => number.toInt
+        	case s => throw new RuntimeException("cannot interpret gl context shader version string \"%s\"".format(s))
         }
 
         src.getLines.foreach { line =>

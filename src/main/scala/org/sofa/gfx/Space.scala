@@ -245,7 +245,7 @@ trait Space {
       * 
       * This method does not empty the model-view matrix stack. */
     def lookAt(eye:Vector3, focusPoint:Vector3, up:Vector3) {
-        modelview.lookAt(eye, focusPoint, up)
+        modelview.setLookAt(eye, focusPoint, up)
         needRecomputeMVP = true
     }
 

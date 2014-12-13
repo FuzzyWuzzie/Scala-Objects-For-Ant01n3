@@ -66,14 +66,16 @@ class GraphMesh(val maxNodes:Int, val maxEdges:Int) extends MultiMesh {
 		if(v+1 > V.end) V.end = v + 1
 	}
 
-    def color(c:Int, rgba:Rgba) {
-    	val i = c * 3
+    def color(c:Int, rgba:Rgba) { color(c, rgba.red, rgba.green, rgba.blue, rgba.alpha) }
+
+    def color(c:Int, r:Double, g:Double, b:Double, a:Double=1.0) {
+    	val i = c * 4
     	val data = C.theData
 
-    	data(i+0) = rgba.red.toFloat
-    	data(i+1) = rgba.green.toFloat
-    	data(i+2) = rgba.blue.toFloat
-    	data(i+3) = rgba.alpha.toFloat
+    	data(i+0) = r.toFloat
+    	data(i+1) = g.toFloat
+    	data(i+2) = b.toFloat
+    	data(i+3) = a.toFloat
 
     	if(c   < C.beg) C.beg = c
     	if(c+1 > C.end) C.end = c + 1
