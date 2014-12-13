@@ -70,8 +70,7 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
     def size:Int = elementCount
     
     def vertexAttrib(index:Int, enable:Boolean) {
-        checkId
-        bindBuffer(gl.ARRAY_BUFFER, oid)
+    	bind
 //Console.err.println("binding buffer %d vpe, type=%s".format(valuesPerElement, if(glType==gl.FLOAT) "float" else if(glType==gl.UNSIGNED_INT) "int" else "other"))
         vertexAttribPointer(index, valuesPerElement, glType, false, 0, 0)
         if(enable) enableVertexAttribArray(index)
@@ -112,8 +111,7 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
     }
     
     override def dispose() {
-        checkId
-        bindBuffer(gl.ARRAY_BUFFER, null)
+        bind
         deleteBuffer(oid)
         super.dispose
     }

@@ -75,6 +75,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     	}
     	if(indices ne null) {
     		elements = indices
+    		elements.bind
     	}
     	if(!gl.isES) bindVertexArray(null)
     }

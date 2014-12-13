@@ -42,7 +42,7 @@ class RendererNewt(factory:AvatarFactory=null) extends Renderer(factory) {
 
 	    new org.sofa.gfx.backend.SurfaceNewt(this,
 	    		width, height, title, caps,
-	    		org.sofa.gfx.backend.SurfaceNewtGLBackend.GL2ES2,
+	    		org.sofa.gfx.backend.SurfaceNewtGLBackend.GL3,
 	    		fps, decorated, fullscreen, multiSample)
 	}
 }
