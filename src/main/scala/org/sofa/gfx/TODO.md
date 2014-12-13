@@ -61,7 +61,8 @@ Game
 * Wouldn't it be better if Mesh was tied to a hidden vertex array ?
     - It would have draw methods.
     - It would handle efficiently its data internally when possible.
-    - It would allocate its own vertex array when needed.
+    - It would allocate its own vertex array(s) when needed.
+    - It would be linked with the shaders used to generate the vertex array(s).
 
 ## Behaviors/Armature
 

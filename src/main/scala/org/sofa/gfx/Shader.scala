@@ -290,6 +290,8 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
     	if(line+1 < source.length)
     		Console.err.print("          |   %s".format(source(line+1)))    	
     }
+
+    def shaderTypeString:String
 }
 
 
@@ -304,6 +306,8 @@ class VertexShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl,
     
     /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.VERTEX_SHADER))
+
+    def shaderTypeString:String = "vertex"
 }
 
 
@@ -318,6 +322,8 @@ class FragmentShader(gl:SGL, name:String, source:Array[String]) extends Shader(g
 
     /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.FRAGMENT_SHADER))
+
+    def shaderTypeString:String = "fragment"
 }
 
 
@@ -332,6 +338,8 @@ class GeometryShader(gl:SGL, name:String, source:Array[String]) extends Shader(g
 
     /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.GEOMETRY_SHADER))
+
+    def shaderTypeString:String = "geometry"
 }
 
 
@@ -352,13 +360,11 @@ class ShaderProgram(gl:SGL, val name:String, shdrs:Shader*) extends OpenGLObject
     
     protected def init() {
         super.init(createProgram)
-        shaders.foreach { shader => attachShader(oid, shader.id) }
+        shaders.foreach { shader => attachShader(oid, shader.id); println("attaching shader %s:%s".format(shader.name, shader.shaderTypeString)) }
         linkProgram(oid)
         
         if(! getProgramLinkStatus(oid)) {
-            val log = "error"
-            //val log = getProgramInfoLog(oid)
-            //Console.err.println(log)
+            val log = getProgramInfoLog(oid)
             throw ShaderLinkException("Cannot link shaders program %s:%n%s".format(name, log))
         }
         

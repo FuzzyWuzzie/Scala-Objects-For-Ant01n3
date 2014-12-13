@@ -252,10 +252,14 @@ class Libraries(gl:SGL) {
 
 	protected def parseShaders(nodes:NodeSeq) {
 		nodes \\ "shader" foreach { shader ⇒
+			var geom = (shader \\ "@geom").text
+			geom = if(geom == "") null else geom
+
 			shaders.add(ShaderResource(
 				(shader \\ "@id").text,
 				(shader \\ "@vert").text,
-				(shader \\ "@frag").text))
+				(shader \\ "@frag").text,
+				geom))
 		}
 	}
 
@@ -424,7 +428,7 @@ class Libraries(gl:SGL) {
 	  *     "font":     [ "S", "S" ]
 	  *	},
 	  *	"shaders": [
-	  *		{ "id": "S", "vertex": "S", "fragment": "S" }
+	  *		{ "id": "S", "vertex": "S", "fragment": "S", "geometry": "S" }
 	  *	],
 	  *	"textures": [
 	  *		{ "id": "S", "res": "S", "mipMap": "S", "minFilter": "S", "magFilter": "S", "alpha": "S", "wrap": "S" }
