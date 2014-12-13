@@ -104,6 +104,7 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
 
     val VERTEX_SHADER:Int = GL2ES2.GL_VERTEX_SHADER
     val FRAGMENT_SHADER:Int = GL2ES2.GL_FRAGMENT_SHADER
+    val GEOMETRY_SHADER:Int = GL3.GL_GEOMETRY_SHADER
 
     val POINTS:Int = GL.GL_POINTS
     val LINE_STRIP:Int = GL.GL_LINE_STRIP

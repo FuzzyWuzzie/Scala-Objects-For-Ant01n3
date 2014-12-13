@@ -91,6 +91,7 @@ abstract class SGL {
 
     val VERTEX_SHADER:Int
     val FRAGMENT_SHADER:Int
+    val GEOMETRY_SHADER:Int
     
     val POINTS:Int
     val LINE_STRIP:Int

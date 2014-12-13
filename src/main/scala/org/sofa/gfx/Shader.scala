@@ -190,18 +190,36 @@ class DefaultShaderLoader extends ShaderLoader {
 
 /** ShaderProgram companion object. */
 object ShaderProgram {
-    /** Create a new shader program from a vertex shader file and a fragment shader file. */
+    /** Create a new shader program from a `vertexShaderFileName` and a `fragmentShaderFileName`. */
     def apply(gl:SGL, name:String, vertexShaderFileName:String, fragmentShaderFileName:String):ShaderProgram = {
     	new ShaderProgram(gl, name,
                 new VertexShader(gl, name, vertexShaderFileName),
     			new FragmentShader(gl, name, fragmentShaderFileName))
     }
 
-    /** Create a new shader program from a vertex shader source, and a fragment shader source. */
-    def apply(gl:SGL, name:String, vertexShaderStrings:Array[String], fragmentShaderStrings:Array[String]):ShaderProgram = {
+    /** Create a new shader program from a `vertexShaderFileName`, a `fragmentShaderFileName`
+      * and a `programShaderFileName`. */
+    def apply(gl:SGL, name:String, vertexShaderFileName:String, fragmentShaderFileName:String, geometryShaderFileName:String):ShaderProgram = {
     	new ShaderProgram(gl, name,
-    			new VertexShader(gl, name, vertexShaderStrings),
-    			new FragmentShader(gl, name, fragmentShaderStrings))
+                new VertexShader(gl, name, vertexShaderFileName),
+    			new FragmentShader(gl, name, fragmentShaderFileName),
+    			new GeometryShader(gl, name, geometryShaderFileName))
+    }
+
+    /** Create a new shader program from a `vertexShaderSource`, and a `fragmentShaderSource`. */
+    def apply(gl:SGL, name:String, vertexShaderSource:Array[String], fragmentShaderSource:Array[String]):ShaderProgram = {
+    	new ShaderProgram(gl, name,
+    			new VertexShader(gl, name, vertexShaderSource),
+    			new FragmentShader(gl, name, fragmentShaderSource))
+    }
+
+    /** Create a new shader program from a `vertexShaderSource`, a `fragmentShaderSource`
+      * and a `geometryShaderSource`. */
+    def apply(gl:SGL, name:String, vertexShaderSource:Array[String], fragmentShaderSource:Array[String], geometryShaderSource:Array[String]):ShaderProgram = {
+    	new ShaderProgram(gl, name,
+    			new VertexShader(gl, name, vertexShaderSource),
+    			new FragmentShader(gl, name, fragmentShaderSource),
+    			new GeometryShader(gl, name, geometryShaderSource))
     }
 }
 
@@ -219,6 +237,9 @@ abstract class Shader(gl:SGL, val name:String, val source:Array[String]) extends
     
     /** Upload the source, compile it and check errors. */
     protected def init() {
+    	if(shaderType == gl.GEOMETRY_SHADER && gl.isES)
+    		throw new RuntimeException("Sorry, geometry shaders are not supported by OpenGL ES")
+
         checkErrors
         super.init(createShader(shaderType))
         checkErrors
@@ -297,6 +318,20 @@ class FragmentShader(gl:SGL, name:String, source:Array[String]) extends Shader(g
 
     /** Try to read a shader source from the given input `stream` and compile it. */
     def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.FRAGMENT_SHADER))
+}
+
+
+/** A geometry shader. */
+class GeometryShader(gl:SGL, name:String, source:Array[String]) extends Shader(gl, name, source) {
+	protected val shaderType = gl.GEOMETRY_SHADER
+
+	init 
+
+    /** Try to open the given `sourceFile` on the file system and compile it. */
+    def this(gl:SGL, name:String, fileSource:String) = this(gl, name, Shader.fileToArrayOfStrings(gl, fileSource, gl.GEOMETRY_SHADER))
+
+    /** Try to read a shader source from the given input `stream` and compile it. */
+    def this(gl:SGL, name:String, stream:java.io.InputStream) = this(gl, name, Shader.streamToArrayOfStrings(gl, stream, gl.GEOMETRY_SHADER))
 }
 
 

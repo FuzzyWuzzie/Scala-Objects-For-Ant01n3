@@ -105,6 +105,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 
     val VERTEX_SHADER:Int = GL2ES2.GL_VERTEX_SHADER
     val FRAGMENT_SHADER:Int = GL2ES2.GL_FRAGMENT_SHADER
+    val GEOMETRY_SHADER:Int = -1 // Not supported
 
     val POINTS:Int = GL.GL_POINTS
     val LINE_STRIP:Int = GL.GL_LINE_STRIP

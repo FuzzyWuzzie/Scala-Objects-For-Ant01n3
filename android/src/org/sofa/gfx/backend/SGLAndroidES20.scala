@@ -102,6 +102,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 
     val VERTEX_SHADER:Int = GLES20.GL_VERTEX_SHADER
     val FRAGMENT_SHADER:Int = GLES20.GL_FRAGMENT_SHADER
+    val GEOMETRY_SHADER:Int = -1 // Not supported
 
     val POINTS:Int = GLES20.GL_POINTS
     val LINE_STRIP:Int = GLES20.GL_LINE_STRIP

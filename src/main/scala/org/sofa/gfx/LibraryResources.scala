@@ -25,14 +25,16 @@ import java.io.File
 
 
 /** Resource descriptor for shaders. */
-case class ShaderResource(override val id:String, vertex:String, fragment:String) extends ResourceDescriptor[ShaderProgram](id) {
+case class ShaderResource(override val id:String, vertex:String, fragment:String, geometry:String=null) extends ResourceDescriptor[ShaderProgram](id) {
 
 	private[this] var data:ShaderProgram = null
 
 	def value(gl:SGL):ShaderProgram = {
 		if(data eq null) {
 			try {
-				data = ShaderProgram(gl, id, vertex, fragment)
+				if(geometry ne null)
+				     data = ShaderProgram(gl, id, vertex, fragment, geometry)
+				else data = ShaderProgram(gl, id, vertex, fragment)
 			} catch {
 				case e:Exception ⇒ throw NoSuchResourceException(e.getMessage, e)
 			}
