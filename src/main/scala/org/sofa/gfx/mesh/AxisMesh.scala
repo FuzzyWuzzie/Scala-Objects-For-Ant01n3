@@ -4,46 +4,19 @@ import org.sofa.nio._
 import org.sofa.gfx._
 import org.sofa.math.Rgba
 
+
 /** Draw the X, Y and Z axis as lines with colors.
   *
   * The `side` paramter allows to tell the length of each axis in the negative and positive directions. */
 class AxisMesh(val side:Float) extends Mesh {
     
-    protected lazy val V:FloatBuffer = allocateVertices
+    protected val V:MeshAttribute = allocateVertices
 
-    protected lazy val C:FloatBuffer = allocateColors
+    protected val C:MeshAttribute = allocateColors
 
     def vertexCount:Int = 12
 
     def elementsPerPrimitive:Int = 6
-
-    override def attribute(name:String):FloatBuffer = {
-    	VertexAttribute.withName(name) match { 
-    		case VertexAttribute.Vertex => V
-    		case VertexAttribute.Color  => C
-    		case _                      => super.attribute(name) //throw new RuntimeException("mesh has no attribute %s".format(name))
-    	}
-    }
-
-    override def attributeCount():Int = 2 + super.attributeCount
-
-    override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Color.toString) ++ super.attributes
-
-    override def components(name:String):Int = {
-    	VertexAttribute.withName(name) match { 
-    		case VertexAttribute.Vertex => 3
-    		case VertexAttribute.Color  => 4
-    		case _                      => super.components(name) //throw new RuntimeException("mesh has no attribute %s".format(name))
-    	}    	
-    }
-
-    override def has(name:String):Boolean = {
-    	VertexAttribute.withName(name) match { 
-    		case VertexAttribute.Vertex => true
-    		case VertexAttribute.Color  => true
-    		case _                      => super.has(name) //false
-    	}    	    	
-    }
 
     def drawAs(gl:SGL):Int = gl.LINES    
 
@@ -68,59 +41,66 @@ class AxisMesh(val side:Float) extends Mesh {
     protected def setAxisColor(i:Int, color:Rgba) {
     	val x = i * 8
     	val y = x + 4
-    	C(x+0) = color.red.toFloat
-    	C(x+1) = color.green.toFloat
-    	C(x+2) = color.blue.toFloat
-    	C(x+3) = color.alpha.toFloat
-    	C(y+0) = (color.red/2).toFloat
-    	C(y+1) = (color.green/2).toFloat
-    	C(y+2) = (color.blue/2).toFloat
-    	C(y+3) = (color.alpha/2).toFloat
+    	val c = C.theData
+
+    	c(x+0) = color.red.toFloat
+    	c(x+1) = color.green.toFloat
+    	c(x+2) = color.blue.toFloat
+    	c(x+3) = color.alpha.toFloat
+    	c(y+0) = (color.red/2).toFloat
+    	c(y+1) = (color.green/2).toFloat
+    	c(y+2) = (color.blue/2).toFloat
+    	c(y+3) = (color.alpha/2).toFloat
     }
 
     // -- Mesh building ---------------------------------------------------
 
-    protected def allocateVertices:FloatBuffer = {
+    protected def allocateVertices:MeshAttribute = {
+    	val v = addMeshAttribute(VertexAttribute.Vertex, 3)
         val s = side / 2f
         
-        FloatBuffer(
-         0,  0,  0,			// X+ 0
-         s,  0,  0,			// X+
+        v.set(0,  0,  0,  0)			// X+ 0
+        v.set(1,  s,  0,  0)			// X+
 
-         0,  0,  0,			// X- 0
-        -s,  0,  0,			// X-
+        v.set(2,  0,  0,  0)			// X- 0
+        v.set(3, -s,  0,  0)			// X-
 
-         0,  0,  0,			// Y+ 0
-         0,  s,  0,			// Y+
+        v.set(4,  0,  0,  0)			// Y+ 0
+        v.set(5,  0,  s,  0)			// Y+
 
-         0,  0,  0,			// Y- 0
-         0, -s,  0,			// Y-
+        v.set(6,  0,  0,  0)			// Y- 0
+        v.set(7,  0, -s,  0)			// Y-
 
-         0,  0,  0,			// Z+ 0
-         0,  0,  s,			// Z+
+        v.set(8,  0,  0,  0)			// Z+ 0
+        v.set(9,  0,  0,  s)			// Z+
 
-         0,  0,  0,			// Z- 0
-         0,  0, -s)			// Z-
+        v.set(10,  0,  0,  0)			// Z- 0
+        v.set(11,  0,  0, -s)			// Z-
+
+        v
     }
 
-    protected def allocateColors:FloatBuffer = {
-        FloatBuffer(
-        	1, 0, 0, 1,
-        	1, 0, 0, 1,
-        		
-        	0.5f, 0, 0, 1,
-        	0.5f, 0, 0, 1,
-        		
-        	0, 1, 0, 1,
-        	0, 1, 0, 1,
-        		
-        	0, 0.5f, 0, 1,
-        	0, 0.5f, 0, 1,
-        		
-        	0, 0, 1, 1,
-        	0, 0, 1, 1,
-        		
-        	0, 0, 0.5f, 1,
-        	0, 0, 0.5f, 1)
+    protected def allocateColors:MeshAttribute = {
+    	val c = addMeshAttribute(VertexAttribute.Color, 4)
+
+    	c.set(0, 1, 0, 0, 1)
+    	c.set(1, 1, 0, 0, 1)
+    		
+    	c.set(2, 0.5f, 0, 0, 1)
+    	c.set(3, 0.5f, 0, 0, 1)
+    		
+    	c.set(4, 0, 1, 0, 1)
+    	c.set(5, 0, 1, 0, 1)
+    		
+    	c.set(6, 0, 0.5f, 0, 1)
+    	c.set(7, 0, 0.5f, 0, 1)
+    		
+    	c.set(8, 0, 0, 1, 1)
+    	c.set(9, 0, 0, 1, 1)
+    		
+    	c.set(10, 0, 0, 0.5f, 1)
+    	c.set(11, 0, 0, 0.5f, 1)
+
+    	c
     }
 }

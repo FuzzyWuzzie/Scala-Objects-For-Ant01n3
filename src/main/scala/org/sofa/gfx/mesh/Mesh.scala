@@ -12,31 +12,16 @@ import scala.collection.mutable.HashMap
 
 
 // TODO 
+// - allow a mesh to have several VAs, paving the way for multi mesh.
+// - store with each va the shader used to reference uniforms and the like.
+// - simplify the API.
+// - store MeshAttribute and MeshElement out of Mesh. Make them traits. Create base implementations.
+// - specify update as an interface method.
+
 // - change EditableMesh to use these MeshAttribute (actually it duplicates them).
 // - for dynamic meshes, use the VertexAttribute names or the name of the user attributes
 //   to specify what to update (see TrianglesMesh as an example).
 
-
-
-/** Predefined vertex attribute names. More are possible. */
-object VertexAttribute extends Enumeration {
-	type VertexAttribute = Value
-
-	val Vertex    = Value("Vertex")
-	val Normal    = Value("Normal")
-	val Tangent   = Value("Tangent")
-	val Bitangent = Value("Bitangent")
-	val Color     = Value("Color")
-	val TexCoord  = Value("TexCoord")
-	val Bone      = Value("Bone")
-	val Weight    = Value("Weight")
-
-	/** Convert a pair (VertexAttribute,String) to a pair (String,String) as often used with Mesh.newVertexArray(). */
-	implicit def VaStPair2StStPair(p:(VertexAttribute,String)):(String,String) = (p._1.toString, p._2)
-
-	/** Convert a VertexAttribute to a String. */
-	implicit def Va2St(v:VertexAttribute):String = v.toString
-}
 
 
 /** Pluggable loader for mesh sources. */
@@ -119,144 +104,11 @@ object Mesh {
 trait Mesh {
 	import VertexAttribute._
 
-	/** Representation of a user-defined attribute.
-	  * 
-	  * Such attributes are set of floats (1 to 4, depending on the number of components),
-	  * each one being associated to a vertex. You can index the attribute by the
-	  * vertex number. Individual meshes have to allocate these
-	  * attribute by giving the number of vertices and the number of components per
-	  * vertice. This encapsulate a [[FloatBuffer]] to store data.
-	  *
-	  * This class also allows to memorize two vertex positions that mark the
-	  * begin and end of the area where modifcations have been done since the last
-	  * update (an update consists in sending data to OpenGL). These two markers
-	  * are update by `set()` method.
-	  *
-	  * The `set()` method allow to change individual
-	  * attribute values per vertex. However for efficiency reasons, as the creator
-	  * of sub-classes of this one, you have plain access to
-	  * the [[theData]] field wich is a buffer of [[vertexCount]]*[[components]]
-	  * floats, and [[beg]] and [[end]] markers, indicating the extent of modifications
-	  * in the buffer. If you mess with these fields, you known the consequences.
-	  * However this will be far faster than using the `set*()` methods. */
-	class MeshAttribute(val name:String, val components:Int, val vertexCount:Int) {
-		
-		var theData = FloatBuffer(vertexCount * components)
-
-		var beg:Int = vertexCount
-
-		var end:Int = 0
-
-		/** Data under the form a float buffer. */
-		def data:FloatBuffer = theData
-
-		/** Change [[components]] values at `vertex` in the buffer.
-		  * @param values must contain at least [[components]] elements.
-		  * @param vertex an index as a vertex number. */
-		def set(vertex:Int, values:Float*) {
-			val i = vertex * components
-
-			if(values.length >= components) {
-				if(i >= 0 && i < theData.size) {
-					if(beg > vertex)   beg = vertex
-					if(end < vertex+1) end = vertex+1
-
-					var j = 0
-
-					while(j < components) {
-						theData(i+j) = values(j)
-						j += 1
-					}
-				} else {
-					throw new InvalidVertexException(s"invalid vertex ${vertex} out of attribute buffer (size=${vertexCount})")
-				}
-			} else {
-				throw new InvalidVertexComponentException(s"no enough values passed for attribute (${values.length}), needs ${components} components")
-			}
-		}
-
-		/** Update the buffer (send it to OpenGL) with the same name as this attribute if
-		  * some elements have been changed. */
-		def update(va:VertexArray) {
-			if(end > beg) {
-				if(beg==0 && end == vertexCount)
-				     va.buffer(name).update(theData)
-				else va.buffer(name).update(beg, end, theData)
-				resetMarkers
-			}
-		}
-
-		/** Used to reset the [[beg]] and [[end]] markers as if no changes
-		  * have been made to the values. Used after `update()` and by the
-		  * mesh before creating a new vertex array. */
-		def resetMarkers() {
-			beg = vertexCount
-			end = 0
-		}
-	}
-
-	/** Same role as [[MeshAttribute]] for the index of elements to draw primitives.
-	  * 
-	  * You are responsible for creating and maintaining an instance of this
-	  * class in sub-classes of [[Mesh]], this cannot be done automatically.
-	  *
-	  * @param primCount the number of primitives.
-	  * @param verticesPerPrim the number of vertices (or elements) for one primitive. */
-	class MeshElement(val primCount:Int, val verticesPerPrim:Int) {
-		
-		var theData = IntBuffer(primCount * verticesPerPrim)
-
-		var beg:Int = primCount * verticesPerPrim
-
-		var end:Int = 0
-
-		/** Data under the form an int buffer. */
-		def data:IntBuffer = theData
-
-		def set(prim:Int, values:Int*) {
-			val i = prim * verticesPerPrim
-
-			if(values.length >= verticesPerPrim) {
-				if(i >= 0 && i < theData.size) {
-					if(beg > i) beg = i
-					if(end < i+verticesPerPrim) end = i+verticesPerPrim
-
-					var j = 0
-
-					while(j < verticesPerPrim) {
-						theData(i+j) = values(j)
-						j += 1
-					}
-				} else {
-					throw new InvalidPrimitiveException(s"invalid primitive index ${prim} out of index buffer (size=${primCount})")
-				}
-			} else {
-				throw new InvalidPrimitiveVertexException(s"no enough values passed for primitive (${values.length}), needs ${verticesPerPrim} vertices indices")
-			}
-		}
-
-		/** Update the buffer (send it to OpenGL) with the same name as this attribute if
-		  * some elements have been changed. */
-		def update(va:VertexArray) {
-			if(end > beg) {
-				if(beg==0 && end == primCount*verticesPerPrim)
-				     va.indices.update(theData)
-				else va.indices.update(beg, end, theData)
-				resetMarkers
-			}
-		}
-
-		/** Used to reset the [[beg]] and [[end]] markers as if no changes
-		  * have been made to the values. Used after `update()` and by the
-		  * mesh before creating a new vertex array. */
-		def resetMarkers() {
-			beg = primCount * verticesPerPrim
-			end = 0
-		}
-	}
-
 	/** Last produced vertex array. */
 	protected[this] var va:VertexArray = _
+
+	/** Last used shader for the vertex array. */
+	protected[this] var sh:ShaderProgram = _
 
 	/** Set of user defined vertex attributes. Allocated on demand. */
 	protected[this] var meshAttributes:HashMap[String, MeshAttribute] = null
@@ -349,6 +201,9 @@ trait Mesh {
     	}
     }
 
+    /** True if this mesh has an attribute with the given `name`. */
+    def hasAttribute(name:String):Boolean = meshAttributes.contains(name)
+
     /** Indices of the elements to draw in the attributes array, in draw order.
       * The indices points at elements in each attribute array. */
     def elements:IntBuffer = throw new InvalidPrimitiveException("no elements in this mesh")
@@ -436,13 +291,13 @@ trait Mesh {
       * Each time a vertex array is created with a mesh, it is remembered. Some
       * meshes allow to update the arrays when a change is made to the data in the
       * mesh. Such meshes are dynamic. */
-    def lastVertexArray():VertexArray = va
-
-    /** The last created vertex array. Synonym of `lastVertexArray`. */
-    def lastva():VertexArray = va
+    def vertexArray():VertexArray = va
 
     /** True if at least one vertex array was created. You can access it using `lastva()`. */
-    def hasva:Boolean = (va ne null)
+    def hasVertexArray:Boolean = (va ne null)
+
+    /** The shader used to allocate the vertex array. */
+    def shader:ShaderProgram = sh
 
     /** Always called before creating a new vertex array. Hook for sub-classes. */
     protected def beforeNewVertexArray() {}
@@ -450,39 +305,9 @@ trait Mesh {
     /** Always called after creating a new vertex array. Hook for sub-classes. */
     protected def afterNewVertexArray() {}
 
-   //  /** Create a vertex array for the mesh. This method will create the vertex array with
-   //    * all the vertex attributes present in the mesh. Each one will have a location starting
-   //    * from 0. The order follows the one given by the list of attributes given by the
-   //    * `attributes()` method.
-   //    * 
-   //    * This is useful only for shaders having the possibility to associate locations
-   //    * with a vertex attribute (having the 'layout' qualifier (e.g. layout(location=1)),
-   //    * that is under OpenGL 3). The draw mode for the array buffers is STATIC_DRAW. 
-	  // *
-   //    * The last created vertex array is remembered by the mesh and can be accessed later,
-   //    * and for some meshes updated from new data if the mesh is dynamic. */
-   //  def newVertexArray(gl:SGL, shader:ShaderProgram):VertexArray = {
-   //  	var locs = new Array[(String,Int)](attributeCount)
-   //  	var i    = 0
-    	
-   //  	attributes.foreach { name => locs(i) = (name, i); i+= 1 }
-   //  	newVertexArray(gl, shader, locs:_*)
-   //  }
-    
-   //  /** Create a vertex array from the given map of attribute names / locations.
-   //    * The draw mode for the array buffers is STATIC_DRAW.
-   //    * 
-   //    * Example usage: newVertexArray(gl, ("vertices", 0), ("normals", 1))
-   //    * 
-   //    * Attribute names are case insensitive.
-	  // *
-   //    * The last created vertex array is remembered by the mesh and can be accessed later,
-   //    * and for some meshes updated from new data if the mesh is dynamic. */
-   //  def newVertexArray(gl:SGL, shader:ShaderProgram, locations:Tuple2[String,Int]*):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, shader, locations:_*)
-
-    /** Create a vertex array from the given `locations` map of attribute name -> shader attribute names.
-      * The given `shader` is directly used to query the position of attribute names.
-      * The draw mode for the array buffers is STATIC_DRAW.
+    /** Create a vertex array from the given `locations` map of attribute name to shader
+      * attribute names. The given `shader` is directly used to query the position of
+      * attribute names. The draw mode for the array buffers is STATIC_DRAW.
       * 
       * Example usage: 
       *
@@ -497,9 +322,10 @@ trait Mesh {
       * and for some meshes updated from new data if the mesh is dynamic. */
     def newVertexArray(gl:SGL, shader:ShaderProgram, locations:Tuple2[String,String]*):VertexArray = newVertexArray(gl, gl.STATIC_DRAW, shader, locations:_*)
 
-    /** Create a vertex array from the given `locations` map of attribute name -> shader attribute names.
-      * The given `shader` is directly used to query the position of attribute names.
-      * You can specify the `drawMode` for the array buffers, either STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW.
+    /** Create a vertex array from the given `locations` map of attribute name to shader
+      * attribute names. The given `shader` is directly used to query the position of
+      * attribute names. You can specify the `drawMode` for the array buffers, either
+      * STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW.
       * 
       * Example usage: 
       *
@@ -513,23 +339,23 @@ trait Mesh {
       * The last created vertex array is remembered by the mesh and can be accessed later,
       * and for some meshes updated from new data if the mesh is dynamic. */
     def newVertexArray(gl:SGL, drawMode:Int, shader:ShaderProgram, locations:Tuple2[String,String]*):VertexArray = {
-    	// val locs = new Array[Tuple2[String,Int]](locations.length)
-    	// var i = 0
-    	// while(i < locations.length) {
-    	// 	locs(i) = (locations(i)._1, shader.getAttribLocation(locations(i)._2))
-    	// 	i += 1
-    	// }
-//    	newVertexArray(gl, drawMode, shader, locs:_*)
-
     	beforeNewVertexArray
 
     	val locs = new Array[Tuple4[String,Int,Int,NioBuffer]](locations.size)
     	var pos  = 0
 
     	locations.foreach { value => 
-    		locs(pos) = (value._1, shader.getAttribLocation(value._2), components(value._1), attribute(value._1))
+    		val attName = value._1
+    		val varName = value._2
+    		
+    		if(!hasAttribute(attName))
+    			throw new NoSuchVertexAttributeException("mesh has no attribute named '%s' (mapped to '%s')".format(attName, varName))
+
+    		locs(pos) = (attName, shader.getAttribLocation(varName), components(attName), attribute(attName))
     		pos += 1
     	}
+
+    	sh = shader
     	
     	if(hasElements)
     	     va = new VertexArray(gl, elements, drawMode, locs:_*)
@@ -539,31 +365,141 @@ trait Mesh {
 
     	va
     }
+}
 
-   //  /** Create a vertex array from the given map of attribute names / locations.
-   //    * You can specify the draw mode for the array buffers, either STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW.
-   //    * 
-   //    * Example usage: newVertexArray(gl, gl.DYNAMIC_DRAW, ("vertices", 0), ("normals", 1))
-	  // *
-   //    * The last created vertex array is remembered by the mesh and can be accessed later,
-   //    * and for some meshes updated from new data if the mesh is dynamic. */
-   //  def newVertexArray(gl:SGL, drawMode:Int, shader:ShaderProgram, locations:Tuple2[String,Int]*):VertexArray = {
-    	// beforeNewVertexArray
 
-    	// val locs = new Array[Tuple4[String,Int,Int,NioBuffer]](locations.size)
-    	// var pos  = 0
+/** Representation of a user-defined attribute.
+  * 
+  * Such attributes are set of floats (1 to 4, depending on the number of components),
+  * each one being associated to a vertex. You can index the attribute by the
+  * vertex number. Individual meshes have to allocate these
+  * attribute by giving the number of vertices and the number of components per
+  * vertice. This encapsulate a [[FloatBuffer]] to store data.
+  *
+  * This class also allows to memorize two vertex positions that mark the
+  * begin and end of the area where modifcations have been done since the last
+  * update (an update consists in sending data to OpenGL). These two markers
+  * are update by `set()` method.
+  *
+  * The `set()` method allow to change individual
+  * attribute values per vertex. However for efficiency reasons, as the creator
+  * of sub-classes of this one, you have plain access to
+  * the [[theData]] field wich is a buffer of [[vertexCount]]*[[components]]
+  * floats, and [[beg]] and [[end]] markers, indicating the extent of modifications
+  * in the buffer. If you mess with these fields, you known the consequences.
+  * However this will be far faster than using the `set*()` methods. */
+class MeshAttribute(val name:String, val components:Int, val vertexCount:Int) {
+	
+	var theData = FloatBuffer(vertexCount * components)
 
-    	// locations.foreach { value => 
-    	// 	locs(pos) = (value._1, value._2, components(value._1), attribute(value._1))
-    	// 	pos += 1
-    	// }
-    	
-    	// if(hasElements)
-    	//      va = new VertexArray(gl, elements, drawMode, locs:_*)
-    	// else va = new VertexArray(gl, drawMode, locs:_*)
+	var beg:Int = vertexCount
 
-    	// afterNewVertexArray
+	var end:Int = 0
 
-    	// va
-//    }
+	/** Data under the form a float buffer. */
+	def data:FloatBuffer = theData
+
+	/** Change [[components]] values at `vertex` in the buffer.
+	  * @param values must contain at least [[components]] elements.
+	  * @param vertex an index as a vertex number. */
+	def set(vertex:Int, values:Float*) {
+		val i = vertex * components
+
+		if(values.length >= components) {
+			if(i >= 0 && i < theData.size) {
+				if(beg > vertex)   beg = vertex
+				if(end < vertex+1) end = vertex+1
+
+				var j = 0
+
+				while(j < components) {
+					theData(i+j) = values(j)
+					j += 1
+				}
+			} else {
+				throw new InvalidVertexException(s"invalid vertex ${vertex} out of attribute buffer (size=${vertexCount})")
+			}
+		} else {
+			throw new InvalidVertexComponentException(s"no enough values passed for attribute (${values.length}), needs ${components} components")
+		}
+	}
+
+	/** Update the buffer (send it to OpenGL) with the same name as this attribute if
+	  * some elements have been changed. */
+	def update(va:VertexArray) {
+		if(end > beg) {
+			if(beg==0 && end == vertexCount)
+			     va.buffer(name).update(theData)
+			else va.buffer(name).update(beg, end, theData)
+			resetMarkers
+		}
+	}
+
+	/** Used to reset the [[beg]] and [[end]] markers as if no changes
+	  * have been made to the values. Used after `update()` and by the
+	  * mesh before creating a new vertex array. */
+	def resetMarkers() {
+		beg = vertexCount
+		end = 0
+	}
+}
+
+/** Same role as [[MeshAttribute]] for the index of elements to draw primitives.
+  * 
+  * You are responsible for creating and maintaining an instance of this
+  * class in sub-classes of [[Mesh]], this cannot be done automatically.
+  *
+  * @param primCount the number of primitives.
+  * @param verticesPerPrim the number of vertices (or elements) for one primitive. */
+class MeshElement(val primCount:Int, val verticesPerPrim:Int) {
+	
+	var theData = IntBuffer(primCount * verticesPerPrim)
+
+	var beg:Int = primCount * verticesPerPrim
+
+	var end:Int = 0
+
+	/** Data under the form an int buffer. */
+	def data:IntBuffer = theData
+
+	def set(prim:Int, values:Int*) {
+		val i = prim * verticesPerPrim
+
+		if(values.length >= verticesPerPrim) {
+			if(i >= 0 && i < theData.size) {
+				if(beg > i) beg = i
+				if(end < i+verticesPerPrim) end = i+verticesPerPrim
+
+				var j = 0
+
+				while(j < verticesPerPrim) {
+					theData(i+j) = values(j)
+					j += 1
+				}
+			} else {
+				throw new InvalidPrimitiveException(s"invalid primitive index ${prim} out of index buffer (size=${primCount})")
+			}
+		} else {
+			throw new InvalidPrimitiveVertexException(s"no enough values passed for primitive (${values.length}), needs ${verticesPerPrim} vertices indices")
+		}
+	}
+
+	/** Update the buffer (send it to OpenGL) with the same name as this attribute if
+	  * some elements have been changed. */
+	def update(va:VertexArray) {
+		if(end > beg) {
+			if(beg==0 && end == primCount*verticesPerPrim)
+			     va.indices.update(theData)
+			else va.indices.update(beg, end, theData)
+			resetMarkers
+		}
+	}
+
+	/** Used to reset the [[beg]] and [[end]] markers as if no changes
+	  * have been made to the values. Used after `update()` and by the
+	  * mesh before creating a new vertex array. */
+	def resetMarkers() {
+		beg = primCount * verticesPerPrim
+		end = 0
+	}
 }

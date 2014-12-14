@@ -155,7 +155,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	  * font have to be rendered. The `camera` space is considered to match pixels. */
 	def render(camera:Camera) {
 	    camera.uniformMVP(font.shader)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
+		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
@@ -164,7 +164,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	  * font have to be rendered. The `mvp` space is considered to match pixels. */
 	def render(mvp:Matrix4) {
 		font.shader.uniformMatrix("MVP", mvp)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)	
+		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)	
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
@@ -173,7 +173,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	  * font have to be rendered. The `space` is considered to match pixels. */
 	def render(space:Space) {
 		space.uniformMVP(font.shader)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
+		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)
 	}
 
 	/** Draw the string with the baseline at (0,0). Use the current translation of the camera.

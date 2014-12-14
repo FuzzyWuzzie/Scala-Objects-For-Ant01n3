@@ -178,12 +178,12 @@ class GraphMesh(val maxNodes:Int, val maxEdges:Int) extends MultiMesh {
 	  * avoid moving data between the CPU and GPU. You may give a boolean for each buffer in the vertex array
 	  * that you want to update or not. */
 	def update(gl:SGL, updateVertices:Boolean=false, updateColors:Boolean=false, updateNodes:Boolean=false, updateEdges:Boolean=false) {
-		if(hasva) {
+		if(hasVertexArray) {
 			if(updateVertices) V.update(vas(0))
 			if(updateColors)   C.update(vas(0))
 		}
-		if(hasva(0)  && updateNodes) nodes.update(vas(0))
-		if(hasva(1) && updateEdges) edges.update(vas(1))
+		if(hasVertexArray(0) && updateNodes) nodes.update(vas(0))
+		if(hasVertexArray(1) && updateEdges) edges.update(vas(1))
 	}
 
 	override def toString():String = {

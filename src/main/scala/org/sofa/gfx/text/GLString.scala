@@ -109,7 +109,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 	    font.shader.uniform("textColor", clr)
 	    camera.uniformMVP(font.shader)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
+		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
@@ -121,7 +121,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 	    font.shader.uniform("textColor", clr)
 		font.shader.uniformMatrix("MVP", mvp)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)	
+		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)	
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
@@ -133,7 +133,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 	    font.shader.uniform("textColor", clr)
 		space.uniformMVP(font.shader)
-		batchMesh.lastVertexArray.draw(batchMesh.drawAs(gl), t*3)
+		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)
 	}
 
 	/** Draw the string with the baseline at (0,0). Use the current translation of the camera.
