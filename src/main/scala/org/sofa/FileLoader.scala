@@ -13,6 +13,8 @@ trait FileLoader {
             file
         } else {
             val sep = sys.props.get("file.separator").get
+            
+            //paths.foreach { path => printf("Searching for %s%n", new File("%s%s%s".format(path, sep, resource)))}
 
             paths.find(path => (new File("%s%s%s".format(path, sep, resource))).exists) match {
                 case path:Some[String] => { new File("%s%s%s".format(path.get,sep,resource)) }
@@ -30,6 +32,8 @@ trait FileLoader {
 
         if(!file.exists) {
             val sep = sys.props.get("file.separator").get
+
+            //paths.foreach { path => printf("Searching for %s%n", new File("%s%s%s".format(path, sep, res)))}
 
             paths.find(path => (new File("%s%s%s".format(path, sep, res))).exists) match {
                 case path:Some[String] => { res = "%s%s%s".format(path.get, sep, res) }

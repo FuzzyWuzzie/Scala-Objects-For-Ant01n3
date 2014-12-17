@@ -17,6 +17,10 @@ trait AvatarState {}
 case class NoSuchAvatarException(msg:String) extends Exception(msg)
 
 
+/** When the state of an avatar cannot be used. */
+case class AvatarStateException(msg:String) extends Exception(msg)
+
+
 /** When a state does not exist in an avatar or screen. */
 case class NoSuchAvatarStateException(state:AvatarState) extends Exception(state.toString)
 
@@ -127,6 +131,13 @@ abstract class Avatar(
 
 	/** By default handles avatar space and render states otherwise throw a NoSuchAvatarStateException. */
 	def change(state:AvatarState) {
+		if(!changed(state))
+			throw new NoSuchAvatarStateException(state)
+	}
+
+	/** Default implementation of `change(AvatarState)`, that returns true if the avatar
+	  * sent the message to its space or renderer, or if the state is render filter. */
+	protected def changed(state:AvatarState):Boolean = {
 		var used = false
 
 		// Cannot use a match, since the state can be sent several times.
@@ -135,11 +146,13 @@ abstract class Avatar(
 
 		if(! used) {
 			state match {
-				case AvatarBaseStates.RenderFilter(filter) => renderFilter(filter)
-				case AvatarBaseStates.RenderFilterRequest() => renderFilterRequest()
-				case _ => throw new NoSuchAvatarStateException(state)
+				case AvatarBaseStates.RenderFilter(filter) => { used = true; renderFilter(filter) }
+				case AvatarBaseStates.RenderFilterRequest() => { used = true; renderFilterRequest() }
+				case _ => { used = false }
 			}
 		}
+
+		used
 	}
 
 // Sub-Avatars

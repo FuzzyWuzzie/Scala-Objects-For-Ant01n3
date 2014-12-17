@@ -3,10 +3,6 @@ package org.sofa.gfx.renderer
 import scala.math._
 import scala.collection.mutable.HashMap
 
-import javax.media.opengl._
-import javax.media.opengl.glu._
-import com.jogamp.opengl.util._
-
 import org.sofa.nio._
 import org.sofa.math.{Rgba, Vector3, Vector4, Axes, Point3, NumberSeq3}
 import org.sofa.gfx.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, HemisphereLight, ResourceDescriptor, Libraries}

@@ -5,11 +5,6 @@ import org.sofa.gfx.{VertexArray, SGL, Camera, ShaderProgram}
 import org.sofa.gfx.mesh.{VertexAttribute, Mesh, BoneLineMesh}
 import org.sofa.math.{Matrix4, Rgba, NumberSeq3, Point4}
 
-import javax.media.opengl._
-import GL._
-import GL2._
-import GL2ES2._
-import GL3._
 
 /** Bone companion object. */
 object Bone {

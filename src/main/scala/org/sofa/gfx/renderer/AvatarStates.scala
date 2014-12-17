@@ -28,4 +28,7 @@ object AvatarBaseStates {
 	  * next frame. By default, a filter request is done when a new
 	  * avatar is added or one is removed. */
 	case class RenderFilterRequest() extends AvatarState {}
+
+	/** Ask the avatar to change its renderer, if possible. */
+	case class ChangeRenderer(newRenderer:AvatarRender) extends AvatarState {}
 }

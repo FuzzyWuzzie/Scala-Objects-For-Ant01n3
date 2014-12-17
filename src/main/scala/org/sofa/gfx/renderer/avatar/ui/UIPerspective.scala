@@ -3,7 +3,7 @@ package org.sofa.gfx.renderer.avatar.ui
 import org.sofa.math.{ Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default }
 import org.sofa.gfx.surface.event.{ ActionKey=>SurfaceActionChar }
 import org.sofa.gfx.renderer.{ Screen }
-import org.sofa.gfx.renderer.{ Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarBaseStates }
+import org.sofa.gfx.renderer.{ Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarBaseStates, NoSuchAvatarStateException, AvatarStateException }
 import org.sofa.gfx.surface.event._
 import org.sofa.gfx.renderer.{ NoSuchAvatarException }
 
@@ -28,54 +28,37 @@ class UIPerspective(name: AvatarName, screen: Screen)
 
 	var space = new UIAvatarSpacePerspective(this)
 
-	var renderer = new UIAvatarRenderPerspective(this)
+	var renderer = new UIAvatarRenderBase(this)
 
-	def consumeEvent(event: Event): Boolean = {
-		true
-		// event match {
-		// 	case ev:AvatarZoomEvent ⇒ {
-		// 		space.camera.rotateEyeHorizontal(ev.amount/1000.0)
-		// 		true
-		// 	}
-		// 	case ev:AvatarKeyEvent ⇒ {
-		// 		ev.actionChar match {
-		// 			case SurfaceActionChar.PageUp ⇒ {
-		// 				space.camera.eyeTraveling(-0.1)
-		// 				true 
-		// 			}
-		// 			case SurfaceActionChar.PageDown ⇒ {
-		// 				space.camera.eyeTraveling(0.1)
-		// 				true
-		// 			}
-		// 			case SurfaceActionChar.Left ⇒ { 
-		// 				space.camera.rotateEyeHorizontal(-0.05)
-		// 				true
-		// 			}
-		// 			case SurfaceActionChar.Right ⇒ {
-		// 				space.camera.rotateEyeHorizontal(0.05)
-		// 				true
-		// 			}
-		// 			case SurfaceActionChar.Up ⇒ { 
-		// 				space.camera.rotateEyeVertical(0.05)
-		// 				true
-		// 			}
-		// 			case SurfaceActionChar.Down ⇒ {
-		// 				space.camera.rotateEyeVertical(-0.05)
-		// 				true
-		// 			}
-		// 			case _ ⇒ { false }
-		// 		}
-		// 	}
-		// 	case _ ⇒ false
-		// }
+	override def change(state:AvatarState) {
+		if(! changed(state)) {
+			state match {
+				case AvatarBaseStates.ChangeRenderer(renderer) => {
+					renderer match {
+						case r:UIAvatarRenderBase => { this.renderer = r; r.setAvatar(this); println("Changing UIPerspective renderer") }
+						case _ => throw new AvatarStateException("the renderer type must be UIAvatarRenderBase")
+					}
+				}
+				case _ => throw new NoSuchAvatarStateException(state)
+			}
+		}
 	}
+
+	def consumeEvent(event: Event): Boolean = true
 }
 
 
 // ----------------------------------------------------------------------------------------------
 
 
-class UIAvatarRenderPerspective(avatar: Avatar) extends UIAvatarRender(avatar) {
+class UIAvatarRenderBase(avatar:Avatar) extends UIAvatarRender(avatar) {
+
+	def this() { this(null) }
+
+	def setAvatar(avatar:UIPerspective) {
+		this.self = avatar
+	}
+
 	override def render() {
 		val gl = screen.gl
 
