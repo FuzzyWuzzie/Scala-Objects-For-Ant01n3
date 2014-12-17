@@ -143,9 +143,11 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	def enableVertexAttribArray(index:Int) = glEnableVertexAttribArray(index)
 	def disableVertexAttribArray(index:Int) = glDisableVertexAttribArray(index)
 	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, j:Int) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, j)
-	//def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
+	def vertexAttribDivisor(index:Int, divisor:Int) = throw new RuntimeException("no attrib divisor in ES 2 (TODO in ES 3)")
     def drawArrays(mode:Int, i:Int, size:Int) = glDrawArrays(mode, i, size)
     def drawElements(mode:Int, count:Int, i:Int, offset:Int) = glDrawElements(mode, count, i, offset)
+    def drawArraysInstanced(mode:Int, first:Int, count:Int, primcount:Int) = throw new RuntimeException("no drawArraysInstanced in ES 2 (TODO in ES 3)")
+    def drawElementsInstanced(mode:Int, count:Int, thetype:Int, offset:Int, primcount:Int) = throw new RuntimeException("no drawElementsInstanced in ES 2 (TODO in ES 3)")
     def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) = throw new RuntimeException("no mutli draw arrays in GL ES 2.0 too bad")
 
 // Textures

@@ -69,14 +69,15 @@ class ArrayBuffer(gl:SGL, val valuesPerElement:Int, data:NioBuffer, val drawMode
     /** Overall number of components in the array (not the number of elements!). */
     def size:Int = elementCount
     
-    def vertexAttrib(index:Int, enable:Boolean) {
+    def vertexAttrib(index:Int, enable:Boolean, divisor:Int = -1) {
     	bind
 //Console.err.println("binding buffer %d vpe, type=%s".format(valuesPerElement, if(glType==gl.FLOAT) "float" else if(glType==gl.UNSIGNED_INT) "int" else "other"))
         vertexAttribPointer(index, valuesPerElement, glType, false, 0, 0)
         if(enable) enableVertexAttribArray(index)
+        if(divisor >= 0) vertexAttribDivisor(index, divisor)
         checkErrors
     }
-    
+
     def bind() {
         checkId
         bindBuffer(gl.ARRAY_BUFFER, oid)

@@ -432,7 +432,7 @@ class Joint(val name:String,
 		//     shader.uniform("highlight", 1.0f)
 		//else shader.uniform("highlight", 0.0f)
 		space.uniformMVP(armature.shader)
-		armature.triangles.vertexArray.drawArrays(armature.triangles.drawAs(gl), triangle*3, 2*3)
+		armature.triangles.vertexArray.draw(armature.triangles.drawAs(gl), triangle*3, 2*3)
 	}
 
 	/** Return a multiline string where sub joints are indented. */

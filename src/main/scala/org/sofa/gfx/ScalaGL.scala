@@ -128,9 +128,11 @@ abstract class SGL {
 	def enableVertexAttribArray(index:Int)
 	def disableVertexAttribArray(index:Int)
 	def vertexAttribPointer(number:Int, size:Int, typ:Int, b:Boolean, i:Int, j:Int)
-	//def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer)
+	def vertexAttribDivisor(index:Int, divisor:Int)
     def drawArrays(mode:Int, i:Int, size:Int)
     def drawElements(mode:Int, count:Int, i:Int, offset:Int)
+    def drawArraysInstanced(mode:Int, first:Int, count:Int, primcount:Int)
+    def drawElementsInstanced(mode:Int, count:Int, thetype:Int, offset:Int, primcount:Int)
     def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int)
 
 // Textures

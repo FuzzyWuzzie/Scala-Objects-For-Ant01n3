@@ -11,13 +11,12 @@ import scala.collection.mutable.HashMap
 
 
 
-// TODO 
+// TODO
+// - Instanced mesh to use instanced rendering. 
 // - allow a mesh to have several VAs, paving the way for multi mesh.
-// - store with each va the shader used to reference uniforms and the like.
 // - simplify the API.
-// - store MeshAttribute and MeshElement out of Mesh. Make them traits. Create base implementations.
-// - specify update as an interface method.
-
+// - Make MeshAttribute and MeshElement traits. Create base implementations.
+// - Specify update() as an interface method for Mesh.
 // - change EditableMesh to use these MeshAttribute (actually it duplicates them).
 // - for dynamic meshes, use the VertexAttribute names or the name of the user attributes
 //   to specify what to update (see TrianglesMesh as an example).
@@ -271,6 +270,33 @@ trait Mesh {
     	if(va ne null) {
     		val epp = elementsPerPrimitive
     		va.draw(drawAs(gl), start * epp, count * epp)
+    	} else {
+    		throw new NoVertexArrayException("create a vertex array before draw")
+    	}
+    }
+
+    def drawInstanced(gl:SGL, instances:Int) {
+    	if(va ne null) {
+    		val epp = elementsPerPrimitive
+    		va.drawInstanced(drawAs(gl), instances)
+    	} else {
+    		throw new NoVertexArrayException("create a vertex array before draw")
+    	}
+    }
+
+    def drawInstanced(gl:SGL, count:Int, instances:Int) {
+    	if(va ne null) {
+    		val epp = elementsPerPrimitive
+    		va.drawInstanced(drawAs(gl), count, instances)
+    	} else {
+    		throw new NoVertexArrayException("create a vertex array before draw")
+    	}
+    }
+
+    def drawInstanced(gl:SGL, start:Int, count:Int, instances:Int) {
+    	if(va ne null) {
+    		val epp = elementsPerPrimitive
+    		va.drawInstanced(drawAs(gl), start * epp, count * epp, instances)
     	} else {
     		throw new NoVertexArrayException("create a vertex array before draw")
     	}

@@ -18,7 +18,7 @@ class GraphMesh(val maxNodes:Int, val maxEdges:Int) extends MultiMesh {
 	protected[this] val V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)
 	
 	/** The mutable set of colors. */
-	protected[this] lazy val C:MeshAttribute = addMeshAttribute(VertexAttribute.Color, 4)
+	protected[this] val C:MeshAttribute = addMeshAttribute(VertexAttribute.Color, 4)
 	
 	/** The mutable set of nodes. */
 	protected[this] val nodes:MeshElement = new MeshElement(maxNodes, elementsPerPrimitive(0))

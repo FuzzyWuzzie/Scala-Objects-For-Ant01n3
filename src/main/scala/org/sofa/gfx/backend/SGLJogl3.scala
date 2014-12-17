@@ -149,9 +149,11 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
 	def enableVertexAttribArray(index:Int) = glEnableVertexAttribArray(index)
 	def disableVertexAttribArray(index:Int) = glDisableVertexAttribArray(index)
 	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, j:Int) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, j)
-//	def vertexAttribPointer(number:Int, attributeSize:Int, attributeType:Int, b:Boolean, size:Int, data:Buffer) = glVertexAttribPointer(number, attributeSize, attributeType, b, size, data)
+	def vertexAttribDivisor(index:Int, divisor:Int) = glVertexAttribDivisor(index, divisor)
     def drawArrays(mode:Int, i:Int, size:Int) = glDrawArrays(mode, i, size)
     def drawElements(mode:Int, count:Int, i:Int, offset:Int) = glDrawElements(mode, count, i, offset)
+    def drawArraysInstanced(mode:Int, first:Int, count:Int, primcount:Int) = glDrawArraysInstanced(mode, first, count, primcount)
+    def drawElementsInstanced(mode:Int, count:Int, thetype:Int, offset:Int, primcount:Int) = glDrawElementsInstanced(mode, count, thetype, offset, primcount)
     def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) = glMultiDrawArrays(mode, firsts.buffer.asInstanceOf[java.nio.IntBuffer], counts.buffer.asInstanceOf[java.nio.IntBuffer], primcount)
 
 // Textures

@@ -179,9 +179,9 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
         checkErrors
     }
 
-    /** Draw the elements (vertices, colors, normals) eventually using indices if
+    /** Draw the vertices (vertices, colors, normals) eventually using indices if
       * specified, and following a drawing mode given by the `kind` argument. This
-      * last argument takes as value either the `Mesh.drawAs()` value of one of the
+      * argument takes as value either the `Mesh.drawAs()` value of one of the
       * OpenGL constants `GL_TRIANGLES`, `GL_LINES`, `GL_LINE_LOOP`, `GL_POINTS`,
       * etc. Each attribute is associated to the index given at construction. */
     def draw(kind:Int, countElement:Int):Unit = {
@@ -210,19 +210,41 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     	}	
     }
 
-    def drawArrays(kind:Int, offset:Int, count:Int) {
-    	checkId
-    	bind
-    	gl.drawArrays(kind, offset, count)
-    	checkErrors
-    }
-    
-    def multiDraw(kind:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) {
+    def drawInstanced(kind:Int, instanceCount:Int) {
         checkId
         bind
         
-        if(elements ne null) { /* TODO */ }
-        else multiDrawArrays(kind, firsts, counts, primcount)
+        if(elements ne null)
+             drawElementsInstanced(kind, elements.size, elements.intType, 0, instanceCount)
+        else drawArraysInstanced(kind, 0, buffers(0)._2.size, instanceCount)
+
+        checkErrors    	
+    }
+
+    def drawInstanced(kind:Int, countElement:Int, instanceCount:Int) {
+    	if(countElement > 0) {
+    		checkId
+    		bind
+
+    		if(elements ne null)
+    			 drawElementsInstanced(kind, countElement, elements.intType, 0, instanceCount)
+    		else drawArraysInstanced(kind, 0, countElement, instanceCount)
+
+    		checkErrors
+    	}
+    }
+
+    def drawInstanced(kind:Int, offset:Int, countElement:Int, instanceCount:Int) {
+    	if(countElement > 0) {
+    		checkId
+    		bind
+
+    		if(elements ne null)
+    		     drawElementsInstanced(kind, countElement, elements.intType, offset, instanceCount)
+    		else drawArraysInstanced(kind, offset, countElement, instanceCount)
+
+    		checkErrors
+    	}
     }
 
     protected def bind() {
@@ -246,10 +268,6 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
 	        }
 	        VertexArray.currentlybound = this
 	    }
-    }
-    
-    def drawTriangles() {
-        draw(gl.TRIANGLES)
     }
 
     def indices:ElementBuffer = elements

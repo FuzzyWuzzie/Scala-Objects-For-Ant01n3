@@ -7,7 +7,10 @@ import org.sofa.math.Rgba
 
 /** Draw the X, Y and Z axis as lines with colors.
   *
-  * The `side` paramter allows to tell the length of each axis in the negative and positive directions. */
+  * The `side` paramter allows to tell the length of each axis in the negative
+  * and positive directions. The axis is centered at zero. By default the X
+  * axis is red, the y axis is green, and the z axis is blue. Negative axis
+  * parts are darker. */
 class AxisMesh(val side:Float) extends Mesh {
     
     protected val V:MeshAttribute = allocateVertices
