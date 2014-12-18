@@ -210,6 +210,26 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     	}	
     }
 
+    /** Draw the vertex array ignoring the elements indices if any. */
+    def drawArrays(kind:Int, countElement:Int):Unit = {
+    	if(countElement > 0) {
+    		checkId
+    		bind
+    		gl.drawArrays(kind, 0, countElement)
+    		checkErrors
+    	}	
+    }
+
+    /** Draw the vertex array ignoring the elements indices if any. */
+    def drawArrays(kind:Int, offset:Int, countElement:Int):Unit = {
+    	if(countElement > 0) {
+    		checkId
+    		bind
+    		gl.drawArrays(kind, offset, countElement)
+    		checkErrors
+    	}	
+    }
+
     def drawInstanced(kind:Int, instanceCount:Int) {
         checkId
         bind

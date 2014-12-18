@@ -41,7 +41,7 @@ class UIPanel(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 // ----------------------------------------------------------------------------------------------
 
 
-class UIAvatarRenderPanel(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
+class UIAvatarRenderPanel(avatar:Avatar) extends UIAvatarRender(avatar) with UIRenderUtils {
 
 	color = null
 

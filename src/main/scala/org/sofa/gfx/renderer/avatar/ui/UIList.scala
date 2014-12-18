@@ -141,7 +141,7 @@ class UIListItem(name:AvatarName, screen:Screen)
 // ----------------------------------------------------------------------------------------------
 
 
-class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
+class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIRenderUtils {
 	override def render() {
 // if(self.spaceChanged)
 // 	println("# %s space changed".format(self.name))
@@ -208,7 +208,7 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIre
 }
 
 
-class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
+class UIAvatarRenderListItem(avatar:Avatar) extends UIAvatarRender(avatar) with UIRenderUtils {
 
 	color = null//Rgba.White
 

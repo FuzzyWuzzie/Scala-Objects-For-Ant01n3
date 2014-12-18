@@ -35,7 +35,11 @@ class UIPerspective(name: AvatarName, screen: Screen)
 			state match {
 				case AvatarBaseStates.ChangeRenderer(renderer) => {
 					renderer match {
-						case r:UIAvatarRenderBase => { this.renderer = r; r.setAvatar(this); println("Changing UIPerspective renderer") }
+						case r:UIAvatarRenderBase => {
+							this.renderer = r
+							r.setAvatar(this)
+							self.screen.requestRender
+						}
 						case _ => throw new AvatarStateException("the renderer type must be UIAvatarRenderBase")
 					}
 				}
@@ -55,16 +59,9 @@ class UIAvatarRenderBase(avatar:Avatar) extends UIAvatarRender(avatar) {
 
 	def this() { this(null) }
 
-	def setAvatar(avatar:UIPerspective) {
-		this.self = avatar
-	}
+	def setAvatar(avatar:UIPerspective) { this.self = avatar }
 
-	override def render() {
-		val gl = screen.gl
-
-		gl.checkErrors
-		super.render
-	}
+	override def render() { super.render }
 }
 
 
@@ -119,9 +116,12 @@ class UIAvatarSpacePerspective(avatar: Avatar) extends UIAvatarSpace(avatar) {
 		// We do not need the thisSpace information excepted for the ratio h/w.
 
 		space.pushProjection
+		//space.projectionIdentity
 		space.frustum(from.x, to.x, from.y, to.y, from.z)
 		space.maxDepth = to.z
+
 		space.push
+		//space.viewIdentity
 		camera.setSpace(space)
 		camera.lookAt
 	}
@@ -136,41 +136,53 @@ class UIAvatarSpacePerspective(avatar: Avatar) extends UIAvatarSpace(avatar) {
 	override def changeSpace(newState: AvatarSpaceState) {
 		import UIPerspectiveStates._
 
+		val screen = self.screen
+
 		newState match {
 			case AvatarBaseStates.Move(offset) ⇒ {
 				camera.eyeCartesian(camera.cartesianEye.x + offset.x, camera.cartesianEye.y + offset.y, camera.cartesianEye.z + offset.z)
+				screen.requestRender
 			}
 			case AvatarBaseStates.MoveAt(position: Point3) ⇒ {
 				camera.eyeCartesian(position.x, position.y, position.z)
+				screen.requestRender
 			}
 			case AvatarBaseStates.Resize(size) ⇒ {
 				toSpace.from.x = -size.x / 2
 				toSpace.to.x = size.x / 2
 				toSpace.from.z = size.z
+				screen.requestRender
 			}
 			case Orbit(tpr) ⇒ {
 				camera.eyeSpherical(tpr.x, tpr.y, tpr.z)
+				screen.requestRender
 			}
 			case RotateHorizontal(delta) ⇒ {
 				camera.rotateEyeHorizontal(delta)
+				screen.requestRender
 			}
 			case RotateVertical(delta) ⇒ {
 				camera.rotateEyeVertical(delta)
+				screen.requestRender
 			}
 			case Zoom(delta) ⇒ {
 				camera.eyeTraveling(delta)
+				screen.requestRender
 			}
 			case Eye(eye) ⇒ {
 				camera.eyeCartesian(eye.x, eye.y, eye.z)
+				screen.requestRender
 			}
 			case Focus(focus) ⇒ {
 				camera.setFocus(focus.x, focus.y, focus.z)
+				screen.requestRender
 			}
 			case Projection(width, near, far) ⇒ {
 				toSpace.from.x = -width / 2
 				toSpace.to.x = width / 2
 				toSpace.from.z = near
 				toSpace.to.z = far
+				screen.requestRender
 			}
 			case _ ⇒ super.changeSpace(newState)
 		}

@@ -11,7 +11,7 @@ import org.sofa.gfx.{ SGL, ShaderProgram } //, Camera, VertexArray, Texture, Hem
 import org.sofa.gfx.mesh.{ TrianglesMesh, Mesh, VertexAttribute, LinesMesh } //, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 
 
-class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
+class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) with UIRenderUtils {
 	color = Rgba.Yellow
 
 	override def render() {
@@ -21,7 +21,7 @@ class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) with UIr
 // if(self.spaceChanged)
 // 	println("# %s space changed".format(self.name))
 
-		gl.clearColor(Rgba.Red)
+		gl.clearColor(Rgba.White)
 		gl.clear(gl.COLOR_BUFFER_BIT)	// TODO remove it !!
 
 		//gl.lineWidth(1f)

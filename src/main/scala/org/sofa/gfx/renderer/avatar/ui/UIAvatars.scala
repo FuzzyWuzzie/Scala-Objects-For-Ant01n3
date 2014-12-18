@@ -154,7 +154,7 @@ object UIrenderUtils {
 }
 
 
-trait UIrenderUtils {
+trait UIRenderUtils {
 
 	var color = Rgba.Cyan
 

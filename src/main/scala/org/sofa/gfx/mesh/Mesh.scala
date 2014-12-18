@@ -201,7 +201,8 @@ trait Mesh {
     }
 
     /** True if this mesh has an attribute with the given `name`. */
-    def hasAttribute(name:String):Boolean = meshAttributes.contains(name)
+    def hasAttribute(name:String):Boolean = if(meshAttributes ne null) meshAttributes.contains(name) else true
+    // TODO remove the test, when all mesh will be compatible.
 
     /** Indices of the elements to draw in the attributes array, in draw order.
       * The indices points at elements in each attribute array. */

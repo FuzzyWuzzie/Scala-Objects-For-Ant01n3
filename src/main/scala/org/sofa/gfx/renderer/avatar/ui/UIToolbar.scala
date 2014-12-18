@@ -29,7 +29,7 @@ class UIToolbar(name:AvatarName, screen:Screen) extends UIAvatar(name, screen) {
 // ----------------------------------------------------------------------------------------------
 
 
-class UIAvatarRenderToolbar(avatar:Avatar) extends UIAvatarRender(avatar) with UIrenderUtils {
+class UIAvatarRenderToolbar(avatar:Avatar) extends UIAvatarRender(avatar) with UIRenderUtils {
 
 	color = Rgba.fromHSV(toRadians(260.0), 1.0, 1.0)
 
