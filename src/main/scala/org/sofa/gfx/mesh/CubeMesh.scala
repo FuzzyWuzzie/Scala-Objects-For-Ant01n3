@@ -9,20 +9,20 @@ import org.sofa.math.Rgba
   * The vertex data must use indices. The cube is made of single triangles and therefore must be
   * drawn using "triangle" mode. Triangles are in CW order. 
   *
-  * As with each [[Mesh]], you can use any vertex attribute you desire, but there are helper
-  * methods to allocate colors, normals, tex-coords and tangents so that they are already
-  * filled correctly. Use methods:
-  *    - allocateTexCoords()
-  *    - allocateNormals()
-  *    - allocateColors()
-  *    - allocateTangents()
+  * As with each [[Mesh]], you can use any vertex attribute you desire and add them using
+  * `addAttribute()`. However there are helper methods to allocate colors, normals,
+  * tex-coords and tangents so that they are already filled correctly:
+  *    - addAttributeTexCoord()
+  *    - addAttributeNormal()
+  *    - addAttributeColor()
+  *    - addAttributeTangent()
   *
   * There is also a facility to use instanced rendering and draw multiples cubes with one call.
   */
 class CubeMesh(val side:Float) extends Mesh {
     
-    protected var I:MeshElement = allocateIndices
-    protected var V:MeshAttribute = allocateVertices
+    protected var I:MeshElement = addIndex
+    protected var V:MeshAttribute = addAttributeVertex
     protected var C:MeshAttribute = _ 
     protected var N:MeshAttribute = _ 
     protected var X:MeshAttribute = _ 
@@ -43,7 +43,7 @@ class CubeMesh(val side:Float) extends Mesh {
       * attribute if needed. */
     def setColor(color:Rgba) {
     	if(C eq null)
-    		allocateColors
+    		addAttributeColor
 
     	val n = 6 * 4 * 4
     	val d = C.theData
@@ -62,45 +62,7 @@ class CubeMesh(val side:Float) extends Mesh {
 
     def elementsPerPrimitive:Int = 3
 
-    // override def attribute(name:String):FloatBuffer = {
-    // 	VertexAttribute.withName(name) match {
-    // 		case VertexAttribute.Vertex   => V
-    // 		case VertexAttribute.Color    => C
-    // 		case VertexAttribute.Normal   => N
-    // 		case VertexAttribute.TexCoord => X
-    // 		case VertexAttribute.Tangent  => T
-    // 		case _                        => super.attribute(name) //throw new RuntimeException("mesh has no attribute %s".format(name))
-    // 	}
-    // }
-
     override def elements:IntBuffer = I.theData
-
-    // override def attributeCount():Int = 5 + super.attributeCount
-
-    // override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString,
-    // 		VertexAttribute.Tangent.toString, VertexAttribute.TexCoord.toString, VertexAttribute.Color.toString) ++ super.attributes
-
-    // override def components(name:String):Int = {
-    // 	VertexAttribute.withName(name) match {
-    // 		case VertexAttribute.Vertex   => 3
-    // 		case VertexAttribute.Color    => 4
-    // 		case VertexAttribute.Normal   => 3
-    // 		case VertexAttribute.TexCoord => 2
-    // 		case VertexAttribute.Tangent  => 3
-    // 		case _                        => super.components(name)// throw new RuntimeException("mesh has no attribute %s".format(name))
-    // 	}    	
-    // }
-
-	// override def has(name:String):Boolean = {
- //    	VertexAttribute.withName(name) match {
- //    		case VertexAttribute.Vertex   => true
- //    		case VertexAttribute.Color    => true
- //    		case VertexAttribute.Normal   => true
- //    		case VertexAttribute.TexCoord => true
- //    		case VertexAttribute.Tangent  => true
- //    		case _                        => super.has(name) //false
- //    	}
-	// }
 
     override def hasElements():Boolean = true
     
@@ -108,7 +70,7 @@ class CubeMesh(val side:Float) extends Mesh {
 
 	// -- Building ---------------------------------------------------
     
-    protected def allocateVertices:MeshAttribute = {
+    protected def addAttributeVertex:MeshAttribute = {
     	if(V eq null) {
 	    	V = addMeshAttribute(VertexAttribute.Vertex, 3)
 	        val s = side / 2f
@@ -148,7 +110,7 @@ class CubeMesh(val side:Float) extends Mesh {
         V
     }
     
-    def allocateTexCoords:MeshAttribute = {
+    def addAttributeTexCoord:MeshAttribute = {
     	if(X eq null) {
 	        X = addMeshAttribute(VertexAttribute.TexCoord, 2)
 	        val s = textureRepeatS
@@ -191,7 +153,7 @@ class CubeMesh(val side:Float) extends Mesh {
         X
     }
 
-    def allocateColors:MeshAttribute = {
+    def addAttributeColor:MeshAttribute = {
         if(C eq null) {
 	        var i = 0
 	        val n = 6 * 4 * 4
@@ -207,7 +169,7 @@ class CubeMesh(val side:Float) extends Mesh {
         C
     }
 
-    def allocateNormals:MeshAttribute = {
+    def addAttributeNormal:MeshAttribute = {
     	if(N eq null) {
 	        N = addMeshAttribute(VertexAttribute.Normal, 3)
 
@@ -247,7 +209,7 @@ class CubeMesh(val side:Float) extends Mesh {
        	N
     }
 
-    def allocateTangents:MeshAttribute = {
+    def addAttributeTangent:MeshAttribute = {
     	if(T eq null) {
 	        T = addMeshAttribute(VertexAttribute.Tangent, 3)
 
@@ -287,7 +249,7 @@ class CubeMesh(val side:Float) extends Mesh {
         T
     }
 
-    protected def allocateIndices:MeshElement = {
+    protected def addIndex:MeshElement = {
         if(I eq null) {
 	        I = new MeshElement(12, 3)
 

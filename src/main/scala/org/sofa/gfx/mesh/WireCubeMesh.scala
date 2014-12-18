@@ -12,45 +12,17 @@ import org.sofa.math.Rgba
   */
 class WireCubeMesh(val side:Float) extends Mesh  {
     
-    protected lazy val V:FloatBuffer = allocateVertices
-    protected lazy val C:FloatBuffer = allocateColors
-    protected lazy val I:IntBuffer = allocateIndices
+    protected var I:MeshElement = addIndex
+    protected var V:MeshAttribute = addAttributeVertex
+    protected var C:MeshAttribute = _ //addAttributeColor
 
     // -- Mesh interface ------------------------------------
 
-    def vertexCount:Int = 6
+    def vertexCount:Int = 8
 
     def elementsPerPrimitive:Int = 2
 
-    override def attribute(name:String):FloatBuffer = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex => V
-    		case VertexAttribute.Color  => C
-    		case _                      => super.attribute(name)// throw new RuntimeException("this mesh does not have attribute %s".format(name))
-    	}
-    }
-
-    override def elements:IntBuffer = I
-
-    override def attributeCount() = 2 + super.attributeCount
-
-    override def attributes() = Array[String](VertexAttribute.Vertex.toString,VertexAttribute.Color.toString) ++ super.attributes
-
-    override def components(name:String) = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex => 3
-    		case VertexAttribute.Color  => 4
-    		case _                      => super.components(name)// throw new RuntimeException("this mesh does not have attribute %s".format(name))    		
-    	}
-    }
-
-    override def has(name:String) = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex => true
-    		case VertexAttribute.Color  => true
-    		case _                      => super.has(name) //false
-    	}    	
-    }
+    override def elements:IntBuffer = I.theData
 
     override def hasElements():Boolean = true
 
@@ -58,61 +30,79 @@ class WireCubeMesh(val side:Float) extends Mesh  {
 
 	// -- Mesh building --------------------------------------------        
     
-    protected def allocateVertices:FloatBuffer = {
-        val s = side / 2f
-        
-        FloatBuffer(
-        // Front
-        -s, -s,  s,			// 0
-         s, -s,  s,			// 1
-         s,  s,  s,			// 2
-        -s,  s,  s,			// 3
-        // Back
-        -s, -s, -s,			// 4
-         s, -s, -s,			// 5
-         s,  s, -s,		 	// 6
-        -s,  s, -s)			// 7
+    protected def addAttributeVertex:MeshAttribute = {
+        if(V eq null) {
+	     	V = addMeshAttribute(VertexAttribute.Vertex, 3)
+	        val s = side / 2f
+	        
+	        V.copy(
+		        // Front
+		        -s, -s,  s,			// 0
+		         s, -s,  s,			// 1
+		         s,  s,  s,			// 2
+		        -s,  s,  s,			// 3
+		        // Back
+		        -s, -s, -s,			// 4
+		         s, -s, -s,			// 5
+		         s,  s, -s,		 	// 6
+		        -s,  s, -s)			// 7
+	    }
+
+	    V
     }
 
-    protected def allocateColors:FloatBuffer = {
-        val n   = 8 * 4
-        val buf = FloatBuffer(n)
-        
-        for(i <- 0 until n) {
-        	buf(i) = 1f
-        }
-        
-        buf
+    /** Add a color vertex attribute with all vertices having the same color (black). */
+    def addAttributeColor:MeshAttribute = {
+        if(C eq null) {
+	        C = addMeshAttribute(VertexAttribute.Color, 4)
+	        val n = 8 * 4
+	        val d = C.theData 
+	        
+	        for(i <- 0 until n) {
+	        	d(i) = 1f
+	        }    
+	    }
+
+	    C
     }
     
-    /** Set the color of each line. */
+    /** Set the color of each line. Allocate the color vertex attribute if needed. */
     def setColor(color:Rgba) {
+    	if(C eq null)
+    		addAttributeColor
+
     	val n = 8 * 4
-    	
+    	val d = C.theData
+
     	for(i <- 0 until n by 4) {
-    		C(i+0) = color.red.toFloat
-    		C(i+1) = color.green.toFloat
-    		C(i+2) = color.blue.toFloat
-    		C(i+3) = color.alpha.toFloat
+    		d(i+0) = color.red.toFloat
+    		d(i+1) = color.green.toFloat
+    		d(i+2) = color.blue.toFloat
+    		d(i+3) = color.alpha.toFloat
     	}
     }
 
-    protected def allocateIndices:IntBuffer = {
-        IntBuffer(
-        // Front
-        0, 1,
-        1, 2,
-        2, 3,
-        3, 0,
-        // Back
-        4, 5,
-        5, 6,
-        6, 7,
-        7, 4,
-        // Sides
-        0, 4,
-        1, 5,
-        2, 6,
-        3, 7)
-    }
+    protected def addIndex:MeshElement = {
+        if(I eq null) {
+	        I = new MeshElement(12, 2)
+	        I.copy(
+		        // Front
+		        0, 1,
+		        1, 2,
+		        2, 3,
+		        3, 0,
+		        // Back
+		        4, 5,
+		        5, 6,
+		        6, 7,
+		        7, 4,
+		        // Sides
+		        0, 4,
+		        1, 5,
+		        2, 6,
+		        3, 7)
+	    }
+
+	    I
+	}
 }
