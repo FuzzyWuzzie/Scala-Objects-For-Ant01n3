@@ -133,14 +133,26 @@ trait Mesh {
 	  * number of `components`, that is the number of values per vertex.
 	  * The returned [[MeshAttribute]] is stored. */
 	protected def addMeshAttribute(name:String, components:Int):MeshAttribute = {
+		// if(meshAttributes eq null)
+		// 	meshAttributes = new HashMap[String, MeshAttribute]()
+
+		// val meshAttr = new MeshAttribute(name, components, vertexCount)
+
+		// meshAttributes += name -> meshAttr
+
+		// meshAttr		
+		addMeshAttribute(name, components, vertexCount)
+	}
+
+	protected def addMeshAttribute(name:String, components:Int, nVertices:Int):MeshAttribute = {
 		if(meshAttributes eq null)
 			meshAttributes = new HashMap[String, MeshAttribute]()
 
-		val meshAttr = new MeshAttribute(name, components, vertexCount)
+		val meshAttr = new MeshAttribute(name, components, nVertices)
 
 		meshAttributes += name -> meshAttr
 
-		meshAttr		
+		meshAttr
 	}
 
 	/** Change the value of an attribute for the given `vertex`. The `values` must
@@ -155,7 +167,7 @@ trait Mesh {
 	/** Number of vertices in the mesh. */
 	def vertexCount:Int
 
-	/** Number of elements (vertices, colors, etc) for one primitive. For
+	/** Number of elements (vertices) for one primitive. For
 	  * example lines uses 2 elements, triangles 3, etc. */
 	def elementsPerPrimitive:Int
 
@@ -451,6 +463,13 @@ class MeshAttribute(val name:String, val components:Int, val vertexCount:Int) {
 		}
 	}
 
+	/** Copy the data from the set of `values` given. The number of values must match the size of the attribute. */
+	def copy(values:Float*) {
+		if(values.length == vertexCount*components)
+			theData.copy(values.asInstanceOf[scala.collection.mutable.WrappedArray[Float]].array)
+		else throw new RuntimeException("use copy with exactly the correct number of arguments")
+	}
+
 	/** Update the buffer (send it to OpenGL) with the same name as this attribute if
 	  * some elements have been changed. */
 	def update(va:VertexArray) {
@@ -509,6 +528,13 @@ class MeshElement(val primCount:Int, val verticesPerPrim:Int) {
 		} else {
 			throw new InvalidPrimitiveVertexException(s"no enough values passed for primitive (${values.length}), needs ${verticesPerPrim} vertices indices")
 		}
+	}
+
+	/** Copy the data from the set of `values` given. The number of values must match the size of the attribute. */
+	def copy(values:Int*) {
+		if(values.length == primCount*verticesPerPrim)
+			theData.copy(values.asInstanceOf[scala.collection.mutable.WrappedArray[Int]].array)
+		else throw new RuntimeException("use copy with exactly the correct number of arguments")
 	}
 
 	/** Update the buffer (send it to OpenGL) with the same name as this attribute if
