@@ -440,7 +440,7 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     
     /** Bind the texture as current. */
     def bind() {
-    	if(Texture.currentlybound(0) != this) {
+    	if(Texture.currentlybound(0) eq this) {
         	bindTexture(mode, oid)
         	Texture.currentlybound(0) = this
         }
@@ -449,25 +449,19 @@ class Texture(gl:SGL, val mode:Int, val width:Int, val height:Int, val depth:Int
     /** Both bind the texture and specify to which texture unit it binds. */
     def bindTo(textureUnit:Int) {
     	// Yet heavy, but faster.
-    	if(textureUnit == gl.TEXTURE0) {
-    		if(Texture.currentlybound(0) != this) {
-		        activeTexture(textureUnit)
-        		bindTexture(mode, oid)
-        		Texture.currentlybound(0) = this
-    		}	
-    	} else if(textureUnit == gl.TEXTURE1) {
-    		if(Texture.currentlybound(1) != this) {
-		        activeTexture(textureUnit)
-        		bindTexture(mode, oid)
-        		Texture.currentlybound(1) = this
-    		}	    		
-    	} else if(textureUnit == gl.TEXTURE2) {
-    		if(Texture.currentlybound(2) != this) {
-		        activeTexture(textureUnit)
-        		bindTexture(mode, oid)
-        		Texture.currentlybound(2) = this
-    		}	
-    	} else throw new RuntimeException("cannot handle more than 3 texture unit yet")
+
+    	val i = textureUnit match {
+    		case gl.TEXTURE0 => 0
+    		case gl.TEXTURE1 => 1
+    		case gl.TEXTURE2 => 2
+    		case _ => throw new RuntimeException("cannot handle more than 3 texture unit yet")
+    	}
+
+    	if(Texture.currentlybound(i) eq this) {
+		    activeTexture(textureUnit)
+        	bindTexture(mode, oid)
+        	Texture.currentlybound(i) = this
+        }	
     }
 
     /** Bind the texture, specify to witch texture unit it binds, and set
