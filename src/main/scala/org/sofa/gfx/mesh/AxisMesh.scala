@@ -13,9 +13,9 @@ import org.sofa.math.Rgba
   * parts are darker. */
 class AxisMesh(val side:Float) extends Mesh {
     
-    protected val V:MeshAttribute = allocateVertices
+    protected var V:MeshAttribute = addAttributeVertex
 
-    protected val C:MeshAttribute = allocateColors
+    protected var C:MeshAttribute = addAttributeColor
 
     def vertexCount:Int = 12
 
@@ -58,52 +58,56 @@ class AxisMesh(val side:Float) extends Mesh {
 
     // -- Mesh building ---------------------------------------------------
 
-    protected def allocateVertices:MeshAttribute = {
-    	val v = addMeshAttribute(VertexAttribute.Vertex, 3)
-        val s = side / 2f
-        
-        v.set(0,  0,  0,  0)			// X+ 0
-        v.set(1,  s,  0,  0)			// X+
+    protected def addAttributeVertex:MeshAttribute = {
+    	if(V eq null) {
+	    	V = addMeshAttribute(VertexAttribute.Vertex, 3)
+	        
+	        val s = side / 2f
+	        
+	        V.set(0,  0,  0,  0)			// X+ 0
+	        V.set(1,  s,  0,  0)			// X+
 
-        v.set(2,  0,  0,  0)			// X- 0
-        v.set(3, -s,  0,  0)			// X-
+	        V.set(2,  0,  0,  0)			// X- 0
+	        V.set(3, -s,  0,  0)			// X-
 
-        v.set(4,  0,  0,  0)			// Y+ 0
-        v.set(5,  0,  s,  0)			// Y+
+	        V.set(4,  0,  0,  0)			// Y+ 0
+	        V.set(5,  0,  s,  0)			// Y+
 
-        v.set(6,  0,  0,  0)			// Y- 0
-        v.set(7,  0, -s,  0)			// Y-
+	        V.set(6,  0,  0,  0)			// Y- 0
+	        V.set(7,  0, -s,  0)			// Y-
 
-        v.set(8,  0,  0,  0)			// Z+ 0
-        v.set(9,  0,  0,  s)			// Z+
+	        V.set(8,  0,  0,  0)			// Z+ 0
+	        V.set(9,  0,  0,  s)			// Z+
 
-        v.set(10,  0,  0,  0)			// Z- 0
-        v.set(11,  0,  0, -s)			// Z-
+	        V.set(10,  0,  0,  0)			// Z- 0
+	        V.set(11,  0,  0, -s)			// Z-
+	    }
 
-        v
+        V
     }
 
-    protected def allocateColors:MeshAttribute = {
-    	val c = addMeshAttribute(VertexAttribute.Color, 4)
+    protected def addAttributeColor:MeshAttribute = {
+    	if(C eq null) {
+	    	C = addMeshAttribute(VertexAttribute.Color, 4)
 
-    	c.set(0, 1, 0, 0, 1)
-    	c.set(1, 1, 0, 0, 1)
-    		
-    	c.set(2, 0.5f, 0, 0, 1)
-    	c.set(3, 0.5f, 0, 0, 1)
-    		
-    	c.set(4, 0, 1, 0, 1)
-    	c.set(5, 0, 1, 0, 1)
-    		
-    	c.set(6, 0, 0.5f, 0, 1)
-    	c.set(7, 0, 0.5f, 0, 1)
-    		
-    	c.set(8, 0, 0, 1, 1)
-    	c.set(9, 0, 0, 1, 1)
-    		
-    	c.set(10, 0, 0, 0.5f, 1)
-    	c.set(11, 0, 0, 0.5f, 1)
-
-    	c
+	    	C.set(0, 1, 0, 0, 1)
+	    	C.set(1, 1, 0, 0, 1)
+	    		
+	    	C.set(2, 0.5f, 0, 0, 1)
+	    	C.set(3, 0.5f, 0, 0, 1)
+	    		
+	    	C.set(4, 0, 1, 0, 1)
+	    	C.set(5, 0, 1, 0, 1)
+	    		
+	    	C.set(6, 0, 0.5f, 0, 1)
+	    	C.set(7, 0, 0.5f, 0, 1)
+	    		
+	    	C.set(8, 0, 0, 1, 1)
+	    	C.set(9, 0, 0, 1, 1)
+	    		
+	    	C.set(10, 0, 0, 0.5f, 1)
+	    	C.set(11, 0, 0, 0.5f, 1)
+    	}
+    	C
     }
 }

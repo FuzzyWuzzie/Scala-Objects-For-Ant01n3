@@ -133,22 +133,14 @@ trait Mesh {
 	  * number of `components`, that is the number of values per vertex.
 	  * The returned [[MeshAttribute]] is stored. */
 	protected def addMeshAttribute(name:String, components:Int):MeshAttribute = {
-		// if(meshAttributes eq null)
-		// 	meshAttributes = new HashMap[String, MeshAttribute]()
-
-		// val meshAttr = new MeshAttribute(name, components, vertexCount)
-
-		// meshAttributes += name -> meshAttr
-
-		// meshAttr		
 		addMeshAttribute(name, components, vertexCount)
 	}
 
-	protected def addMeshAttribute(name:String, components:Int, nVertices:Int):MeshAttribute = {
+	protected def addMeshAttribute(name:String, components:Int, nVertices:Int, divisor:Int=0):MeshAttribute = {
 		if(meshAttributes eq null)
 			meshAttributes = new HashMap[String, MeshAttribute]()
 
-		val meshAttr = new MeshAttribute(name, components, nVertices)
+		val meshAttr = new MeshAttribute(name, components, nVertices, divisor)
 
 		meshAttributes += name -> meshAttr
 
@@ -234,6 +226,17 @@ trait Mesh {
 
     /** Number of components of the given vertex attribute. */
     def components(name:VertexAttribute.Value):Int = components(name.toString)
+
+    def divisor(name:String):Int = {
+    	if(meshAttributes ne null) {
+    		meshAttributes.get(name) match {
+    			case Some(x) => x.divisor
+    			case None => throw new NoSuchVertexAttributeException("mesh has no attribute named %s".format(name))
+    		}
+    	} else {
+    		throw new NoSuchVertexAttributeException("mesh has no attribute named %s".format(name))
+    	}
+    }
 
     /** True if the vertex attribute whose name is given is defined in this mesh. */
     def has(name:String):Boolean = {
@@ -380,7 +383,7 @@ trait Mesh {
     def newVertexArray(gl:SGL, drawMode:Int, shader:ShaderProgram, locations:Tuple2[String,String]*):VertexArray = {
     	beforeNewVertexArray
 
-    	val locs = new Array[Tuple4[String,Int,Int,NioBuffer]](locations.size)
+    	val locs = new Array[Tuple5[String,Int,Int,NioBuffer,Int]](locations.size)
     	var pos  = 0
 
     	locations.foreach { value => 
@@ -389,8 +392,11 @@ trait Mesh {
     		
     		if(!hasAttribute(attName))
     			throw new NoSuchVertexAttributeException("mesh has no attribute named '%s' (mapped to '%s')".format(attName, varName))
-
-    		locs(pos) = (attName, shader.getAttribLocation(varName), components(attName), attribute(attName))
+ 
+ 	  		val att = meshAttribute(attName)
+ 
+    		//locs(pos) = (attName, shader.getAttribLocation(varName), components(attName), attribute(attName), divisor(attName))
+    		locs(pos) = (attName, shader.getAttribLocation(varName), att.components, att.theData, att.divisor)
     		pos += 1
     	}
 
@@ -427,12 +433,15 @@ trait Mesh {
   * floats, and [[beg]] and [[end]] markers, indicating the extent of modifications
   * in the buffer. If you mess with these fields, you known the consequences.
   * However this will be far faster than using the `set*()` methods. */
-class MeshAttribute(val name:String, val components:Int, val vertexCount:Int) {
+class MeshAttribute(val name:String, val components:Int, val vertexCount:Int, var divisor:Int = -1) {
 	
+	/** The data ! */
 	var theData = FloatBuffer(vertexCount * components)
 
+	/** Start position (included) of the last modification. */
 	var beg:Int = vertexCount
 
+	/** End position (not included) of the last modification. */
 	var end:Int = 0
 
 	/** Data under the form a float buffer. */

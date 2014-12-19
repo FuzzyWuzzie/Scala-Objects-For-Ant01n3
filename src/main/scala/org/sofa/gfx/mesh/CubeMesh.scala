@@ -27,6 +27,7 @@ class CubeMesh(val side:Float) extends Mesh {
     protected var N:MeshAttribute = _ 
     protected var X:MeshAttribute = _ 
     protected var T:MeshAttribute = _ 
+    protected var P:MeshAttribute = _
 
     protected var textureRepeatS:Int = 1
     
@@ -275,5 +276,20 @@ class CubeMesh(val side:Float) extends Mesh {
 	    }
 
         I
+    }
+
+    def addAttributeInstancedPosition(count:Int, divisor:Int=1):MeshAttribute = {
+		if(P eq null)
+			P = addMeshAttribute("Position", 3, count)
+
+		P
+    }
+
+    def position(i:Int, x:Float, y:Float, z:Float) {
+    	val d = P.theData
+    	val v = i * 3
+    	d(v+0) = x
+    	d(v+1) = y
+    	d(v+2) = z
     }
 }

@@ -162,14 +162,14 @@ trait MultiMesh extends Mesh {
     	if(vas eq null) vas = new Array[VertexArray](subMeshCount)
     	if(shs eq null) shs = new Array[ShaderProgram](subMeshCount)
 
-		val locs = new Array[Tuple3[String,Int,ArrayBuffer]](locations.size)
+		val locs = new Array[Tuple4[String,Int,ArrayBuffer,Int]](locations.size)
     	var pos  = 0
 
     	locations.foreach { value =>
     		val attribute   = value._1
     		val location    = shader.getAttribLocation(value._2)
     		val arrayBuffer = createOrReuseArrayBuffer(gl, attribute, drawMode)
-    		locs(pos)       = (attribute, location, arrayBuffer)
+    		locs(pos)       = (attribute, location, arrayBuffer, divisor(attribute))
     		pos += 1
     	}
 

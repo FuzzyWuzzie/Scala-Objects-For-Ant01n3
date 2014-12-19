@@ -44,7 +44,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     protected def init() { super.init(if(gl.isES) this else createVertexArray) }
     
     /** Store the indices and array buffers. Indices may be null. */
-    protected def storeData(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(String,Int,Int,NioBuffer)*) {
+    protected def storeData(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(String,Int,Int,NioBuffer,Int)*) {
         this.buffers = new Array[(Int,ArrayBuffer)](attributes.size)
         if(!gl.isES) bindVertexArray(oid)
         var i=0
@@ -52,7 +52,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
             // The creation binds the buffer.
         	bufferNames += ((item._1, i))
             buffers(i) = (item._2, ArrayBuffer(gl, item._3, item._4, drawMode))
-            if(!gl.isES) buffers(i)._2.vertexAttrib(item._2, true)	// Identify the attribute to the vertex array.
+            if(!gl.isES) buffers(i)._2.vertexAttrib(item._2, true, item._5)	// Identify the attribute to the vertex array.
             i += 1
         }
         if(indices ne null) {
@@ -63,14 +63,14 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     }
     
     /** Store the indices and array buffers. Indices may be null. */
-    protected def storeData(gl:SGL, indices:ElementBuffer, attributes:(String,Int,ArrayBuffer)*) {
+    protected def storeData(gl:SGL, indices:ElementBuffer, attributes:(String,Int,ArrayBuffer,Int)*) {
     	this.buffers = new Array[(Int,ArrayBuffer)](attributes.size)
     	if(!gl.isES) bindVertexArray(oid)
     	var i=0
     	attributes.foreach { item =>
     		bufferNames += ((item._1, i))
     		buffers(i) = (item._2, item._3)
-    		if(!gl.isES) item._3.vertexAttrib(item._2, true)
+    		if(!gl.isES) item._3.vertexAttrib(item._2, true, item._4)
     		i += 1
     	}
     	if(indices ne null) {
@@ -83,11 +83,12 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     /** Create a vertex array without indices, only made of vertices, colors, normals, etc.
       * The `attributes` must be a tuple with four values, first the attribute name, then the attribute index, then
       * the attribute number of component per element(for example vertices have 3 components
-      * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
+      * (x, y and z), colors have four components (r, g, b and a)), the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
-      * number of components per element. The array buffers are created with gl.STATIC_DRAW
+      * number of components per element, and finally the attribute divisor, for instanced rendering,
+      * 0 it the attribute is not instanced. The array buffers are created with gl.STATIC_DRAW
       * draw mode. */
-    def this(gl:SGL, attributes:(String, Int, Int, NioBuffer)*) {
+    def this(gl:SGL, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
         storeData(gl, null, gl.STATIC_DRAW, attributes:_*)
     }
@@ -95,13 +96,14 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     /** Create a vertex array with indices, made of vertices, colors, normals, etc.
       * The `indices` must be a set of integers defining which element to use in the `data`. The
       * use of the indices depends on the way elements are drawn (triangles, lines, etc.). 
-      * The `attributes` must be a tuple with four values, first the attribute name, then the attribute index, then
+      * The `attributes` must be a tuple with five values, first the attribute name, then the attribute index, then
       * the attribute number of component per element(for example vertices have 3 components
-      * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
+      * (x, y and z), colors have four components (r, g, b and a)), the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
-      * number of components per element. The array buffers are created with gl.STATIC_DRAW
+      * number of components per element, and finally the attribute divisor, for instanced rendering,
+      * 0 it the attribute is not instanced. The array buffers are created with gl.STATIC_DRAW
       * draw mode. */
-    def this(gl:SGL, indices:IntBuffer, attributes:(String, Int, Int, NioBuffer)*) {
+    def this(gl:SGL, indices:IntBuffer, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
         storeData(gl, indices, gl.STATIC_DRAW, attributes:_*)
     }
@@ -109,10 +111,11 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     /** Create a vertex array without indices, only made of vertices, colors, normals, etc.
       * The `attributes` must be a tuple with four values, first the attribute name, then the attribute index, then
       * the attribute number of component per element(for example vertices have 3 components
-      * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
+      * (x, y and z), colors have five components (r, g, b and a)), the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
-      * number of components per element. */
-    def this(gl:SGL, drawMode:Int, attributes:(String, Int, Int, NioBuffer)*) {
+      * number of components per element, and finally the attribute divisor, for instanced rendering,
+      * 0 it the attribute is not instanced. */
+    def this(gl:SGL, drawMode:Int, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
         storeData(gl, null, drawMode, attributes:_*)
     }
@@ -120,33 +123,25 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     /** Create a vertex array with indices, made of vertices, colors, normals, etc.
       * The `indices` must be a set of integers defining which element to use in the `data`. The
       * use of the indices depends on the way elements are drawn (triangles, lines, etc.). 
-      * The `attributes` must be a tuple with four values, first the attribute name, then the attribute index, then
+      * The `attributes` must be a tuple with five values, first the attribute name, then the attribute index, then
       * the attribute number of component per element(for example vertices have 3 components
-      * (x, y and z), colors have four components (r, g, b and a)), and finally the attribute
+      * (x, y and z), colors have four components (r, g, b and a)), the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
-      * number of components per element. */
-    def this(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(String, Int, Int, NioBuffer)*) {
+      * number of components per element, and finally the attribute divisor, for instanced rendering,
+      * 0 it the attribute is not instanced. */
+    def this(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
         storeData(gl, indices, drawMode, attributes:_*)
     }
-    
-    /*  Create a vertex array without indices, only made of vertices, colors, normals, etc.
-      * The `data` must be a tuple with two values, first the attribute index, then the attribute
-      * data as an array buffer already allocated an bindable.
-    def this(gl:SGL, attributes:(Int,ArrayBuffer)*) {
-    	this(gl)
-    	storeData(gl, null, attributes:_*)
-    }
-    */
-    
+        
     /** Create a vertex array with indices, made of vertices, colors, normals, etc.
       * The `indices` must be a set of integers defining which element to use in the `data`. The
       * use of the indices depends on the way elements are drawn (triangles, lines, etc.). 
       * The `indices` array may be null if no indices are used.
-      * The `attributes` must be a tuple with three values, first the attribute name, then
+      * The `attributes` must be a tuple with four values, first the attribute name, then
       * the attribute index, then the attribute data as an array buffer already allocated
-      * and bindable. */
-    def this(gl:SGL, indices:ElementBuffer, attributes:(String, Int, ArrayBuffer)*) {
+      * and bindable and finally the attribute divisor (0 to deactivate). */
+    def this(gl:SGL, indices:ElementBuffer, attributes:(String, Int, ArrayBuffer, Int)*) {
     	this(gl)
     	storeData(gl, indices, attributes:_*)
     }

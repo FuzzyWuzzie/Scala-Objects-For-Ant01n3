@@ -31,18 +31,18 @@ import org.sofa.math.Rgba
   */
 class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, var isXY:Boolean = false) extends Mesh {
     import VertexAttribute._
+    
+    protected var I:MeshElement = addIndex
 
-    protected lazy val V:FloatBuffer = allocateVertices
+    protected var V:MeshAttribute = addAttributeVertex
     
-    protected lazy val C:FloatBuffer = allocateColors
+    protected var C:MeshAttribute = _ //addAttributeColor
     
-    protected lazy val N:FloatBuffer = allocateNormals
+    protected var N:MeshAttribute = _ //addAttributeNormal
     
-    protected lazy val T:FloatBuffer = allocateTangents
+    protected var T:MeshAttribute = _ //addAttributeTangent
     
-    protected lazy val X:FloatBuffer = allocateTexCoords
-    
-    protected lazy val I:IntBuffer = allocateIndices
+    protected var X:MeshAttribute = _ //addAttributeTexCoord
 
     protected var textureRepeatS:Int = 1
 
@@ -57,13 +57,17 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 
 	/** Set the color of the whole plane. This must be done before the plane is transformed to a mesh. */    
     def setColor(color:Rgba) {
-        val n     = nVertX * nVertZ * 4
+    	if(C eq null)
+    		addAttributeColor
+
+        val n = nVertX * nVertZ * 4
+        val d = C.theData
         
         for(i <- 0 until n by 4) {
-            C(i+0) = color.red.toFloat
-            C(i+1) = color.green.toFloat
-            C(i+2) = color.blue.toFloat
-            C(i+3) = color.alpha.toFloat
+            d(i+0) = color.red.toFloat
+            d(i+1) = color.green.toFloat
+            d(i+2) = color.blue.toFloat
+            d(i+3) = color.alpha.toFloat
         }
     }
 
@@ -73,174 +77,161 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 
     def elementsPerPrimitive:Int = 3
 
-    override def attribute(name:String):FloatBuffer = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex   => V
-    		case VertexAttribute.Color    => C
-    		case VertexAttribute.Normal   => N
-    		case VertexAttribute.Tangent  => T
-    		case VertexAttribute.TexCoord => X
-    		case _                        => super.attribute(name) //throw new RuntimeException("This mesh does not have a vertex attribute %s".format(name))
-    	}
-    }
-
-    override def attributeCount:Int = 5 + super.attributeCount
-
-    override def attributes() = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString,
-    		VertexAttribute.Tangent.toString, VertexAttribute.TexCoord.toString, VertexAttribute.Color.toString) ++ super.attributes
-
-    override def components(name:String):Int = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex   => 3
-    		case VertexAttribute.Color    => 4
-    		case VertexAttribute.Normal   => 3
-    		case VertexAttribute.Tangent  => 3
-    		case VertexAttribute.TexCoord => 2
-    		case _                        => super.components(name) //throw new RuntimeException("This mesh does not have a vertex attribute %s".format(name))
-    	}
-    }
-
-    override def has(name:String):Boolean = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex   => true
-    		case VertexAttribute.Color    => true
-    		case VertexAttribute.Normal   => true
-    		case VertexAttribute.Tangent  => true
-    		case VertexAttribute.TexCoord => true
-    		case _                        => super.has(name) //false
-    	}    	
-    }
-
     override def hasElements():Boolean = true
     
-    override def elements:IntBuffer = I
+    override def elements:IntBuffer = I.theData
     
     def drawAs(gl:SGL):Int = gl.TRIANGLES
 
     // -- Building ----------------------------------------------------------
     
-    protected def allocateVertices:FloatBuffer = {
-        val buf = FloatBuffer(nVertX * nVertZ * 3)
-        val nw  = width / (nVertX-1).toFloat
-        val nd  = depth / (nVertZ-1).toFloat 
-        var xx  = -width/2f
-        var zz  = -depth/2f
-        var i   = 0
+    protected def addAttributeVertex:MeshAttribute = {
+    	if(V eq null) {
+    		V = addMeshAttribute(VertexAttribute.Vertex, 3)
 
-        if(isXY) {
-            for(d <- 0 until nVertZ) {
-                for(x <- 0 until nVertX) {
-                    buf(i+0) = xx
-                    buf(i+1) = zz	// **
-                    buf(i+2) = 0
-                    xx += nw
-                    i  += 3
-                }
-                xx  = -width/2f
-            	zz += nd
-            }
-        } else {
-            for(d <- 0 until nVertZ) {
-                for(x <- 0 until nVertX) {
-                    buf(i+0) = xx
-                    buf(i+1) = 0
-                    buf(i+2) = zz	// **
-                    xx += nw
-                    i  += 3
-                }
-                xx  = -width/2f
-                zz += nd
-            }
-        }
+    		val v   = V.theData
+	        val nw  = width / (nVertX-1).toFloat
+	        val nd  = depth / (nVertZ-1).toFloat 
+	        var xx  = -width/2f
+	        var zz  = -depth/2f
+	        var i   = 0
+
+	        if(isXY) {
+	            for(d <- 0 until nVertZ) {
+	                for(x <- 0 until nVertX) {
+	                    v(i+0) = xx
+	                    v(i+1) = zz	// **
+	                    v(i+2) = 0
+	                    xx += nw
+	                    i  += 3
+	                }
+	                xx  = -width/2f
+	            	zz += nd
+	            }
+	        } else {
+	            for(d <- 0 until nVertZ) {
+	                for(x <- 0 until nVertX) {
+	                    v(i+0) = xx
+	                    v(i+1) = 0
+	                    v(i+2) = zz	// **
+	                    xx += nw
+	                    i  += 3
+	                }
+	                xx  = -width/2f
+	                zz += nd
+	            }
+	        }
+		}        
         
-        buf
+        V
     }
     
-    protected def allocateTexCoords:FloatBuffer = {
-        val n   = nVertX * nVertZ * 2 
-        val buf = FloatBuffer(n)
-        var nw  = textureRepeatS / (nVertX-1).toFloat
-        var nd  = textureRepeatT / (nVertZ-1).toFloat
-        var xx  = 0f
-        var zz  = 0f
-        var i   = 0
-        
-        for(d <- 0 until nVertZ) {
-            for(x <- 0 until nVertX) {
-                buf(i+0) = xx
-                buf(i+1) = zz
-                xx += nw
-                i  += 2
-            }
-            xx  = 0
-            zz += nd
+    def addAttributeTexCoord:MeshAttribute = {
+    	if(X eq null) {
+			X = addMeshAttribute(VertexAttribute.TexCoord, 2)
+
+//	        val n   = nVertX * nVertZ * 2 
+	        val v   = X.theData
+	        var nw  = textureRepeatS / (nVertX-1).toFloat
+	        var nd  = textureRepeatT / (nVertZ-1).toFloat
+	        var xx  = 0f
+	        var zz  = 0f
+	        var i   = 0
+	        
+	        for(d <- 0 until nVertZ) {
+	            for(x <- 0 until nVertX) {
+	                v(i+0) = xx
+	                v(i+1) = zz
+	                xx += nw
+	                i  += 2
+	            }
+	            xx  = 0
+	            zz += nd
+	        }
         }
-        
-        buf
+
+        X
     }
 
-    protected def allocateColors:FloatBuffer = {
-        val n   = nVertX * nVertZ * 4
-        val buf = FloatBuffer(n)
-        
-        for(i <- 0 until n) {
-        	buf(i) = 1f
-        }
-        
-        buf
+    def addAttributeColor:MeshAttribute = {
+    	if(C eq null) {
+    		C = addMeshAttribute(VertexAttribute.Color, 4)
+
+    		val d = C.theData
+	        val n = nVertX * nVertZ * 4
+	        
+	        for(i <- 0 until n) {
+	        	d(i) = 1f
+	        }
+		}
+
+        C
     }
 
-    protected def allocateNormals:FloatBuffer = {
-        val n   = nVertX * nVertZ * 3
-        val buf = FloatBuffer(n)
+    def addAttributeNormal:MeshAttribute = {
+    	if(N eq null) {
+    		N = addMeshAttribute(VertexAttribute.Normal, 3)
+
+    		val d = N.theData
+	        val n = nVertX * nVertZ * 3
+	        
+	        if(isXY) {
+	            for(i <- 0 until n by 3) {
+	               d(i+0) = 0f
+	               d(i+1) = 0f
+	               d(i+2) = 1f
+	            }
+	        } else {
+	            for(i <- 0 until n by 3) {
+	        	   d(i+0) = 0f
+	        	   d(i+1) = 1f
+	        	   d(i+2) = 0f
+	            }
+	        }
+		}        
         
-        if(isXY) {
-            for(i <- 0 until n by 3) {
-               buf(i+0) = 0f
-               buf(i+1) = 0f
-               buf(i+2) = 1f
-            }
-        } else {
-            for(i <- 0 until n by 3) {
-        	   buf(i+0) = 0f
-        	   buf(i+1) = 1f
-        	   buf(i+2) = 0f
-            }
-        }
-        
-        buf
+        N
     }
     
-    protected def allocateTangents:FloatBuffer = {
-        val n   = nVertX * nVertZ * 3
-        val buf = FloatBuffer(n)
-        
-        for(i <- 0 until n by 3) {
-            buf(i+0) = 1f
-            buf(i+1) = 0f
-            buf(i+2) = 0f
-        }
+    def addAttributeTangent:MeshAttribute = {
+    	if(T eq null) {
+    		T = addMeshAttribute(VertexAttribute.Tangent, 3)
+
+    		val d = T.theData
+	        val n = nVertX * nVertZ * 3
+	        
+	        for(i <- 0 until n by 3) {
+	            d(i+0) = 1f
+	            d(i+1) = 0f
+	            d(i+2) = 0f
+	        }
+    	}
             
-        buf
+        T
     }
 
-    protected def allocateIndices:IntBuffer = {
-        val n   = ((nVertX-1) * (nVertZ-1))	// n Squares
-        val buf = IntBuffer(n*2*3)		// 2 triangles per square
-        var i   = 0
-        
-        for(z <- 0 until nVertZ-1) {
-        	for(x <- 0 until nVertX-1) {
-        	    buf(i+0) = z*nVertX + x 
-        	    buf(i+1) = z*nVertX + x + 1
-        	    buf(i+2) = z*nVertX + x + nVertX + 1 
-        	    buf(i+3) = z*nVertX + x 
-        	    buf(i+4) = z*nVertX + x + nVertX + 1
-        	    buf(i+5) = z*nVertX + x + nVertX 
-        	    i += 6
-        	}
-        }
+    protected def addIndex:MeshElement = {
+    	if(I eq null) {
+	        val n = ((nVertX-1) * (nVertZ-1))	// n Squares
+	        var i = 0
 
-        buf
+    		I = new MeshElement(n*2, 3)	// 2 triangles per square, 3 vertices per triangle
+	        
+	        val d = I.theData
+
+	        for(z <- 0 until nVertZ-1) {
+	        	for(x <- 0 until nVertX-1) {
+	        	    d(i+0) = z*nVertX + x 
+	        	    d(i+1) = z*nVertX + x + 1
+	        	    d(i+2) = z*nVertX + x + nVertX + 1 
+	        	    d(i+3) = z*nVertX + x 
+	        	    d(i+4) = z*nVertX + x + nVertX + 1
+	        	    d(i+5) = z*nVertX + x + nVertX 
+	        	    i += 6
+	        	}
+	        }
+    	}
+
+    	I
     }
 }
