@@ -7,17 +7,9 @@ import scala.math._
 
 /** A set of disjoint line segments. */
 class LinesMesh(val count:Int) extends Mesh {
-    protected[this] lazy val V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)// = FloatBuffer(count * 3 * 2)
+    protected[this] val V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)
 
-    protected[this] lazy val C:MeshAttribute = addMeshAttribute(VertexAttribute.Color, 4)// = FloatBuffer(count * 4 * 2)
-
-    // protected var cbeg = 0
-
-    // protected var cend = count
-
-    // protected var vbeg = 0
-
-    // protected var vend = count
+    protected[this] var C:MeshAttribute = _ // addMeshAttribute(VertexAttribute.Color, 4)
 
     // -- Mesh Interface -----------------------------------------------
     
@@ -26,35 +18,6 @@ class LinesMesh(val count:Int) extends Mesh {
     def elementsPerPrimitive:Int = 2
 
     def drawAs(gl:SGL):Int = gl.LINES
-
-    // override def attribute(name:String):FloatBuffer = {
-    // 	VertexAttribute.withName(name) match {
-    // 		case VertexAttribute.Vertex => V
-    // 		case VertexAttribute.Color  => C
-    // 		case _                      => super.attribute(name) //throw new RuntimeException("no %s attribute in this mesh".format(name))
-    // 	}
-    // }
-
-    // override def attributeCount():Int = 2 + super.attributeCount
-
-    // override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Color.toString) ++ super.attributes
-        
-    // override def components(name:String):Int = {
-    // 	VertexAttribute.withName(name) match {
-    // 		case VertexAttribute.Vertex => 3
-    // 		case VertexAttribute.Color  => 4
-    // 		case _                      => super.components(name) //throw new RuntimeException("no %s attribute in this mesh".format(name))
-    // 	}
-
-    // }
-
-    // override def has(name:String):Boolean = {
-    // 	VertexAttribute.withName(name) match {
-    // 		case VertexAttribute.Vertex => true
-    // 		case VertexAttribute.Color  => true
-    // 		case _                      => super.has(name)// false
-    // 	}
-    // }
 
     // -- Edition -----------------------------------------------------
 
@@ -116,6 +79,9 @@ class LinesMesh(val count:Int) extends Mesh {
 
     def setColor(i:Int, ra:Float, ga:Float, ba:Float, aa:Float,
                         rb:Float, gb:Float, bb:Float, ab:Float):LinesMesh = {
+    	if(C eq null)
+    		C = addAttributeColor
+
         val pos  = i * C.components * 2
         val data = C.theData
 
@@ -196,6 +162,12 @@ class LinesMesh(val count:Int) extends Mesh {
 		}
 	}
 
+	def addAttributeColor():MeshAttribute = {
+		if(C eq null)
+			C = addMeshAttribute(VertexAttribute.Color, 4)
+		C
+	}
+
     // -- Dynamic mesh --------------------------------------------------
 
     override def beforeNewVertexArray() {
@@ -214,24 +186,6 @@ class LinesMesh(val count:Int) extends Mesh {
     		if(updateVertices) V.update(va)
     		if(updateColors)   C.update(va)
     	}
-        // if(va ne null) {
-        //     if(vend > vbeg) {
-        //         if(vbeg == 0 && vend == count)
-        //              va.buffer(VertexAttribute.Vertex.toString).update(V)
-        //         else va.buffer(VertexAttribute.Vertex.toString).update(vbeg*2, vend*2, V)
-                
-        //         vbeg = count
-        //         vend = 0
-        //     }
-        //     if(cend > cbeg) {
-        //         if(cbeg == 0 && cend == count)
-        //              va.buffer(VertexAttribute.Color.toString).update(C)
-        //         else va.buffer(VertexAttribute.Color.toString).update(cbeg*2, cend*2, C)
-                
-        //         cbeg = count
-        //         cend = 0                
-        //     }
-        // }
     }
 
 	/** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
