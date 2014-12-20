@@ -15,16 +15,16 @@ class GraphMesh(val maxNodes:Int, val maxEdges:Int) extends MultiMesh {
 	var edgeCount = 0
 
 	/** The mutable set of coordinates. */
-	protected[this] val V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)
+	protected var V:MeshAttribute = addMeshAttribute(VertexAttribute.Vertex, 3)
 	
 	/** The mutable set of colors. */
-	protected[this] val C:MeshAttribute = addMeshAttribute(VertexAttribute.Color, 4)
+	protected var C:MeshAttribute = _ // addMeshAttribute(VertexAttribute.Color, 4)
 	
 	/** The mutable set of nodes. */
-	protected[this] val nodes:MeshElement = new MeshElement(maxNodes, elementsPerPrimitive(0))
+	protected val nodes:MeshElement = new MeshElement(maxNodes, elementsPerPrimitive(0))
 
 	/** The mutable set of edges. */
-	protected[this] val edges:MeshElement = new MeshElement(maxEdges, elementsPerPrimitive(1))
+	protected val edges:MeshElement = new MeshElement(maxEdges, elementsPerPrimitive(1))
     	
 	// -- Mesh interface -----------------------------------------------------
 
@@ -52,6 +52,12 @@ class GraphMesh(val maxNodes:Int, val maxEdges:Int) extends MultiMesh {
 
     def subMeshCount = 2
 
+    def addAttributeColor():MeshAttribute = {
+    	if(C eq null)
+    		C = addMeshAttribute(VertexAttribute.Color, 4)
+    	C
+    }
+
     // -- Constructive / Update interface --------------------------------------
 
     def vertex(v:Int, x:Float, y:Float, z:Float) {
@@ -69,6 +75,9 @@ class GraphMesh(val maxNodes:Int, val maxEdges:Int) extends MultiMesh {
     def color(c:Int, rgba:Rgba) { color(c, rgba.red, rgba.green, rgba.blue, rgba.alpha) }
 
     def color(c:Int, r:Double, g:Double, b:Double, a:Double=1.0) {
+    	if(C eq null)
+    		addAttributeColor
+
     	val i = c * 4
     	val data = C.theData
 
@@ -132,6 +141,9 @@ class GraphMesh(val maxNodes:Int, val maxEdges:Int) extends MultiMesh {
     }
 
     protected def delColor(n:Int)  {
+    	if(C eq null)
+    		addAttributeColor
+
     	val d = C.theData
     	val l = nodeCount * 4
     	val i = n * 4

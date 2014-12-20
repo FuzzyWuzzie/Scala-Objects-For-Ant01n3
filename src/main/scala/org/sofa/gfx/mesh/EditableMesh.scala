@@ -475,6 +475,8 @@ class EditableMesh extends Mesh {
     override def has(name:String):Boolean = buffers.contains(name)
     
     override def hasElements:Boolean = (indexBuffer ne null)
+
+    override def divisor(name:String):Int = 0
 }
 
 /** A buffer of elements each made of `components` float values, represents a vertex attribute set.

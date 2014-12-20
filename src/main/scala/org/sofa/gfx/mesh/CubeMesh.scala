@@ -280,7 +280,7 @@ class CubeMesh(val side:Float) extends Mesh {
 
     def addAttributeInstancedPosition(count:Int, divisor:Int=1):MeshAttribute = {
 		if(P eq null)
-			P = addMeshAttribute("Position", 3, count)
+			P = addMeshAttribute("Position", 3, count, divisor)
 
 		P
     }

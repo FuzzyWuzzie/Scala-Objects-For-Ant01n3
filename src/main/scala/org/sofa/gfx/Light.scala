@@ -3,13 +3,13 @@ package org.sofa.gfx
 import org.sofa.math.{Vector3, Vector4, NumberSeq3, Rgba}
 
 trait Light {
-	def uniform(shader:ShaderProgram, camera:Camera)
+	def uniform(shader:ShaderProgram, space:Space)
 
-	def uniformPosition(shader:ShaderProgram, camera:Camera)
+	def uniformPosition(shader:ShaderProgram, space:Space)
 
-	def uniform(index:Int, shader:ShaderProgram, camera:Camera)
+	def uniform(index:Int, shader:ShaderProgram, space:Space)
 
-	def uniformPosition(index:Int, shader:ShaderProgram, camera:Camera)
+	def uniformPosition(index:Int, shader:ShaderProgram, space:Space)
 }
 
 /** WhiteLight companion object. */
@@ -43,32 +43,38 @@ class WhiteLight(x:Double, y:Double, z:Double, var intensity:Float, var specular
 
 	/** Setup a given shader uniform variables based on the assertion that
 	  * the shader defines one light with the structure defined in the main documentation
-	  * bloc of this class. */
-	def uniform(shader:ShaderProgram, camera:Camera) {
-		shader.uniform("whitelight.pos",       Vector3(camera.modelview.top * pos))
+	  * bloc of this class. All variables are set excepted the position. */
+	def uniform(shader:ShaderProgram, space:Space) {
+//		shader.uniform("whitelight.pos",       Vector3(space.modelview.top * pos))
 		shader.uniform("whitelight.intensity", intensity)
 		shader.uniform("whitelight.specular",  specular)
 		shader.uniform("whitelight.ambient",   ambient)
 	}
 
-	/** If only the light position changed, you can setup it using this method. */
-	def uniformPosition(shader:ShaderProgram, camera:Camera) {
-		shader.uniform("whitelight.pos", Vector3(camera.modelview.top * pos))
+	/** Setup the position of the light according to the given state of the `space`. */
+	def uniformPosition(shader:ShaderProgram, space:Space) {
+//		println("whitelight.pos = %s".format(Vector3(space.modelview.top * pos)))
+		shader.uniform("whitelight.pos", Vector3(space.modelview.top * pos))
+	}
+
+	/** Setup a constant position of the light non transformed. */
+	def uniformPosition(shader:ShaderProgram) {
+		shader.uniform("whitelight.pos", Vector3(pos))
 	}
 
 	/** Setup a given shader uniform variables based on the assertion that
 	  * the shader defines several lights with the structure defined in the main documentation
 	  * bloc of this class. */
-	def uniform(index:Int, shader:ShaderProgram, camera:Camera) {
-		shader.uniform("whitelight[%d].pos".format(index), Vector3(camera.modelview.top * pos))
+	def uniform(index:Int, shader:ShaderProgram, space:Space) {
+		shader.uniform("whitelight[%d].pos".format(index), Vector3(space.modelview.top * pos))
 		shader.uniform("whitelight[%d].intensity".format(index), intensity)
 		shader.uniform("whitelight[%d].specular".format(index),  specular)
 		shader.uniform("whitelight[%d].ambient".format(index),   ambient)
 	}
 
 	/** If only the light position changed, you can setup it using this method. */
-	def uniformPosition(index:Int, shader:ShaderProgram, camera:Camera) {
-		shader.uniform("whitelight[%d].pos".format(index), Vector3(camera.modelview.top * pos))
+	def uniformPosition(index:Int, shader:ShaderProgram, space:Space) {
+		shader.uniform("whitelight[%d].pos".format(index), Vector3(space.modelview.top * pos))
 	}
 }
 
@@ -89,8 +95,8 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
 		this(p.x, p.y, p.z, diffuse, Rgba.White, diffuse, Kd, Ks, Ka, roughness, 0.0, 1.0, quadAtt)
 	}
 
-	def uniform(shader:ShaderProgram, camera:Camera) {
-		shader.uniform("light.pos", Vector3(camera.modelview.top * pos))
+	def uniform(shader:ShaderProgram, space:Space) {
+		shader.uniform("light.pos", Vector3(space.modelview.top * pos))
 		shader.uniform("light.diffuse", diffuse)
 		shader.uniform("light.specular", specular)
 		shader.uniform("light.ambient", ambient)
@@ -103,12 +109,12 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
 		shader.uniform("light.quadAtt", quadAtt.toFloat)
 	}
 
-	def uniformPosition(shader:ShaderProgram, camera:Camera) {
-		shader.uniform("light.pos", Vector3(camera.modelview.top * pos))
+	def uniformPosition(shader:ShaderProgram, space:Space) {
+		shader.uniform("light.pos", Vector3(space.modelview.top * pos))
 	}
 
-	def uniform(index:Int, shader:ShaderProgram, camera:Camera) {
-		shader.uniform("light[%d].pos".format(index), Vector3(camera.modelview.top * pos))
+	def uniform(index:Int, shader:ShaderProgram, space:Space) {
+		shader.uniform("light[%d].pos".format(index), Vector3(space.modelview.top * pos))
 		shader.uniform("light[%d].diffuse".format(index), diffuse)
 		shader.uniform("light[%d].specular".format(index), specular)
 		shader.uniform("light[%d].ambient".format(index), ambient)
@@ -122,8 +128,8 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
 
 	}
 
-	def uniformPosition(index:Int, shader:ShaderProgram, camera:Camera) {
-		shader.uniform("light[%d].pos".format(index), Vector3(camera.modelview.top * pos))
+	def uniformPosition(index:Int, shader:ShaderProgram, space:Space) {
+		shader.uniform("light[%d].pos".format(index), Vector3(space.modelview.top * pos))
 	}
 }
 
@@ -147,23 +153,23 @@ class HemisphereLight(x:Double, y:Double, z:Double, val skyColor:Rgba, val groun
 		this(position.x, position.y, position.z, sky, ground)
 	}
 
-	def uniform(shader:ShaderProgram, camera:Camera) {
-		shader.uniform("hemilight.pos",         Vector3(camera.modelview.top * pos))
+	def uniform(shader:ShaderProgram, space:Space) {
+		shader.uniform("hemilight.pos",         Vector3(space.modelview.top * pos))
 		shader.uniform("hemilight.skyColor",    skyColor)
 		shader.uniform("hemilight.groundColor", groundColor)
 	}
 
-	def uniformPosition(shader:ShaderProgram, camera:Camera) {
-		shader.uniform("hemilight.pos", Vector3(camera.modelview.top * pos))
+	def uniformPosition(shader:ShaderProgram, space:Space) {
+		shader.uniform("hemilight.pos", Vector3(space.modelview.top * pos))
 	}
 
-	def uniform(index:Int, shader:ShaderProgram, camera:Camera) {
-		shader.uniform("hemilight[%d].pos".format(index),         Vector3(camera.modelview.top * pos))
+	def uniform(index:Int, shader:ShaderProgram, space:Space) {
+		shader.uniform("hemilight[%d].pos".format(index),         Vector3(space.modelview.top * pos))
 		shader.uniform("hemilight[%d].skyColor".format(index),    skyColor)
 		shader.uniform("hemilight[%d].groundColor".format(index), groundColor)
 	}
 
-	def uniformPosition(index:Int, shader:ShaderProgram, camera:Camera) {
-		shader.uniform("hemilight[%d].pos".format(index), Vector3(camera.modelview.top * pos))
+	def uniformPosition(index:Int, shader:ShaderProgram, space:Space) {
+		shader.uniform("hemilight[%d].pos".format(index), Vector3(space.modelview.top * pos))
 	}
 }

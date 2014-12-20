@@ -30,6 +30,8 @@ class UIPerspective(name: AvatarName, screen: Screen)
 
 	var renderer = new UIAvatarRenderBase(this)
 
+	var step = 0.2
+
 	override def change(state:AvatarState) {
 		if(! changed(state)) {
 			state match {
@@ -48,7 +50,40 @@ class UIPerspective(name: AvatarName, screen: Screen)
 		}
 	}
 
-	def consumeEvent(event: Event): Boolean = true
+	def consumeEvent(event: Event): Boolean = {
+		event match {
+			case scroll:ScrollEvent => {
+				space.camera.rotateEyeHorizontal(scroll.delta.x * step * 0.5)
+				space.camera.rotateEyeVertical(-scroll.delta.y * step * 0.5)
+				self.screen.requestRender
+				true
+			}
+			case scale:ScaleEvent => {
+				space.camera.eyeTraveling(scale.delta * 0.05)
+				self.screen.requestRender
+				true
+			}
+			case k:ActionKeyEvent => {
+			    import org.sofa.gfx.surface.event.ActionKey._
+
+			    if(k.isEnd) {
+					k.key match {
+		    			case PageUp   => space.camera.eyeTraveling(-step)
+		    			case PageDown => space.camera.eyeTraveling(step)
+		    			case Up       => space.camera.rotateEyeVertical(step)
+		    			case Down     => space.camera.rotateEyeVertical(-step)
+		    			case Left     => space.camera.rotateEyeHorizontal(-step)
+		    			case Right    => space.camera.rotateEyeHorizontal(step)
+		    			case _        => {}
+					}
+					self.screen.requestRender
+					true
+				}
+				else false	
+			}
+			case _=> false
+		}
+	}
 }
 
 

@@ -5,26 +5,26 @@ import org.sofa.gfx.{ ShaderResource }
 import org.sofa.gfx.renderer.{ Screen }
 import org.sofa.gfx.renderer.{ Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState }
 import org.sofa.gfx.surface.event._
-import org.sofa.gfx.renderer.{ NoSuchAvatarException }
+import org.sofa.gfx.renderer.{ NoSuchAvatarException, NoSuchAvatarStateException }
 
 import org.sofa.gfx.{ SGL, ShaderProgram } //, Camera, VertexArray, Texture, HemisphereLight, ResourceDescriptor, Libraries}
 import org.sofa.gfx.mesh.{ TrianglesMesh, Mesh, VertexAttribute, LinesMesh } //, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 
 
 class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) with UIRenderUtils {
+
 	color = Rgba.Yellow
 
 	override def render() {
-		val gl = screen.gl
+		val gl    = screen.gl
 		val text  = screen.textLayer
+		val root  = avatar.asInstanceOf[UIRoot]
+		var clr   = 0
 
-// if(self.spaceChanged)
-// 	println("# %s space changed".format(self.name))
+		if(root.clearBuffer) { clr |= gl.COLOR_BUFFER_BIT; gl.clearColor(root.clearColor) }
+		if(root.clearDepth)  { clr |= gl.DEPTH_BUFFER_BIT }
+		if(clr != 0)         { gl.clear(clr) }
 
-		gl.clearColor(Rgba.White)
-		gl.clear(gl.COLOR_BUFFER_BIT)	// TODO remove it !!
-
-		//gl.lineWidth(1f)
 		gl.disable(gl.DEPTH_TEST)
 		gl.enable(gl.BLEND)
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -136,7 +136,10 @@ class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 
 
 object UIRoot {
-	//case class DotPerCentimeter(dotsPerCm:Int) extends AvatarSpaceState {}
+	/** Ask the root avatar to clear the frame-buffer or not.
+	  * Specify also if the depth buffer must be cleared and the color
+	  * used to clear the frame buffer. */
+	case class ClearBuffer(clearBuffer:Boolean, clearDepth:Boolean, clearColor:Rgba) extends AvatarState {}
 }
 
 
@@ -151,6 +154,25 @@ class UIRoot(name: AvatarName, screen: Screen)
 	var space = new UIAvatarSpaceRoot(this)
 
 	var renderer = new UIAvatarRenderRoot(this)
+
+	var clearBuffer = true
+
+	var clearDepth = true
+
+	var clearColor = Rgba.Black
+
+	override def change(state:AvatarState) {
+		if(! changed(state)) {
+			state match {
+				case UIRoot.ClearBuffer(clear, depth, color) => {
+					clearBuffer = clear
+					clearDepth  = depth
+					clearColor  = color
+				}
+				case _ => throw new NoSuchAvatarStateException(state)
+			}
+		}
+	}
 
 	def consumeEvent(event:Event): Boolean = false
 }

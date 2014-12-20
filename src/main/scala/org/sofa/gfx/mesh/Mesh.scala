@@ -393,10 +393,11 @@ trait Mesh {
     		if(!hasAttribute(attName))
     			throw new NoSuchVertexAttributeException("mesh has no attribute named '%s' (mapped to '%s')".format(attName, varName))
  
- 	  		val att = meshAttribute(attName)
+ 	  		//val att = meshAttribute(attName)
  
-    		//locs(pos) = (attName, shader.getAttribLocation(varName), components(attName), attribute(attName), divisor(attName))
-    		locs(pos) = (attName, shader.getAttribLocation(varName), att.components, att.theData, att.divisor)
+    		locs(pos) = (attName, shader.getAttribLocation(varName), components(attName), attribute(attName), divisor(attName))
+    		//locs(pos) = (attName, shader.getAttribLocation(varName), att.components, att.theData, att.divisor)
+    		// We will be able to use att when all mesh will have been converted to the new Mesh format.
     		pos += 1
     	}
 
