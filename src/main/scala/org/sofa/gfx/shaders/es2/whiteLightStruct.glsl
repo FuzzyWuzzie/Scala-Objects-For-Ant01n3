@@ -3,4 +3,5 @@ struct WhiteLight {
 	float intensity;
 	float ambient;
 	float specular;
+	float roughness;
 };

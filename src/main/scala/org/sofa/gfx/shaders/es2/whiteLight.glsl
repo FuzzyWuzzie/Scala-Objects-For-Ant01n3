@@ -20,7 +20,7 @@ vec4 singleWhiteLightPhong(vec3 P, vec3 N, vec4 C) {
 	      L  = normalize(L);
 	      N  = normalize(N);
 	float D  = diffuse(N, L);
-	float S  = specular(N, L, whitelight.specular);
+	float S  = specular(N, L, whitelight.roughness);
 	vec3  SS = vec3(1, 1, 1);
 	vec3  CC = C.rgb;
 
@@ -28,7 +28,7 @@ vec4 singleWhiteLightPhong(vec3 P, vec3 N, vec4 C) {
 
 	return vec4(
 			  ((CC * D * whitelight.intensity) / d)
-			+ ((SS * S * whitelight.intensity) / d)
+			+ ((SS * S * whitelight.specular) / d)
 			+ ( CC     * whitelight.ambient), C.a);
 }
 
@@ -49,7 +49,7 @@ vec4 singleWhiteLightPhong(in vec3 P, in vec3 N, in vec4 C, in mat3 TBN) {
 	      L  = normalize(TBN * L);
 	      N  = normalize(N);
 	float D  = diffuse(N, L);
-	float S  = specular(N, L, whitelight.specular);
+	float S  = specular(N, L, whitelight.roughness);
 	vec3  CC = C.rgb;
 	vec3  SS = vec3(1,1,1);
 

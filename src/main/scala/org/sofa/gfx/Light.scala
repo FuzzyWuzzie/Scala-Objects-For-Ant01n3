@@ -2,20 +2,30 @@ package org.sofa.gfx
 
 import org.sofa.math.{Vector3, Vector4, NumberSeq3, Rgba}
 
+
 trait Light {
 	def uniform(shader:ShaderProgram, space:Space)
 
 	def uniformPosition(shader:ShaderProgram, space:Space)
 
+	def uniformPosition(shader:ShaderProgram)
+
 	def uniform(index:Int, shader:ShaderProgram, space:Space)
 
 	def uniformPosition(index:Int, shader:ShaderProgram, space:Space)
+
+	def uniformPosition(index:Int, shader:ShaderProgram)
 }
+
+
+// == White light ===============================================================
+
 
 /** WhiteLight companion object. */
 object WhiteLight {
-	def apply(x:Double, y:Double, z:Double, intensity:Float, specular:Float, ambient:Float):WhiteLight = new WhiteLight(x,y,z, intensity, specular, ambient)
+	def apply(x:Double, y:Double, z:Double, intensity:Float, specular:Float, ambient:Float, roughness:Float=32f):WhiteLight = new WhiteLight(x,y,z, intensity, specular, ambient, roughness)
 }
+
 
 /** A simple, non colored, light modelisation.
   *
@@ -33,7 +43,7 @@ object WhiteLight {
   * A set of lights must be declared as:
   *     WhiteLight whitelight[4];
   * for example. */
-class WhiteLight(x:Double, y:Double, z:Double, var intensity:Float, var specular:Float, var ambient:Float) extends Light {
+class WhiteLight(x:Double, y:Double, z:Double, var intensity:Float, var specular:Float, var ambient:Float, var roughness:Float = 32f) extends Light {
 	/** Light position. */
 	val pos = Vector4(x, y, z, 1)
 
@@ -45,15 +55,14 @@ class WhiteLight(x:Double, y:Double, z:Double, var intensity:Float, var specular
 	  * the shader defines one light with the structure defined in the main documentation
 	  * bloc of this class. All variables are set excepted the position. */
 	def uniform(shader:ShaderProgram, space:Space) {
-//		shader.uniform("whitelight.pos",       Vector3(space.modelview.top * pos))
 		shader.uniform("whitelight.intensity", intensity)
 		shader.uniform("whitelight.specular",  specular)
 		shader.uniform("whitelight.ambient",   ambient)
+		shader.uniform("whitelight.roughness", roughness)
 	}
 
 	/** Setup the position of the light according to the given state of the `space`. */
 	def uniformPosition(shader:ShaderProgram, space:Space) {
-//		println("whitelight.pos = %s".format(Vector3(space.modelview.top * pos)))
 		shader.uniform("whitelight.pos", Vector3(space.modelview.top * pos))
 	}
 
@@ -66,23 +75,32 @@ class WhiteLight(x:Double, y:Double, z:Double, var intensity:Float, var specular
 	  * the shader defines several lights with the structure defined in the main documentation
 	  * bloc of this class. */
 	def uniform(index:Int, shader:ShaderProgram, space:Space) {
-		shader.uniform("whitelight[%d].pos".format(index), Vector3(space.modelview.top * pos))
 		shader.uniform("whitelight[%d].intensity".format(index), intensity)
 		shader.uniform("whitelight[%d].specular".format(index),  specular)
 		shader.uniform("whitelight[%d].ambient".format(index),   ambient)
+		shader.uniform("whitelight[%d].roughness".format(index), roughness)
 	}
 
 	/** If only the light position changed, you can setup it using this method. */
 	def uniformPosition(index:Int, shader:ShaderProgram, space:Space) {
 		shader.uniform("whitelight[%d].pos".format(index), Vector3(space.modelview.top * pos))
 	}
-}
+
+	/** If only the light position changed, you can setup it using this method. */
+	def uniformPosition(index:Int, shader:ShaderProgram) {
+		shader.uniform("whitelight[%d].pos".format(index), Vector3(pos))
+	}}
+
+
+// == Colored light =====================================================
+
 
 object ColoredLight {
 	def apply(x:Double, y:Double, z:Double, diffuse:Rgba, specular:Rgba, ambient:Rgba, Kd:Double, Ks:Double, Ka:Double, roughness:Double, constAtt:Double, linAtt:Double, quadAtt:Double):ColoredLight = {
 		new ColoredLight(x,y,z, diffuse, specular, ambient, Kd, Ks, Ka, roughness, constAtt, linAtt, quadAtt)
 	}
 }
+
 
 class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:Rgba, val ambient:Rgba, val Kd:Double, val Ks:Double, val Ka:Double, val roughness:Double, val constAtt:Double, val linAtt:Double, val quadAtt:Double) extends Light {
 	val pos = Vector4(x, y, z, 1)
@@ -113,6 +131,10 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
 		shader.uniform("light.pos", Vector3(space.modelview.top * pos))
 	}
 
+	def uniformPosition(shader:ShaderProgram) {
+		shader.uniform("light.pos", Vector3(pos))
+	}
+
 	def uniform(index:Int, shader:ShaderProgram, space:Space) {
 		shader.uniform("light[%d].pos".format(index), Vector3(space.modelview.top * pos))
 		shader.uniform("light[%d].diffuse".format(index), diffuse)
@@ -131,7 +153,15 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
 	def uniformPosition(index:Int, shader:ShaderProgram, space:Space) {
 		shader.uniform("light[%d].pos".format(index), Vector3(space.modelview.top * pos))
 	}
+
+	def uniformPosition(index:Int, shader:ShaderProgram) {
+		shader.uniform("light[%d].pos".format(index), Vector3(pos))
+	}
 }
+
+
+// == Hemisphere light ===========================================================
+
 
 /** A simple hemisphere ligh modelisation.
   *
@@ -163,6 +193,10 @@ class HemisphereLight(x:Double, y:Double, z:Double, val skyColor:Rgba, val groun
 		shader.uniform("hemilight.pos", Vector3(space.modelview.top * pos))
 	}
 
+	def uniformPosition(shader:ShaderProgram) {
+		shader.uniform("hemilight.pos", Vector3(pos))
+	}
+
 	def uniform(index:Int, shader:ShaderProgram, space:Space) {
 		shader.uniform("hemilight[%d].pos".format(index),         Vector3(space.modelview.top * pos))
 		shader.uniform("hemilight[%d].skyColor".format(index),    skyColor)
@@ -171,5 +205,9 @@ class HemisphereLight(x:Double, y:Double, z:Double, val skyColor:Rgba, val groun
 
 	def uniformPosition(index:Int, shader:ShaderProgram, space:Space) {
 		shader.uniform("hemilight[%d].pos".format(index), Vector3(space.modelview.top * pos))
+	}
+
+	def uniformPosition(index:Int, shader:ShaderProgram) {
+		shader.uniform("hemilight[%d].pos".format(index), Vector3(pos))
 	}
 }

@@ -255,8 +255,6 @@ class Libraries(gl:SGL) {
 			var geom = (shader \\ "@geom").text
 			geom = if(geom == "") null else geom
 
-println("ADD SHADER %s".format((shader \\ "@id").text))
-
 			shaders.add(ShaderResource(
 				(shader \\ "@id").text,
 				(shader \\ "@vert").text,
