@@ -13,7 +13,7 @@ object VertexArray {
 
 /** Associates several buffers containing arrays representing vertex attributes and
   * an eventual element buffer (indices into these arrays) in a common structure.
-  * 
+  *
   * The vertex array is an unique OpenGl object that identifies a set of buffers storing vertex
   * attributes and an optional buffer storing indices in the vertex attributes. This allows
   * to quickly bind several attributes for drawing.
@@ -86,7 +86,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * (x, y and z), colors have four components (r, g, b and a)), the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
       * number of components per element, and finally the attribute divisor, for instanced rendering,
-      * 0 it the attribute is not instanced. The array buffers are created with gl.STATIC_DRAW
+      * 0 if the attribute is not instanced. The array buffers are created with gl.STATIC_DRAW
       * draw mode. */
     def this(gl:SGL, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
@@ -101,7 +101,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * (x, y and z), colors have four components (r, g, b and a)), the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
       * number of components per element, and finally the attribute divisor, for instanced rendering,
-      * 0 it the attribute is not instanced. The array buffers are created with gl.STATIC_DRAW
+      * 0 if the attribute is not instanced. The array buffers are created with gl.STATIC_DRAW
       * draw mode. */
     def this(gl:SGL, indices:IntBuffer, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
@@ -114,7 +114,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * (x, y and z), colors have five components (r, g, b and a)), the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
       * number of components per element, and finally the attribute divisor, for instanced rendering,
-      * 0 it the attribute is not instanced. */
+      * 0 if the attribute is not instanced. */
     def this(gl:SGL, drawMode:Int, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
         storeData(gl, null, drawMode, attributes:_*)
@@ -128,7 +128,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * (x, y and z), colors have four components (r, g, b and a)), the attribute
       * data as a float buffer containing the data, whose length must be a multiple of the
       * number of components per element, and finally the attribute divisor, for instanced rendering,
-      * 0 it the attribute is not instanced. */
+      * 0 if the attribute is not instanced. */
     def this(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
         storeData(gl, indices, drawMode, attributes:_*)
