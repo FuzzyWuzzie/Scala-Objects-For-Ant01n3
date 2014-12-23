@@ -6,10 +6,10 @@ varying vec3 V;
 varying vec3 N;
 varying vec4 C;
 
-uniform WhiteLight whitelight;
+uniform WhiteLight L;
 
 #include <es2/whiteLight.glsl>
 
 void main() {
-	gl_FragColor = singleWhiteLightPhong(V, N, C);
+	gl_FragColor = singleWhiteLightPhong(V, N, C, L);
 }

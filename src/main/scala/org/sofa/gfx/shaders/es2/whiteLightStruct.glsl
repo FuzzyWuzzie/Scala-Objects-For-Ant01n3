@@ -1,7 +1,7 @@
 struct WhiteLight {
-	vec3 pos;
-	float intensity;
-	float ambient;
-	float specular;
-	float roughness;
+	vec3 P;
+	float Kd;
+	float Ks;
+	float Ka;
+	float R;
 };

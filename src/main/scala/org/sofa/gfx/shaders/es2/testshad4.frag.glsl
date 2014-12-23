@@ -1,16 +1,14 @@
 #version 110
 #include <es2/ColoredLightStruct.glsl>
 
-varying vec3 P;
+varying vec3 V;
 varying vec3 N;
-varying vec2 X;
 varying vec4 C;
-varying vec3 T;
 
-uniform ColoredLight light;
+uniform ColoredLight L;
 
 #include <es2/ColoredLight.glsl>
 
 void main() {
-	gl_FragColor = singleColoredLightMetal(P, N, C);
+	gl_FragColor = singleColoredLightMetal(V, N, C, L);
 }

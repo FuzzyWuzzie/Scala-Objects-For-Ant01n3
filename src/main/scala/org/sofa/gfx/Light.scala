@@ -4,17 +4,16 @@ import org.sofa.math.{Vector3, Vector4, NumberSeq3, Rgba}
 
 
 trait Light {
-	def uniform(shader:ShaderProgram, space:Space)
+	/** Setup all the parameters of the light in the given `shader` excepted the position for positional lights. */
+	def uniform(shader:ShaderProgram)
+}
 
-	def uniformPosition(shader:ShaderProgram, space:Space)
+trait PositionalLight extends Light {
+	def pos:Vector4
 
-	def uniformPosition(shader:ShaderProgram)
-
-	def uniform(index:Int, shader:ShaderProgram, space:Space)
-
-	def uniformPosition(index:Int, shader:ShaderProgram, space:Space)
-
-	def uniformPosition(index:Int, shader:ShaderProgram)
+	/** Setup the position of the light in the given `shader`, transforming its position
+	  * using the given `space` if non null. */
+	def uniformPosition(shader:ShaderProgram, space:Space=null)
 }
 
 
@@ -23,7 +22,7 @@ trait Light {
 
 /** WhiteLight companion object. */
 object WhiteLight {
-	def apply(x:Double, y:Double, z:Double, intensity:Float, specular:Float, ambient:Float, roughness:Float=32f):WhiteLight = new WhiteLight(x,y,z, intensity, specular, ambient, roughness)
+	def apply(x:Double, y:Double, z:Double, Kd:Float, Ks:Float, Ka:Float, roughness:Float=32f):WhiteLight = new WhiteLight(x,y,z, Kd, Ks, Ka, roughness)
 }
 
 
@@ -34,62 +33,47 @@ object WhiteLight {
   * the shader uses either one light which is a structure of the form:
   *     struct WhiteLight {
   *	        vec3 pos;
-  *         float intensity;
-  *         float ambient;
-  *         float specular;
+  *         float Kd;
+  *         float Ks;
+  *         float Ka;
+  *         float roughness;
   *     }
   * Or several such lights in an array. The unique light must be declared as:
   *     WhiteLight whitelight;
   * A set of lights must be declared as:
   *     WhiteLight whitelight[4];
   * for example. */
-class WhiteLight(x:Double, y:Double, z:Double, var intensity:Float, var specular:Float, var ambient:Float, var roughness:Float = 32f) extends Light {
+class WhiteLight(x:Double, y:Double, z:Double, var Kd:Float, var Ks:Float, var Ka:Float, var roughness:Float = 32f) extends PositionalLight {
 	/** Light position. */
 	val pos = Vector4(x, y, z, 1)
 
-	def this(position:NumberSeq3, intensity:Float, specular:Float, ambient:Float) {
-		this(position.x, position.y, position.z, intensity, specular, ambient)
+	/** When there are several lights, this is >= 0 and indicates the index of the light. */
+	var index = -1
+
+	def this(position:NumberSeq3, Kd:Float, Ks:Float, Ka:Float, roughness:Float) {
+		this(position.x, position.y, position.z, Kd, Ks, Ka, roughness)
 	}
 
-	/** Setup a given shader uniform variables based on the assertion that
-	  * the shader defines one light with the structure defined in the main documentation
-	  * bloc of this class. All variables are set excepted the position. */
-	def uniform(shader:ShaderProgram, space:Space) {
-		shader.uniform("whitelight.intensity", intensity)
-		shader.uniform("whitelight.specular",  specular)
-		shader.uniform("whitelight.ambient",   ambient)
-		shader.uniform("whitelight.roughness", roughness)
+	def uniform(shader:ShaderProgram) {
+		if(index < 0) {
+			shader.uniform("L.Kd", Kd)
+			shader.uniform("L.Ks",  Ks)
+			shader.uniform("L.Ka",   Ka)
+			shader.uniform("L.R", roughness)
+		} else {
+			shader.uniform("L[%d].Kd".format(index), Kd)
+			shader.uniform("L[%d].Ks".format(index),  Ks)
+			shader.uniform("L[%d].Ka".format(index),   Ka)
+			shader.uniform("L[%d].R".format(index), roughness)			
+		}	
 	}
 
-	/** Setup the position of the light according to the given state of the `space`. */
-	def uniformPosition(shader:ShaderProgram, space:Space) {
-		shader.uniform("whitelight.pos", Vector3(space.modelview.top * pos))
+	def uniformPosition(shader:ShaderProgram, space:Space=null) {
+		if(index < 0)
+		     shader.uniform("L.P", if(space ne null) Vector3(space.modelview.top * pos) else Vector3(pos))
+		else shader.uniform("L[%d].P".format(index), if(space ne null) Vector3(space.modelview.top * pos) else Vector3(pos))
 	}
-
-	/** Setup a constant position of the light non transformed. */
-	def uniformPosition(shader:ShaderProgram) {
-		shader.uniform("whitelight.pos", Vector3(pos))
-	}
-
-	/** Setup a given shader uniform variables based on the assertion that
-	  * the shader defines several lights with the structure defined in the main documentation
-	  * bloc of this class. */
-	def uniform(index:Int, shader:ShaderProgram, space:Space) {
-		shader.uniform("whitelight[%d].intensity".format(index), intensity)
-		shader.uniform("whitelight[%d].specular".format(index),  specular)
-		shader.uniform("whitelight[%d].ambient".format(index),   ambient)
-		shader.uniform("whitelight[%d].roughness".format(index), roughness)
-	}
-
-	/** If only the light position changed, you can setup it using this method. */
-	def uniformPosition(index:Int, shader:ShaderProgram, space:Space) {
-		shader.uniform("whitelight[%d].pos".format(index), Vector3(space.modelview.top * pos))
-	}
-
-	/** If only the light position changed, you can setup it using this method. */
-	def uniformPosition(index:Int, shader:ShaderProgram) {
-		shader.uniform("whitelight[%d].pos".format(index), Vector3(pos))
-	}}
+}
 
 
 // == Colored light =====================================================
@@ -102,8 +86,12 @@ object ColoredLight {
 }
 
 
-class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:Rgba, val ambient:Rgba, val Kd:Double, val Ks:Double, val Ka:Double, val roughness:Double, val constAtt:Double, val linAtt:Double, val quadAtt:Double) extends Light {
+class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:Rgba, val ambient:Rgba, val Kd:Double, val Ks:Double, val Ka:Double, val roughness:Double, val constAtt:Double, val linAtt:Double, val quadAtt:Double) extends PositionalLight {
+	/** Light position. */
 	val pos = Vector4(x, y, z, 1)
+
+	/** When there are several lights, this is >= 0 and indicates the index of the light. */
+	var index = -1
 
 	def this(p:NumberSeq3, diffuse:Rgba, specular:Rgba, ambient:Rgba, Kd:Double, Ks:Double, Ka:Double, roughness:Double, constAtt:Double, linAtt:Double, quadAtt:Double) {
 		this(p.x, p.y, p.z, diffuse, specular, ambient, Kd, Ks, Ka, roughness, constAtt, linAtt, quadAtt)
@@ -113,49 +101,36 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
 		this(p.x, p.y, p.z, diffuse, Rgba.White, diffuse, Kd, Ks, Ka, roughness, 0.0, 1.0, quadAtt)
 	}
 
-	def uniform(shader:ShaderProgram, space:Space) {
-		shader.uniform("light.pos", Vector3(space.modelview.top * pos))
-		shader.uniform("light.diffuse", diffuse)
-		shader.uniform("light.specular", specular)
-		shader.uniform("light.ambient", ambient)
-		shader.uniform("light.Kd", Kd.toFloat)
-		shader.uniform("light.Ks", Ks.toFloat)
-		shader.uniform("light.Ka", Ka.toFloat)
-		shader.uniform("light.roughness", roughness.toFloat)
-		shader.uniform("light.constAtt", constAtt.toFloat)
-		shader.uniform("light.linAtt", linAtt.toFloat)
-		shader.uniform("light.quadAtt", quadAtt.toFloat)
+	def uniform(shader:ShaderProgram) {
+		if(index < 0) {
+			shader.uniform("L.Cd", diffuse)
+			shader.uniform("L.Cs", specular)
+			shader.uniform("L.Ca", ambient)
+			shader.uniform("L.Kd", Kd.toFloat)
+			shader.uniform("L.Ks", Ks.toFloat)
+			shader.uniform("L.Ka", Ka.toFloat)
+			shader.uniform("L.R", roughness.toFloat)
+			shader.uniform("L.Ac", constAtt.toFloat)
+			shader.uniform("L.Al", linAtt.toFloat)
+			shader.uniform("L.Aq", quadAtt.toFloat)
+		} else {
+			shader.uniform("L[%d].Cd".format(index), diffuse)
+			shader.uniform("L[%d].Cs".format(index), specular)
+			shader.uniform("L[%d].Ca".format(index), ambient)
+			shader.uniform("L[%d].Kd".format(index), Kd.toFloat)
+			shader.uniform("L[%d].Ks".format(index), Ks.toFloat)
+			shader.uniform("L[%d].Ka".format(index), Ka.toFloat)
+			shader.uniform("L[%d].R".format(index), roughness.toFloat)
+			shader.uniform("L[%d].Ac".format(index), constAtt.toFloat)
+			shader.uniform("L[%d].Al".format(index), linAtt.toFloat)
+			shader.uniform("L[%d].Aq".format(index), quadAtt.toFloat)
+		}
 	}
 
-	def uniformPosition(shader:ShaderProgram, space:Space) {
-		shader.uniform("light.pos", Vector3(space.modelview.top * pos))
-	}
-
-	def uniformPosition(shader:ShaderProgram) {
-		shader.uniform("light.pos", Vector3(pos))
-	}
-
-	def uniform(index:Int, shader:ShaderProgram, space:Space) {
-		shader.uniform("light[%d].pos".format(index), Vector3(space.modelview.top * pos))
-		shader.uniform("light[%d].diffuse".format(index), diffuse)
-		shader.uniform("light[%d].specular".format(index), specular)
-		shader.uniform("light[%d].ambient".format(index), ambient)
-		shader.uniform("light[%d].Kd".format(index), Kd.toFloat)
-		shader.uniform("light[%d].Ks".format(index), Ks.toFloat)
-		shader.uniform("light[%d].Ka".format(index), Ka.toFloat)
-		shader.uniform("light[%d].roughness".format(index), roughness.toFloat)
-		shader.uniform("light[%d].constAtt".format(index), constAtt.toFloat)
-		shader.uniform("light[%d].linAtt".format(index), linAtt.toFloat)
-		shader.uniform("light[%d].quadAtt".format(index), quadAtt.toFloat)
-
-	}
-
-	def uniformPosition(index:Int, shader:ShaderProgram, space:Space) {
-		shader.uniform("light[%d].pos".format(index), Vector3(space.modelview.top * pos))
-	}
-
-	def uniformPosition(index:Int, shader:ShaderProgram) {
-		shader.uniform("light[%d].pos".format(index), Vector3(pos))
+	def uniformPosition(shader:ShaderProgram, space:Space=null) {
+		if(index < 0)
+		     shader.uniform("L.P", if(space ne null) Vector3(space.modelview.top * pos) else Vector3(pos))
+		else shader.uniform("L[%d].P".format(index), if(space ne null) Vector3(space.modelview.top * pos) else Vector3(pos))
 	}
 }
 
@@ -175,39 +150,30 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
   * Furthermore the hemisphere light must be declared as:
   *     HemisphereLight hemilight;
   */
-class HemisphereLight(x:Double, y:Double, z:Double, val skyColor:Rgba, val groundColor:Rgba) extends Light {
+class HemisphereLight(x:Double, y:Double, z:Double, val skyColor:Rgba, val groundColor:Rgba) extends PositionalLight {
 	/** Light position. */
 	val pos = Vector4(x, y, z, 1)
+
+	/** When there are several lights, this is >= 0 and indicates the index of the light. */
+	var index = -1
 
 	def this(position:NumberSeq3, sky:Rgba, ground:Rgba) {
 		this(position.x, position.y, position.z, sky, ground)
 	}
 
-	def uniform(shader:ShaderProgram, space:Space) {
-		shader.uniform("hemilight.pos",         Vector3(space.modelview.top * pos))
-		shader.uniform("hemilight.skyColor",    skyColor)
-		shader.uniform("hemilight.groundColor", groundColor)
+	def uniform(shader:ShaderProgram) {
+		if(index < 0) {
+			shader.uniform("L.skyColor",    skyColor)
+			shader.uniform("L.groundColor", groundColor)
+		} else {
+			shader.uniform("L[%d].skyColor".format(index),    skyColor)
+			shader.uniform("L[%d].groundColor".format(index), groundColor)
+		}
 	}
 
-	def uniformPosition(shader:ShaderProgram, space:Space) {
-		shader.uniform("hemilight.pos", Vector3(space.modelview.top * pos))
-	}
-
-	def uniformPosition(shader:ShaderProgram) {
-		shader.uniform("hemilight.pos", Vector3(pos))
-	}
-
-	def uniform(index:Int, shader:ShaderProgram, space:Space) {
-		shader.uniform("hemilight[%d].pos".format(index),         Vector3(space.modelview.top * pos))
-		shader.uniform("hemilight[%d].skyColor".format(index),    skyColor)
-		shader.uniform("hemilight[%d].groundColor".format(index), groundColor)
-	}
-
-	def uniformPosition(index:Int, shader:ShaderProgram, space:Space) {
-		shader.uniform("hemilight[%d].pos".format(index), Vector3(space.modelview.top * pos))
-	}
-
-	def uniformPosition(index:Int, shader:ShaderProgram) {
-		shader.uniform("hemilight[%d].pos".format(index), Vector3(pos))
+	def uniformPosition(shader:ShaderProgram, space:Space=null) {
+		if(index < 0)
+		     shader.uniform("L.P", if(space ne null) Vector3(space.modelview.top * pos) else Vector3(pos))
+		else shader.uniform("L[%d].P".format(index), if(space ne null) Vector3(space.modelview.top * pos) else Vector3(pos))
 	}
 }

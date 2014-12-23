@@ -2,7 +2,7 @@
   *
   * The light intensity is given by the skyColor. */
 struct HemisphereLight {
-	vec3 pos;
+	vec3 P;
 	vec4 skyColor;
 	vec4 groundColor;
 };

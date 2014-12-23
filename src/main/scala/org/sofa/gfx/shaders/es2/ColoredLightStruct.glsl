@@ -2,17 +2,17 @@
 #define COLORED_LIGHT_STRUCT
 
 struct ColoredLight {
-	vec3 pos;
-	vec4 diffuse;
-	vec4 specular;
-	vec4 ambient;
+	vec3 P;
+	vec4 Cd;
+	vec4 Cs;
+	vec4 Ca;
 	float Kd;
 	float Ks;
 	float Ka;
-	float roughness;
-	float constAtt;
-	float linAtt;
-	float quadAtt;
+	float R;
+	float Ac;
+	float Al;
+	float Aq;
 };
 
 #endif COLORED_LIGHT_STRUCT

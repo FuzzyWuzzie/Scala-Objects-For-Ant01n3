@@ -2,72 +2,107 @@
 #define COLORED_LIGHT
 #include <es2/light.glsl>
 
-vec4 singleColoredLightPlastic(vec3 P, vec3 N, vec4 C) {
-	vec3  L  = light.pos - P;
+
+vec4 singleColoredLightPlastic(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
+	vec3  L  = light.P - P;
 	float d  = length(L); 
 
 	L = normalize(L);
 	N = normalize(N);
 
 	float D  = diffuse(N, L);
-	float S  = specular(N, L, light.roughness);
-	vec3  CS = light.specular.rgb;
-	vec3  CD = light.diffuse.rgb;
-	vec3  CA = light.ambient.rgb;
+	float S  = specular(N, L, light.R);
+	vec3  CS = light.Cs.rgb;
+	vec3  CD = light.Cd.rgb;
+	vec3  CA = light.Ca.rgb;
 
-	d = 1.0 / (light.constAtt + light.linAtt * d + light.quadAtt * d * d);
+	d = 1.0 / (light.Ac + light.Al * d + light.Aq * d * d);
 
 	return vec4(C.rgb * ((light.Ka * CA * d) + (light.Kd * D * CD * d)) + (light.Ks * S * CS * d), C.a);
 }
 
-/*
-vec4 singleColoredLightPlastic(in vec3 P, in vec3 N, in vec4 C, in mat3 TBN) {
-	vec3  L  = whitelight.pos - P;
-	float d  = length(L);
-	      L  = normalize(TBN * L);
-	float D  = diffuse(N, L);
-	float S  = specular(N, L, whitelight.specular);
-	vec3  CC = C.rgb;
-	vec3  SS = vec3(1,1,1);
 
-	d = d * d;
+vec4 singleColoredLightPlastic2(vec3 P, vec3 N, vec4 C, in ColoredLight light[2]) {
+	vec4 R[2];
 
-	return vec4(
-		((CC * D * whitelight.intensity) / d)
-	  + ((SS * S * whitelight.intensity) / d)
-	  + ( CC * whitelight.ambient), C.a);
+	for(int i=0; i<2; i++) {
+		vec3  L  = light[i].P - P;
+		float d  = length(L); 
+
+		L = normalize(L);
+		N = normalize(N);
+
+		float D  = diffuse(N, L);
+		float S  = specular(N, L, light[i].R);
+		vec3  CS = light[i].Cs.rgb;
+		vec3  CD = light[i].Cd.rgb;
+		vec3  CA = light[i].Ca.rgb;
+
+		d = 1.0 / (light[i].Ac + light[i].Al * d + light[i].Aq * d * d);
+
+		R[i] = vec4(C.rgb * ((light[i].Ka * CA * d) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
+	}
+
+	return mix(R[0], R[1], 0.5);
 }
-*/
-vec4 singleColoredLightMatte(vec3 P, vec3 N, vec4 C) {
-	vec3  L  = light.pos - P;
+
+
+vec4 coloredLightPlastic4(vec3 P, vec3 N, vec4 C, in ColoredLight light[4]) {
+	vec4 R[4];
+
+	for(int i=0; i<4; i++) {
+		vec3  L  = light[i].P - P;
+		float d  = length(L); 
+
+		L = normalize(L);
+		N = normalize(N);
+
+		float D  = diffuse(N, L);
+		float S  = specular(N, L, light[i].R);
+		vec3  CS = light[i].Cs.rgb;
+		vec3  CD = light[i].Cd.rgb;
+		vec3  CA = light[i].Ca.rgb;
+
+		d = 1.0 / (light[i].Ac + light[i].Al * d + light[i].Aq * d * d);
+
+		R[i] = vec4(C.rgb * ((light[i].Ka * CA * d) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
+	}
+
+	return mix(mix(R[0], R[1], 0.5), mix(R[2], R[3], 0.5), 0.5);
+}
+
+
+vec4 singleColoredLightMatte(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
+	vec3  L  = light.P - P;
 	float d  = length(L); 
 
 	L = normalize(L);
 	N = normalize(N);
 
 	float D  = diffuse(N, L);
-	vec3  CD = light.diffuse.rgb;
-	vec3  CA = light.ambient.rgb;
+	vec3  CD = light.Cd.rgb;
+	vec3  CA = light.Ca.rgb;
 
-	d = 1.0 / (light.constAtt + light.linAtt * d + light.quadAtt * d * d);
+	d = 1.0 / (light.Ac + light.Al * d + light.Aq * d * d);
 
 	return vec4(C.rgb * ((light.Ka * CA * d) + (light.Kd * D * CD * d)), C.a);
 }
 
-vec4 singleColoredLightMetal(vec3 P, vec3 N, vec4 C) {
-	vec3  L  = light.pos - P;
+
+vec4 singleColoredLightMetal(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
+	vec3  L  = light.P - P;
 	float d  = length(L); 
 
 	L = normalize(L);
 	N = normalize(N);
 
 	float D  = diffuse(N, L);
-	float S  = specular(N, L, light.roughness);
-	vec3  CS = light.specular.rgb;
-	vec3  CD = light.diffuse.rgb;
-	vec3  CA = light.ambient.rgb;
+	float S  = specular(N, L, light.R);
+	vec3  CS = light.Cs.rgb;
+	vec3  CD = light.Cd.rgb;
+	vec3  CA = light.Ca.rgb;
 
-	d = 1.0 / (light.constAtt + light.linAtt * d + light.quadAtt * d * d);
+	d = 1.0 / (light.Ac + light.Al * d + light.Aq * d * d);
 
 	// Yes, only the parenthesis changed, specular is comprised in the mult with
 	// the color.
