@@ -13,6 +13,11 @@ import scala.collection.mutable.HashMap
 
 // TODO
 // - Instanced mesh to use instanced rendering. 
+// - Allow meshes to share attributes. This means that MeshAttribute should proabably have
+//   a link to an associated array buffer (dissociated from the vertex array ?). This would
+//   also allow mesh attribute to eventually be mappings instead of copy of data, update would
+//   be faster ?
+//   -> probably the mapping behavior should happen in ArrayBuffer.
 // - allow a mesh to have several VAs, paving the way for multi mesh.
 // - simplify the API.
 // - Make MeshAttribute and MeshElement traits. Create base implementations.

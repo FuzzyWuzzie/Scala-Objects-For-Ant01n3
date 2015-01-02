@@ -109,6 +109,9 @@ abstract class SGL {
             
     val PROGRAM_POINT_SIZE:Int
 
+    val MAP_READ_BIT:Int
+    val MAP_WRITE_BIT:Int
+
     var ShaderVersion:String
 
 // Info
@@ -165,6 +168,7 @@ abstract class SGL {
     def bindBuffer(mode:Int, id:AnyRef)
 	def deleteBuffer(id:AnyRef)
 
+	def bufferData(target:Int, byteSize:Int, mode:Int)
 	def bufferData(target:Int, data:DoubleBuffer, mode:Int)
 	def bufferData(target:Int, data:Array[Double], mode:Int)
 	def bufferData(target:Int, data:FloatBuffer, mode:Int)
@@ -182,6 +186,9 @@ abstract class SGL {
     def bufferSubData(target:Int, offset:Int, size:Int, data:FloatBuffer, alsoPositionInData:Boolean)
     def bufferSubData(target:Int, offset:Int, size:Int, data:IntBuffer, alsoPositionInData:Boolean)
     def bufferSubData(target:Int, offset:Int, size:Int, data:ByteBuffer, alsoPositionInData:Boolean)
+
+    def mapBufferRange(target:Int, offset:Int, size:Int, accessMode:Int):ByteBuffer
+    def unmapBuffer(target:Int)
 
 // Shaders
 	

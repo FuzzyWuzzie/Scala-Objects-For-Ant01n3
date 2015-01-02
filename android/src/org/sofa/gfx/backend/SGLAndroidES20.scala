@@ -114,6 +114,9 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 
     val EXTENSIONS:Int = GLES20.GL_EXTENSIONS
 
+    val MAP_READ_BIT:Int = -1 // Not supported
+    val MAP_WRITE_BIT:Int = -1 // Not supported
+
 // Info
     
     def isES:Boolean = true
@@ -192,6 +195,10 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	def deleteBuffer(id:AnyRef) {
 	    ib1.put(0, id.asInstanceOf[Integer].toInt)
 	    GLES20.glDeleteBuffers(1, ib1)
+	}
+
+	def bufferData(target:Int, byteSize:Int, mode:Int) {
+		GLES20.glBufferData(target, byteSize, null, mode)
 	}
 
 	def bufferData(target:Int, data:DoubleBuffer, mode:Int) {
@@ -273,6 +280,10 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
 	        throw new RuntimeException("Unknown Nio buffer data type")
 	    }
 	}
+
+    def mapBufferRange(target:Int, offset:Int, size:Int, accessMode:Int) = throw new RuntimeException("mapBufferRange not supported in ES 2.0")
+
+    def unmapBuffer(target:Int) = throw new RuntimeException("unmapBuffer not supported in ES 2.0")
 
 // Shaders
 	

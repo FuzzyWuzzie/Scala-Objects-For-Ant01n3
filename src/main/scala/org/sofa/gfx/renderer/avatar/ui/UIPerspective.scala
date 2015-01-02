@@ -32,6 +32,8 @@ class UIPerspective(name: AvatarName, screen: Screen)
 
 	var step = 0.2
 
+	def camera:CameraSpace = space.camera
+
 	override def change(state:AvatarState) {
 		if(! changed(state)) {
 			state match {

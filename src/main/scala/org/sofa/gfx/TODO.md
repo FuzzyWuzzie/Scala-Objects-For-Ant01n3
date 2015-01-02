@@ -26,6 +26,11 @@ Game
     - Gamma Ɣ ?
     - Phi φ ?
     - SOFA Σοφα ?
+* Instead of rename, maybe cut it in several sub-libs
+    - GFX ƔφX
+    - SET Σ
+    - MATH
+    - NIO
 
 ## NIO
 
@@ -63,6 +68,16 @@ Game
     - It would handle efficiently its data internally when possible.
     - It would allocate its own vertex array(s) when needed.
     - It would be linked with the shaders used to generate the vertex array(s).
+* Wouldn't it be better if mesh attributes where tied to the ArrayBuffer ? 
+    - This would allow eventually to always use the array buffer as storage by mapping it.
+    - This requires a big change -> passing to OpenGL ES 3.0
+
+Plan :
+    - Add map to ScalaGL and ArrayBuffer.
+    - Allow meshes to share their attributes.
+    - Change mesh to use only one vertex array.
+    - Change one mesh to use it instead.
+    - Adapt all meshes to use it.
 
 ## Behaviors/Armature
 

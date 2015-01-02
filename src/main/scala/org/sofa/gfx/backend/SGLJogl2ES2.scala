@@ -123,6 +123,9 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
     
     val PROGRAM_POINT_SIZE:Int = GL3.GL_PROGRAM_POINT_SIZE
     
+    val MAP_READ_BIT:Int = -1 // Not supported
+    val MAP_WRITE_BIT:Int = -1 // Not supported
+
 // Info
     
     def isES:Boolean = true
@@ -200,6 +203,10 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	def deleteBuffer(id:AnyRef) {
 	    ib1.put(0, id.asInstanceOf[Integer].toInt)
 	    glDeleteBuffers(1, ib1)
+	}
+
+	def bufferData(target:Int, byteSize:Int, mode:Int) {
+		gl.glBufferData(target, byteSize, null, mode)
 	}
 
 	def bufferData(target:Int, data:DoubleBuffer, mode:Int) {
@@ -281,6 +288,10 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	        throw new RuntimeException("Unknown Nio buffer data type")
 	    }
 	}
+
+    def mapBufferRange(target:Int, offset:Int, size:Int, accessMode:Int) = throw new RuntimeException("mapBufferRange not supported in ES 2.0")
+
+    def unmapBuffer(target:Int) = throw new RuntimeException("unmapBuffer not supported in ES 2.0")
 
 // Shaders
 	

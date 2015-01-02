@@ -122,6 +122,10 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
         
     val PROGRAM_POINT_SIZE:Int = GL3.GL_PROGRAM_POINT_SIZE
 
+    val MAP_READ_BIT:Int = GL.GL_MAP_READ_BIT
+
+    val MAP_WRITE_BIT:Int = GL.GL_MAP_WRITE_BIT
+
 // Info
     
     def isES:Boolean = false
@@ -208,6 +212,10 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
 	    glDeleteBuffers(1, ib1)
 	}
 
+	def bufferData(target:Int, byteSize:Int, mode:Int) {
+		gl.glBufferData(target, byteSize, null, mode)
+	}
+
 	def bufferData(target:Int, data:DoubleBuffer, mode:Int) {
 	    gl.glBufferData(target, data.size*8, data.buffer.asInstanceOf[java.nio.DoubleBuffer], mode)
 	}
@@ -287,6 +295,10 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
 	        throw new RuntimeException("Unknown Nio buffer data type")
 	    }
 	}
+
+    def mapBufferRange(target:Int, offset:Int, size:Int, accessMode:Int) = new ByteBufferJava(gl.glMapBufferRange(target, offset, size, accessMode))
+
+    def unmapBuffer(target:Int) = gl.glUnmapBuffer(target)
 
 // Shaders
 	
