@@ -1,5 +1,6 @@
 # TODO
 
+
 ## Priority list and roadmap:
 
 UI
@@ -19,6 +20,7 @@ Game
 3. Add selective rendering.
 4. Picking.
 
+
 ## General
 
 * Rename SOFA, but to what ?
@@ -32,12 +34,14 @@ Game
     - MATH
     - NIO
 
+
 ## NIO
 
 * backup a float buffer by a java array with faster read/write accesses.
     - When the buffer is requested, copy back all non data to the corresponding NIO buffer.
     - Make tests to see if this is faster.
     - NIO buffers are such a pain...
+
 
 ## Avatars
 
@@ -58,26 +62,18 @@ Game
     - When several avatars are picked, how to sort them ?
     - -> this is specific to each avatar sub-library (UI, Game, etc.) Partly done in UI.
 
+
 ## Mesh
 
-* Mesh was always thought as a factory to produce vertex arrays. Two problems :
-    - With dynamic meshes, come the idea that the last produced vertex array can be updated with the changes occuring in the mesh. This is quite confusing.
-    - Meshes copy their data from Nio buffers to OpenGL buffers. However OpenGL allows to map a buffer to avoid copy, it would be far more efficient if the mesh buffers were maps from OpenGL buffers. -> this seems to be usable only on OpenGL ES 3.0. Therefore this has to be optionnal.
-* Wouldn't it be better if Mesh was tied to a hidden vertex array ?
-    - It would have draw methods.
-    - It would handle efficiently its data internally when possible.
-    - It would allocate its own vertex array(s) when needed.
-    - It would be linked with the shaders used to generate the vertex array(s).
-* Wouldn't it be better if mesh attributes where tied to the ArrayBuffer ? 
-    - This would allow eventually to always use the array buffer as storage by mapping it.
-    - This requires a big change -> passing to OpenGL ES 3.0
+* Make MultiMesh disappear.
+* Make EditableMesh disappear, replaced by TrianglesMesh and new features in Mesh.
+* Ensure mesh modifications are done un sub-classes according to the needs.
+* simplify the API.
+* Ensure TrianglesMesh, LinesMesh and PointsMesh which are generalist meshes
+  allows to add or not indices, and all the standard vertex attributes. These
+  meshes are here to replace old generalist OpenGL 1.0 functionnality (begin/end).
+* Remove the VertexArray return value in bindShader.
 
-Plan :
-    - Add map to ScalaGL and ArrayBuffer.
-    - Allow meshes to share their attributes.
-    - Change mesh to use only one vertex array.
-    - Change one mesh to use it instead.
-    - Adapt all meshes to use it.
 
 ## Behaviors/Armature
 
@@ -93,20 +89,24 @@ Plan :
 * Add `FromVariable` behavior that scale a value (scale, translation, angle) to an external variable. Question : how to specify how to reach/read the variable. (via an interface on objects that can be named in the library ? --> AnimatedValues ?)
 * Uses the new TextureFramebuffer of AvatarRender to store the armature result when non-animating ?
 
+
 ## Library/Resources
 
 * Allow the `Library` to be actor based, loading elements in the background ? Return a Future instead of an item ? How to handle the fact OpenGL is not thread safe ?
 * Change the loadresources of Libraries, the XML lib of Scala is very slow. A dedicated format ? JSON ??
     - JSON done but loading is still very slow -> use a dedicated parser done with Jackson.
 
+
 ## Surface/Renderer
 
 * Allow the renderer to choose if base/high-level events are sent, as in surfaces.
 * Actually the surface newt uses GL2ES2 ... should use GL3 -> bug in VertexArrays -> Bugs in SOFAtest
 
+
 ## Events
 
 * Shortcuts
+
 
 ## Game
 
@@ -143,6 +143,7 @@ Plan :
     - Identify the error ?? How ?
 * All layers must be invalidated and rebuild if the surface is resized.
 
+
 ## Display lists
 
 * When drawing, one can either draw the things if they changed, and doing this memorize the resulting drawing commands, or use this memory of previously issued commands to draw faster (avoiding to recompute transformation matrices, graphic code, etc.).
@@ -172,6 +173,12 @@ Plan :
 * I realize that this is not the rendering of text that takes so much time, but *preparation* to render text, building of the vertex arrays of text, updating, changing space and computing MVP matrix. 
     - FBO and glBlitFrameBufer may be far faster when compositing text, however glBlitFrameBuffer is supported only in ES 3.0.
     - We could try an experimental way to do this as another interface to GLText when the ES 3.0 implementation of android SGL is ready ?
+
+
+## Armature
+
+- Redo it in the shader space -> export only the palette of matrices on a general model, use bones.
+- Maybe generalize to 3D models ?
 
 
 ## CSS

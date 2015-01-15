@@ -107,11 +107,14 @@ class Armature(val name:String,
 			texture   = libraries.textures.get(gl, texResource)
 			shader    = libraries.shaders.get(gl, shaderResource)
 			val count = root.init(null, this)
-			triangles = new TrianglesMesh(count*2)
+			triangles = new TrianglesMesh(gl, count*2)
 
-			root.build(this)
-			assert(this.count == count)
-			triangles.newVertexArray(gl, shader, Vertex → "position", TexCoord → "texCoords")
+			triangles.addAttributeTexCoord
+			triangles.modify() {
+				root.build(this)
+				assert(this.count == count)				
+			}
+			triangles.bindShader(shader, Vertex → "position", TexCoord → "texCoords")
 		}
 	}
 
@@ -432,7 +435,7 @@ class Joint(val name:String,
 		//     shader.uniform("highlight", 1.0f)
 		//else shader.uniform("highlight", 0.0f)
 		space.uniformMVP(armature.shader)
-		armature.triangles.vertexArray.drawArrays(armature.triangles.drawAs(gl), triangle*3, 2*3)
+		armature.triangles.vertexArray.drawArrays(armature.triangles.drawAs, triangle*3, 2*3)
 	}
 
 	/** Return a multiline string where sub joints are indented. */

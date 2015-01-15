@@ -46,11 +46,8 @@ class ArrayBuffer(val gl:SGL, val valuesPerElement:Int, val byteSize:Int, val dr
     /** Number of components in the buffer. */
     var componentCount:Int = 0
 
-    /** The buffer used to initialize the data, or the actually mapped buffer. */
-    protected var data:NioBuffer = null
-
-    /** True if the buffer is actually mapped. */
-    protected var mapped = false
+    /** The actually mapped buffer. */
+    var data:NioBuffer = null
 
     /** Number of elements (components divided by the number of components per element). */
     def elementCount:Int = componentCount / valuesPerElement
@@ -67,8 +64,7 @@ class ArrayBuffer(val gl:SGL, val valuesPerElement:Int, val byteSize:Int, val dr
       * in each element. */
     def this(gl:SGL, valuesPerElement:Int, data:Array[Float], drawMode:Int) {
         this(gl, valuesPerElement, data.length * 4, drawMode)
-        this.data = FloatBuffer(data)
-        initData(this.data)
+        initWithData(FloatBuffer(data))
     }
     
     /** Create, allocate and initialize a buffer whose size and contents will be set using the
@@ -78,8 +74,7 @@ class ArrayBuffer(val gl:SGL, val valuesPerElement:Int, val byteSize:Int, val dr
       * in each element. */
     def this(gl:SGL, valuesPerElement:Int, data:Array[Int], drawMode:Int) {
         this(gl, valuesPerElement, data.length * 4, drawMode)
-        this.data = IntBuffer(data)
-        initData(this.data)
+        initWithData(IntBuffer(data))
     }
 
     /** Create, allocate and initialize a buffer whose size and contents will be set using the
@@ -95,8 +90,7 @@ class ArrayBuffer(val gl:SGL, val valuesPerElement:Int, val byteSize:Int, val dr
     		case db:DoubleBuffer => 8
     	}), drawMode)
 
-    	this.data = data
-    	initData(this.data)
+    	initWithData(data)
     }
     
     /** Create and allocate a buffer whose size is given by `byteSize`. The buffer has `valuesPerElement`
@@ -106,12 +100,10 @@ class ArrayBuffer(val gl:SGL, val valuesPerElement:Int, val byteSize:Int, val dr
       * constructor, the buffer is allocated but its contents are undefined. */
     def this(gl:SGL, valuesPerElement:Int, byteSize:Int, valueType:Int, drawMode:Int) {
     	this(gl, valuesPerElement, byteSize, drawMode)
-    	this.data = null
     	initEmpty(valueType)
     }
 
-    protected def initData(data:NioBuffer) {
-        checkId
+    protected def initWithData(data:NioBuffer) {
         super.init(createBuffer)
         bind
 
@@ -133,7 +125,6 @@ class ArrayBuffer(val gl:SGL, val valuesPerElement:Int, val byteSize:Int, val dr
     }
     
     protected def initEmpty(valueType:Int) {
-    	checkId
     	super.init(createBuffer)
     	bind
 
@@ -187,7 +178,7 @@ class ArrayBuffer(val gl:SGL, val valuesPerElement:Int, val byteSize:Int, val dr
       * The `to` and `from` values are expressed in elements (series of valuesPerElement
       * items). */
     def update(from:Int, to:Int, data:FloatBuffer, alsoPositionInData:Boolean = true) {
-    	bind    	
+    	bind 
     	bufferSubData(gl.ARRAY_BUFFER, from*valuesPerElement, (to-from)*valuesPerElement, data, alsoPositionInData)
     	checkErrors
     	
@@ -209,15 +200,14 @@ class ArrayBuffer(val gl:SGL, val valuesPerElement:Int, val byteSize:Int, val dr
     	if(! isMapped) {
 	    	bind
 	    	// ??? componentCount or elementCount ????
-    		
+    		// Probably componentCount times bytes per component !!!
+
     		data = mapBufferRange(gl.ARRAY_BUFFER, 0, componentCount, accessMode match {
     			case AccessMode.ReadOnly  => gl.MAP_READ_BIT
     			case AccessMode.WriteOnly => gl.MAP_WRITE_BIT
     			case AccessMode.ReadWrite => gl.MAP_READ_BIT | gl.MAP_WRITE_BIT
     			case _ => throw new RuntimeException("unknown access mode %s".format(accessMode))
     		})
-
-    		mapped = true
     	}
 	}
 
@@ -230,5 +220,5 @@ class ArrayBuffer(val gl:SGL, val valuesPerElement:Int, val byteSize:Int, val dr
     }
 
     /** True if the buffer is actually mapped. You cannot call drawing commands using this buffer while mapped. */
-    def isMapped():Boolean = mapped
+    def isMapped():Boolean = (data ne null)
 }

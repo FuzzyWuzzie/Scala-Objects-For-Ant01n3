@@ -44,7 +44,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     protected def init() { super.init(if(gl.isES) this else createVertexArray) }
     
     /** Store the indices and array buffers. Indices may be null. */
-    protected def storeData(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(String,Int,Int,NioBuffer,Int)*) {
+    protected def storeDataAndCreateVA(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(String,Int,Int,NioBuffer,Int)*) {
         this.buffers = new Array[(Int,ArrayBuffer)](attributes.size)
         if(!gl.isES) bindVertexArray(oid)
         var i=0
@@ -63,14 +63,14 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
     }
     
     /** Store the indices and array buffers. Indices may be null. */
-    protected def storeData(gl:SGL, indices:ElementBuffer, attributes:(String,Int,ArrayBuffer,Int)*) {
+    protected def createVA(gl:SGL, indices:ElementBuffer, attributes:(String,Int,ArrayBuffer,Int)*) {
     	this.buffers = new Array[(Int,ArrayBuffer)](attributes.size)
     	if(!gl.isES) bindVertexArray(oid)
     	var i=0
     	attributes.foreach { item =>
     		bufferNames += ((item._1, i))
     		buffers(i) = (item._2, item._3)
-    		if(!gl.isES) item._3.vertexAttrib(item._2, true, item._4)
+    		if(!gl.isES) item._3.vertexAttrib(item._2, true, item._4)	// This binds the buffer
     		i += 1
     	}
     	if(indices ne null) {
@@ -90,7 +90,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * draw mode. */
     def this(gl:SGL, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
-        storeData(gl, null, gl.STATIC_DRAW, attributes:_*)
+        storeDataAndCreateVA(gl, null, gl.STATIC_DRAW, attributes:_*)
     }
     
     /** Create a vertex array with indices, made of vertices, colors, normals, etc.
@@ -105,7 +105,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * draw mode. */
     def this(gl:SGL, indices:IntBuffer, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
-        storeData(gl, indices, gl.STATIC_DRAW, attributes:_*)
+        storeDataAndCreateVA(gl, indices, gl.STATIC_DRAW, attributes:_*)
     }
     
     /** Create a vertex array without indices, only made of vertices, colors, normals, etc.
@@ -117,7 +117,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * 0 if the attribute is not instanced. */
     def this(gl:SGL, drawMode:Int, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
-        storeData(gl, null, drawMode, attributes:_*)
+        storeDataAndCreateVA(gl, null, drawMode, attributes:_*)
     }
     
     /** Create a vertex array with indices, made of vertices, colors, normals, etc.
@@ -131,7 +131,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * 0 if the attribute is not instanced. */
     def this(gl:SGL, indices:IntBuffer, drawMode:Int, attributes:(String, Int, Int, NioBuffer, Int)*) {
         this(gl)
-        storeData(gl, indices, drawMode, attributes:_*)
+        storeDataAndCreateVA(gl, indices, drawMode, attributes:_*)
     }
         
     /** Create a vertex array with indices, made of vertices, colors, normals, etc.
@@ -143,7 +143,7 @@ class VertexArray(gl:SGL) extends OpenGLObject(gl) {
       * and bindable and finally the attribute divisor (0 to deactivate). */
     def this(gl:SGL, indices:ElementBuffer, attributes:(String, Int, ArrayBuffer, Int)*) {
     	this(gl)
-    	storeData(gl, indices, attributes:_*)
+    	createVA(gl, indices, attributes:_*)
     }
 
     override def dispose() {

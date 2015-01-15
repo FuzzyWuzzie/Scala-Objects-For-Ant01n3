@@ -5,13 +5,16 @@ import org.sofa.gfx.{SGL,VertexArray,ShaderProgram}
 import org.sofa.math.{Rgba, Point3}
 
 
-class PointsMesh(val size:Int) extends Mesh {
+/** A general mesh allowing to draw points.
+  *
+  * @param size The number of points. */
+class PointsMesh(val gl:SGL, val size:Int) extends Mesh {
 	
 	/** The mutable set of coordinates. */
-	protected var V = addAttributeVertex() // new MeshAttribute(size*3)
+	protected var V = addAttributeVertex()
 	
 	/** The mutable set of colors. */
-    protected var C:MeshAttribute =  _ // new MeshAttribute(size*4)
+    protected var C:MeshAttribute =  _
     
 	// -- Mesh interface
 
@@ -19,7 +22,7 @@ class PointsMesh(val size:Int) extends Mesh {
 
 	def elementsPerPrimitive:Int = 1
 	
-	def drawAs(gl:SGL):Int = gl.POINTS
+	def drawAs():Int = gl.POINTS
 	
 	protected def addAttributeVertex():MeshAttribute = {
 		if(V eq null) {
@@ -29,6 +32,7 @@ class PointsMesh(val size:Int) extends Mesh {
 		V
 	}
 
+	/** Add a color vertex attribute to the mesh. */
 	def addAttributeColor():MeshAttribute = {
 		if(C eq null) {
 			C = addMeshAttribute(VertexAttribute.Color, 4)
@@ -39,58 +43,46 @@ class PointsMesh(val size:Int) extends Mesh {
 
 	// -- Edition interface ------------------------------------
 
+	/** Move the `i`-th point at `p`. */
 	def setPoint(i:Int, p:Point3) { setPoint(i, p.x.toFloat, p.y.toFloat, p.z.toFloat) }
 	
+	/** Move the `i`-th point at (`x`, `y`, `z`). */
 	def setPoint(i:Int, x:Float, y:Float, z:Float) {
 		val p = i*3
-		val v = V.theData
+		val v = V.data
 
 		v(p)   = x
 		v(p+1) = y
 		v(p+2) = z
-		
-		if(i   < V.beg) V.beg = i
-		if(i+1 > V.end) V.end = i+1
+
+		V.range(i, i+1)		
+	}
+
+	/** Change the `color` of the `i`-th point. */	
+	def setColor(i:Int, color:Rgba) { 
+		setColor(i, color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
 	}
 	
-	def setColor(i:Int, c:Rgba) { setColor(i, c.red.toFloat, c.green.toFloat, c.blue.toFloat, c.alpha.toFloat) }
-	
+	/** Set the color (`red`, `green`, `blue`, `alpha`) of the `i`-th point. */
 	def setColor(i:Int, red:Float, green:Float, blue:Float, alpha:Float) {
-		if(C eq null)
-			addAttributeColor
-
+		if(C eq null) {
+			throw new NoSuchVertexAttributeException("no color vertex attribute in points mesh, add it first")
+		}
 
 		val p = i*4
-		val c = C.theData
+		val c = C.data
 
 		c(p)   = red
 		c(p+1) = green
 		c(p+2) = blue
 		c(p+3) = alpha
 
-		if(i   < C.beg) C.beg = i
-		if(i+1 > C.end) C.end = i+1
+		C.range(i, i+1)
 	}
 	
-	def getPoint(i:Int):Point3 = { val p = i*3; val v = V.theData; Point3(v(p), v(p+1), v(p+2)) }
+	/** Get the coordinates of the `i`-th point. */
+	def getPoint(i:Int):Point3 = { val p = i*3; val v = V.data; Point3(v(p), v(p+1), v(p+2)) }
 	
-	def getColor(i:Int):Rgba = { val p = i*4; val c = V.theData; Rgba(c(p), c(p+1), c(p+2), c(p+3)) }
-
-	// -- Dynamic edition ----------------------------------------------
-	
-    override def beforeNewVertexArray() {
-    	V.resetMarkers
-    	if(C ne null) C.resetMarkers
-	}
-
-    def updateVertexArray(gl:SGL) { updateVertexArray(gl, true, true) }
-	
-    /** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
-	  * avoid moving data between the CPU and GPU. */
-	def updateVertexArray(gl:SGL, updateVertices:Boolean, updateColors:Boolean) {
-		if(va ne null) {
-			if(updateVertices) V.update(va)
-			if(updateColors)   C.update(va)
-		}
-	}
+	/** Get the color of th `i`-th point. */
+	def getColor(i:Int):Rgba = { val p = i*4; val c = V.data; Rgba(c(p), c(p+1), c(p+2), c(p+3)) }
 }

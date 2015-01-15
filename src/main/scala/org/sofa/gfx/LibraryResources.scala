@@ -7,7 +7,7 @@ import scala.collection.mutable.HashMap
 
 import org.sofa.{FileLoader, Timer}
 import org.sofa.gfx.text.{GLFont, GLTypeFace, GLText, GLString}
-import org.sofa.gfx.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
+import org.sofa.gfx.mesh.{Mesh, VertexAttribute}
 import org.sofa.gfx.armature.{Armature, Joint}
 import org.sofa.behavior.{Behavior, Wait, InParallel, InSequence, Loop}
 import org.sofa.gfx.armature.behavior.{ArmatureBehavior, LerpToAngle, LerpToPosition, LerpToScale, LerpMove, Switch, LerpKeyArmature}
@@ -109,7 +109,7 @@ class ModelResource(id:String, mesh:Mesh, aFileName:String = "", aGeometry:Strin
 	def value(gl:SGL):Mesh = {
 		if(data eq null) {
 			try {
-				data = Mesh.loader.open(fileName, geometry)
+				data = Mesh.loader.open(gl, fileName, geometry)
 			} catch {
 				case e:IOException => throw NoSuchResourceException(e.getMessage, e)
 			}

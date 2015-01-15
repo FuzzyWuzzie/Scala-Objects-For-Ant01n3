@@ -29,7 +29,7 @@ import org.sofa.math.Rgba
   * 
   * Triangles are in CW order.
   */
-class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, var isXY:Boolean = false) extends Mesh {
+class PlaneMesh(val gl:SGL, val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float, var isXY:Boolean = false) extends Mesh {
     import VertexAttribute._
     
     protected var I:MeshElement = addIndex
@@ -57,11 +57,13 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 
 	/** Set the color of the whole plane. This must be done before the plane is transformed to a mesh. */    
     def setColor(color:Rgba) {
-    	if(C eq null)
+    	if(C eq null) {
     		addAttributeColor
+    		begin(VertexAttribute.Color)
+    	}
 
         val n = nVertX * nVertZ * 4
-        val d = C.theData
+        val d = C.data
         
         for(i <- 0 until n by 4) {
             d(i+0) = color.red.toFloat
@@ -69,6 +71,8 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
             d(i+2) = color.blue.toFloat
             d(i+3) = color.alpha.toFloat
         }
+
+        C.range(0, n/4)
     }
 
     // -- Mesh interface --------------------------------------------------------
@@ -77,11 +81,7 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 
     def elementsPerPrimitive:Int = 3
 
-    override def hasElements():Boolean = true
-    
-    override def elements:IntBuffer = I.theData
-    
-    def drawAs(gl:SGL):Int = gl.TRIANGLES
+    def drawAs():Int = gl.TRIANGLES
 
     // -- Building ----------------------------------------------------------
     
@@ -89,7 +89,9 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     	if(V eq null) {
     		V = addMeshAttribute(VertexAttribute.Vertex, 3)
 
-    		val v   = V.theData
+	        V.begin
+
+    		val v   = V.data
 	        val nw  = width / (nVertX-1).toFloat
 	        val nd  = depth / (nVertZ-1).toFloat 
 	        var xx  = -width/2f
@@ -121,6 +123,8 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 	                zz += nd
 	            }
 	        }
+	        V.range(0, vertexCount)
+	        V.end
 		}        
         
         V
@@ -130,8 +134,10 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     	if(X eq null) {
 			X = addMeshAttribute(VertexAttribute.TexCoord, 2)
 
+	        X.begin
+
 //	        val n   = nVertX * nVertZ * 2 
-	        val v   = X.theData
+	        val v   = X.data
 	        var nw  = textureRepeatS / (nVertX-1).toFloat
 	        var nd  = textureRepeatT / (nVertZ-1).toFloat
 	        var xx  = 0f
@@ -148,6 +154,9 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 	            xx  = 0
 	            zz += nd
 	        }
+
+	        X.range(0, vertexCount)
+	       	X.end
         }
 
         X
@@ -157,12 +166,17 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     	if(C eq null) {
     		C = addMeshAttribute(VertexAttribute.Color, 4)
 
-    		val d = C.theData
+    		C.begin
+
+    		val d = C.data
 	        val n = nVertX * nVertZ * 4
 	        
 	        for(i <- 0 until n) {
 	        	d(i) = 1f
 	        }
+
+	        C.range(0, vertexCount)
+	        C.end
 		}
 
         C
@@ -172,7 +186,9 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     	if(N eq null) {
     		N = addMeshAttribute(VertexAttribute.Normal, 3)
 
-    		val d = N.theData
+    		N.begin
+
+    		val d = N.data
 	        val n = nVertX * nVertZ * 3
 	        
 	        if(isXY) {
@@ -188,6 +204,9 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 	        	   d(i+2) = 0f
 	            }
 	        }
+
+	        N.range(0, vertexCount)
+	        N.end
 		}        
         
         N
@@ -197,7 +216,9 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
     	if(T eq null) {
     		T = addMeshAttribute(VertexAttribute.Tangent, 3)
 
-    		val d = T.theData
+    		T.begin
+
+    		val d = T.data
 	        val n = nVertX * nVertZ * 3
 	        
 	        for(i <- 0 until n by 3) {
@@ -205,6 +226,9 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 	            d(i+1) = 0f
 	            d(i+2) = 0f
 	        }
+
+	        T.range(0, vertexCount)
+	        T.end
     	}
             
         T
@@ -215,9 +239,10 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 	        val n = ((nVertX-1) * (nVertZ-1))	// n Squares
 	        var i = 0
 
-    		I = new MeshElement(n*2, 3)	// 2 triangles per square, 3 vertices per triangle
+    		I = addMeshElement(n*2, 3)	// 2 triangles per square, 3 vertices per triangle
+    		I.begin
 	        
-	        val d = I.theData
+	        val d = I.data
 
 	        for(z <- 0 until nVertZ-1) {
 	        	for(x <- 0 until nVertX-1) {
@@ -230,6 +255,9 @@ class PlaneMesh(val nVertX:Int, val nVertZ:Int, val width:Float, val depth:Float
 	        	    i += 6
 	        	}
 	        }
+
+	        I.range(0, n*2)
+	        I.end
     	}
 
     	I

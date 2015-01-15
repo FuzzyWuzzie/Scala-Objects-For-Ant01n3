@@ -95,26 +95,26 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 // Text storage
 
 	/** Mesh used to build the quads of the batch. */
-	protected[this] val batchMesh = new TrianglesMesh(maxCharCnt * 2)
+	protected val batchMesh = new TrianglesMesh(gl, maxCharCnt * 2)
 	// Cannot use triangle strips, since chars can overlap (kerning), and
 	// may not follow each others.
 
 // Used during text composition.
 
 	/** Current color, used for each following glyph. */
-	protected[this] var color = Rgba.Black
+	protected var color = Rgba.Black
 
 	/** Current triangle. */
-	protected[this] var t = 0
+	protected var t = 0
 
 	/** Current point. */
-	protected[this] var p = -1
+	protected var p = -1
 
 	/** Current x. */
-	protected[this] var x = 0f
+	protected var x = 0f
 
 	/** Current y. */
-	protected[this] var y = 0f
+	protected var y = 0f
 
 // Creation
 
@@ -123,8 +123,12 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	protected def init() {
 		import VertexAttribute._
 		// set a vertex and a texcoord to declare the mesh has having these attributes.
-		batchMesh v(0) xyz (0,0,0) uv (0,0) rgba(0,0,0,1)
-		batchMesh.newVertexArray(gl, gl.DYNAMIC_DRAW, font.shader,
+		batchMesh.addAttributeTexCoord
+		batchMesh.addAttributeColor
+		batchMesh.modify() {
+			batchMesh v(0) xyz (0,0,0) uv (0,0) rgba(0,0,0,1)
+		}
+		batchMesh.bindShader(font.shader,
 			Vertex   -> "position",
 			TexCoord -> "texCoords",
 			Color    -> "color")
@@ -155,7 +159,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	  * font have to be rendered. The `camera` space is considered to match pixels. */
 	def render(camera:Camera) {
 	    camera.uniformMVP(font.shader)
-		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)
+		batchMesh.vertexArray.draw(batchMesh.drawAs, t*3)
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
@@ -164,7 +168,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	  * font have to be rendered. The `mvp` space is considered to match pixels. */
 	def render(mvp:Matrix4) {
 		font.shader.uniformMatrix("MVP", mvp)
-		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)	
+		batchMesh.vertexArray.draw(batchMesh.drawAs, t*3)	
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
@@ -173,7 +177,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	  * font have to be rendered. The `space` is considered to match pixels. */
 	def render(space:Space) {
 		space.uniformMVP(font.shader)
-		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)
+		batchMesh.vertexArray.draw(batchMesh.drawAs, t*3)
 	}
 
 	/** Draw the string with the baseline at (0,0). Use the current translation of the camera.
@@ -249,6 +253,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 		t = 0
 		x = 0
 		y = 0
+		batchMesh.begin()
 	}
 
 	/** Like begin but also changes the font. The font can only be changed if they have the same shader. */
@@ -364,7 +369,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 	def end() {
 		if(p < 0)
 			throw new RuntimeException("call to end() without begin()")
-		batchMesh.updateVertexArray(gl, updateVertices=true, updateColors=true, updateTexCoords=true)
+		batchMesh.end
 		p = -1
 	}
 

@@ -2,7 +2,8 @@ package org.sofa.gfx.io.collada
 
 import scala.xml.{Node, NodeSeq}
 import scala.collection.mutable.{HashMap, ArrayBuffer}
-import org.sofa.gfx.mesh.{Mesh, EditableMesh}
+import org.sofa.gfx.{SGL}
+import org.sofa.gfx.mesh.{Mesh, TrianglesMesh}// EditableMesh}
 import scala.math._
 
 /** Geometry feature companion object. */
@@ -231,7 +232,7 @@ abstract class Faces(node:Node, val mesh:ColladaMesh) {
 	/** Transform this into a SOFA [[org.sofa.gfx.mesh.Mesh]], usable to draw in an OpenGL scene.
 	  * Some transformations may be applyed to the original data accoding to the settings in
 	  * The Collada Mesh. */
-	def toMesh():Mesh
+	def toMesh(gl:SGL):Mesh
 
 	/** Generate a list of vertices from the data given in the Collada file such that each vertex
 	  * owns its own set of attributes (as needed by OpenGL). If mergeVertices is true, the procedure
@@ -292,7 +293,59 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 		(elements, vertices)
 	}
 
-	protected def toMesh(elements:ArrayBuffer[Int], vertices:ArrayBuffer[Vertex]):Mesh = {
+	protected def toMesh(gl:SGL, elements:ArrayBuffer[Int], vertices:ArrayBuffer[Vertex]):Mesh = {
+		val mesh = new TrianglesMesh(gl, vertices.length/3)
+
+		mesh.addAttributeNormal
+		mesh.addAttributeTexCoord
+		mesh.addAttributeBone
+		mesh.addAttributeWeight
+
+		mesh.begin()
+			var i = 0
+
+			vertices.foreach { vertex =>
+				if(vertex.normal >= 0) {
+					val norm = getAttribute(Input.Normal, vertex.normal)
+
+					if(this.mesh.blenderToOpenGLCoos)
+					     mesh.setPointNormal(i, norm(1), norm(2), norm(0))
+					else mesh.setPointNormal(i, norm(0), norm(1), norm(2))
+				}
+				if(vertex.texcoord >= 0) {
+					val uv = getAttribute(Input.TexCoord, vertex.texcoord)
+
+					mesh.setPointTexCoord(i, uv(0), uv(1))
+				}
+				if(vertex.bone >= 0) {
+					val bone = getAttribute(Input.Bone, vertex.bone)
+					mesh.setPointBones(i, bone(0).toInt, bone(1).toInt, bone(2).toInt)
+				}
+				if(vertex.weight >= 0) {
+					val weight = getAttribute(Input.Weight, vertex.weight)
+					mesh.setPointWeights(i, weight(0), weight(1), weight(2))
+				}
+				if(vertex.index >= 0) {
+					val vert = getVertex(vertex.index)
+
+					if(this.mesh.blenderToOpenGLCoos)
+					     mesh.setPoint(i, vert(1), vert(2), vert(0))
+					else mesh.setPoint(i, vert(0), vert(1), vert(2))
+				}
+
+				i += 1
+			}
+
+			i = 0
+
+			elements.foreach { e =>
+				mesh.setIndex(i, e)
+				i += 1
+			}
+		mesh.end()
+
+		mesh
+/*
 		val mesh = new EditableMesh()
 	
 		mesh.buildAttributes {
@@ -331,7 +384,7 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 		}
 		
 		mesh
-	}	
+*/	}	
 }
 
 /** Represents internally a vertex.
@@ -464,7 +517,7 @@ class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, v
 class Triangles(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	parse(node)
 	override def toString():String = "triangles(%d, [%s], data %d(%d))".format(count, inputs.mkString(","), data.length, (data.length/inputs.length)/3)
-	def toMesh():Mesh = { val (elements,vertices) = toVertexList; toMesh(elements, vertices) }
+	def toMesh(gl:SGL):Mesh = { val (elements,vertices) = toVertexList; toMesh(gl, elements, vertices) }
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -484,9 +537,9 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	override def toString():String = "polys(%d, [%s], vcount %d, data %d)".format(count, inputs.mkString(","), vcount.length, data.length)
 	
 	/** */
-	def toMesh():Mesh = {
+	def toMesh(gl:SGL):Mesh = {
 		var (elements,vertices) = triangulate
-		toMesh(elements,vertices)
+		toMesh(gl, elements,vertices)
 	}
 	
 	def triangulate():(ArrayBuffer[Int],ArrayBuffer[Vertex]) = {
@@ -632,7 +685,7 @@ class ColladaMesh(val id:String, node:Node) {
 
 	/** Transform the Collada data to a SOFA Mesh object.
 	  * See `mergeVertices(Boolean)` and `blenderToOpenGL(Boolean). */
-	def toMesh():Mesh = faces.toMesh
+	def toMesh(gl:SGL):Mesh = faces.toMesh(gl)
 	
 	override def toString():String = "mesh(%s(%s), %s)".format(sources(vertices).name, sources.values.mkString(","), faces)
 }

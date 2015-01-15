@@ -191,7 +191,7 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIRe
 					shaderUniform.use
 					shaderUniform.uniform("uniformColor", color)
 					sp.uniformMVP(shaderUniform)
-					plainRect.draw(gl)
+					plainRect.draw
 				}
 
 			}
@@ -202,7 +202,7 @@ class UIAvatarRenderList(avatar:Avatar) extends UIAvatarRender(avatar) with UIRe
 			shaderUniform.use
 			shaderUniform.uniform("uniformColor", color)
 			shaderUniform.uniformMatrix("MVP", savedMVP)
-			plainRect.draw(gl)
+			plainRect.draw
 		}
 	}
 }

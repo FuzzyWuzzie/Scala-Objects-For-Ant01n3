@@ -32,27 +32,26 @@ object GLString {
   */
 class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	/** Mesh used to build the quads of the batch. */
-	//protected[this] val batchMesh = new QuadsMesh(maxCharCnt)
-	protected[this] val batchMesh = new TrianglesMesh(maxCharCnt * 2)
+	protected val batchMesh = new TrianglesMesh(gl, maxCharCnt * 2)
 	// Cannot use triangle strips, since chars can overlap (kerning).
 
 	/** Rendering color. */
-	protected[this] var color = Rgba.Black
+	protected var color = Rgba.Black
 
 	/** Current triangle. */
-	protected[this] var t = 0
+	protected var t = 0
 
 	/** Current point. */
-	protected[this] var p = -1
+	protected var p = -1
 
 	/** Current x. */
-	protected[this] var x = 0f
+	protected var x = 0f
 
 	/** Current y. */
-	protected[this] var y = 0f
+	protected var y = 0f
 
 	/** Length of string. */
-	protected[this] var l = 0
+	protected var l = 0
 
 	/** Build a GLString from a string. */
 	def this(gl:SGL, font:GLFont, text:String) {
@@ -72,8 +71,11 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	protected def init() {
 		import VertexAttribute._
 		// set a vertex and a texcoord to declare the mesh has having these attributes.
-		batchMesh v(0) xyz (0,0,0) uv (0,0)
-		batchMesh.newVertexArray(gl, gl.DYNAMIC_DRAW, font.shader, Vertex -> "position", TexCoord -> "texCoords")
+		batchMesh.addAttributeTexCoord
+		batchMesh.modify() {
+			batchMesh v(0) xyz (0,0,0) uv (0,0)
+		}
+		batchMesh.bindShader(font.shader, Vertex -> "position", TexCoord -> "texCoords")
 	}
 
 	/** Release the resources of this string, the string is no more usable after this. */
@@ -109,7 +111,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 	    font.shader.uniform("textColor", clr)
 	    camera.uniformMVP(font.shader)
-		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)
+		batchMesh.vertexArray.draw(batchMesh.drawAs, t*3)
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
@@ -121,7 +123,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 	    font.shader.uniform("textColor", clr)
 		font.shader.uniformMatrix("MVP", mvp)
-		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)	
+		batchMesh.vertexArray.draw(batchMesh.drawAs, t*3)	
 	}
 
 	/** Render only this string, but do not setup the font before, you must have
@@ -133,7 +135,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 	    font.shader.uniform("textColor", clr)
 		space.uniformMVP(font.shader)
-		batchMesh.vertexArray.draw(batchMesh.drawAs(gl), t*3)
+		batchMesh.vertexArray.draw(batchMesh.drawAs, t*3)
 	}
 
 	/** Draw the string with the baseline at (0,0). Use the current translation of the camera.
@@ -200,6 +202,8 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		x = xStart
 		y = yStart
 		l = 0
+
+		batchMesh.begin()
 	}
 
 	/** Add a character in the string. This can only be called after a call to begin() and before a call to end(). */
@@ -227,7 +231,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 	def end() {
 		if(p < 0)
 			throw new RuntimeException("call to end() without begin()")
-		batchMesh.updateVertexArray(gl, updateVertices=true, updateTexCoords=true)
+		batchMesh.end
 		p = -1
 	}
 

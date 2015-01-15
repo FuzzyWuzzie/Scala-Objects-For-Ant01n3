@@ -207,14 +207,14 @@ trait UIRenderUtils {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.plainRect = new TrianglesMesh(2)
+			UIrenderUtils.plainRect = new TrianglesMesh(gl, 2)
 			UIrenderUtils.plainRect.setPoint(0, 0, 0, 0)
 			UIrenderUtils.plainRect.setPoint(1, 1, 0, 0)
 			UIrenderUtils.plainRect.setPoint(2, 1, 1, 0)
 			UIrenderUtils.plainRect.setPoint(3, 0, 1, 0)
 			UIrenderUtils.plainRect.setTriangle(0, 0, 1, 2)
 			UIrenderUtils.plainRect.setTriangle(1, 0, 2, 3)
-			UIrenderUtils.plainRect.newVertexArray(gl, shaderUniform, Vertex -> "position")			
+			UIrenderUtils.plainRect.bindShader(shaderUniform, Vertex -> "position")			
 		}
 
 		UIrenderUtils.plainRect
@@ -225,14 +225,14 @@ trait UIRenderUtils {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.texRect = new TrianglesMesh(2)
+			UIrenderUtils.texRect = new TrianglesMesh(gl, 2)
 			UIrenderUtils.texRect v(0) xyz(0, 0, 0) uv(0, 1)
 			UIrenderUtils.texRect v(1) xyz(1, 0, 0) uv(1, 1)
 			UIrenderUtils.texRect v(2) xyz(1, 1, 0) uv(1, 0)
 			UIrenderUtils.texRect v(3) xyz(0, 1, 0) uv(0, 0)
 			UIrenderUtils.texRect.setTriangle(0, 0, 1, 2)
 			UIrenderUtils.texRect.setTriangle(1, 0, 2, 3)
-			UIrenderUtils.texRect.newVertexArray(gl, shaderTex, Vertex -> "position", TexCoord -> "texCoords")
+			UIrenderUtils.texRect.bindShader(shaderTex, Vertex -> "position", TexCoord -> "texCoords")
 		}
 
 		UIrenderUtils.texRect
@@ -243,14 +243,14 @@ trait UIRenderUtils {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.layerRect = new TrianglesMesh(2)
+			UIrenderUtils.layerRect = new TrianglesMesh(gl, 2)
 			UIrenderUtils.layerRect v(0) xyz(0, 0, 0) uv(0, 1)
 			UIrenderUtils.layerRect v(1) xyz(1, 0, 0) uv(1, 1)
 			UIrenderUtils.layerRect v(2) xyz(1, 1, 0) uv(1, 0)
 			UIrenderUtils.layerRect v(3) xyz(0, 1, 0) uv(0, 0)
 			UIrenderUtils.layerRect.setTriangle(0, 0, 1, 2)
 			UIrenderUtils.layerRect.setTriangle(1, 0, 2, 3)
-			UIrenderUtils.layerRect.newVertexArray(gl, shaderTex, Vertex -> "position", TexCoord -> "texCoords")
+			UIrenderUtils.layerRect.bindShader(shaderTex, Vertex -> "position", TexCoord -> "texCoords")
 		}
 
 		UIrenderUtils.layerRect
@@ -261,12 +261,12 @@ trait UIRenderUtils {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.strokeRect = new LinesMesh(4)
+			UIrenderUtils.strokeRect = new LinesMesh(gl, 4)
 			UIrenderUtils.strokeRect.setLine(0, 0,0,0, 1,0,0)
 			UIrenderUtils.strokeRect.setLine(1, 1,0,0, 1,1,0)
 			UIrenderUtils.strokeRect.setLine(2, 1,1,0, 0,1,0)
 			UIrenderUtils.strokeRect.setLine(3, 0,1,0, 0,0,0)
-			UIrenderUtils.strokeRect.newVertexArray(gl, shaderUniform, Vertex -> "position")
+			UIrenderUtils.strokeRect.bindShader(shaderUniform, Vertex -> "position")
 		}		
 		UIrenderUtils.strokeRect
 	}
@@ -276,14 +276,14 @@ trait UIRenderUtils {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.shadowUnderRect = new TrianglesMesh(2)
+			UIrenderUtils.shadowUnderRect = new TrianglesMesh(gl, 2)
 			UIrenderUtils.shadowUnderRect v(0) xyz(0, 0, 0) rgba(0, 0, 0, 0.25f)
 			UIrenderUtils.shadowUnderRect v(1) xyz(1, 0, 0) rgba(0, 0, 0, 0.25f)
 			UIrenderUtils.shadowUnderRect v(2) xyz(1, 1, 0) rgba(0, 0, 0, 0)
 			UIrenderUtils.shadowUnderRect v(3) xyz(0, 1, 0) rgba(0, 0, 0, 0)
 			UIrenderUtils.shadowUnderRect t(0, 0, 1, 2)
 			UIrenderUtils.shadowUnderRect t(1, 0, 2, 3)
-			UIrenderUtils.shadowUnderRect.newVertexArray(gl, shaderColor, Vertex -> "position", Color -> "color")
+			UIrenderUtils.shadowUnderRect.bindShader(shaderColor, Vertex -> "position", Color -> "color")
 		}
 		UIrenderUtils.shadowUnderRect
 	}
@@ -302,9 +302,9 @@ trait UIRenderUtils {
 			shaderUniform.uniform("uniformColor", color)
 			space.scale(subSpace.sizex, subSpace.sizey, 1)
 			space.uniformMVP(shaderUniform)
-			plainRect.draw(gl)
+			plainRect.draw
 			shaderUniform.uniform("uniformColor", lineColor)
-			strokeRect.draw(gl)
+			strokeRect.draw
 		}
 	}
 
@@ -323,7 +323,7 @@ trait UIRenderUtils {
 			shaderUniform.use
 			shaderUniform.uniform("uniformColor", color)
 			shaderUniform.uniformMatrix("MVP", mvp)
-			plainRect.draw(gl)
+			plainRect.draw
 		}
 		def dispose(gl:SGL) {}
 	}
@@ -356,7 +356,7 @@ trait UIRenderUtils {
 		def render(gl:SGL) {
 			shaderColor.use
 			shaderColor.uniformMatrix("MVP", mvp)
-			shadowUnderRect.draw(gl)
+			shadowUnderRect.draw
 		}
 		def dispose(gl:SGL) {}
 	}
@@ -404,7 +404,7 @@ trait UIRenderUtils {
 			layer.fb.bindColorTexture
 			shaderLayer.uniformTexture(layer.fb.colorTexture, "texColor")
 			shaderLayer.uniformMatrix("MVP", mvp)
-			layerRect.draw(gl)
+			layerRect.draw
 		}
 		def dispose(gl:SGL) {}
 	}

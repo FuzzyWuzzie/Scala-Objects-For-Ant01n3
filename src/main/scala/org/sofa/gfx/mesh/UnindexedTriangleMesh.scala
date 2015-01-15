@@ -6,28 +6,28 @@ import org.sofa.nio.{IntBuffer, FloatBuffer}
 
 
 /** Like a [[TriangleMesh]] but without an index. */
-class UnindexedTrianglesMesh(val size:Int) extends Mesh {
+class UnindexedTrianglesMesh(val gl:SGL, val size:Int) extends Mesh {
 
 	/** The mutable set of coordinates. */
-	protected lazy val V:FloatBuffer = FloatBuffer(size*3*3)
+	protected var V:MeshAttribute = addAttributeVertex() // FloatBuffer(size*3*3)
 
 	/** The mutable set of colors. */
-	protected lazy val C:FloatBuffer = FloatBuffer(size*4*3)
+	protected var C:MeshAttribute = _ // FloatBuffer(size*4*3)
 
 	/** The mutable set of normals, changes with the triangles. */
-	protected lazy val N:FloatBuffer = FloatBuffer(size*3*3)
+	protected var N:MeshAttribute = _ // FloatBuffer(size*3*3)
 
-    /** Start position of the last modification inside the coordinates array. */
-    protected var vbeg = 0
+    // /** Start position of the last modification inside the coordinates array. */
+    // protected var vbeg = 0
     
-    /** End position of the last modification inside the coordinates array. */
-    protected var vend = size
+    // /** End position of the last modification inside the coordinates array. */
+    // protected var vend = size
     
-    /** Start position of the last modification inside the color array. */
-    protected var cbeg = 0
+    // /** Start position of the last modification inside the color array. */
+    // protected var cbeg = 0
     
-    /** End position of the last modification inside the color array. */
-    protected var cend = size
+    // /** End position of the last modification inside the color array. */
+    // protected var cend = size
 
     // -- Mesh interface ---------------------------------------
 
@@ -35,39 +35,63 @@ class UnindexedTrianglesMesh(val size:Int) extends Mesh {
 
     def elementsPerPrimitive:Int = 3
 
-    override def attribute(name:String):FloatBuffer = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex => V
-    		case VertexAttribute.Normal => N
-    		case VertexAttribute.Color  => C
-    		case _                      => super.attribute(name) //throw new RuntimeException("this mesh has no %s attribute".format(name))
-    	}
-    }
+    // override def attribute(name:String):FloatBuffer = {
+    // 	VertexAttribute.withName(name) match {
+    // 		case VertexAttribute.Vertex => V
+    // 		case VertexAttribute.Normal => N
+    // 		case VertexAttribute.Color  => C
+    // 		case _                      => super.attribute(name) //throw new RuntimeException("this mesh has no %s attribute".format(name))
+    // 	}
+    // }
 
-    override def attributeCount():Int = 3 + super.attributeCount
+    // override def attributeCount():Int = 3 + super.attributeCount
 
-    override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString, VertexAttribute.Color.toString) ++ super.attributes
+    // override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Normal.toString, VertexAttribute.Color.toString) ++ super.attributes
     
-    override def components(name:String):Int = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex => 3
-    		case VertexAttribute.Normal => 3
-    		case VertexAttribute.Color  => 4
-    		case _                      => super.components(name) //throw new RuntimeException("this mesh has no %s attribute".format(name))
-    	}
+    // override def components(name:String):Int = {
+    // 	VertexAttribute.withName(name) match {
+    // 		case VertexAttribute.Vertex => 3
+    // 		case VertexAttribute.Normal => 3
+    // 		case VertexAttribute.Color  => 4
+    // 		case _                      => super.components(name) //throw new RuntimeException("this mesh has no %s attribute".format(name))
+    // 	}
 
-    }
+    // }
 
-    override def has(name:String):Boolean = {
-    	VertexAttribute.withName(name) match {
-    		case VertexAttribute.Vertex => true
-    		case VertexAttribute.Normal => true
-    		case VertexAttribute.Color  => true
-    		case _                      =>  super.has(name) //false
-    	}    	
-    }
+    // override def has(name:String):Boolean = {
+    // 	VertexAttribute.withName(name) match {
+    // 		case VertexAttribute.Vertex => true
+    // 		case VertexAttribute.Normal => true
+    // 		case VertexAttribute.Color  => true
+    // 		case _                      =>  super.has(name) //false
+    // 	}    	
+    // }
 
-	def drawAs(gl:SGL):Int = gl.TRIANGLES
+	def drawAs():Int = gl.TRIANGLES
+
+	protected def addAttributeVertex():MeshAttribute = {
+		if(V eq null) {
+			V = addMeshAttribute(VertexAttribute.Vertex, 3)
+		}
+
+		V
+	}
+
+	def addAttributeColor():MeshAttribute = {
+		if(C eq null) {
+			C = addMeshAttribute(VertexAttribute.Color, 4)
+		}
+
+		C
+	}
+
+	def addAttributeNormal():MeshAttribute = {
+		if(N eq null) {
+			N = addMeshAttribute(VertexAttribute.Normal, 3)
+		}
+
+		N
+	}
 
     // -- Editing ----------------------------------------------------------------
 
@@ -81,45 +105,49 @@ class UnindexedTrianglesMesh(val size:Int) extends Mesh {
 
 	def setTriangle(i:Int, x0:Float, y0:Float, z0:Float, x1:Float, y1:Float, z1:Float, x2:Float, y2:Float, z2:Float) {
 		val p = i*3*3
+		val v = V.data
 
-		V(p)   = x0
-		V(p+1) = y0
-		V(p+2) = z0
+		v(p)   = x0
+		v(p+1) = y0
+		v(p+2) = z0
 
-		V(p+3) = x1
-		V(p+4) = y1
-		V(p+5) = z1
+		v(p+3) = x1
+		v(p+4) = y1
+		v(p+5) = z1
 
-		V(p+6) = x2
-		V(p+7) = y2
-		V(p+8) = z2		
+		v(p+6) = x2
+		v(p+7) = y2
+		v(p+8) = z2		
 
-		if(i < vbeg) vbeg = i
-		if(i+1 > vend) vend = i+1
+		V.range(i, i+1)
+		//if(i < vbeg) vbeg = i
+		//if(i+1 > vend) vend = i+1
 	}
 
 	def setColor(i:Int, c:Rgba) { setColor(i, c, c, c) }
 
 	def setColor(i:Int, c0:Rgba, c1:Rgba, c2:Rgba) {
 		val p = i*4*3
+		val c = C.data
 
-		C(p   ) = c0.red.toFloat
-		C(p+ 1) = c0.green.toFloat
-		C(p+ 2) = c0.blue.toFloat
-		C(p+ 3) = c0.alpha.toFloat
+		c(p   ) = c0.red.toFloat
+		c(p+ 1) = c0.green.toFloat
+		c(p+ 2) = c0.blue.toFloat
+		c(p+ 3) = c0.alpha.toFloat
 
-		C(p+ 4) = c1.red.toFloat
-		C(p+ 5) = c1.green.toFloat
-		C(p+ 6) = c1.blue.toFloat
-		C(p+ 7) = c1.alpha.toFloat
+		c(p+ 4) = c1.red.toFloat
+		c(p+ 5) = c1.green.toFloat
+		c(p+ 6) = c1.blue.toFloat
+		c(p+ 7) = c1.alpha.toFloat
 
-		C(p+ 8) = c2.red.toFloat
-		C(p+ 9) = c2.green.toFloat
-		C(p+10) = c2.blue.toFloat
-		C(p+11) = c2.alpha.toFloat
+		c(p+ 8) = c2.red.toFloat
+		c(p+ 9) = c2.green.toFloat
+		c(p+10) = c2.blue.toFloat
+		c(p+11) = c2.alpha.toFloat
 
-		if(i < cbeg) cbeg = i
-		if(i+1 > cend) cend = i + 1
+		C.range(i, i+1)
+		//if(i < cbeg) cbeg = i
+		//if(i+1 > cend) cend = i + 1
 	}
 
 	def autoComputeNormal(i:Int) {
@@ -148,69 +176,72 @@ class UnindexedTrianglesMesh(val size:Int) extends Mesh {
 
 	def setNormal(i:Int, x0:Float, y0:Float, z0:Float, x1:Float, y1:Float, z1:Float, x2:Float, y2:Float, z2:Float) {
 		val p = i*3*3
+		val n = N.data
 
-		N(p)   = x0
-		N(p+1) = y0
-		N(p+2) = z0
+		n(p)   = x0
+		n(p+1) = y0
+		n(p+2) = z0
 
-		N(p+3) = x1
-		N(p+4) = y1
-		N(p+5) = z1
+		n(p+3) = x1
+		n(p+4) = y1
+		n(p+5) = z1
 
-		N(p+6) = x2
-		N(p+7) = y2
-		N(p+8) = z2		
+		n(p+6) = x2
+		n(p+7) = y2
+		n(p+8) = z2		
 
-		if(i < vbeg) vbeg = i
-		if(i+1 > vend) vend = i+1		
+		N.range(i, i+1)
+		//if(i < vbeg) vbeg = i
+		//if(i+1 > vend) vend = i+1		
 	}
 
 	def getTriangle(i:Int):(Point3,Point3,Point3) = {
 		val p = i*3*3
-		(Point3(V(p)  , V(p+1), V(p+2)),
-		 Point3(V(p+3), V(p+4), V(p+5)),
-		 Point3(V(p+6), V(p+7), V(p+8)))
+		val v = V.data
+		(Point3(v(p)  , v(p+1), v(p+2)),
+		 Point3(v(p+3), v(p+4), v(p+5)),
+		 Point3(v(p+6), v(p+7), v(p+8)))
 	}
 
 	// -- Dynamic -----------------------------------------------
 
-    override def beforeNewVertexArray() {
-		cbeg = size; cend = 0; vbeg = size; vend = 0
-	}
+ //    override def beforeNewVertexArray() {
+	// 	cbeg = size; cend = 0; vbeg = size; vend = 0
+	// }
 
-	/** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
-	  * avoid moving data between the CPU and GPU. */
-	def updateVertexArray(gl:SGL) { updateVertexArray(gl, true, true, true) }
+	// /** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
+	//   * avoid moving data between the CPU and GPU. */
+	// def updateVertexArray(gl:SGL) { updateVertexArray(gl, true, true, true) }
 
-	/** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
-	  * avoid moving data between the CPU and GPU. */
-	def updateVertexArray(gl:SGL, updateVertices:Boolean, updateColors:Boolean, updateNormals:Boolean) {
-		if(va ne null) {
-			if(updateVertices && vend > vbeg) {
-				if(vbeg == 0 && vend == size) {
-					va.buffer(VertexAttribute.Vertex.toString).update(V)
-					if(updateNormals)
-						va.buffer(VertexAttribute.Normal.toString).update(N)
-				} else {
-					va.buffer(VertexAttribute.Vertex.toString).update(vbeg*3, vend*3, V)
-					if(updateNormals)
-						va.buffer(VertexAttribute.Normal.toString).update(vbeg*3, vend*3, N)
-				}
+	// /** Update the last vertex array created with newVertexArray(). Tries to update only what changed to
+	//   * avoid moving data between the CPU and GPU. */
+	// def updateVertexArray(gl:SGL, updateVertices:Boolean, updateColors:Boolean, updateNormals:Boolean) {
+	// 	if(va ne null) {
+	// 		if(updateVertices && vend > vbeg) {
+	// 			if(vbeg == 0 && vend == size) {
+	// 				va.buffer(VertexAttribute.Vertex.toString).update(V)
+	// 				if(updateNormals)
+	// 					va.buffer(VertexAttribute.Normal.toString).update(N)
+	// 			} else {
+	// 				va.buffer(VertexAttribute.Vertex.toString).update(vbeg*3, vend*3, V)
+	// 				if(updateNormals)
+	// 					va.buffer(VertexAttribute.Normal.toString).update(vbeg*3, vend*3, N)
+	// 			}
 
-				vbeg = size
-				vend = 0
-			}
-			if(updateColors && cend > cbeg) {
-				if(cbeg == 0 && cend == size) {
-					va.buffer(VertexAttribute.Color.toString).update(C)
-				} else {
-					va.buffer(VertexAttribute.Color.toString).update(cbeg*3, cend*3, C)
-				}
+	// 			vbeg = size
+	// 			vend = 0
+	// 		}
+	// 		if(updateColors && cend > cbeg) {
+	// 			if(cbeg == 0 && cend == size) {
+	// 				va.buffer(VertexAttribute.Color.toString).update(C)
+	// 			} else {
+	// 				va.buffer(VertexAttribute.Color.toString).update(cbeg*3, cend*3, C)
+	// 			}
 
 
-				cbeg = size
-				cend = 0
-			}
-		}
-	}
+	// 			cbeg = size
+	// 			cend = 0
+	// 		}
+	// 	}
+	// }
 }

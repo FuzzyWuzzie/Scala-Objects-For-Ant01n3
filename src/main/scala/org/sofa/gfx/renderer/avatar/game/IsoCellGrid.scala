@@ -120,7 +120,7 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 		if(gh > 0 && gw > 0) {
 			if(mesh ne null) mesh.dispose
 		
-			mesh = new TrianglesMesh(6 * gw * gh)		// 6 triangles per cell.
+			mesh = new TrianglesMesh(gl, 6 * gw * gh)		// 6 triangles per cell.
 
 			mesh.addAttribute(UserAttr, 3)
 
@@ -230,7 +230,7 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 				y += 1
 			}
 
-			mesh.newVertexArray(gl, shader, Vertex -> "position", TexCoord -> "texCoords", UserAttr -> UserAttr)
+			mesh.bindShader(shader, Vertex -> "position", TexCoord -> "texCoords", UserAttr -> UserAttr)
 	
 			world = screen.avatar(AvatarName("root.world")).getOrElse(throw new RuntimeException("no world avatar ??"))
 		}
@@ -263,7 +263,7 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 					shader.uniform(IsoWorld.SunDir, sunDir)
 					shader.uniform(IsoWorld.TexOffset, seaOff)
 					screen.space.uniformMVP(shader)
-					mesh.draw(gl)
+					mesh.draw
 		   	    	gl.disable(gl.BLEND)
 		    	}
 		    }

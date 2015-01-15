@@ -7,28 +7,37 @@ import org.sofa.math.Vector3
 import org.sofa.math.Vector2
 import java.awt.Color
 
-class BoneMesh extends Mesh {
-	protected lazy val V:FloatBuffer = allocateVertices
+class BoneMesh(val gl:SGL) extends Mesh {
+	protected var V:MeshAttribute = addAttributeVertex // allocateVertices
 	
-	protected lazy val C:FloatBuffer = allocateColors
+	protected var C:MeshAttribute = addAttributeColor //allocateColors
 	
-	protected lazy val I:IntBuffer = allocateIndices
+	protected var I:MeshElement = addIndex //IntBuffer = allocateIndices
 
 	// -- Edition ------------------------------------------
 	
+	override def begin(names:String*) {
+		// Only color is editable.
+		import VertexAttribute._
+		begin(VertexAttribute.Color)
+	}
+
 	def setColor(color:Color) {
 	    val n = 6 * 4
 	    val red   = color.getRed   / 255f
         val green = color.getGreen / 255f
         val blue  = color.getBlue  / 255f
         val alpha = color.getAlpha / 255f
+        val c     = C.data
 
 	    for(i <- 0 until n by 4) {
-	        C(i+0) = red
-	        C(i+1) = green
-	        C(i+2) = blue
-	        C(i+3) = alpha
+	        c(i+0) = red
+	        c(i+1) = green
+	        c(i+2) = blue
+	        c(i+3) = alpha
 	    }
+
+	    C.range(0, n)
 	}
 
 	// -- Mesh interface -----------------------------------
@@ -37,134 +46,123 @@ class BoneMesh extends Mesh {
 
     def elementsPerPrimitive:Int = 3
 
-	override def attribute(name:String):FloatBuffer = {
-		VertexAttribute.withName(name) match {
-			case VertexAttribute.Vertex => V
-			case VertexAttribute.Color  => C
-			case _                      => super.attribute(name) //throw new RuntimeException("mesh has no %s attribute".format(name))
-		}
-	}	
-
-	override def attributeCount():Int = 2 + super.attributeCount
-
-	override def attributes():Array[String] = Array[String](VertexAttribute.Vertex.toString, VertexAttribute.Color.toString) ++ super.attributes
-	
-	override def elements:IntBuffer = I
+	override def elements:MeshElement = I
 		
 	override def hasElements = true
 
-	override def components(name:String):Int = {
-		VertexAttribute.withName(name) match {
-			case VertexAttribute.Vertex => 3
-			case VertexAttribute.Color  => 4
-			case _                      => super.components(name) // throw new RuntimeException("mesh has no %s attribute".format(name))
-		}
-	}	
-
-	override def has(name:String):Boolean = {
-		VertexAttribute.withName(name) match {
-			case VertexAttribute.Vertex => true
-			case VertexAttribute.Color  => true
-			case _                      => super.has(name) //false
-		}
-	}	
-
-	def drawAs(gl:SGL):Int = gl.TRIANGLES
+	def drawAs():Int = gl.TRIANGLES
 	
 	// -- Building ------------------------------------------
 
-	protected def allocateVertices:FloatBuffer = {
-	    val n = 6 * 3
-	    val buf = FloatBuffer(n)
+	protected def addAttributeVertex:MeshAttribute = {
+		if(V eq null) {
+			V = addMeshAttribute(VertexAttribute.Vertex, 3)
+
+	    	val n = 6 * 3
 	    
-	    // Four middle points 0 1 2 3
-	    // Right 0
-	    buf(0) = 0.25f
-	    buf(1) = 0.25f
-	    buf(2) = 0
-
-	    // Front 1
-	    buf(3) = 0
-	    buf(4) = 0.25f
-	    buf(5) = 0.25f
-
-	    // Left 2
-	    buf(6) = -0.25f
-	    buf(7) =  0.25f
-	    buf(8) =  0
-
-	    // Back 3
-	    buf( 9) =  0
-	    buf(10) =  0.25f
-	    buf(11) = -0.25f
-
-	    // Bottom point 4
-	    buf(12) = 0
-	    buf(13) = 0
-	    buf(14) = 0
+		    // Four middle points 0 1 2 3
+		    V.begin
+		    V.copy(
+			    // Right 0
+		    	0.25f, 0.25f, 0,
+		    	// Front 1
+		    	0, 0.25f, 0.25f,
+		    	// Left 2
+		    	-0.25f, 0.25f, 0,
+		    	// Back 3
+		        0, 0.25f, -0.25f,
+		    	// Bottom point 4
+		     	0, 0, 0,
+		    	// Top point 5
+		     	0, 1, 0 )
+		   	V.end
+		}
 	    
-	    // Top point 5
-	    buf(15) = 0 
-	    buf(16) = 1
-	    buf(17) = 0
-	    
-	    buf
+	    V
 	}
 	
-	protected def allocateColors:FloatBuffer = {
-	    val n = 6 * 4
-	    val buf = FloatBuffer(n)
+	protected def addAttributeColor:MeshAttribute = {
+		if(C eq null) {
+			C = addMeshAttribute(VertexAttribute.Color, 4)
+	    	
+	    	//val n = 6 * 4
 	    
-	    for(i <- 0 until n) {
-	        buf(i) = 1
-	    }
+	    	C.begin
+	    	C.copy(
+	    		1,1,1,1,
+	    		1,1,1,1,
+	    		1,1,1,1,
+	    		1,1,1,1,
+	    		1,1,1,1,
+	    		1,1,1,1)
+	    	C.end
+		}
 	    
-	    buf
+	    C
 	}
 	
-	protected def allocateIndices:IntBuffer = {
-	    val n = 8 * 3
-	    val buf = IntBuffer(n)
-	    
-	    var t=0
-	    
-	    for(i <- 0 until 4) {
-	        buf(t+0) = (i)%4
-	        buf(t+1) = 4
-	        buf(t+2) = (i+1)%4
+	protected def addIndex:MeshElement = {
+		if(I eq null) {
+			I = addMeshElement(8, 3)
+	    	I.begin
 
-	        buf(t+3) = 5
-	        buf(t+4) = (i)%4
-	        buf(t+5) = (i+1)%4
+	    	val n = 8 * 3
+	    	//val buf = IntBuffer(n)
+	    	val buf = I.data
+	    
+	    	var t=0
+	    
+	    	for(i <- 0 until 4) {
+	       		buf(t+0) = (i)%4
+	        	buf(t+1) = 4
+	        	buf(t+2) = (i+1)%4
+
+	        	buf(t+3) = 5
+	        	buf(t+4) = (i)%4
+	        	buf(t+5) = (i+1)%4
 	        
-	        t += 6
+	        	t += 6
+	    	}
+
+	    	I.range(0, 8)
+	    	I.end
 	    }
 	    
-	    buf
+	    I
 	}
 }
 
-class BoneLineMesh extends BoneMesh {
 
-	override def drawAs(gl:SGL):Int = gl.LINES
+class BoneLineMesh(gl:SGL) extends BoneMesh(gl) {
+
+	override def drawAs():Int = gl.LINES
 		
-	override protected def allocateIndices:IntBuffer = {
-	    val n = 6 * 4
-	    val buf = IntBuffer(n)
+	override protected def addIndex:MeshElement = {
+		if(I eq null) {
+			I = addMeshElement(12, 2)
+			I.begin
+
+		    val n = 6 * 4
+		    //val buf = IntBuffer(n)
+		    val buf = I.data
+		    
+		    var t=0
+		    
+		    for(i <- 0 until 4) {
+		        buf(t+0) = 4 // (i)%4
+		        buf(t+1) = i%4
+		        buf(t+2) = i%4
+		        buf(t+3) = 5
+		        buf(t+4) = i%4
+		        buf(t+5) = (i+1)%4
+		        
+		        t += 6
+		    }
+
+		    I.range(0, 12)
+		    I.end
+		} 
 	    
-	    var t=0
-	    
-	    for(i <- 0 until 4) {
-	        buf(t+0) = 4 // (i)%4
-	        buf(t+1) = i%4
-	        buf(t+2) = i%4
-	        buf(t+3) = 5
-	        buf(t+4) = i%4
-	        buf(t+5) = (i+1)%4
-	        
-	        t += 6
-	    }
-	    
-	    buf
+	    I
 	}
 }

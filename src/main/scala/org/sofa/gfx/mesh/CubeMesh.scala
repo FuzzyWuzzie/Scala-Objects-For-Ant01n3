@@ -19,7 +19,7 @@ import org.sofa.math.Rgba
   *
   * There is also a facility to use instanced rendering and draw multiples cubes with one call.
   */
-class CubeMesh(val side:Float) extends Mesh {
+class CubeMesh(val gl:SGL, val side:Float) extends Mesh {
     
     protected var I:MeshElement = addIndex
     protected var V:MeshAttribute = addAttributeVertex
@@ -43,11 +43,13 @@ class CubeMesh(val side:Float) extends Mesh {
     /** Set the color of the whole cube. Automatically allocate a color vertex
       * attribute if needed. */
     def setColor(color:Rgba) {
-    	if(C eq null)
+		if(C eq null) {	
     		addAttributeColor
+    		begin(VertexAttribute.Color)
+    	}
 
     	val n = 6 * 4 * 4
-    	val d = C.theData
+    	val d = C.data
     	
     	for(i <- 0 until n by 4) {
     		d(i+0) = color.red.toFloat
@@ -62,12 +64,8 @@ class CubeMesh(val side:Float) extends Mesh {
     def vertexCount:Int = 24
 
     def elementsPerPrimitive:Int = 3
-
-    override def elements:IntBuffer = I.theData
-
-    override def hasElements():Boolean = true
     
-    def drawAs(gl:SGL):Int = gl.TRIANGLES    
+    def drawAs():Int = gl.TRIANGLES    
 
 	// -- Building ---------------------------------------------------
     
@@ -76,6 +74,7 @@ class CubeMesh(val side:Float) extends Mesh {
 	    	V = addMeshAttribute(VertexAttribute.Vertex, 3)
 	        val s = side / 2f
 
+	        V.begin
 	        V.copy(
 	        // Front
 	        	-s, -s,  s,			// 0
@@ -107,6 +106,7 @@ class CubeMesh(val side:Float) extends Mesh {
 	        	 s, -s, -s,			// 21
 	        	 s, -s,  s,			// 22
 	        	-s, -s,  s)			// 23
+	        V.end
 		}    
         V
     }
@@ -117,6 +117,7 @@ class CubeMesh(val side:Float) extends Mesh {
 	        val s = textureRepeatS
 	        val t = textureRepeatT
 
+	        X.begin
 	        X.copy(
 	        	// Front
 	            0, 0,
@@ -149,6 +150,7 @@ class CubeMesh(val side:Float) extends Mesh {
 	        	s, t,
 	        	0, t
 	        )
+	        X.end
 		}
         
         X
@@ -159,12 +161,18 @@ class CubeMesh(val side:Float) extends Mesh {
 	        var i = 0
 	        val n = 6 * 4 * 4
 	        C = addMeshAttribute(VertexAttribute.Color, 4)// FloatBuffer(n)
-	        val d = C.theData
+
+	        C.begin
+
+	        val d = C.data
 	        
 	        while(i < n) {
 	        	d(i) = 1f
 	        	i += 1
 	        }
+
+	        C.range(0, vertexCount)
+	        C.end
 	    }
 
         C
@@ -174,6 +182,7 @@ class CubeMesh(val side:Float) extends Mesh {
     	if(N eq null) {
 	        N = addMeshAttribute(VertexAttribute.Normal, 3)
 
+	        N.begin
 	       	N.copy(
 		    	// Front
 		         0,  0,  1,
@@ -205,6 +214,8 @@ class CubeMesh(val side:Float) extends Mesh {
 		         0, -1,  0,
 		         0, -1,  0,
 		         0, -1,  0)
+
+	       	N.end
 	    }
 
        	N
@@ -214,6 +225,7 @@ class CubeMesh(val side:Float) extends Mesh {
     	if(T eq null) {
 	        T = addMeshAttribute(VertexAttribute.Tangent, 3)
 
+	        T.begin
 	        T.copy(
 		    	// Front
 		         1,  0,  0,
@@ -245,6 +257,8 @@ class CubeMesh(val side:Float) extends Mesh {
 		        -1,  0,  0,
 		        -1,  0,  0,
 		        -1,  0,  0)
+
+	        T.end
 		}
         
         T
@@ -252,7 +266,8 @@ class CubeMesh(val side:Float) extends Mesh {
 
     protected def addIndex:MeshElement = {
         if(I eq null) {
-	        I = new MeshElement(12, 3)
+	        I = addMeshElement(12, 3)
+	        I.begin
 
 	        I.copy(
 		        // Front
@@ -273,6 +288,8 @@ class CubeMesh(val side:Float) extends Mesh {
 		        // Bottom
 		        20, 22, 21,
 		        20, 23, 22)
+
+	        I.end
 	    }
 
         I
@@ -286,10 +303,11 @@ class CubeMesh(val side:Float) extends Mesh {
     }
 
     def position(i:Int, x:Float, y:Float, z:Float) {
-    	val d = P.theData
+    	val d = P.data
     	val v = i * 3
     	d(v+0) = x
     	d(v+1) = y
     	d(v+2) = z
+    	P.range(i, i+1)
     }
 }

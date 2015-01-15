@@ -8,10 +8,9 @@ import org.sofa.math.{Matrix4, Rgba, NumberSeq3, Point4}
 
 /** Bone companion object. */
 object Bone {
-    val boneMesh = new BoneLineMesh()
-    
-    var bone:VertexArray = null
+    var bone:BoneLineMesh = null
 }
+
 
 /** A simple bone hierarchy. */
 class Bone(val id:Int) {
@@ -221,8 +220,10 @@ class Bone(val id:Int) {
 	
 	/** Recursively draw the whole sub-skeleton. */
 	protected def recursiveDrawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram, uniformColorName:String) {
-	    if(Bone.bone eq null)
-	    	Bone.bone = Bone.boneMesh.newVertexArray(gl, shader, VertexAttribute.Vertex -> "position", VertexAttribute.Color -> "color")
+	    if(Bone.bone eq null) {
+	    	Bone.bone = new BoneLineMesh(gl)
+	    	Bone.bone.bindShader(shader, VertexAttribute.Vertex -> "position", VertexAttribute.Color -> "color")
+	    }
 	    
 	    camera.pushpop {
 	        camera.transform(orientation)
@@ -232,7 +233,7 @@ class Bone(val id:Int) {
 	        camera.pushpop {
 		       	camera.scale(1, length, 1)
 		        camera.uniformMVP(shader)
-		        Bone.bone.draw(Bone.boneMesh.drawAs(gl))
+		        Bone.bone.draw()
 	        }
 	        
 	        children.foreach { child =>

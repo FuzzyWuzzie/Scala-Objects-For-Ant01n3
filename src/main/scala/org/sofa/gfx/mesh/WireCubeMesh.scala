@@ -10,10 +10,12 @@ import org.sofa.math.Rgba
   * The vertex data must use indices. The cube is made of single lines and therefore must be
   * drawn using "line" mode. You can use colors with this mesh.
   */
-class WireCubeMesh(val side:Float) extends Mesh  {
+class WireCubeMesh(val gl:SGL, val side:Float) extends Mesh  {
     
     protected var I:MeshElement = addIndex
+
     protected var V:MeshAttribute = addAttributeVertex
+
     protected var C:MeshAttribute = _ //addAttributeColor
 
     // -- Mesh interface ------------------------------------
@@ -22,11 +24,7 @@ class WireCubeMesh(val side:Float) extends Mesh  {
 
     def elementsPerPrimitive:Int = 2
 
-    override def elements:IntBuffer = I.theData
-
-    override def hasElements():Boolean = true
-
-    def drawAs(gl:SGL):Int = gl.LINES    
+    def drawAs():Int = gl.LINES    
 
 	// -- Mesh building --------------------------------------------        
     
@@ -55,12 +53,17 @@ class WireCubeMesh(val side:Float) extends Mesh  {
     def addAttributeColor:MeshAttribute = {
         if(C eq null) {
 	        C = addMeshAttribute(VertexAttribute.Color, 4)
+	        C.begin()
+
 	        val n = 8 * 4
-	        val d = C.theData 
+	        val d = C.data 
 	        
 	        for(i <- 0 until n) {
 	        	d(i) = 1f
 	        }    
+
+	        C.range(0, vertexCount)
+	        C.end
 	    }
 
 	    C
@@ -68,11 +71,12 @@ class WireCubeMesh(val side:Float) extends Mesh  {
     
     /** Set the color of each line. Allocate the color vertex attribute if needed. */
     def setColor(color:Rgba) {
-    	if(C eq null)
-    		addAttributeColor
+    	if(C eq null) {
+    		throw new NoSuchVertexAttributeException("no color attribute in wire cube mesh, add it first.")
+    	}
 
     	val n = 8 * 4
-    	val d = C.theData
+    	val d = C.data
 
     	for(i <- 0 until n by 4) {
     		d(i+0) = color.red.toFloat
@@ -80,11 +84,14 @@ class WireCubeMesh(val side:Float) extends Mesh  {
     		d(i+2) = color.blue.toFloat
     		d(i+3) = color.alpha.toFloat
     	}
+
+    	C.range(0, vertexCount)
     }
 
     protected def addIndex:MeshElement = {
         if(I eq null) {
-	        I = new MeshElement(12, 2)
+	        I = addMeshElement(12, 2)
+	        I.begin
 	        I.copy(
 		        // Front
 		        0, 1,
@@ -101,6 +108,7 @@ class WireCubeMesh(val side:Float) extends Mesh  {
 		        1, 5,
 		        2, 6,
 		        3, 7)
+	       	I.end
 	    }
 
 	    I

@@ -7,7 +7,7 @@ import scala.collection.mutable.HashMap
 
 import org.sofa.{FileLoader, Timer}
 import org.sofa.gfx.text.{GLFont, GLString}
-import org.sofa.gfx.mesh.{Mesh, PlaneMesh, CubeMesh, WireCubeMesh, AxisMesh, LinesMesh, VertexAttribute}
+import org.sofa.gfx.mesh.{Mesh, VertexAttribute}
 import org.sofa.gfx.armature.{Armature, Joint}
 import org.sofa.behavior.{Behavior, Wait, InParallel, InSequence, Loop}
 import org.sofa.gfx.armature.behavior.{ArmatureBehavior, LerpToAngle, LerpToPosition, LerpToScale, LerpMove, Switch, LerpKeyArmature}

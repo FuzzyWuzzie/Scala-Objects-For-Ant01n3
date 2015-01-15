@@ -55,24 +55,24 @@ trait IsoRenderUtils {
 
 		if(unitSquare eq null) {
 			unitSquare = screen.libraries.models.getOrAdd(gl, "unit-square") { (gl, name) =>
-				val m = new TrianglesMesh(2)
+				val m = new TrianglesMesh(gl, 2)
 				m.setPoint(0, -0.5f, -0.5f, 0f)
 				m.setPoint(1,  0.5f, -0.5f, 0f)
 				m.setPoint(2,  0.5f,  0.5f, 0f)
 				m.setPoint(3, -0.5f,  0.5f, 0f)
 				m.setTriangle(0, 0, 1, 2)
 				m.setTriangle(1, 0, 2, 3)
-				m.newVertexArray(gl, uniformColorShader, Vertex -> "position")
+				m.bindShader(uniformColorShader, Vertex -> "position")
 				new ModelResource(name, m)
 			}
 
 			unitLineSquare = screen.libraries.models.getOrAdd(gl, "unit-line-square") { (gl, name) =>
-				val l = new LinesMesh(4)
+				val l = new LinesMesh(gl, 4)
 				l.setLine(0, -0.5f,-0.5f,0f,  0.5f,-0.5f,0f)
 				l.setLine(1,  0.5f,-0.5f,0f,  0.5f, 0.5f,0f)
 				l.setLine(2,  0.5f, 0.5f,0f, -0.5f, 0.5f,0f)
 				l.setLine(3, -0.5f, 0.5f,0f, -0.5f,-0.5f,0f)
-				l.newVertexArray(gl, uniformColorShader, Vertex -> "position")
+				l.bindShader(uniformColorShader, Vertex -> "position")
 				new ModelResource(name, l)
 			}
 		}
@@ -85,7 +85,7 @@ trait IsoRenderUtils {
 			space.scale(subSpace.size(0), subSpace.size(1), 1)
 			space.uniformMVP(uniformColorShader)
 			uniformColorShader.uniform("uniformColor", lineColor)
-			unitLineSquare.draw(gl)
+			unitLineSquare.draw
 		}
 	}
 
@@ -102,24 +102,24 @@ trait IsoRenderUtils {
 
 		if(unitSquare eq null) {
 			unitSquare = screen.libraries.models.getOrAdd(gl, "unit-square") { (gl, name) =>
-				val m = new TrianglesMesh(2)
+				val m = new TrianglesMesh(gl, 2)
 				m.setPoint(0, -0.5f, -0.5f, 0f)
 				m.setPoint(1,  0.5f, -0.5f, 0f)
 				m.setPoint(2,  0.5f,  0.5f, 0f)
 				m.setPoint(3, -0.5f,  0.5f, 0f)
 				m.setTriangle(0, 0, 1, 2)
 				m.setTriangle(1, 0, 2, 3)
-				m.newVertexArray(gl, uniformColorShader, Vertex -> "position")
+				m.bindShader(uniformColorShader, Vertex -> "position")
 				new ModelResource(name, m)
 			}
 
 			unitLineSquare = screen.libraries.models.getOrAdd(gl, "unit-line-square") { (gl, name) =>
-				val l = new LinesMesh(4)
+				val l = new LinesMesh(gl, 4)
 				l.setLine(0, -0.5f,-0.5f,0f,  0.5f,-0.5f,0f)
 				l.setLine(1,  0.5f,-0.5f,0f,  0.5f, 0.5f,0f)
 				l.setLine(2,  0.5f, 0.5f,0f, -0.5f, 0.5f,0f)
 				l.setLine(3, -0.5f, 0.5f,0f, -0.5f,-0.5f,0f)
-				l.newVertexArray(gl, uniformColorShader, Vertex -> "position")
+				l.bindShader(uniformColorShader, Vertex -> "position")
 				new ModelResource(name, l)
 			}
 		}
@@ -132,9 +132,9 @@ trait IsoRenderUtils {
 			uniformColorShader.uniform("uniformColor", fillColor)
 			space.scale(subSpace.size(0), subSpace.size(1), 1)
 			space.uniformMVP(uniformColorShader)
-			unitSquare.draw(gl)
+			unitSquare.draw
 			uniformColorShader.uniform("uniformColor", lineColor)
-			unitLineSquare.draw(gl)
+			unitLineSquare.draw
 		}
 	}
 }

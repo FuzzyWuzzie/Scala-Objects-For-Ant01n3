@@ -52,8 +52,8 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 		if(ground ne null) ground.dispose
 		if(underground ne null) underground.dispose
 		
-		ground = new TrianglesMesh(2)
-		underground = new TrianglesMesh(2)
+		ground = new TrianglesMesh(gl, 2)
+		underground = new TrianglesMesh(gl, 2)
 		
 		isoShader = screen.libraries.shaders.getOrAdd(gl, "iso-shader", ShaderResource("iso-shader", "iso.vert.glsl", "iso.frag.glsl"))
 		
@@ -107,8 +107,8 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 		underground.setTriangle(0, 0, 1, 2)
 		underground.setTriangle(1, 3, 4, 5)
 
-		ground.newVertexArray(gl, isoShader, Vertex -> "position", TexCoord -> "texCoords")
-		underground.newVertexArray(gl, isoShader, Vertex -> "position", TexCoord -> "texCoords")				
+		ground.bindShader(isoShader, Vertex -> "position", TexCoord -> "texCoords")
+		underground.bindShader(isoShader, Vertex -> "position", TexCoord -> "texCoords")				
 	}
 
 	protected[this] val lightDir = Vector3(1, 1.5, 0)
@@ -141,12 +141,12 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 				undergroundMask.bindUniform(gl.TEXTURE1, isoShader, "texMask")
 				isoShader.uniform("lightDir", lightDir)
 				screen.space.uniformMVP(isoShader)
-				underground.draw(gl)
+				underground.draw
 				screen.space.translate(0,0,-0.1)
 				screen.space.uniformMVP(isoShader)
 				groundColor.bindUniform(gl.TEXTURE0, isoShader, "texColor")
 				groundMask.bindUniform(gl.TEXTURE1, isoShader, "texMask")
-				ground.draw(gl)
+				ground.draw
 				gl.disable(gl.DEPTH_TEST)
 		        gl.disable(gl.BLEND)
 			}
