@@ -7,6 +7,10 @@ import org.sofa.math.{Rgba, Point3}
 
 /** A general mesh allowing to draw points.
   *
+  * By default the mesh contains a Vertex position atttribute.
+  * You can easily add a color vertex attribute and indices in
+  * the vertex attributes.
+  *
   * @param size The number of points. */
 class PointsMesh(val gl:SGL, val size:Int) extends Mesh {
 	
@@ -15,13 +19,16 @@ class PointsMesh(val gl:SGL, val size:Int) extends Mesh {
 	
 	/** The mutable set of colors. */
     protected var C:MeshAttribute =  _
+
+	/** A set of indices. */
+	protected var I:MeshElement = _
     
 	// -- Mesh interface
 
 	def vertexCount:Int = size
 
 	def elementsPerPrimitive:Int = 1
-	
+
 	def drawAs():Int = gl.POINTS
 	
 	protected def addAttributeVertex():MeshAttribute = {
@@ -41,7 +48,24 @@ class PointsMesh(val gl:SGL, val size:Int) extends Mesh {
 		C
 	}
 
+	/** Add a set of indices into the vertex attributes. */
+	def addIndices():MeshElement = {
+		if(I eq null) {
+			I = addMeshElement(size, 1)
+		}
+
+		I
+	}
+
 	// -- Edition interface ------------------------------------
+
+	def setIndex(i:Int, p:Int) {
+		val v = I.data
+
+		v(i) = p
+
+		I.range(i, i+1)
+	}
 
 	/** Move the `i`-th point at `p`. */
 	def setPoint(i:Int, p:Point3) { setPoint(i, p.x.toFloat, p.y.toFloat, p.z.toFloat) }

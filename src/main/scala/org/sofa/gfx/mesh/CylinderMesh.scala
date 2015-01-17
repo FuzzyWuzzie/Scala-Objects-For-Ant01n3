@@ -70,6 +70,9 @@ class CylinderMesh(val gl:SGL, val radius:Float, height:Float, val segments:Int,
 
     /** Set the top disk color, this must be done before the vertex array is produced. */
     def setTopDiskColor(color:Rgba) {
+    	if(C eq null)
+    		throw new NoSuchVertexAttributeException("no color vertex attribute, add one before")
+
         // The disk color.
         
         val data  = C.data
@@ -98,6 +101,9 @@ class CylinderMesh(val gl:SGL, val radius:Float, height:Float, val segments:Int,
     
     /** Set the `disk` color, this must be done before the vertex array is produced. */
     def setDiskColor(disk:Int, color:Rgba) {
+    	if(C eq null)
+    		throw new NoSuchVertexAttributeException("no color vertex attribute, add one before")
+
         // The disk color.
         
         val data  = C.data
@@ -117,6 +123,9 @@ class CylinderMesh(val gl:SGL, val radius:Float, height:Float, val segments:Int,
     
     /** Set the botom disk color, this must be done before the vertex array is produced. */
     def setBottomDiskColor(color:Rgba) {
+    	if(C eq null)
+    		throw new NoSuchVertexAttributeException("no color vertex attribute, add one before")
+
         // The disk color.
         
         val data  = C.data
@@ -145,6 +154,9 @@ class CylinderMesh(val gl:SGL, val radius:Float, height:Float, val segments:Int,
     
     /** Set the cylinder color, this must be done before a vertex array is produced. */
     def setCylinderColor(color:Rgba) {
+    	if(C eq null)
+    		throw new NoSuchVertexAttributeException("no color vertex attribute, add one before")
+
     	val data  = C.data
         var start = segments * 4;
         var end   = (2+sections) * segments * 4

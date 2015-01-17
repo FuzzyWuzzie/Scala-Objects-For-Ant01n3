@@ -1,18 +1,62 @@
 package org.sofa.gfx.mesh.skeleton
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
-import org.sofa.gfx.{VertexArray, SGL, Camera, ShaderProgram}
+import org.sofa.gfx.{VertexArray, SGL, Space, ShaderProgram}
 import org.sofa.gfx.mesh.{VertexAttribute, Mesh, BoneLineMesh}
 import org.sofa.math.{Matrix4, Rgba, NumberSeq3, Point4}
 
 
-/** Bone companion object. */
+/** Thrown for misconfigured bones. */
+class InvalidBoneException(msg:String) extends Exception(msg)
+
+/** Thrown when a bone name is unknown. */
+class NoSuchBoneException(msg:String) extends Exception(msg)
+
+
+/** Bone companion object.
+  *
+  * This object mainly defines a `bone` field that gives mesh allowing to represent the bone.
+  */
 object Bone {
+
+	/** A bone model used to represent the bone, see `allocateDefaultBone()`. */
     var bone:BoneLineMesh = null
+
+    /** The name of the uniform variable used to color bones. */
+    var uniformColorAttribute:String =  null
+
+    /** Allocate (or reallocate) a bone model to be used when drawing the skeleton (often used to
+      * debug a program or see the skeleton to ease anomation).
+      *
+      * The given `shader` will be bound to the model and used to draw it. This shader must fullfill
+      * some contraints. It must define a uniform `mat4` `MVP` matrix containing the  modelview
+      * and projection matrice product. 
+      *
+	  * The `shader` must have a `vec3` attribute named `position` by default or the name passed in
+	  * `positionAttribute`. If `uniformColorAttribute` is null, it must also define a `vec4` attribute
+	  * named `color` or the name passed in `colorAttribute`. Else it must define a uniform `vec4`
+	  * variable whose name is given by `uniformColorAttribute`. 
+      */
+    def allocateDefaultBone(gl:SGL, shader:ShaderProgram, positionAttribute:String="position", colorAttribute:String="color", uniformColorAttribute:String=null) {
+	    if(bone ne null)
+	    	bone.dispose
+
+	    bone = new BoneLineMesh(gl)
+	    
+	    if((uniformColorAttribute eq null) && (colorAttribute ne null)) {
+	    	bone.addAttributeColor
+			Bone.bone.bindShader(shader, VertexAttribute.Vertex -> positionAttribute, VertexAttribute.Color -> colorAttribute)
+	    } else {
+	    	Bone.uniformColorAttribute = uniformColorAttribute
+		    Bone.bone.bindShader(shader, VertexAttribute.Vertex -> positionAttribute)
+		}
+    }
+
+    def apply(id:Int):Bone = new Bone(id)
 }
 
 
-/** A simple bone hierarchy. */
+/** A bone in a bone hierarchy, to model a deformation skeleton. */
 class Bone(val id:Int) {
 // Attributes
 
@@ -52,7 +96,7 @@ class Bone(val id:Int) {
 	  * th computation of the orientation and inverseOrientation. They will
 	  * remain unchanged until the pose (which is usually only setup at start)
 	  * is changed anew. */
-	private var needRecomputePose = true
+	private[this] var needRecomputePose = true
 
 // Construction
 	
@@ -63,15 +107,18 @@ class Bone(val id:Int) {
 	
 // Commands
 	
-	/** Called when a child name changed. */
+	/** Called when a child `oldName` name changed to `newName`. */
 	protected def childRenamed(oldName:String, newName:String) {
+		if(byName.contains(newName))
+			throw new InvalidBoneException("cannot rename bone %s to %s, name is already used.".format(oldName, newName))
+
 		byName.get(oldName) match {
 			case Some(x) => { byName.remove(oldName); byName += ((newName, x)) }
-			case _ => throw new RuntimeException("no such bone %s in parent %s".format(oldName, name))
+			case _ => throw new NoSuchBoneException("cannot rename bone %s no such bone in parent %s".format(oldName, name))
 		}
 	}
 
-	/** Change the bone name. The default name is "bone". Names need not be unique. */
+	/** Change the bone name to `newName`. The parent will be notified, the `newName` must not be already used in the parent. */
 	def setName(newName:String) { 
 		val oldName = name
 		name = newName
@@ -79,7 +126,8 @@ class Bone(val id:Int) {
 			parent.childRenamed(oldName, newName)
 	}
 
-	/** Add a child bone to the hierarchy. The child matrices are untouched. */
+	/** Add a child bone to the hierarchy. The child matrices are untouched.
+	  * The newly added bone name is its `id` as a string. The `id` must be unique in the chidlren. */
 	def addChild(id:Int):Bone = {
 	    val child = new Bone(id)
 	    
@@ -94,9 +142,14 @@ class Bone(val id:Int) {
 	}
 
 	/** Add a child bone to the hierarchy. The child matrices are untouched, the given
-	  * child must not already have a parent. */
+	  * child must not already have a parent and the the child name must not already exist in the children. */
 	def addChild(bone:Bone) {
-		assert(bone.parent eq null)
+		if(bone.parent ne null)
+			throw new InvalidBoneException("cannot add bone %s to %s, it already has a parent (%s)".format(bone.name, name, bone.parent.name))
+		
+		if(byName.contains(bone.name))
+			throw new InvalidBoneException("cannot add bone %s to %s, %s already contains a bone with this name".format(bone.name, name))
+
 		val index = children.size
 		children += bone
 	    byName += ((bone.name, index)) 
@@ -110,38 +163,27 @@ class Bone(val id:Int) {
 	def apply(name:String):Bone = {
 		byName.get(name) match {
 			case Some(x) => children(x)
-			case _       => throw new RuntimeException("no such bone %s in parent %s".format(name, this.name))
+			case _       => throw new NoSuchBoneException("no such bone %s in parent %s".format(name, this.name))
 		}
 	}
 
 // Render
 	
-	/** Draw a representation of the skeleton.
-	  * The given `shader` must have an uniform `vec4` variable whose name is passed
-	  * as `uniformColorName` to set the color of the bone.
+	/** Draw a representation of the skeleton using the [[Bone]] object `bone` field.
+	  *
+	  * This field must have been setup before. See `allocateDefaultBone()`. The shader
+	  * used is the one bound to the bone mesh in [[Bone]] object.
 	  * 
-	  * The [[Camera]] class being used, the shader must also define:
-	  *  
-	  *      uniform mat4 MV;    // Model-View matrix.
-	  *      uniform mat3 MV3x3; // Upper 3x3 model-view matrix.
-	  *      uniform mat4 MVP;   // Projection-Model-View matrix.
+	  * The `space` class is used to setup the initial transformation.
 	  */
-	def drawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram, uniformColorName:String) {
-	    camera.uniformMVP(shader)
-	    recursiveDrawSkeleton(gl, camera, shader, uniformColorName)
-	}
+	def drawSkeleton(gl:SGL, space:Space) {
+	    if(Bone.bone eq null)
+	    	throw new InvalidBoneException("Allocate the Bone.bone field before drawing the skeleton. See Bone.allocateDefaultBone().")
+	    
+	    Bone.bone.shader.use
 
-	/** Draw a representation of the skeleton.
-	  * 
-	  * The [[Camera]] class being used, the shader must define:
-	  *  
-	  *      uniform mat4 MV;    // Model-View matrix.
-	  *      uniform mat3 MV3x3; // Upper 3x3 model-view matrix.
-	  *      uniform mat4 MVP;   // Projection-Model-View matrix.
-	  */
-	def drawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram) {
-	    camera.uniformMVP(shader)
-	    recursiveDrawSkeleton(gl, camera, shader, null)
+	    //space.uniformMVP(Bone.bone.shader)
+	    recursiveDrawSkeleton(gl, space)
 	}
 	
 	/** Install the bones matrices in the given `shader`.
@@ -219,25 +261,22 @@ class Bone(val id:Int) {
 // Compute
 	
 	/** Recursively draw the whole sub-skeleton. */
-	protected def recursiveDrawSkeleton(gl:SGL, camera:Camera, shader:ShaderProgram, uniformColorName:String) {
-	    if(Bone.bone eq null) {
-	    	Bone.bone = new BoneLineMesh(gl)
-	    	Bone.bone.bindShader(shader, VertexAttribute.Vertex -> "position", VertexAttribute.Color -> "color")
-	    }
-	    
-	    camera.pushpop {
-	        camera.transform(orientation)
-	        camera.transform(animation)
+	protected def recursiveDrawSkeleton(gl:SGL, space:Space) {
+	    space.pushpop {
+	        space.transform(orientation)
+	        space.transform(animation)
 
-	        if(uniformColorName ne null) shader.uniform(uniformColorName, color)
-	        camera.pushpop {
-		       	camera.scale(1, length, 1)
-		        camera.uniformMVP(shader)
-		        Bone.bone.draw()
+		    if(Bone.uniformColorAttribute ne null)
+		    	Bone.bone.shader.uniform(Bone.uniformColorAttribute, color)
+	        
+	        space.pushpop {
+		       	space.scale(1, length, 1)
+		        space.uniformMVP(Bone.bone.shader)
+		        Bone.bone.draw
 	        }
 	        
 	        children.foreach { child =>
-	        	child.recursiveDrawSkeleton(gl, camera, shader, uniformColorName)
+	        	child.recursiveDrawSkeleton(gl, space)
 	        }
 	    }
 	}

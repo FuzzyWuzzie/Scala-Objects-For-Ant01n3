@@ -7,12 +7,19 @@ import org.sofa.math.Vector3
 import org.sofa.math.Vector2
 import java.awt.Color
 
+
+/** A model of Bone as often used to represent deformation skeletons.
+  *
+  * The bone model has only position attribute, and indices by default, you
+  * muse allocate a color attribute if needed (`addAttributeColor()`). 
+  */
 class BoneMesh(val gl:SGL) extends Mesh {
-	protected var V:MeshAttribute = addAttributeVertex // allocateVertices
 	
-	protected var C:MeshAttribute = addAttributeColor //allocateColors
+	protected var V:MeshAttribute = addAttributeVertex
 	
-	protected var I:MeshElement = addIndex //IntBuffer = allocateIndices
+	protected var C:MeshAttribute = _
+	
+	protected var I:MeshElement = addIndex
 
 	// -- Edition ------------------------------------------
 	
@@ -22,7 +29,11 @@ class BoneMesh(val gl:SGL) extends Mesh {
 		begin(VertexAttribute.Color)
 	}
 
+	/** Set the whole color of the model. */
 	def setColor(color:Color) {
+		if(C eq null)
+			throw new NoSuchVertexAttributeException("No color vertex attribute, add one first. See addAttributeColor().")
+
 	    val n = 6 * 4
 	    val red   = color.getRed   / 255f
         val green = color.getGreen / 255f
@@ -45,10 +56,6 @@ class BoneMesh(val gl:SGL) extends Mesh {
 	def vertexCount:Int = 6
 
     def elementsPerPrimitive:Int = 3
-
-	override def elements:MeshElement = I
-		
-	override def hasElements = true
 
 	def drawAs():Int = gl.TRIANGLES
 	
@@ -81,7 +88,8 @@ class BoneMesh(val gl:SGL) extends Mesh {
 	    V
 	}
 	
-	protected def addAttributeColor:MeshAttribute = {
+	/** Add a "color" vertex attribute, and color the whole model white. */
+	def addAttributeColor:MeshAttribute = {
 		if(C eq null) {
 			C = addMeshAttribute(VertexAttribute.Color, 4)
 	    	
@@ -133,6 +141,7 @@ class BoneMesh(val gl:SGL) extends Mesh {
 }
 
 
+/** Mofidy the [[BoneMesh]] class to draw lines instead of plain faces for the bone model. */
 class BoneLineMesh(gl:SGL) extends BoneMesh(gl) {
 
 	override def drawAs():Int = gl.LINES

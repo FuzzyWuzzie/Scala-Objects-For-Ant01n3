@@ -16,7 +16,7 @@ class WireCubeMesh(val gl:SGL, val side:Float) extends Mesh  {
 
     protected var V:MeshAttribute = addAttributeVertex
 
-    protected var C:MeshAttribute = _ //addAttributeColor
+    protected var C:MeshAttribute = _
 
     // -- Mesh interface ------------------------------------
 
