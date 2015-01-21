@@ -19,6 +19,9 @@ import scala.collection.mutable.HashMap
   * This encapsulates a 
   */
 abstract class MeshElement(val gl:SGL, val primCount:Int, val verticesPerPrim:Int) {
+
+	/** Release any GL memory. The object is no more usable after this. */
+	def dispose()
 	
 	/** The OpenGL element buffer associated to the data. */
 	def elementBuffer:ElementBuffer
@@ -54,6 +57,14 @@ abstract class MeshElement(val gl:SGL, val primCount:Int, val verticesPerPrim:In
 	/** Copy the data from the set of `values` given. The number of
 	  * values must match the size of the attribute. */
 	def copy(values:Int*)
+
+	/** Copy the data from the set of `values` given. The number of
+	  * values must match the size of the attribute. */
+	def copy(values:Array[Int])
+
+	/** Copy the data from the set of `values` given. The number of
+	  * values must match the size of the attribute. */
+	def copy(values:scala.collection.mutable.ArrayBuffer[Int])
 
 	/** Primitives in the given range changed, the indices are those
 	  * of the primitves, not elements constituting the primitives (in
@@ -94,6 +105,11 @@ class MeshElementCopy(gl:SGL, primCount:Int, verticesPerPrim:Int) extends MeshEl
 	var e:Int = 0
 
 	protected var updateOk = false
+
+	def dispose() {
+		if(elementBuffer ne null) elementBuffer.dispose()
+		elementBuffer = null
+	}
 
 	def modifable:Boolean = updateOk
 
@@ -190,37 +206,30 @@ class MeshElementCopy(gl:SGL, primCount:Int, verticesPerPrim:Int) extends MeshEl
 
 	/** Copy the data from the set of `values` given. The number of values must match the size of the attribute. */
 	def copy(values:Int*) {
-		if(values.length == primCount*verticesPerPrim)
+		if(values.length >= primCount*verticesPerPrim)
 			theData.copy(values.asInstanceOf[scala.collection.mutable.WrappedArray[Int]].array)
 		else throw new RuntimeException("use copy with exactly the correct number of arguments")
 		range(0, primCount)
 	}
 
-	// /** Update the buffer (send it to OpenGL) with the same name as this attribute if
-	//   * some elements have been changed. */
-	// def update(va:VertexArray) {
-	// 	if(va eq null)
-	// 		throw new RuntimeException("null vertex array")
-	// 	if(va.indices eq null)
-	// 		throw new RuntimeException("null indices array")
-	// 	if(e > b) {
-	// 		if(b==0 && e == primCount*verticesPerPrim)
-	// 		     va.indices.update(theData)
-	// 		else va.indices.update(b*verticesPerPrim, e*verticesPerPrim, theData)
-	// 		resetMarkers
-	// 	}
-	// }
+	def copy(values:Array[Int]) {
+		if(values.length >= primCount*verticesPerPrim)
+			theData.copy(values)
+		else throw new RuntimeException("use copy with exactly the correct number of arguments")
+		range(0, primCount)
+	}
+
+	/** Copy the data from the set of `values` given. The number of
+	  * values must match the size of the attribute. */
+	def copy(values:scala.collection.mutable.ArrayBuffer[Int]) {
+		if(values.length >= primCount*verticesPerPrim)
+			theData.copy(values)
+		else throw new RuntimeException("use copy with exactly the correct number of arguments")
+		range(0, primCount)
+	}
 
 	def range(from:Int, to:Int) {
 		if(from < b) b = from
 		if(to   > e) e = to
 	}
-
-	// /** Used to reset the [[b]] and [[e]] markers as if no changes
-	//   * have been made to the values. Used after `update()` and by the
-	//   * mesh before creating a new vertex array. */
-	// def resetMarkers() {
-	// 	b = primCount * verticesPerPrim
-	// 	e = 0
-	// }
 }

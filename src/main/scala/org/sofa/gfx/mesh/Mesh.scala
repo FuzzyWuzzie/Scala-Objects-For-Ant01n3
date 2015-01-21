@@ -367,6 +367,9 @@ trait Mesh {
 		endElements
 	}
 
+	/** True if between calls to `begin()` and `end()`. */
+	def modifiable():Boolean = (mapped.size > 0 || elementsMapped)
+
 	/** Same as calling `begin()`, `code()` and `end()`. */
 	def modify(names:String*)(code: =>Unit) {
 		begin(names:_*)
@@ -416,7 +419,7 @@ trait Mesh {
 
     /** Indices of the elements to draw in the attributes array, in draw order.
       * The indices points at elements in each attribute array. */
-    protected def elements:MeshElement = if(meshElements eq null) throw new InvalidPrimitiveException("no elements in this mesh") else meshElements
+    def elements:MeshElement = if(meshElements eq null) throw new InvalidPrimitiveException("no elements in this mesh") else meshElements
 
 // Drawing commands
 

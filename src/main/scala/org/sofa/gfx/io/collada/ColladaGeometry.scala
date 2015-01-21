@@ -6,10 +6,12 @@ import org.sofa.gfx.{SGL}
 import org.sofa.gfx.mesh.{Mesh, TrianglesMesh}// EditableMesh}
 import scala.math._
 
+
 /** Geometry feature companion object. */
 object Geometry {
 	def apply(node:Node):Geometry = new Geometry(node)
 }
+
 
 /** A geometry descriptor in a Collada geometry library.
   *
@@ -42,7 +44,9 @@ class Geometry(node:Node) extends ColladaFeature {
 	override def toString():String = "geometry(%s, %s)".format(name, mesh)
 }
 
+
 //------------------------------------------------------------------------------------------------------
+
 
 /** One source of data in a mesh (in OpenGL terms, a vertex attribute). */
 class MeshSource() {
@@ -93,7 +97,9 @@ class MeshSource() {
 	override def toString():String = "source(%s, stride %d, %d floats)".format(name, stride, data.length) 
 }
 
+
 //------------------------------------------------------------------------------------------------------
+
 
 /** Possible type of vertex attributes. */
 object Input extends Enumeration {
@@ -106,6 +112,7 @@ object Input extends Enumeration {
 	val Weight   = Value
 	val User     = Value
 }	
+
 
 /** Faces making up a mesh.
   * 
@@ -294,12 +301,13 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 	}
 
 	protected def toMesh(gl:SGL, elements:ArrayBuffer[Int], vertices:ArrayBuffer[Vertex]):Mesh = {
-		val mesh = new TrianglesMesh(gl, vertices.length/3)
+		val mesh = new TrianglesMesh(gl, elements.length/3, vertices.length+1)	// We will allocate too many vertices, but the
+															// TriangleMesh allows as many vertices as there are triangles....
 
-		mesh.addAttributeNormal
-		mesh.addAttributeTexCoord
-		mesh.addAttributeBone
-		mesh.addAttributeWeight
+		if(vertices(0).normal   >= 0) mesh.addAttributeNormal
+		if(vertices(0).texcoord >= 0) mesh.addAttributeTexCoord
+		if(vertices(0).bone     >= 0) mesh.addAttributeBone
+		if(vertices(0).weight   >= 0) mesh.addAttributeWeight
 
 		mesh.begin()
 			var i = 0
@@ -319,11 +327,11 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 				}
 				if(vertex.bone >= 0) {
 					val bone = getAttribute(Input.Bone, vertex.bone)
-					mesh.setPointBones(i, bone(0).toInt, bone(1).toInt, bone(2).toInt)
+					mesh.setPointBones(i, bone(0).toInt, bone(1).toInt, bone(2).toInt, bone(3).toInt)
 				}
 				if(vertex.weight >= 0) {
 					val weight = getAttribute(Input.Weight, vertex.weight)
-					mesh.setPointWeights(i, weight(0), weight(1), weight(2))
+					mesh.setPointWeights(i, weight(0), weight(1), weight(2), weight(3))
 				}
 				if(vertex.index >= 0) {
 					val vert = getVertex(vertex.index)
@@ -338,11 +346,19 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 
 			i = 0
 
-			elements.foreach { e =>
-				mesh.setIndex(i, e)
-				i += 1
-			}
+			// elements.foreach { e =>
+			// 	mesh.setIndex(i, e)
+			// 	i += 1
+			// }
+			mesh.elements.copy(elements)
 		mesh.end()
+
+		// i = 0
+		// while(i < mesh.size*3) {
+		// 	val N = mesh.getNormal(i)
+		// 	printf("point(%d) -> normal %s%n", i, N)
+		// 	i += 1
+		// }
 
 		mesh
 /*
@@ -386,6 +402,7 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 		mesh
 */	}	
 }
+
 
 /** Represents internally a vertex.
   *
@@ -511,7 +528,9 @@ class Vertex(val faces:Faces, val index:Int, val normal:Int, val texcoord:Int, v
 	}
 }
 
+
 //------------------------------------------------------------------------------------------------------
+
 
 /** Faces only made of triangles. */
 class Triangles(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
@@ -520,7 +539,9 @@ class Triangles(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	def toMesh(gl:SGL):Mesh = { val (elements,vertices) = toVertexList; toMesh(gl, elements, vertices) }
 }
 
+
 //------------------------------------------------------------------------------------------------------
+
 
 /** Faces made of polygons with an arbitrary number of vertices. */
 class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
@@ -577,7 +598,9 @@ class Polygons(node:Node, mesh:ColladaMesh) extends Faces(node, mesh) {
 	}
 }
 
+
 //------------------------------------------------------------------------------------------------------
+
 
 /** Describe a mesh (source (vertex attributes), and indices in the source under the form of faces.
   * This mesh format offer a convertion toward SOFA meshes */

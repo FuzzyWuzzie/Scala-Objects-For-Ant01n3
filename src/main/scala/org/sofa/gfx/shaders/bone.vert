@@ -12,7 +12,7 @@ uniform Bone bone[6];
 smooth out vec4 ex_Color;
 
 void main(void) {
-	uint b = int(uint(boneIndex));
+	uint b = uint(boneIndex);
 	vec4 P = bone[b].MV * vec4(position, 1);
 	
 	ex_Color    = bone[b].color;

@@ -10,7 +10,7 @@ varying vec3 P;		// Position
 
 // Global:
 uniform mat3 MV3x3;				// Upper 3x3 matrix of MV, without scaling or translation,
-uniform WhiteLight whitelight;
+uniform WhiteLight L;
 uniform sampler2D texColor;		// Color texture,
 uniform sampler2D texNormal;	// Normal map texture,
 
@@ -21,5 +21,6 @@ void main(void) {							// TBN and not TNB since most nmap textures uses Z up, t
 	vec3  n   = normalize((2 * (texture2D(texNormal, X.st).rgb)) - 1);
 	vec4  c   = texture2D(texColor, X.st);
 
-	gl_FragColor = singleWhiteLightPhong(P, n, c, TBN);
+	gl_FragColor = singleWhiteLightPhong(P, n, c, TBN, L);
+	//gl_FragColor = vec4(1,0,0,1);
 }

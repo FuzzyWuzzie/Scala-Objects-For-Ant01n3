@@ -29,7 +29,7 @@ void main(void) {
 	vec3  n;
 	vec3  t;
 
-	applyBones(position, normal, vec3(tangent.xyz), p, n, t);
+	applyBones(position, normal, vec3(tangent.xyz), boneWeight, p, n, t);
 
 	P = vec3(MV * p);
 	N = normalize(MV3x3 * n); 

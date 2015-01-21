@@ -27,6 +27,9 @@ import scala.collection.mutable.HashMap
   * call `end`. */
 abstract class MeshAttribute(val gl:SGL, val name:String, val components:Int, val vertexCount:Int, var divisor:Int = -1) {
 
+	/** Release any GL memory. The object is no more usable after this. */
+	def dispose()
+
 	/** The OpenGL array buffer associated to the data. */
 	def arrayBuffer:ArrayBuffer
 
@@ -61,6 +64,14 @@ abstract class MeshAttribute(val gl:SGL, val name:String, val components:Int, va
 	/** Copy the data from the set of `values` given. The number of values must match
 	  * the size of the attribute. This is usable only between calls to `begin` and `end`. */
 	def copy(values:Float*)
+
+	/** Copy the data from the set of `values` given. The number of values must match
+	  * the size of the attribute. This is usable only between calls to `begin` and `end`. */
+	def copy(values:Array[Float])
+
+	/** Copy the data from the set of `values` given. The number of values must match
+	  * the size of the attribute. This is usable only between calls to `begin` and `end`. */
+	def copy(values:scala.collection.mutable.ArrayBuffer[Float])
 
 	/** Elements in the given range changed. The indices are thos of the vertices,
 	  * not the individual components of the vertices (in other words, it does not
@@ -100,6 +111,11 @@ class MeshAttributeCopy(gl:SGL, name:String, components:Int, vertexCount:Int, di
 	var e:Int = 0
 
 	protected var updateOk = false
+
+	def dispose() {
+		if(arrayBuffer ne null) arrayBuffer.dispose()
+		arrayBuffer = null
+	}
 
 	def modifiable:Boolean = updateOk
 
@@ -200,8 +216,24 @@ class MeshAttributeCopy(gl:SGL, name:String, components:Int, vertexCount:Int, di
 
 	/** Copy the data from the set of `values` given. The number of values must match the size of the attribute. */
 	def copy(values:Float*) {
-		if(values.length == vertexCount*components) {
+		if(values.length >= vertexCount*components) {
 			theData.copy(values.asInstanceOf[scala.collection.mutable.WrappedArray[Float]].array)
+		}
+		else throw new RuntimeException("use copy with exactly the correct number of arguments")
+		range(0, vertexCount)
+	}
+
+	def copy(values:Array[Float]) {
+		if(values.length >= vertexCount*components) {
+			theData.copy(values)
+		}
+		else throw new RuntimeException("use copy with exactly the correct number of arguments")
+		range(0, vertexCount)
+	}
+
+	def copy(values:scala.collection.mutable.ArrayBuffer[Float]) {
+		if(values.length >= vertexCount*components) {
+			theData.copy(values)
 		}
 		else throw new RuntimeException("use copy with exactly the correct number of arguments")
 		range(0, vertexCount)

@@ -22,11 +22,11 @@ void main(void) {
 	vec3 n;
 	vec4 c;
 
-	applyBonesWithColor(p, n, c);
+	applyBonesWithColor(p, n, c, boneWeight, position, normal);
 
 	P = vec3(MV * p);
 	N = normalize(MV3x3 * n); 
-	C = vec4(c.rgb, c.a*0.9);
+	C = vec4(c.rgb, c.a * 0.9);
 
 	gl_Position = MVP * p;
 }

@@ -20,7 +20,9 @@ void main(void) {
 	vec4  p;
 	vec3  n;
 
-	applyBones(position, normal, p, n);
+	applyBones(position, normal, boneWeight, p, n);
+	//p = vec4(position,1);
+	//n = normal;
 
 	P = vec3(MV * p);
 	N = normalize(MV3x3 * n);

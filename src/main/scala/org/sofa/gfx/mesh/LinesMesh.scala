@@ -5,9 +5,7 @@ import org.sofa.gfx._
 import org.sofa.math.{Point3, Rgba, Vector3}
 import scala.math._
 
-/** A set of disjoint line segments.
-  *
-  * @param count The number of segments. */
+/** A set of `count` disjoint line segments. */
 class LinesMesh(val gl:SGL, val count:Int) extends Mesh {
 
     protected var V:MeshAttribute = addAttributeVertex 
