@@ -294,6 +294,32 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		this
 	}
 
+	/** Change the coordinates of vertices already identified by `triangle`. This method
+	  * assumes the indices of the three vertices of `triangle` are already set. The corresponding
+	  * position vertex attribute is then modified. */
+	def setTriangle(triangle:Int,
+		x0:Float, y0:Float, z0:Float,
+		x1:Float, y1:Float, z1:Float,
+		x2:Float, y2:Float, z2:Float) {
+		val (i0, i1, i2) = getTriangle(triangle)
+		setPoint(i0, x0, y0, z0)
+		setPoint(i1, x1, y1, z1)
+		setPoint(i2, x2, y2, z2)
+	}
+
+	/** Change the coordinates of vertices already identified by `triangle`. This method
+	  * assumes the indices of the three vertices of `triangle` are already set. The corresponding
+	  * position vertex attribute is then modified. */
+	def setTriangle(triangle:Int, p0:Point3, p1:Point3, p2:Point3) {
+		setTriangle(triangle,
+			p0.x.toFloat, p0.y.toFloat, p0.z.toFloat,
+			p1.x.toFloat, p1.y.toFloat, p1.z.toFloat,
+			p2.x.toFloat, p2.y.toFloat, p2.z.toFloat)
+	}
+
+	/** Change the normal of vertices already identified by `triangle`. This method
+	  * assumes the indices of the three vertices of `triangle` are already set. The corresponding
+	  * normal vertex attribute is then modified. */
 	def setTriangleNormal(triangle:Int, x:Float, y:Float, z:Float) {
 		val (i0, i1, i2) = getTriangle(triangle)
 		setPointNormal(i0, x, y, z)
@@ -301,7 +327,25 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		setPointNormal(i2, x, y, z)
 	}
 
+	/** Change the `normal` of vertices already identified by `triangle`. This method
+	  * assumes the indices of the three vertices of `triangle` are already set. The corresponding
+	  * `normal` vertex attribute is then modified. */
 	def setTriangleNormal(triangle:Int, normal:Vector3) { setTriangleNormal(triangle, normal.x.toFloat, normal.y.toFloat, normal.z.toFloat) }
+
+	/** Change the color of vertices already identified by `triangle`. This method
+	  * assumes the indices of the three vertices of `triangle` are already set. The corresponding
+	  * color vertex attribute is then modified. */
+	def setTriangleColor(triangle:Int, r:Float, g:Float, b:Float, a:Float) {
+		val (i0, i1, i2) = getTriangle(triangle)
+		setPointColor(i0, r, g, b, a)
+		setPointColor(i1, r, g, b, a)
+		setPointColor(i2, r, g, b, a)
+	}
+
+	/** Change the `color` of vertices already identified by `triangle`. This method
+	  * assumes the indices of the three vertices of `triangle` are already set. The corresponding
+	  * `color` vertex attribute is then modified. */
+	def setTriangleColor(triangle:Int, color:Rgba) { setTriangleColor(triangle, color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat) }
 
 	/** Set individual index `i` to reference vertex attribute `a`. */
 	def setIndex(i:Int, a:Int):TrianglesMesh = {
@@ -314,11 +358,16 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		this
 	}
 
+	/** Compute the normals of a `triangle` whose indices and position vertex attribute are already set.
+	  * The computed normals are all perpendicular to the `triangle` face. */
 	def autoComputeTriangleNormal(triangle:Int) {
 		val (i0, i1, i2) = getTriangle(triangle)
 		autoComputeTriangleNormal(triangle, getPoint(i0), getPoint(i1), getPoint(i2))
 	}
 
+	/** Compute the normals of a `triangle` whose indices are already set, with the given position
+	  * vertex attributes `p0`, `p1` and `p2` (these attributes are not set).
+	  * The computed normals are all perpendicular to the `triangle` face. */
 	def autoComputeTriangleNormal(triangle:Int, p0:Point3, p1:Point3, p2:Point3) {
 		val v0 = Vector3(p0, p1)
 		val v1 = Vector3(p0, p2)
