@@ -85,7 +85,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		def normal(x:Float, y:Float, z:Float):Vx = { setPointNormal(vertex,x,y,z); this }
 		
 		/** Set the `vertex` tangent (`x`, `y`, `z`). */
-		def tan(x:Float, y:Float, z:Foat):Vx = { setPointTangent(vertex,x,y,z); this }
+		def tan(x:Float, y:Float, z:Float):Vx = { setPointTangent(vertex,x,y,z); this }
 
 		/** Set the `vertex` bi-tangent (`x`, `y`, `z`). */
 		def bitan(x:Float, y:Float, z:Float):Vx = { setPointBiTangent(vertex, x,y,z); this }
@@ -281,18 +281,27 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	}
 	
 	/** Map the `t`-th triangle to the vertex attributes indices (`a`, `b`, `c`). */
-	def setTriangle(t:Int, a:Int, b:Int, c:Int):TrianglesMesh = {
-		val i = t * I.verticesPerPrim
+	def setTriangle(triangle:Int, a:Int, b:Int, c:Int):TrianglesMesh = {
+		val i = triangle * I.verticesPerPrim
 		val data = I.data
 
 		data(i)   = a
 		data(i+1) = b
 		data(i+2) = c
 		
-		I.range(t, t+1)
+		I.range(triangle, triangle+1)
 
 		this
 	}
+
+	def setTriangleNormal(triangle:Int, x:Float, y:Float, z:Float) {
+		val (i0, i1, i2) = getTriangle(triangle)
+		setPointNormal(i0, x, y, z)
+		setPointNormal(i1, x, y, z)
+		setPointNormal(i2, x, y, z)
+	}
+
+	def setTriangleNormal(triangle:Int, normal:Vector3) { setTriangleNormal(triangle, normal.x.toFloat, normal.y.toFloat, normal.z.toFloat) }
 
 	/** Set individual index `i` to reference vertex attribute `a`. */
 	def setIndex(i:Int, a:Int):TrianglesMesh = {
@@ -303,6 +312,19 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		I.range(i/3, i/3+1)
 
 		this
+	}
+
+	def autoComputeTriangleNormal(triangle:Int) {
+		val (i0, i1, i2) = getTriangle(triangle)
+		autoComputeTriangleNormal(triangle, getPoint(i0), getPoint(i1), getPoint(i2))
+	}
+
+	def autoComputeTriangleNormal(triangle:Int, p0:Point3, p1:Point3, p2:Point3) {
+		val v0 = Vector3(p0, p1)
+		val v1 = Vector3(p0, p2)
+		val n = v1 X v0
+		n.normalize
+		setTriangleNormal(triangle, n)
 	}
 	
 	/** The position of `vertex`. */
