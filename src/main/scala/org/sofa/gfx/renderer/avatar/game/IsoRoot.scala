@@ -56,10 +56,10 @@ trait IsoRenderUtils {
 		if(unitSquare eq null) {
 			unitSquare = screen.libraries.models.getOrAdd(gl, "unit-square") { (gl, name) =>
 				val m = new TrianglesMesh(gl, 2)
-				m.setPoint(0, -0.5f, -0.5f, 0f)
-				m.setPoint(1,  0.5f, -0.5f, 0f)
-				m.setPoint(2,  0.5f,  0.5f, 0f)
-				m.setPoint(3, -0.5f,  0.5f, 0f)
+				m.setVertexPosition(0, -0.5f, -0.5f, 0f)
+				m.setVertexPosition(1,  0.5f, -0.5f, 0f)
+				m.setVertexPosition(2,  0.5f,  0.5f, 0f)
+				m.setVertexPosition(3, -0.5f,  0.5f, 0f)
 				m.setTriangle(0, 0, 1, 2)
 				m.setTriangle(1, 0, 2, 3)
 				m.bindShader(uniformColorShader, Vertex -> "position")
@@ -103,10 +103,10 @@ trait IsoRenderUtils {
 		if(unitSquare eq null) {
 			unitSquare = screen.libraries.models.getOrAdd(gl, "unit-square") { (gl, name) =>
 				val m = new TrianglesMesh(gl, 2)
-				m.setPoint(0, -0.5f, -0.5f, 0f)
-				m.setPoint(1,  0.5f, -0.5f, 0f)
-				m.setPoint(2,  0.5f,  0.5f, 0f)
-				m.setPoint(3, -0.5f,  0.5f, 0f)
+				m.setVertexPosition(0, -0.5f, -0.5f, 0f)
+				m.setVertexPosition(1,  0.5f, -0.5f, 0f)
+				m.setVertexPosition(2,  0.5f,  0.5f, 0f)
+				m.setVertexPosition(3, -0.5f,  0.5f, 0f)
 				m.setTriangle(0, 0, 1, 2)
 				m.setTriangle(1, 0, 2, 3)
 				m.bindShader(uniformColorShader, Vertex -> "position")

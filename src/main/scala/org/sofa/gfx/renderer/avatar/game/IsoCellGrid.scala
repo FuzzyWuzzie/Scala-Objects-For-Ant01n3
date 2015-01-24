@@ -172,15 +172,15 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 					var vv = shade.ground.y(re.groundTex)				// Lower left tex V
 
 					// Triangle 0 Ground
-					mesh v(p+0) xyz(xx,    yy-h2, 0) uv(uu+uw/2, vv)       user(UserAttr, of, 0, 0)
-					mesh v(p+1) xyz(xx,    yy+h2, 0) uv(uu+uw/2, vv+vh)    user(UserAttr, of, 0, 0)
-					mesh v(p+2) xyz(xx-w2, yy,    0) uv(uu,      vv+vh/2)  user(UserAttr, of, 0, 0)
+					mesh v(p+0) pos(xx,    yy-h2, 0) tex(uu+uw/2, vv)       usr(UserAttr, of, 0, 0)
+					mesh v(p+1) pos(xx,    yy+h2, 0) tex(uu+uw/2, vv+vh)    usr(UserAttr, of, 0, 0)
+					mesh v(p+2) pos(xx-w2, yy,    0) tex(uu,      vv+vh/2)  usr(UserAttr, of, 0, 0)
 					mesh triangle(t+0, p+0, p+1, p+2)
 
 					// Triangle 1 Ground
-					mesh v(p+3) xyz(xx,    yy-h2, 0) uv(uu+uw/2, vv)       user(UserAttr, of, 0, 0)
-					mesh v(p+4) xyz(xx,    yy+h2, 0) uv(uu+uw/2, vv+vh)    user(UserAttr, of, 0, 0)
-					mesh v(p+5) xyz(xx+w2, yy,    0) uv(uu+uw,   vv+vh/2)  user(UserAttr, of, 0, 0)
+					mesh v(p+3) pos(xx,    yy-h2, 0) tex(uu+uw/2, vv)       usr(UserAttr, of, 0, 0)
+					mesh v(p+4) pos(xx,    yy+h2, 0) tex(uu+uw/2, vv+vh)    usr(UserAttr, of, 0, 0)
+					mesh v(p+5) pos(xx+w2, yy,    0) tex(uu+uw,   vv+vh/2)  usr(UserAttr, of, 0, 0)
 					mesh triangle(t+1, p+3, p+4, p+5)
 
 					// - Underground --
@@ -194,27 +194,27 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 						//println(s"uw=${uw} vh=${vh},  uu=${uu} vv=${vv}")
 
 						// Triangle 2 Underground
-						mesh v(p+6) xyz(xx-w2, yy-2*h2, 0)  uv(uu,      vv+vh/3)     user(UserAttr, 0, 0, 0)
-						mesh v(p+7) xyz(xx,    yy-h2,   0)  uv(uu+uw/2, vv+2*(vh/3)) user(UserAttr, 0, 0, 0)
-						mesh v(p+8) xyz(xx-w2, yy,      0)  uv(uu,      vv+vh)       user(UserAttr, 0, 0, 0)
+						mesh v(p+6) pos(xx-w2, yy-2*h2, 0)  tex(uu,      vv+vh/3)     usr(UserAttr, 0, 0, 0)
+						mesh v(p+7) pos(xx,    yy-h2,   0)  tex(uu+uw/2, vv+2*(vh/3)) usr(UserAttr, 0, 0, 0)
+						mesh v(p+8) pos(xx-w2, yy,      0)  tex(uu,      vv+vh)       usr(UserAttr, 0, 0, 0)
 						mesh triangle(t+2, p+6, p+7, p+8)
 
 						// Triangle 3 Underground
-						mesh v(p+ 9) xyz(xx+w2, yy-2*h2, 0) uv(uu+uw,   vv+vh/3)     user(UserAttr, 0, 0, 0)
-						mesh v(p+10) xyz(xx+w2, yy,      0) uv(uu+uw,   vv+vh)       user(UserAttr, 0, 0, 0)
-						mesh v(p+11) xyz(xx,    yy-h2,   0) uv(uu+uw/2, vv+2*(vh/3)) user(UserAttr, 0, 0, 0)
+						mesh v(p+ 9) pos(xx+w2, yy-2*h2, 0) tex(uu+uw,   vv+vh/3)     usr(UserAttr, 0, 0, 0)
+						mesh v(p+10) pos(xx+w2, yy,      0) tex(uu+uw,   vv+vh)       usr(UserAttr, 0, 0, 0)
+						mesh v(p+11) pos(xx,    yy-h2,   0) tex(uu+uw/2, vv+2*(vh/3)) usr(UserAttr, 0, 0, 0)
 						mesh triangle(t+3, p+9, p+10, p+11)
 
 						// Triangle 4 Underground
-						mesh v(p+12) xyz(xx,    yy-3*h2, 0) uv(uu+uw/2, vv)          user(UserAttr, 0, 0, 0)
-						mesh v(p+13) xyz(xx,    yy-h2,   0) uv(uu+uw/2, vv+2*(vh/3)) user(UserAttr, 0, 0, 0)
-						mesh v(p+14) xyz(xx-w2, yy-2*h2, 0) uv(uu,      vv+vh/3)     user(UserAttr, 0, 0, 0)
+						mesh v(p+12) pos(xx,    yy-3*h2, 0) tex(uu+uw/2, vv)          usr(UserAttr, 0, 0, 0)
+						mesh v(p+13) pos(xx,    yy-h2,   0) tex(uu+uw/2, vv+2*(vh/3)) usr(UserAttr, 0, 0, 0)
+						mesh v(p+14) pos(xx-w2, yy-2*h2, 0) tex(uu,      vv+vh/3)     usr(UserAttr, 0, 0, 0)
 						mesh triangle(t+4, p+12, p+13, p+14)
 
 						// Triangle 5 Underground
-						mesh v(p+15) xyz(xx,    yy-3*h2, 0) uv(uu+uw/2, vv)          user(UserAttr, 0, 0, 0)
-						mesh v(p+16) xyz(xx+w2, yy-2*h2, 0) uv(uu+uw,   vv+vh/3)     user(UserAttr, 0, 0, 0)
-						mesh v(p+17) xyz(xx,    yy-h2,   0) uv(uu+uw/2, vv+2*(vh/3)) user(UserAttr, 0, 0, 0)
+						mesh v(p+15) pos(xx,    yy-3*h2, 0) tex(uu+uw/2, vv)          usr(UserAttr, 0, 0, 0)
+						mesh v(p+16) pos(xx+w2, yy-2*h2, 0) tex(uu+uw,   vv+vh/3)     usr(UserAttr, 0, 0, 0)
+						mesh v(p+17) pos(xx,    yy-h2,   0) tex(uu+uw/2, vv+2*(vh/3)) usr(UserAttr, 0, 0, 0)
 						mesh triangle(t+5, p+15, p+16, p+17)
 
 						p += 18

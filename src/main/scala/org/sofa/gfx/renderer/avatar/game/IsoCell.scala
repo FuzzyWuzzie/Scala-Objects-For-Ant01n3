@@ -85,24 +85,24 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 		var w2 = (2 * Sqrt3).toFloat
 		var h2 = 2f
 
-		ground.setPoint(0, -w2, -(h2+0.5f), 0); ground.setPointTexCoord(0, 0.027f, 0.359f)
-		ground.setPoint(1,  w2, -(h2+0.5f), 0); ground.setPointTexCoord(1, 0.460f, 0.359f)
-		ground.setPoint(2, -w2,  h2,        0); ground.setPointTexCoord(2, 0.027f, 0.640f)
-		ground.setPoint(3,  w2, -(h2+0.5f), 0); ground.setPointTexCoord(3, 0.460f, 0.359f)
-		ground.setPoint(4,  w2,  h2,        0); ground.setPointTexCoord(4, 0.460f, 0.640f)
-		ground.setPoint(5, -w2,  h2,        0); ground.setPointTexCoord(5, 0.027f, 0.640f)
+		ground.setVertexPosition(0, -w2, -(h2+0.5f), 0); ground.setVertexTexCoords(0, 0.027f, 0.359f)
+		ground.setVertexPosition(1,  w2, -(h2+0.5f), 0); ground.setVertexTexCoords(1, 0.460f, 0.359f)
+		ground.setVertexPosition(2, -w2,  h2,        0); ground.setVertexTexCoords(2, 0.027f, 0.640f)
+		ground.setVertexPosition(3,  w2, -(h2+0.5f), 0); ground.setVertexTexCoords(3, 0.460f, 0.359f)
+		ground.setVertexPosition(4,  w2,  h2,        0); ground.setVertexTexCoords(4, 0.460f, 0.640f)
+		ground.setVertexPosition(5, -w2,  h2,        0); ground.setVertexTexCoords(5, 0.027f, 0.640f)
 		ground.setTriangle(0, 0, 1, 2)
 		ground.setTriangle(1, 3, 4, 5)
 
 		w2 = (2 * Sqrt3).toFloat
 		h2 = 8f
 		
-		underground.setPoint(0, -w2, -(h2+0.5f), 0); underground.setPointTexCoord(0, 0.027f, 0.015f)
-		underground.setPoint(1,  w2, -(h2+0.5f), 0); underground.setPointTexCoord(1, 0.460f, 0.015f)
-		underground.setPoint(2, -w2, -(   0.5f), 0); underground.setPointTexCoord(2, 0.027f, 0.484f)
-		underground.setPoint(3,  w2, -(h2+0.5f), 0); underground.setPointTexCoord(3, 0.460f, 0.015f)
-		underground.setPoint(4,  w2, -(   0.5f), 0); underground.setPointTexCoord(4, 0.460f, 0.484f)
-		underground.setPoint(5, -w2, -(   0.5f), 0); underground.setPointTexCoord(5, 0.027f, 0.484f)
+		underground.setVertexPosition(0, -w2, -(h2+0.5f), 0); underground.setVertexTexCoords(0, 0.027f, 0.015f)
+		underground.setVertexPosition(1,  w2, -(h2+0.5f), 0); underground.setVertexTexCoords(1, 0.460f, 0.015f)
+		underground.setVertexPosition(2, -w2, -(   0.5f), 0); underground.setVertexTexCoords(2, 0.027f, 0.484f)
+		underground.setVertexPosition(3,  w2, -(h2+0.5f), 0); underground.setVertexTexCoords(3, 0.460f, 0.015f)
+		underground.setVertexPosition(4,  w2, -(   0.5f), 0); underground.setVertexTexCoords(4, 0.460f, 0.484f)
+		underground.setVertexPosition(5, -w2, -(   0.5f), 0); underground.setVertexTexCoords(5, 0.027f, 0.484f)
 
 		underground.setTriangle(0, 0, 1, 2)
 		underground.setTriangle(1, 3, 4, 5)

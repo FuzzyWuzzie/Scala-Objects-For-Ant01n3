@@ -208,10 +208,10 @@ trait UIRenderUtils {
 			val gl = self.screen.gl
 
 			UIrenderUtils.plainRect = new TrianglesMesh(gl, 2)
-			UIrenderUtils.plainRect.setPoint(0, 0, 0, 0)
-			UIrenderUtils.plainRect.setPoint(1, 1, 0, 0)
-			UIrenderUtils.plainRect.setPoint(2, 1, 1, 0)
-			UIrenderUtils.plainRect.setPoint(3, 0, 1, 0)
+			UIrenderUtils.plainRect.setVertexPosition(0, 0, 0, 0)
+			UIrenderUtils.plainRect.setVertexPosition(1, 1, 0, 0)
+			UIrenderUtils.plainRect.setVertexPosition(2, 1, 1, 0)
+			UIrenderUtils.plainRect.setVertexPosition(3, 0, 1, 0)
 			UIrenderUtils.plainRect.setTriangle(0, 0, 1, 2)
 			UIrenderUtils.plainRect.setTriangle(1, 0, 2, 3)
 			UIrenderUtils.plainRect.bindShader(shaderUniform, Vertex -> "position")			
@@ -226,10 +226,10 @@ trait UIRenderUtils {
 			val gl = self.screen.gl
 
 			UIrenderUtils.texRect = new TrianglesMesh(gl, 2)
-			UIrenderUtils.texRect v(0) xyz(0, 0, 0) uv(0, 1)
-			UIrenderUtils.texRect v(1) xyz(1, 0, 0) uv(1, 1)
-			UIrenderUtils.texRect v(2) xyz(1, 1, 0) uv(1, 0)
-			UIrenderUtils.texRect v(3) xyz(0, 1, 0) uv(0, 0)
+			UIrenderUtils.texRect v(0) pos(0, 0, 0) tex(0, 1)
+			UIrenderUtils.texRect v(1) pos(1, 0, 0) tex(1, 1)
+			UIrenderUtils.texRect v(2) pos(1, 1, 0) tex(1, 0)
+			UIrenderUtils.texRect v(3) pos(0, 1, 0) tex(0, 0)
 			UIrenderUtils.texRect.setTriangle(0, 0, 1, 2)
 			UIrenderUtils.texRect.setTriangle(1, 0, 2, 3)
 			UIrenderUtils.texRect.bindShader(shaderTex, Vertex -> "position", TexCoord -> "texCoords")
@@ -244,10 +244,10 @@ trait UIRenderUtils {
 			val gl = self.screen.gl
 
 			UIrenderUtils.layerRect = new TrianglesMesh(gl, 2)
-			UIrenderUtils.layerRect v(0) xyz(0, 0, 0) uv(0, 1)
-			UIrenderUtils.layerRect v(1) xyz(1, 0, 0) uv(1, 1)
-			UIrenderUtils.layerRect v(2) xyz(1, 1, 0) uv(1, 0)
-			UIrenderUtils.layerRect v(3) xyz(0, 1, 0) uv(0, 0)
+			UIrenderUtils.layerRect v(0) pos(0, 0, 0) tex(0, 1)
+			UIrenderUtils.layerRect v(1) pos(1, 0, 0) tex(1, 1)
+			UIrenderUtils.layerRect v(2) pos(1, 1, 0) tex(1, 0)
+			UIrenderUtils.layerRect v(3) pos(0, 1, 0) tex(0, 0)
 			UIrenderUtils.layerRect.setTriangle(0, 0, 1, 2)
 			UIrenderUtils.layerRect.setTriangle(1, 0, 2, 3)
 			UIrenderUtils.layerRect.bindShader(shaderTex, Vertex -> "position", TexCoord -> "texCoords")
@@ -277,10 +277,10 @@ trait UIRenderUtils {
 			val gl = self.screen.gl
 
 			UIrenderUtils.shadowUnderRect = new TrianglesMesh(gl, 2)
-			UIrenderUtils.shadowUnderRect v(0) xyz(0, 0, 0) rgba(0, 0, 0, 0.25f)
-			UIrenderUtils.shadowUnderRect v(1) xyz(1, 0, 0) rgba(0, 0, 0, 0.25f)
-			UIrenderUtils.shadowUnderRect v(2) xyz(1, 1, 0) rgba(0, 0, 0, 0)
-			UIrenderUtils.shadowUnderRect v(3) xyz(0, 1, 0) rgba(0, 0, 0, 0)
+			UIrenderUtils.shadowUnderRect v(0) pos(0, 0, 0) clr(0, 0, 0, 0.25f)
+			UIrenderUtils.shadowUnderRect v(1) pos(1, 0, 0) clr(0, 0, 0, 0.25f)
+			UIrenderUtils.shadowUnderRect v(2) pos(1, 1, 0) clr(0, 0, 0, 0)
+			UIrenderUtils.shadowUnderRect v(3) pos(0, 1, 0) clr(0, 0, 0, 0)
 			UIrenderUtils.shadowUnderRect t(0, 0, 1, 2)
 			UIrenderUtils.shadowUnderRect t(1, 0, 2, 3)
 			UIrenderUtils.shadowUnderRect.bindShader(shaderColor, Vertex -> "position", Color -> "color")

@@ -73,7 +73,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		// set a vertex and a texcoord to declare the mesh has having these attributes.
 		batchMesh.addAttributeTexCoord
 		batchMesh.modify() {
-			batchMesh v(0) xyz (0,0,0) uv (0,0)
+			batchMesh v(0) pos (0,0,0) tex (0,0)
 		}
 		batchMesh.bindShader(font.shader, Vertex -> "position", TexCoord -> "texCoords")
 	}
@@ -255,10 +255,10 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 
 			// Vertices & TexCoords
 
-			batchMesh v(p+0) xyz(X,   Y,   0) uv(rgn.u1, rgn.v2)
-			batchMesh v(p+1) xyz(X+W, Y,   0) uv(rgn.u2, rgn.v2)
-			batchMesh v(p+2) xyz(X+W, Y+H, 0) uv(rgn.u2, rgn.v1)
-			batchMesh v(p+3) xyz(X,   Y+H, 0) uv(rgn.u1, rgn.v1)
+			batchMesh v(p+0) pos(X,   Y,   0) tex(rgn.u1, rgn.v2)
+			batchMesh v(p+1) pos(X+W, Y,   0) tex(rgn.u2, rgn.v2)
+			batchMesh v(p+2) pos(X+W, Y+H, 0) tex(rgn.u2, rgn.v1)
+			batchMesh v(p+3) pos(X,   Y+H, 0) tex(rgn.u1, rgn.v1)
 
 			// The triangles
 

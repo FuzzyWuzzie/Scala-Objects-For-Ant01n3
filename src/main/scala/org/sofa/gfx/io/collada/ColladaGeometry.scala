@@ -317,28 +317,28 @@ println("Collada Faces %d original elements %d unique elements (saved %d compres
 					val norm = getAttribute(Input.Normal, vertex.normal)
 
 					if(this.mesh.blenderToOpenGLCoos)
-					     mesh.setPointNormal(i, norm(1), norm(2), norm(0))
-					else mesh.setPointNormal(i, norm(0), norm(1), norm(2))
+					     mesh.setVertexNormal(i, norm(1), norm(2), norm(0))
+					else mesh.setVertexNormal(i, norm(0), norm(1), norm(2))
 				}
 				if(vertex.texcoord >= 0) {
 					val uv = getAttribute(Input.TexCoord, vertex.texcoord)
 
-					mesh.setPointTexCoord(i, uv(0), uv(1))
+					mesh.setVertexTexCoords(i, uv(0), uv(1))
 				}
 				if(vertex.bone >= 0) {
 					val bone = getAttribute(Input.Bone, vertex.bone)
-					mesh.setPointBones(i, bone(0).toInt, bone(1).toInt, bone(2).toInt, bone(3).toInt)
+					mesh.setVertexBones(i, bone(0).toInt, bone(1).toInt, bone(2).toInt, bone(3).toInt)
 				}
 				if(vertex.weight >= 0) {
 					val weight = getAttribute(Input.Weight, vertex.weight)
-					mesh.setPointWeights(i, weight(0), weight(1), weight(2), weight(3))
+					mesh.setVertexWeights(i, weight(0), weight(1), weight(2), weight(3))
 				}
 				if(vertex.index >= 0) {
 					val vert = getVertex(vertex.index)
 
 					if(this.mesh.blenderToOpenGLCoos)
-					     mesh.setPoint(i, vert(1), vert(2), vert(0))
-					else mesh.setPoint(i, vert(0), vert(1), vert(2))
+					     mesh.setVertexPosition(i, vert(1), vert(2), vert(0))
+					else mesh.setVertexPosition(i, vert(0), vert(1), vert(2))
 				}
 
 				i += 1

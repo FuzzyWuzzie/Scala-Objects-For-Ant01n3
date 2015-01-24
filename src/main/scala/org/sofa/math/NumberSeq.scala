@@ -501,6 +501,20 @@ trait NumberSeq extends IndexedSeq[Double] {
 		result.normalize
 	    result
 	}
+
+	/** Make this vector or point the opposite of itself. */
+	def oppose():ReturnType = {
+		var i = 0
+		val n = size
+		while(i < n) {
+			data(i) = -data(i)
+			i += 1
+		}
+		this.asInstanceOf[ReturnType]
+	}
+
+	/** New vector or poiont oppositve of this. */
+	def opposite():ReturnType = newClone.oppose.asInstanceOf[ReturnType]
 	
 	/** Arbitrarily move this point in a random direction of a maximum given factor. */
 	def brownianMotion(factor:Double) {

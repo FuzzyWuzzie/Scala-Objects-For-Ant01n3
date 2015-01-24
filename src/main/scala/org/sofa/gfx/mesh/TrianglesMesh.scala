@@ -9,6 +9,8 @@ import org.sofa.nio.{IntBuffer}
 
 // TODO
 //   - Allow to add the indices if needed only.
+//   - Add methods to ensure vertexToTriangles relations are remembered and automatically
+//     updated if needed.
 
 
 
@@ -67,37 +69,37 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	/** Class representing one vertex, allowing easy modification of each attribute. */
 	final class Vx(var vertex:Int) {
 		/** Set the `vertex` position (`x`, `y`, `z`). */
-		def xyz(x:Float, y:Float, z:Float):Vx = { setPoint(vertex,x,y,z); this }
+		def pos(x:Float, y:Float, z:Float):Vx = { setVertexPosition(vertex,x,y,z); this }
 		
 		/** Set the `vertex` texture coordinates (`u`, `v`). */
-		def uv(u:Float, v:Float):Vx = { setPointTexCoord(vertex,u,v); this }
-		
+		def tex(u:Float, v:Float):Vx = { setVertexTexCoords(vertex,u,v); this }
+
 		/** Set the `vertex` color (`r`, `g`, `b`). */
-		def rgb(r:Float, g:Float, b:Float):Vx = { setPointColor(vertex,r,g,b,1f); this }
+		def clr(r:Float, g:Float, b:Float):Vx = { setVertexColor(vertex,r,g,b,1f); this }
 		
 		/** Set the `vertex` color (`r`, `g`, `b`, `a`). */
-		def rgba(r:Float, g:Float, b:Float, a:Float):Vx = { setPointColor(vertex,r,g,b,a); this }
+		def clr(r:Float, g:Float, b:Float, a:Float):Vx = { setVertexColor(vertex,r,g,b,a); this }
 
 		/** Set the `vertex` `color`. */
-		def rgba(color:Rgba):Vx = { setPointColor(vertex, color); this }
+		def clr(color:Rgba):Vx = { setVertexColor(vertex, color); this }
 		
 		/** Set the `vertex` normal (`x`, `y`, `z`). */
-		def normal(x:Float, y:Float, z:Float):Vx = { setPointNormal(vertex,x,y,z); this }
+		def nrm(x:Float, y:Float, z:Float):Vx = { setVertexNormal(vertex,x,y,z); this }
 		
 		/** Set the `vertex` tangent (`x`, `y`, `z`). */
-		def tan(x:Float, y:Float, z:Float):Vx = { setPointTangent(vertex,x,y,z); this }
+		def tan(x:Float, y:Float, z:Float):Vx = { setVertexTangent(vertex,x,y,z); this }
 
 		/** Set the `vertex` bi-tangent (`x`, `y`, `z`). */
-		def bitan(x:Float, y:Float, z:Float):Vx = { setPointBiTangent(vertex, x,y,z); this }
+		def btn(x:Float, y:Float, z:Float):Vx = { setVertexBiTangent(vertex, x,y,z); this }
 
 		/**  Set the `vertex` bone indices. There can be up to four bones. */
-		def bones(b0:Int, b1:Int = -1, b2:Int = -1, b3:Int = -1):Vx = { setPointBones(vertex,b0,b1,b2,b3); this }
+		def bon(b0:Int, b1:Int = -1, b2:Int = -1, b3:Int = -1):Vx = { setVertexBones(vertex,b0,b1,b2,b3); this }
 
 		/** Set the `vertex` bone weights. There can be up to four bones. */
-		def weights(w0:Float, w1:Float, w2:Float, w3:Float):Vx = { setPointWeights(vertex,w0,w1,w2,w3); this }
+		def wei(w0:Float, w1:Float, w2:Float, w3:Float):Vx = { setVertexWeights(vertex,w0,w1,w2,w3); this }
 
 		/** Set the `values` for `vertex` attribute `name`. */
-		def user(name:String, values:Float*):Vx = { 
+		def usr(name:String, values:Float*):Vx = { 
 			// Highly innefficient.
 			meshAttribute(name).set(vertex, values:_*); this
 		}
@@ -110,11 +112,11 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	  *
 	  * Intended use, for example, is:
 	  *
-	  *     mesh.vertex(232).xyz(1,2,3).uv(0,1).rgb(1,0,0)
+	  *     mesh.vertex(232).pos(1,2,3).uv(0,1).rgb(1,0,0)
       *
 	  * Or, using syntax sugar:
 	  *
-	  *     mesh v(232) xyz(1,2,3) uv(0,1) rgb(1,0,0)
+	  *     mesh v(232) pos(1,2,3) uv(0,1) rgb(1,0,0)
 	  */
 	def vertex(vertex:Int):Vx = { vx.vertex = vertex; vx }
 
@@ -128,19 +130,19 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	def t(i:Int, v0:Int, v1:Int, v2:Int) = triangle(i, v0, v1, v2)
 
 	/** The position of `vertex`. */
-	def point(vertex:Int):Point3 = getPoint(vertex)
+	def position(vertex:Int):Point3 = getVertexPosition(vertex)
 
 	/** The texture coordinates of `vertex`. */
-	def texCoord(vertex:Int):Point2 = getPointTexCoord(vertex)
+	def texCoord(vertex:Int):Point2 = getVertexTexCoord(vertex)
 	
 	/** The normal of `vertex`. */
-	def normal(vertex:Int):Vector3 = getNormal(vertex)
+	def normal(vertex:Int):Vector3 = getVertexNormal(vertex)
 
 	/** The tangent of `vertex`. */
-	def tangent(vertex:Int):Vector3 = getTangent(vertex)
+	def tangent(vertex:Int):Vector3 = getVertexTangent(vertex)
 
 	/** The bi-tangent of `vertex`. */
-	def bitangent(vertex:Int):Vector3 = getBiTangent(vertex)
+	def bitangent(vertex:Int):Vector3 = getVertexBiTangent(vertex)
 
 	/** The `t`-th triangle in the index array. The returned tuple contains the three indices of
 	  * points in the vertex attributes. */
@@ -149,10 +151,10 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	// -- Old Constructive interface -----------------------------------------------
 
 	/** Set the position `p` of `vertex`. */
-	def setPoint(vertex:Int, p:NumberSeq3):TrianglesMesh = setPoint(vertex, p.x.toFloat, p.y.toFloat, p.z.toFloat)
+	def setVertexPosition(vertex:Int, p:NumberSeq3):TrianglesMesh = setVertexPosition(vertex, p.x.toFloat, p.y.toFloat, p.z.toFloat)
 
 	/** Set the position (`x`, `y`, `z`) of `vertex`. */
-	def setPoint(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
+	def setVertexPosition(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
 		val i = vertex * V.components
 		val data = V.data
 
@@ -166,10 +168,10 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	}
 	
 	/** Set the `color` of `vertex`. */
-	def setPointColor(vertex:Int, color:Rgba):TrianglesMesh = setPointColor(vertex, color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
+	def setVertexColor(vertex:Int, color:Rgba):TrianglesMesh = setVertexColor(vertex, color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat)
 	
 	/** Set the color (`red`, `green`, `blue`, `alpha`) of `vertex`. */
-	def setPointColor(vertex:Int, red:Float, green:Float, blue:Float, alpha:Float):TrianglesMesh = {
+	def setVertexColor(vertex:Int, red:Float, green:Float, blue:Float, alpha:Float):TrianglesMesh = {
 		val i = vertex * C.components
 		val data = C.data
 		
@@ -184,10 +186,10 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	}
 	
 	/** Set the `normal` of `vertex`. */
-	def setPointNormal(vertex:Int, normal:NumberSeq3):TrianglesMesh = setPointNormal(vertex, normal.x.toFloat, normal.y.toFloat, normal.z.toFloat)
+	def setVertexNormal(vertex:Int, normal:NumberSeq3):TrianglesMesh = setVertexNormal(vertex, normal.x.toFloat, normal.y.toFloat, normal.z.toFloat)
 	
 	/** Set the normal (`x`, `y`, `z`) of `vertex`. */
-	def setPointNormal(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
+	def setVertexNormal(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
 		val i = vertex * N.components
 		val data = N.data
 
@@ -201,10 +203,10 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	}
 
 	/** Set the `tangent` of `vertex`. */
-	def setPointTangent(vertex:Int, tangent:NumberSeq3):TrianglesMesh = setPointTangent(vertex, tangent.x.toFloat, tangent.y.toFloat, tangent.z.toFloat)
+	def setVertexTangent(vertex:Int, tangent:NumberSeq3):TrianglesMesh = setVertexTangent(vertex, tangent.x.toFloat, tangent.y.toFloat, tangent.z.toFloat)
 	
 	/** Set the tangent (`x`, `y`, `z`) of `vertex`. */
-	def setPointTangent(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
+	def setVertexTangent(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
 		val i = vertex * Nt.components
 		val data = Nt.data
 		
@@ -218,10 +220,10 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	}
 
 	/** Set the `bitangent` of `vertex`. */
-	def setPointBiTangent(vertex:Int, bitangent:NumberSeq3):TrianglesMesh = setPointBiTangent(vertex, bitangent.x.toFloat, bitangent.y.toFloat, bitangent.z.toFloat)
+	def setVertexBiTangent(vertex:Int, bitangent:NumberSeq3):TrianglesMesh = setVertexBiTangent(vertex, bitangent.x.toFloat, bitangent.y.toFloat, bitangent.z.toFloat)
 	
 	/** Set the bi-tangent (`x`, `y`, `z`) of `vertex`. */
-	def setPointBiTangent(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
+	def setVertexBiTangent(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
 		val i = vertex * Nb.components
 		val data = Nb.data
 		
@@ -235,10 +237,10 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	}
 
 	/** Set the texture coordinates `uv` of `vertex`. */
-	def setPointTexCoord(vertex:Int, uv:NumberSeq2):TrianglesMesh = setPointTexCoord(vertex, uv.x.toFloat, uv.y.toFloat)
+	def setVertexTexCoords(vertex:Int, uv:NumberSeq2):TrianglesMesh = setVertexTexCoords(vertex, uv.x.toFloat, uv.y.toFloat)
 
 	/** Set the texture coordinates (`u`, `v`) of `vertex`. */
-	def setPointTexCoord(vertex:Int, u:Float, v:Float):TrianglesMesh = {
+	def setVertexTexCoords(vertex:Int, u:Float, v:Float):TrianglesMesh = {
 		val i = vertex * T.components
 		val data = T.data
 
@@ -251,7 +253,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	}
 
 	/** Set the bones references (`b0`, `b1`, `b2`, `b3`) (up to four bone indices) of `vertex. */
-	def setPointBones(vertex:Int, b0:Int, b1:Int = -1, b2:Int = -1, b3:Int = -1):TrianglesMesh = {
+	def setVertexBones(vertex:Int, b0:Int, b1:Int = -1, b2:Int = -1, b3:Int = -1):TrianglesMesh = {
 		val i = vertex * B.components
 		val data = B.data
 
@@ -266,7 +268,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	}
 
 	/** Set the influence of each bone (`w0`, `w1`, `w2`, `w3`) (up to four bones) of `vertex`. */
-	def setPointWeights(vertex:Int, w0:Float, w1:Float=0, w2:Float=0, w3:Float=0):TrianglesMesh = {
+	def setVertexWeights(vertex:Int, w0:Float, w1:Float=0, w2:Float=0, w3:Float=0):TrianglesMesh = {
 		val i = vertex * W.components
 		val data = W.data
 
@@ -297,21 +299,21 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	/** Change the coordinates of vertices already identified by `triangle`. This method
 	  * assumes the indices of the three vertices of `triangle` are already set. The corresponding
 	  * position vertex attribute is then modified. */
-	def setTriangle(triangle:Int,
+	def setTrianglePosition(triangle:Int,
 		x0:Float, y0:Float, z0:Float,
 		x1:Float, y1:Float, z1:Float,
 		x2:Float, y2:Float, z2:Float) {
 		val (i0, i1, i2) = getTriangle(triangle)
-		setPoint(i0, x0, y0, z0)
-		setPoint(i1, x1, y1, z1)
-		setPoint(i2, x2, y2, z2)
+		setVertexPosition(i0, x0, y0, z0)
+		setVertexPosition(i1, x1, y1, z1)
+		setVertexPosition(i2, x2, y2, z2)
 	}
 
 	/** Change the coordinates of vertices already identified by `triangle`. This method
 	  * assumes the indices of the three vertices of `triangle` are already set. The corresponding
 	  * position vertex attribute is then modified. */
-	def setTriangle(triangle:Int, p0:Point3, p1:Point3, p2:Point3) {
-		setTriangle(triangle,
+	def setTrianglePosition(triangle:Int, p0:Point3, p1:Point3, p2:Point3) {
+		setTrianglePosition(triangle,
 			p0.x.toFloat, p0.y.toFloat, p0.z.toFloat,
 			p1.x.toFloat, p1.y.toFloat, p1.z.toFloat,
 			p2.x.toFloat, p2.y.toFloat, p2.z.toFloat)
@@ -322,9 +324,9 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	  * normal vertex attribute is then modified. */
 	def setTriangleNormal(triangle:Int, x:Float, y:Float, z:Float) {
 		val (i0, i1, i2) = getTriangle(triangle)
-		setPointNormal(i0, x, y, z)
-		setPointNormal(i1, x, y, z)
-		setPointNormal(i2, x, y, z)
+		setVertexNormal(i0, x, y, z)
+		setVertexNormal(i1, x, y, z)
+		setVertexNormal(i2, x, y, z)
 	}
 
 	/** Change the `normal` of vertices already identified by `triangle`. This method
@@ -337,9 +339,9 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	  * color vertex attribute is then modified. */
 	def setTriangleColor(triangle:Int, r:Float, g:Float, b:Float, a:Float) {
 		val (i0, i1, i2) = getTriangle(triangle)
-		setPointColor(i0, r, g, b, a)
-		setPointColor(i1, r, g, b, a)
-		setPointColor(i2, r, g, b, a)
+		setVertexColor(i0, r, g, b, a)
+		setVertexColor(i1, r, g, b, a)
+		setVertexColor(i2, r, g, b, a)
 	}
 
 	/** Change the `color` of vertices already identified by `triangle`. This method
@@ -347,7 +349,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	  * `color` vertex attribute is then modified. */
 	def setTriangleColor(triangle:Int, color:Rgba) { setTriangleColor(triangle, color.red.toFloat, color.green.toFloat, color.blue.toFloat, color.alpha.toFloat) }
 
-	/** Set individual index `i` to reference vertex attribute `a`. */
+	/** Set individual index `i` to reference vertex attribute `a`, independantly of triangles. */
 	def setIndex(i:Int, a:Int):TrianglesMesh = {
 		val data = I.data
 		
@@ -359,53 +361,56 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	}
 
 	/** Compute the normals of a `triangle` whose indices and position vertex attribute are already set.
-	  * The computed normals are all perpendicular to the `triangle` face. */
-	def autoComputeTriangleNormal(triangle:Int) {
+	  * The computed normals are all perpendicular to the `triangle` face. The points are taken 
+	  * in order (first to second, then first to third) to create two vectors and compute a third perpendicular
+	  * vector), use parameter `opposite` to change the orientation of the resulting normal. */
+	def computeTriangleNormals(triangle:Int, opposite:Boolean=false) {
 		val (i0, i1, i2) = getTriangle(triangle)
-		autoComputeTriangleNormal(triangle, getPoint(i0), getPoint(i1), getPoint(i2))
-	}
-
-	/** Compute the normals of a `triangle` whose indices are already set, with the given position
-	  * vertex attributes `p0`, `p1` and `p2` (these attributes are not set).
-	  * The computed normals are all perpendicular to the `triangle` face. */
-	def autoComputeTriangleNormal(triangle:Int, p0:Point3, p1:Point3, p2:Point3) {
+		//autoComputeTriangleNormals(triangle, getVertexPosition(i0), getVertexPosition(i1), getVertexPosition(i2), opposite)
+		val p0 = getVertexPosition(i0)
+		val p1 = getVertexPosition(i1)
+		val p2 = getVertexPosition(i2)
 		val v0 = Vector3(p0, p1)
 		val v1 = Vector3(p0, p2)
-		val n = v1 X v0
+		val n  = v1 X v0
+		
 		n.normalize
-		setTriangleNormal(triangle, n)
+		
+		if(opposite)
+		     setTriangleNormal(triangle, n.oppose)
+		else setTriangleNormal(triangle, n)
 	}
 	
 	/** The position of `vertex`. */
-	def getPoint(vertex:Int):Point3 = {
+	def getVertexPosition(vertex:Int):Point3 = {
 		val i = vertex * V.components
 		val data = V.data
 		Point3(data(i), data(i+1), data(i+2))
 	}
 
 	/** The texture coordinates of `vertex`. */
-	def getPointTexCoord(vertex:Int):Point2 = {
+	def getVertexTexCoord(vertex:Int):Point2 = {
 		val i = vertex * T.components
 		val data = T.data
 		Point2(data(i), data(i+1))
 	}
 
 	/** The normal of `vertex`. */
-	def getNormal(vertex:Int):Vector3 = {
+	def getVertexNormal(vertex:Int):Vector3 = {
 		val i = vertex * N.components
 		val data = N.data
 		Vector3(data(i), data(i+1), data(i+2))
 	}
 
 	/** The tangent of `vertex`. */
-	def getTangent(vertex:Int):Vector3 = {
+	def getVertexTangent(vertex:Int):Vector3 = {
 		val i = vertex * Nt.components
 		val data = Nt.data
 		Vector3(data(i), data(i+1), data(i+2))
 	}
 
 	/** The bi-tangent of `vertex`. */
-	def getBiTangent(vertex:Int):Vector3 = {
+	def getVertexBiTangent(vertex:Int):Vector3 = {
 		val i = vertex * Nb.components
 		val data = Nb.data
 		Vector3(data(i), data(i+1), data(i+2))
@@ -419,7 +424,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		(data(i), data(i+1), data(i+2))
 	}
 
-	/** Compute the tangents and optionnaly bi-tangents.
+	/** Compute the tangents and optionnaly bi-tangents of the whole mesh.
 	  *
 	  * The mesh must already have the triangles indices, the vertices position, normals, and texture coordinates, all
 	  * four are needed to build the tangents.
@@ -463,13 +468,13 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 
 				assert(p0 == i || p1 == i || p2 == i)
 
-				val P0 = point(p0) // Point3(vertexBuffer(p0*3), vertexBuffer(p0*3+1), vertexBuffer(p0*3+2))
-				val P1 = point(p1) // Point3(vertexBuffer(p1*3), vertexBuffer(p1*3+1), vertexBuffer(p1*3+2))
-				val P2 = point(p2) // Point3(vertexBuffer(p2*3), vertexBuffer(p2*3+1), vertexBuffer(p2*3+2))
+				val P0 = position(p0)
+				val P1 = position(p1)
+				val P2 = position(p2)
 
-				val UV0 = texCoord(p0) // Point2(texcooBuffer(p0*2), texcooBuffer(p0*2+1))
-				val UV1 = texCoord(p1) // Point2(texcooBuffer(p1*2), texcooBuffer(p1*2+1))
-				val UV2 = texCoord(p2) // Point2(texcooBuffer(p2*2), texcooBuffer(p2*2+1))
+				val UV0 = texCoord(p0)
+				val UV1 = texCoord(p1)
+				val UV2 = texCoord(p2)
 
 				val x1 = P1.x - P0.x
 				val y1 = P1.y - P0.y
@@ -500,22 +505,13 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 
 	        	// Finally add the tangent, one for each vertex.
 
-	        	// if(storeHandedness) {
-	        	// 	// tangent[a].w = (Dot(Cross(n, t), tan2[a]) < 0.0F) ? -1.0F : 1.0F;
-	        	// 	N = Vector3(normalBuffer(i*3), normalBuffer(i*3+1), normalBuffer(i*3+2))
-	        	// 	N.cross(sdir)
-	        	// 	val res = N.dot(tdir)
-
-	        	// 	tangentBuffer.append(sdir.x.toFloat, sdir.y.toFloat, sdir.z.toFloat, if(res < 0) 1.0f else -1.0f)
-	        	// } else {
-	        	setPointTangent(i, sdir.x.toFloat, sdir.y.toFloat, sdir.z.toFloat)
-	//        	}
+	        	setVertexTangent(i, sdir.x.toFloat, sdir.y.toFloat, sdir.z.toFloat)
 
 	        	if(alsoComputeBiTangents)
-	 				setPointBiTangent(i, tdir.x.toFloat, tdir.y.toFloat, tdir.z.toFloat) //biTangentBuffer.append(tdir.x.toFloat, tdir.y.toFloat, tdir.z.toFloat)       	
+	 				setVertexBiTangent(i, tdir.x.toFloat, tdir.y.toFloat, tdir.z.toFloat) //biTangentBuffer.append(tdir.x.toFloat, tdir.y.toFloat, tdir.z.toFloat)       	
 	 		} else {
-	 			setPointTangent(i, 0, 1, 0)
-	 			if(alsoComputeBiTangents) setPointBiTangent(i, 0, 0, 1)
+	 			setVertexTangent(i, 0, 1, 0)
+	 			if(alsoComputeBiTangents) setVertexBiTangent(i, 0, 0, 1)
 	 		}
 
 
@@ -528,7 +524,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		assert(Nt.vertexCount == N.vertexCount) //tangentBuffer.elements == normalBuffer.elements)
 	}
 
-	/** Compute the relations between each vertex to each triangle. This allows, knowing a vertex,
+	/** Compute the relations between each vertex and each triangle. This allows, knowing a vertex,
 	  * to iterate on the triangles it is connected to (triangles can share vertices). Complexity
 	  * is O(n) with n triangles.
 	  *
@@ -590,7 +586,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		nMesh.begin()
 
 		while(i < n) {	// For each vertex
-			val P = point(i)
+			val P = position(i)
 			val N = normal(i)
 
 			nMesh line(i)   ab(P, N) rgba(normalsColor)
@@ -615,17 +611,12 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		ntMesh.begin()
 
 		while(i < n) {	// For each vertex
-			val P = point(i) //Point3(vertices(i*3), vertices(i*3+1), vertices(i*3+2))
-			val N = normal(i) //Vector3(normals(i*3), normals(i*3+1), normals(i*3+2))
-			val T = tangent(i) //Vector3(tangents(i*tangents.components), tangents(i*tangents.components+1), tangents(i*tangents.components+2))
+			val P = position(i)
+			val N = normal(i)
+			val T = tangent(i)
 
 			ntMesh line(i)   ab(P, N) rgba(normalsColor)
 			ntMesh line(i+n) ab(P, T) rgba(tangentsColor)
-
-			// ntMesh.setColor(i, normalsColor)
-			// ntMesh.setLine(i, P, N)
-			// ntMesh.setColor(i+n, tangentsColor)
-			// ntMesh.setLine(i+n, P, T)
 
 			i += 1
 		}
@@ -636,21 +627,28 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 
 	// -- Attributes ---------------------------------------------------
 
+	protected def addIndices():MeshElement = { if(I eq null) { I = addMeshElement(size, 3) }; I }
+
 	protected def addAttributeVertex:MeshAttribute = { if(V eq null) { V = addMeshAttribute(VertexAttribute.Vertex, 3) }; V }
 
+	/** Add a color vertex attribute to this mesh. */
 	def addAttributeColor:MeshAttribute = { if(C eq null) { C = addMeshAttribute(VertexAttribute.Color, 4) }; C }
 
+	/** Add a normal vertex attribute to this mesh. */
 	def addAttributeNormal:MeshAttribute = { if(N eq null) { N = addMeshAttribute(VertexAttribute.Normal, 3) }; N }
 
+	/** Add a tangent vertex attribute to this mesh. */
 	def addAttributeTangent:MeshAttribute = { if(N eq null) { N = addMeshAttribute(VertexAttribute.Tangent, 3) }; N }
 
+	/** Add a bi-tangent vertex attribute to this mesh. */
 	def addAttributeBiTangent:MeshAttribute = { if(N eq null) { N = addMeshAttribute(VertexAttribute.Bitangent, 3) }; N }
 
+	/** Add a tex-coords vertex attribute to this mesh. */
 	def addAttributeTexCoord:MeshAttribute = { if(T eq null) { T = addMeshAttribute(VertexAttribute.TexCoord, 2) }; T }
 
+	/** Add a bones index vertex attribute to this mesh. */
 	def addAttributeBone:MeshAttribute = { if(B eq null) { B = addMeshAttribute(VertexAttribute.Bone, 4) }; B }
 
+	/** Add a bones weight vertex attribute to this mesh. */
 	def addAttributeWeight:MeshAttribute = { if(W eq null) { W = addMeshAttribute(VertexAttribute.Weight, 4) }; W }
-
-	protected def addIndices():MeshElement = { if(I eq null) { I = addMeshElement(size, 3) }; I }
 }

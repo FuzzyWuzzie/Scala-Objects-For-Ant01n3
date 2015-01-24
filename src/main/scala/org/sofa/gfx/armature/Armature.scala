@@ -379,24 +379,24 @@ class Joint(val name:String,
 		var y1 = y0 + sizeGU.y.toFloat
 		var z  = this.z.toFloat
 
-		triangles.setPoint(pt+0, x0, y0, z)
-		triangles.setPoint(pt+1, x1, y1, z)
-		triangles.setPoint(pt+2, x1, y0, z)
-		triangles.setPoint(pt+3, x0, y0, z)
-		triangles.setPoint(pt+4, x0, y1, z)
-		triangles.setPoint(pt+5, x1, y1, z)
+		triangles.setVertexPosition(pt+0, x0, y0, z)
+		triangles.setVertexPosition(pt+1, x1, y1, z)
+		triangles.setVertexPosition(pt+2, x1, y0, z)
+		triangles.setVertexPosition(pt+3, x0, y0, z)
+		triangles.setVertexPosition(pt+4, x0, y1, z)
+		triangles.setVertexPosition(pt+5, x1, y1, z)
 
 		x0 = fromUV.x.toFloat
 		y0 = fromUV.y.toFloat
 		x1 = x0 + sizeUV.x.toFloat
 		y1 = y0 + sizeUV.y.toFloat
 
-		triangles.setPointTexCoord(pt+0, x0, y0)
-		triangles.setPointTexCoord(pt+1, x1, y1)
-		triangles.setPointTexCoord(pt+2, x1, y0)
-		triangles.setPointTexCoord(pt+3, x0, y0)
-		triangles.setPointTexCoord(pt+4, x0, y1)
-		triangles.setPointTexCoord(pt+5, x1, y1)
+		triangles.setVertexTexCoords(pt+0, x0, y0)
+		triangles.setVertexTexCoords(pt+1, x1, y1)
+		triangles.setVertexTexCoords(pt+2, x1, y0)
+		triangles.setVertexTexCoords(pt+3, x0, y0)
+		triangles.setVertexTexCoords(pt+4, x0, y1)
+		triangles.setVertexTexCoords(pt+5, x1, y1)
 
 		triangles.setTriangle(tri+0, pt+0, pt+1, pt+2)
 		triangles.setTriangle(tri+1, pt+3, pt+4, pt+5)

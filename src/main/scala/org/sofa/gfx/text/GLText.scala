@@ -126,7 +126,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 		batchMesh.addAttributeTexCoord
 		batchMesh.addAttributeColor
 		batchMesh.modify() {
-			batchMesh v(0) xyz (0,0,0) uv (0,0) rgba(0,0,0,1)
+			batchMesh v(0) pos (0,0,0) tex (0,0) clr(0,0,0,1)
 		}
 		batchMesh.bindShader(font.shader,
 			Vertex   -> "position",
@@ -393,10 +393,10 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 
 			// Vertices & TexCoords
 
-			batchMesh v(p+0) xyz(X,   Y,   0) uv(rgn.u1, rgn.v2) rgba(color)
-			batchMesh v(p+1) xyz(X+W, Y,   0) uv(rgn.u2, rgn.v2) rgba(color)
-			batchMesh v(p+2) xyz(X+W, Y+H, 0) uv(rgn.u2, rgn.v1) rgba(color)
-			batchMesh v(p+3) xyz(X,   Y+H, 0) uv(rgn.u1, rgn.v1) rgba(color)
+			batchMesh v(p+0) pos(X,   Y,   0) tex(rgn.u1, rgn.v2) clr(color)
+			batchMesh v(p+1) pos(X+W, Y,   0) tex(rgn.u2, rgn.v2) clr(color)
+			batchMesh v(p+2) pos(X+W, Y+H, 0) tex(rgn.u2, rgn.v1) clr(color)
+			batchMesh v(p+3) pos(X,   Y+H, 0) tex(rgn.u1, rgn.v1) clr(color)
 
 			// The triangles
 
