@@ -57,10 +57,8 @@ class PlaneMesh(val gl:SGL, val nVertX:Int, val nVertZ:Int, val width:Float, val
 
 	/** Set the color of the whole plane. This must be done before the plane is transformed to a mesh. */    
     def setColor(color:Rgba) {
-    	if(C eq null) {
-    		addAttributeColor
-    		begin(VertexAttribute.Color)
-    	}
+    	if(C eq null)
+    		throw new NoSuchVertexAttributeException("no color vertex attribute, add one first")
 
         val n = nVertX * nVertZ * 4
         val d = C.data

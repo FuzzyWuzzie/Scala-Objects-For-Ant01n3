@@ -59,6 +59,28 @@ class Vector2(xInit:Double, yInit:Double) extends NumberSeq2 {
     def this() = this(0, 0)
     def newInstance = new Vector2
     override final def size:Int = 2
+    def perpendicularCW():Vector2 = {
+    	val result = Vector2(this)
+    	result.rotatePerpendicularCW
+    	result
+    }
+    def perpendicularCCW():Vector2 = {
+    	val result = Vector2(this)
+    	result.rotatePerpendicularCCW
+    	result
+    }
+    def rotatePerpendicularCW() {
+    	val xx = data(0)
+    	val yy = data(1)
+    	data(0) = -yy
+    	data(1) = xx
+    }
+    def rotatePerpendicularCCW() {
+    	val xx = data(0)
+    	val yy = data(1)
+    	data(0) = yy
+    	data(1) = -xx
+    }
 }
 
 

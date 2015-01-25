@@ -6,10 +6,10 @@ varying vec3 P;
 varying vec3 N;
 varying vec4 C;
 
-uniform ColoredLight L[4];
+uniform ColoredLight L[8];
 
 #include <es2/ColoredLight.glsl>
 
 void main() {
-	gl_FragColor = coloredLightPlastic4(P, N, C, L);
+	gl_FragColor = coloredLightPlastic8(P, N, C, L);
 }

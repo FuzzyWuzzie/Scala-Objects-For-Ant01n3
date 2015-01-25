@@ -6,10 +6,17 @@ import org.sofa.math.{Vector3, Vector4, NumberSeq3, Rgba}
 trait Light {
 	/** Setup all the parameters of the light in the given `shader` excepted the position for positional lights. */
 	def uniform(shader:ShaderProgram)
+
+	/** When lights are in arrays, this indicate the light index in this array. Set to -1 to disable (by default). */
+	def setIndex(i:Int)
 }
 
 trait PositionalLight extends Light {
 	def pos:Vector4
+
+	def moveAt(x:Double, y:Double, z:Double) { pos.set(x, y, z, pos.w) }
+
+	def moveAt(p:NumberSeq3) { pos.set(p.x, p.y, p.z, pos.w) }
 
 	/** Setup the position of the light in the given `shader`, transforming its position
 	  * using the given `space` if non null. */
@@ -53,6 +60,8 @@ class WhiteLight(x:Double, y:Double, z:Double, var Kd:Float, var Ks:Float, var K
 	def this(position:NumberSeq3, Kd:Float, Ks:Float, Ka:Float, roughness:Float) {
 		this(position.x, position.y, position.z, Kd, Ks, Ka, roughness)
 	}
+
+	def setIndex(i:Int) { index = i }
 
 	def uniform(shader:ShaderProgram) {
 		if(index < 0) {
@@ -100,6 +109,8 @@ class ColoredLight(x:Double, y:Double, z:Double, val diffuse:Rgba, val specular:
 	def this(p:NumberSeq3, diffuse:Rgba, Kd:Double, Ks:Double, Ka:Double, roughness:Double, quadAtt:Double) {
 		this(p.x, p.y, p.z, diffuse, Rgba.White, diffuse, Kd, Ks, Ka, roughness, 0.0, 1.0, quadAtt)
 	}
+
+	def setIndex(i:Int) { index = i }
 
 	def uniform(shader:ShaderProgram) {
 		if(index < 0) {
@@ -160,6 +171,8 @@ class HemisphereLight(x:Double, y:Double, z:Double, val skyColor:Rgba, val groun
 	def this(position:NumberSeq3, sky:Rgba, ground:Rgba) {
 		this(position.x, position.y, position.z, sky, ground)
 	}
+
+	def setIndex(i:Int) { index = i }
 
 	def uniform(shader:ShaderProgram) {
 		if(index < 0) {

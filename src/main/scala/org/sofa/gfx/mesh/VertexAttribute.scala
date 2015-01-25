@@ -60,7 +60,7 @@ object VertexAttribute extends Enumeration {
 	/** Position for instanced rendering, often three components. When doing
 	  * instanced rendering, this attribute gives independent positions for each
 	  * instance of the repeatedly drawn mesh. */
-	val Position = Value("Position")
+	val Offset = Value("Offset")
 
 	/** Convert a pair (VertexAttribute,String) to a pair (String,String) as often used with Mesh.newVertexArray(). */
 	implicit def VaStPair2StStPair(p:(VertexAttribute,String)):(String,String) = (p._1.toString, p._2)

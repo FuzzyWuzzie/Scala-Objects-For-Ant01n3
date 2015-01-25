@@ -43,10 +43,8 @@ class CubeMesh(val gl:SGL, val side:Float) extends Mesh {
     /** Set the color of the whole cube. Automatically allocate a color vertex
       * attribute if needed. */
     def setColor(color:Rgba) {
-		if(C eq null) {	
-    		addAttributeColor
-    		begin(VertexAttribute.Color)
-    	}
+    	if(C eq null)
+    		throw new NoSuchVertexAttributeException("no color vertex attribute, add one first")
 
     	val n = 6 * 4 * 4
     	val d = C.data
@@ -57,6 +55,8 @@ class CubeMesh(val gl:SGL, val side:Float) extends Mesh {
     		d(i+2) = color.blue.toFloat
     		d(i+3) = color.alpha.toFloat
     	}
+
+    	C.range(0, vertexCount)
     }
 
     // -- Mesh interface ---------------------------------------------
@@ -295,14 +295,14 @@ class CubeMesh(val gl:SGL, val side:Float) extends Mesh {
         I
     }
 
-    def addAttributeInstancedPosition(count:Int, divisor:Int=1):MeshAttribute = {
+    def addAttributeInstancedOffset(count:Int, divisor:Int=1):MeshAttribute = {
 		if(P eq null)
-			P = addMeshAttribute("Position", 3, count, divisor)
+			P = addMeshAttribute(VertexAttribute.Offset, 3, count, divisor)
 
 		P
     }
 
-    def position(i:Int, x:Float, y:Float, z:Float) {
+    def offset(i:Int, x:Float, y:Float, z:Float) {
     	val d = P.data
     	val v = i * 3
     	d(v+0) = x
