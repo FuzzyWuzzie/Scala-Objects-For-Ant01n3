@@ -107,8 +107,8 @@ class IsoCellRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderUtils
 		underground.setTriangle(0, 0, 1, 2)
 		underground.setTriangle(1, 3, 4, 5)
 
-		ground.bindShader(isoShader, Vertex -> "position", TexCoord -> "texCoords")
-		underground.bindShader(isoShader, Vertex -> "position", TexCoord -> "texCoords")				
+		ground.bindShader(isoShader, Position -> "position", TexCoord -> "texCoords")
+		underground.bindShader(isoShader, Position -> "position", TexCoord -> "texCoords")				
 	}
 
 	protected[this] val lightDir = Vector3(1, 1.5, 0)

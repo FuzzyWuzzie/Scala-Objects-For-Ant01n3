@@ -62,7 +62,7 @@ trait IsoRenderUtils {
 				m.setVertexPosition(3, -0.5f,  0.5f, 0f)
 				m.setTriangle(0, 0, 1, 2)
 				m.setTriangle(1, 0, 2, 3)
-				m.bindShader(uniformColorShader, Vertex -> "position")
+				m.bindShader(uniformColorShader, Position -> "position")
 				new ModelResource(name, m)
 			}
 
@@ -72,7 +72,7 @@ trait IsoRenderUtils {
 				l.setLine(1,  0.5f,-0.5f,0f,  0.5f, 0.5f,0f)
 				l.setLine(2,  0.5f, 0.5f,0f, -0.5f, 0.5f,0f)
 				l.setLine(3, -0.5f, 0.5f,0f, -0.5f,-0.5f,0f)
-				l.bindShader(uniformColorShader, Vertex -> "position")
+				l.bindShader(uniformColorShader, Position -> "position")
 				new ModelResource(name, l)
 			}
 		}
@@ -109,7 +109,7 @@ trait IsoRenderUtils {
 				m.setVertexPosition(3, -0.5f,  0.5f, 0f)
 				m.setTriangle(0, 0, 1, 2)
 				m.setTriangle(1, 0, 2, 3)
-				m.bindShader(uniformColorShader, Vertex -> "position")
+				m.bindShader(uniformColorShader, Position -> "position")
 				new ModelResource(name, m)
 			}
 
@@ -119,7 +119,7 @@ trait IsoRenderUtils {
 				l.setLine(1,  0.5f,-0.5f,0f,  0.5f, 0.5f,0f)
 				l.setLine(2,  0.5f, 0.5f,0f, -0.5f, 0.5f,0f)
 				l.setLine(3, -0.5f, 0.5f,0f, -0.5f,-0.5f,0f)
-				l.bindShader(uniformColorShader, Vertex -> "position")
+				l.bindShader(uniformColorShader, Position -> "position")
 				new ModelResource(name, l)
 			}
 		}

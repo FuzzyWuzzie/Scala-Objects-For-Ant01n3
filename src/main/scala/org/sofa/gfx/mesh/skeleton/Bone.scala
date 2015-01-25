@@ -45,10 +45,10 @@ object Bone {
 	    
 	    if((uniformColorAttribute eq null) && (colorAttribute ne null)) {
 	    	bone.addAttributeColor
-			Bone.bone.bindShader(shader, VertexAttribute.Vertex -> positionAttribute, VertexAttribute.Color -> colorAttribute)
+			Bone.bone.bindShader(shader, VertexAttribute.Position -> positionAttribute, VertexAttribute.Color -> colorAttribute)
 	    } else {
 	    	Bone.uniformColorAttribute = uniformColorAttribute
-		    Bone.bone.bindShader(shader, VertexAttribute.Vertex -> positionAttribute)
+		    Bone.bone.bindShader(shader, VertexAttribute.Position -> positionAttribute)
 		}
     }
 

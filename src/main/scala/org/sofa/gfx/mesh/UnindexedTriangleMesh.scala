@@ -28,7 +28,7 @@ class UnindexedTrianglesMesh(val gl:SGL, val size:Int) extends Mesh {
 
 	def drawAs():Int = gl.TRIANGLES
 
-	protected def addAttributeVertex():MeshAttribute = { if(V eq null) { V = addMeshAttribute(VertexAttribute.Vertex, 3) }; V }
+	protected def addAttributeVertex():MeshAttribute = { if(V eq null) { V = addMeshAttribute(VertexAttribute.Position, 3) }; V }
 
 	def addAttributeColor():MeshAttribute = { if(C eq null) { C = addMeshAttribute(VertexAttribute.Color, 4) }; C }
 

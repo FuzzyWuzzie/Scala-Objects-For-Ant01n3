@@ -192,7 +192,7 @@ class LinesMesh(val gl:SGL, val count:Int) extends Mesh {
 
 	protected def addAttributeVertex():MeshAttribute = {
 		if(V eq null)
-			V = addMeshAttribute(VertexAttribute.Vertex, 3)
+			V = addMeshAttribute(VertexAttribute.Position, 3)
 
 		V
 	}

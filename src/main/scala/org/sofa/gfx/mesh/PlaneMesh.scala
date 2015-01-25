@@ -85,7 +85,7 @@ class PlaneMesh(val gl:SGL, val nVertX:Int, val nVertZ:Int, val width:Float, val
     
     protected def addAttributeVertex:MeshAttribute = {
     	if(V eq null) {
-    		V = addMeshAttribute(VertexAttribute.Vertex, 3)
+    		V = addMeshAttribute(VertexAttribute.Position, 3)
 
 	        V.begin
 

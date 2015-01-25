@@ -63,7 +63,7 @@ class BoneMesh(val gl:SGL) extends Mesh {
 
 	protected def addAttributeVertex:MeshAttribute = {
 		if(V eq null) {
-			V = addMeshAttribute(VertexAttribute.Vertex, 3)
+			V = addMeshAttribute(VertexAttribute.Position, 3)
 
 	    	val n = 6 * 3
 	    

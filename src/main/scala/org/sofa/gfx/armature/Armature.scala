@@ -114,7 +114,7 @@ class Armature(val name:String,
 				root.build(this)
 				assert(this.count == count)				
 			}
-			triangles.bindShader(shader, Vertex → "position", TexCoord → "texCoords")
+			triangles.bindShader(shader, Position → "position", TexCoord → "texCoords")
 		}
 	}
 

@@ -194,7 +194,7 @@ class CylinderMesh(val gl:SGL, val radius:Float, height:Float, val segments:Int,
 	        // The two points that close disk 1 and disk n-1 (first and last) are at the end of
 	        // the array, in this order. Disk 1 is at the bottom.
 
-    		V = addMeshAttribute(VertexAttribute.Vertex, 3)
+    		V = addMeshAttribute(VertexAttribute.Position, 3)
 	        V.begin
 
 	        val n      = vertexCount * 3 // (4 disks + (sections-1)) = (3 + sections)

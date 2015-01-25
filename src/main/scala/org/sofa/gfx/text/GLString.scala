@@ -75,7 +75,7 @@ class GLString(val gl:SGL, val font:GLFont, val maxCharCnt:Int) {
 		batchMesh.modify() {
 			batchMesh v(0) pos (0,0,0) tex (0,0)
 		}
-		batchMesh.bindShader(font.shader, Vertex -> "position", TexCoord -> "texCoords")
+		batchMesh.bindShader(font.shader, Position -> "position", TexCoord -> "texCoords")
 	}
 
 	/** Release the resources of this string, the string is no more usable after this. */

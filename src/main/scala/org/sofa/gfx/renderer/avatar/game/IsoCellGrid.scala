@@ -230,7 +230,7 @@ class IsoCellGridRender(avatar:Avatar) extends IsoRender(avatar) with IsoRenderU
 				y += 1
 			}
 
-			mesh.bindShader(shader, Vertex -> "position", TexCoord -> "texCoords", UserAttr -> UserAttr)
+			mesh.bindShader(shader, Position -> "position", TexCoord -> "texCoords", UserAttr -> UserAttr)
 	
 			world = screen.avatar(AvatarName("root.world")).getOrElse(throw new RuntimeException("no world avatar ??"))
 		}

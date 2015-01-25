@@ -129,7 +129,7 @@ class GLText(val gl:SGL, var font:GLFont, val maxCharCnt:Int) {
 			batchMesh v(0) pos (0,0,0) tex (0,0) clr(0,0,0,1)
 		}
 		batchMesh.bindShader(font.shader,
-			Vertex   -> "position",
+			Position -> "position",
 			TexCoord -> "texCoords",
 			Color    -> "color")
 	}

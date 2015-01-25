@@ -629,7 +629,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 
 	protected def addIndices():MeshElement = { if(I eq null) { I = addMeshElement(size, 3) }; I }
 
-	protected def addAttributeVertex:MeshAttribute = { if(V eq null) { V = addMeshAttribute(VertexAttribute.Vertex, 3) }; V }
+	protected def addAttributeVertex:MeshAttribute = { if(V eq null) { V = addMeshAttribute(VertexAttribute.Position, 3) }; V }
 
 	/** Add a color vertex attribute to this mesh. */
 	def addAttributeColor:MeshAttribute = { if(C eq null) { C = addMeshAttribute(VertexAttribute.Color, 4) }; C }

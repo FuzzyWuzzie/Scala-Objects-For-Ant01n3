@@ -214,7 +214,7 @@ trait UIRenderUtils {
 			UIrenderUtils.plainRect.setVertexPosition(3, 0, 1, 0)
 			UIrenderUtils.plainRect.setTriangle(0, 0, 1, 2)
 			UIrenderUtils.plainRect.setTriangle(1, 0, 2, 3)
-			UIrenderUtils.plainRect.bindShader(shaderUniform, Vertex -> "position")			
+			UIrenderUtils.plainRect.bindShader(shaderUniform, Position -> "position")			
 		}
 
 		UIrenderUtils.plainRect
@@ -232,7 +232,7 @@ trait UIRenderUtils {
 			UIrenderUtils.texRect v(3) pos(0, 1, 0) tex(0, 0)
 			UIrenderUtils.texRect.setTriangle(0, 0, 1, 2)
 			UIrenderUtils.texRect.setTriangle(1, 0, 2, 3)
-			UIrenderUtils.texRect.bindShader(shaderTex, Vertex -> "position", TexCoord -> "texCoords")
+			UIrenderUtils.texRect.bindShader(shaderTex, Position -> "position", TexCoord -> "texCoords")
 		}
 
 		UIrenderUtils.texRect
@@ -250,7 +250,7 @@ trait UIRenderUtils {
 			UIrenderUtils.layerRect v(3) pos(0, 1, 0) tex(0, 0)
 			UIrenderUtils.layerRect.setTriangle(0, 0, 1, 2)
 			UIrenderUtils.layerRect.setTriangle(1, 0, 2, 3)
-			UIrenderUtils.layerRect.bindShader(shaderTex, Vertex -> "position", TexCoord -> "texCoords")
+			UIrenderUtils.layerRect.bindShader(shaderTex, Position -> "position", TexCoord -> "texCoords")
 		}
 
 		UIrenderUtils.layerRect
@@ -266,7 +266,7 @@ trait UIRenderUtils {
 			UIrenderUtils.strokeRect.setLine(1, 1,0,0, 1,1,0)
 			UIrenderUtils.strokeRect.setLine(2, 1,1,0, 0,1,0)
 			UIrenderUtils.strokeRect.setLine(3, 0,1,0, 0,0,0)
-			UIrenderUtils.strokeRect.bindShader(shaderUniform, Vertex -> "position")
+			UIrenderUtils.strokeRect.bindShader(shaderUniform, Position -> "position")
 		}		
 		UIrenderUtils.strokeRect
 	}
@@ -283,7 +283,7 @@ trait UIRenderUtils {
 			UIrenderUtils.shadowUnderRect v(3) pos(0, 1, 0) clr(0, 0, 0, 0)
 			UIrenderUtils.shadowUnderRect t(0, 0, 1, 2)
 			UIrenderUtils.shadowUnderRect t(1, 0, 2, 3)
-			UIrenderUtils.shadowUnderRect.bindShader(shaderColor, Vertex -> "position", Color -> "color")
+			UIrenderUtils.shadowUnderRect.bindShader(shaderColor, Position -> "position", Color -> "color")
 		}
 		UIrenderUtils.shadowUnderRect
 	}
