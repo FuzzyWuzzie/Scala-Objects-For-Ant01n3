@@ -126,24 +126,25 @@ trait Space {
     	mvp.multv4InPlace(point)
     }
 
-    /** If neede recompute the inverse of the top most mvp matrix, and transform the given point by this inverse. */
+    /** If needed recompute the inverse of the top most mvp matrix, and transform the given point by this inverse. The given `point` is
+      * changed. */
     def inverseTransformInPlace(point:Point4) = {
     	recomputeMVP
 
     	if(inverseMVP eq null)
     		inverseMVP = mvp.inverse
 
-    	mvp.multv4InPlace(point)
+    	inverseMVP.multv4InPlace(point)
     }
 
-    /** If neede recompute the inverse of the top most mvp matrix, and transform the given point by this inverse. */
+    /** If needed recompute the inverse of the top most mvp matrix, and transform the given point by this inverse. */
     def inverseTransform(point:Point4):Point4 = {
     	recomputeMVP
 
     	if(inverseMVP eq null)
     		inverseMVP = mvp.inverse
 
-    	mvp.multv4(point)
+    	inverseMVP.multv4(point)
     }
     
     def pushProjection() { projection.push; inverseMVP = null }
@@ -266,6 +267,7 @@ trait Space {
         	mvp.copy(projection)
         	mvp.multBy(modelview)
         	needRecomputeMVP = false
+        	inverseMVP = null
         }    	
     }
 
@@ -299,4 +301,13 @@ trait Space {
     
     /** Store as uniform variable the top 3x3 matrix of the model-view. The default uniform name is "MV3x3". */
     def uniformMV3x3(shader:ShaderProgram, mv3x3Name:String="MV3x3") { shader.uniformMatrix(mv3x3Name, modelview.top3x3) }   
+
+    /** Transform coordinates (`xPx`, `yPx`) in pixels into normalized coordinates, that is
+      * coordinates between -1 and 1. The aspect ratio is preserved. */
+    def px2Normalized(xPx:Double, yPx:Double):Point2 = {
+		val vp = viewport
+		val xr = xPx / vp.x
+		val yr = (vp.y-yPx) / vp.y
+		Point2(xr * 2 -1, yr * 2 - 1)
+    }
 }

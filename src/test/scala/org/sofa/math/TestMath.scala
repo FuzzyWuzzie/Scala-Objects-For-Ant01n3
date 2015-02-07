@@ -294,5 +294,22 @@ class TestMath extends FlatSpec with Matchers {
         assertResult((0, 1, 0, 0)) { I2.row1 }
         assertResult((0, 0, 1, 0)) { I2.row2 }
         assertResult((0, 0, 0, 1)) { I2.row3 }
+
+        val M3 = Matrix4()
+
+        do {
+			M3.irandomize(1, 11)
+        } while(M3.det == 0)
+
+        val I3 = M3 *  M3.inverse
+
+        // println(M3)
+        // println(M3.inverse)
+        // println(I3)
+
+        I3(0,0) should be (1.0 +- 0.001); I3(0,1) should be  (0.0 +- 0.001); I3(0,2) should be (0.0 +- 0.001); I3(0,3) should be (0.0 +- 0.001) 
+        I3(1,0) should be (0.0 +- 0.001); I3(1,1) should be  (1.0 +- 0.001); I3(1,2) should be (0.0 +- 0.001); I3(1,3) should be (0.0 +- 0.001) 
+        I3(2,0) should be (0.0 +- 0.001); I3(2,1) should be  (0.0 +- 0.001); I3(2,2) should be (1.0 +- 0.001); I3(2,3) should be (0.0 +- 0.001) 
+        I3(3,0) should be (0.0 +- 0.001); I3(3,1) should be  (0.0 +- 0.001); I3(3,2) should be (0.0 +- 0.001); I3(3,3) should be (1.0 +- 0.001) 
     }
 }

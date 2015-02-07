@@ -67,6 +67,28 @@ class LinesMesh(val gl:SGL, val count:Int) extends Mesh {
     	this
     }
 
+    /** Set the `color` of all lines. */
+    def setColor(color:Rgba) {
+    	val data = C.data
+    	var i = 0
+    	val n = vertexCount * C.components
+    	val r = color.red.toFloat
+    	val g = color.green.toFloat
+    	val b = color.blue.toFloat
+    	val a = color.alpha.toFloat
+
+    	while(i < n) {
+    		data(i+0) = r
+    		data(i+1) = g
+    		data(i+2) = b
+    		data(i+3) = a
+
+    		i+= 4
+    	}
+
+    	C.range(0, vertexCount)
+    }
+
     /** Set the `color` of the `i`-th line. */
     def setColor(i:Int, color:Rgba):LinesMesh = { setColor(i, color, color); this }
 

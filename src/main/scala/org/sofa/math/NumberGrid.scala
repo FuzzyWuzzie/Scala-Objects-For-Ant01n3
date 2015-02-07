@@ -7,6 +7,9 @@ import org.sofa.math.Axis._
 
 
  /** An arbitrary sized 2D grid of float numbers.
+   *
+   * This base `NumberGrid` implementation provides arbitrary sized matrices. The
+   * descendant classes provides 
    * 
    * == Ordering ==
    * 
@@ -22,8 +25,8 @@ import org.sofa.math.Axis._
    *          | 3  7 11 15 |
    * }}}
    * This is not common in math, but has been chosen to be directly compatible with
-   * graphics library like OpenGL for example that expect a linear array of value
-   * organized in this order. This avoids conversions.
+   * real-time graphics library like OpenGL for example that expect a linear array of
+   * values organized in this order to avoids conversions.
    */
 trait NumberGrid extends IndexedSeq[Double] {
 // Attribute
@@ -37,6 +40,7 @@ trait NumberGrid extends IndexedSeq[Double] {
 	/** A reference to a temporary array, to avoid reallocate it constantly. */
     protected var tmpFltArr:Array[Float] = null
 
+    /** A reference to a temporary buffer, to avoid reallocate it cosntantly. */
     protected var tmpFltBuf:FloatBuffer = null
 
 // Access
@@ -130,15 +134,16 @@ trait NumberGrid extends IndexedSeq[Double] {
     
     /** This sequence converted of numbers as a NIO buffer of doubles.
       *
-      * If the sequence is not backed by a NIO buffer of doubles, a conversion occurs.
+      * The sequence is not backed by a NIO buffer of doubles, a conversion always 
+      * occurs.
       */
     def toDoubleBuffer:DoubleBuffer = DoubleBuffer(data)
     
     /** This sequence converted of numbers as a NIO buffer of floats.
       *
       * If the sequence is not backed by a NIO buffer of floats, a conversion occurs. For
-      * efficiency reasons, the returned buffer may be always the same. You cannot
-      * keep the reference to this buffer and consider it immutable.
+      * efficiency reasons, the returned buffer may be the same at each call, therefore you
+      * cannot keep the reference to this buffer and consider it immutable.
       */
     def toFloatBuffer:FloatBuffer = {
         val n   = data.length
@@ -202,6 +207,42 @@ trait NumberGrid extends IndexedSeq[Double] {
 //		}
 	}
 
+	/** Randomize in place this matrix with numbers between 0 and 1. */
+	def randomize() {
+		val random = new scala.util.Random()
+		var i = 0
+		val n = data.length
+
+		while(i < n) {
+			data(i) = random.nextFloat
+			i += 1
+		} 
+	}
+
+	/** Randomize this matrix with numbers between 0 and `max` not included. */
+	def irandomize(max:Int) {
+		val random = new scala.util.Random()
+		var i = 0
+		val n = data.length
+
+		while(i < n) {
+			data(i) = random.nextInt(max)
+			i += 1
+		}
+	}
+
+	def irandomize(min:Int, max:Int) {
+		val random = new scala.util.Random()
+		var i = 0
+		val n = data.length
+
+		while(i < n) {
+			data(i) = min + random.nextInt(max-min)
+			i += 1
+		}
+	}
+
+	/** Make this matrix an identity matrix in place. */
 	def setIdentity() {
 	    fill(0)
 	    
@@ -510,6 +551,7 @@ trait NumberGrid3 extends NumberGrid {
     		r(5) = (-(dat(0) * dat(5) - dat(2) * dat(3))) / d
     		r(8) = (  dat(0) * dat(4) - dat(3) * dat(1) ) / d
         } else {
+        	printf("cannot invert matrix%n")
             r.setIdentity
         }
         
@@ -1337,7 +1379,7 @@ abstract class NumberGrid4 extends NumberGrid {
 	  * 
 	  * If the inverse does not exist, the identity is returned.
 	  */
-	def inverse():ReturnType = {
+	def inverse:ReturnType = {
 	    val result = newInstance(width, height)
 	    val d      = det
 	    

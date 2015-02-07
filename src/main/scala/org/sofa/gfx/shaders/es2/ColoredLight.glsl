@@ -18,7 +18,7 @@ vec4 coloredLightPlastic(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
 
 	d = 1.0 / (light.Ac + light.Al * d + light.Aq * d * d);
 
-	return vec4(C.rgb * ((light.Ka * CA * d) + (light.Kd * D * CD * d)) + (light.Ks * S * CS * d), C.a);
+	return vec4(C.rgb * ((light.Ka * CA) + (light.Kd * D * CD * d)) + (light.Ks * S * CS * d), C.a);
 }
 
 
@@ -40,7 +40,7 @@ vec4 coloredLightPlastic2(vec3 P, vec3 N, vec4 C, in ColoredLight light[2]) {
 
 		d = 1.0 / (light[i].Ac + light[i].Al * d + light[i].Aq * d * d);
 
-		R[i] = vec4(C.rgb * ((light[i].Ka * CA * d) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
+		R[i] = vec4(C.rgb * ((light[i].Ka * CA) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
 	}
 
 	return mix(R[0], R[1], 0.5);
@@ -65,7 +65,7 @@ vec4 coloredLightPlastic4(vec3 P, vec3 N, vec4 C, in ColoredLight light[4]) {
 
 		d = 1.0 / (light[i].Ac + light[i].Al * d + light[i].Aq * d * d);
 
-		R[i] = vec4(C.rgb * ((light[i].Ka * CA * d) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
+		R[i] = vec4(C.rgb * ((light[i].Ka * CA) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
 		// Using a single vec4 R, and doing R+= vec4 * 0.25 is ultra slow ... why ?
 	}
 
@@ -91,7 +91,7 @@ vec4 coloredLightPlastic8(vec3 P, vec3 N, vec4 C, in ColoredLight light[8]) {
 
 		d = 1.0 / (light[i].Ac + light[i].Al * d + light[i].Aq * d * d);
 
-		R[i] = vec4(C.rgb * ((light[i].Ka * CA * d) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
+		R[i] = vec4(C.rgb * ((light[i].Ka * CA) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
 	}
 
 	return mix(mix(mix(R[0], R[1], 0.5), mix(R[2], R[3], 0.5), 0.5), mix(mix(R[4], R[5], 0.5), mix(R[6], R[7], 0.5), 0.5), 0.5);
@@ -112,7 +112,7 @@ vec4 singleColoredLightMatte(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
 
 	d = 1.0 / (light.Ac + light.Al * d + light.Aq * d * d);
 
-	return vec4(C.rgb * ((light.Ka * CA * d) + (light.Kd * D * CD * d)), C.a);
+	return vec4(C.rgb * ((light.Ka * CA) + (light.Kd * D * CD * d)), C.a);
 }
 
 
@@ -133,7 +133,7 @@ vec4 singleColoredLightMetal(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
 
 	// Yes, only the parenthesis changed, specular is comprised in the mult with
 	// the color.
-	return vec4(C.rgb * ((light.Ka * CA * d) + (light.Kd * D * CD * d) + (light.Ks * S * CS * d)), C.a);
+	return vec4(C.rgb * ((light.Ka * CA) + (light.Kd * D * CD * d) + (light.Ks * S * CS * d)), C.a);
 }
 
 

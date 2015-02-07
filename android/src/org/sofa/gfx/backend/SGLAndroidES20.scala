@@ -142,7 +142,7 @@ class SGLAndroidES20(var ShaderVersion:String) extends SGL {
     def drawArrays(mode:Int, i:Int, size:Int) = GLES20.glDrawArrays(mode, i, size)
     def drawElements(mode:Int, count:Int, i:Int, offset:Int) = GLES20.glDrawElements(mode, count, i, offset)
     def drawArraysInstanced(mode:Int, first:Int, count:Int, primcount:Int) = throw new RuntimeException("no drawArraysInstanced in ES 2 (TODO in ES 3)")
-    def drawElementsInstanced(mode:Int, count:Int, type:Int, offset:Int, primcount:Int) = throw new RuntimeException("no drawElementsInstanced in ES 2 (TODO in ES 3)")
+    def drawElementsInstanced(mode:Int, count:Int, ttype:Int, offset:Int, primcount:Int) = throw new RuntimeException("no drawElementsInstanced in ES 2 (TODO in ES 3)")
     def multiDrawArrays(mode:Int, firsts:IntBuffer, counts:IntBuffer, primcount:Int) = throw new RuntimeException("no multi draw arrays in GL ES 2.0, too bad")
 
 	// Textures

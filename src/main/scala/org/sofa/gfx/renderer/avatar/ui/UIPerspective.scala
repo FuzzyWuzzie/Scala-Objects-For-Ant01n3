@@ -81,9 +81,13 @@ class UIPerspective(name: AvatarName, screen: Screen)
 					self.screen.requestRender
 					true
 				}
-				else false	
+				else {
+					renderer.consumeEvent(event)
+				}	
 			}
-			case _=> false
+			case _ => {
+				renderer.consumeEvent(event)
+			}
 		}
 	}
 }
@@ -99,6 +103,10 @@ class UIAvatarRenderBase(avatar:Avatar) extends UIAvatarRender(avatar) {
 	def setAvatar(avatar:UIPerspective) { this.self = avatar }
 
 	override def render() { super.render }
+
+	def consumeEvent(event:Event):Boolean = {
+		false
+	}
 }
 
 

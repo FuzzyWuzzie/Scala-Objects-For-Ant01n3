@@ -119,6 +119,10 @@ trait PointOfView {
     
     /** Set the focus point (looked-at point) at `(p)`. */
     def setFocus(p:NumberSeq3) = focus.copy(p)
+
+    /** New vector representing the distance and direction from the camera eye to the looked at point.
+      * This is a vector perpendicular to the view plane. */
+    def eyeToFocusVector():Vector3 = Vector3(focus.x-cartesianEye.x, focus.y-cartesianEye.y, focus.z-cartesianEye.z)
     
     protected def cartesianFromSpherical() {
         cartesianEye.x = sphericalEye.z * cos(sphericalEye.x) * sin(sphericalEye.y)
@@ -198,7 +202,7 @@ class Camera extends Space with PointOfView {
   * reuse it as an orbiting camera. Use the `setSpace()` method to specify the space
   * to use. The `lookAt()`  method will overwrite the top-most model-view matrix. */
 class CameraSpace extends PointOfView {
-	protected[this] var space:Space = null
+	var space:Space = null
 
 	def setSpace(space:Space) { this.space = space }
 

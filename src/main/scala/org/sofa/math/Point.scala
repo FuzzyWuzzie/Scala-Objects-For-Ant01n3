@@ -104,6 +104,8 @@ object Point3 {
              new Point3(other.data(0), other.data(1), 0)
         else new Point3(other.data(0), other.data(1), other.data(2))
     }
+
+    def apply(other:NumberSeq2, z:Double) = new Point3(other.data(0), other.data(1), z)
     
     def apply(xyz:(Double, Double, Double)) = new Point3(xyz._1, xyz._2, xyz._3)
     
@@ -213,6 +215,10 @@ object Point4 {
              new Point4(other.data(0), other.data(1), other.data(2), 0)
         else new Point4(other.data(0), other.data(1), other.data(2), other.data(3))
     }
+
+    def apply(other:NumberSeq2, z:Double, w:Double) = new Point4(other.data(0), other.data(1), z, w)
+    def apply(other:NumberSeq3, w:Double) = new Point4(other.data(0), other.data(1), other.data(2), w)
+
     def apply(xyzw:(Double, Double, Double, Double))    = new Point4(xyzw._1, xyzw._2, xyzw._3, xyzw._4)
     def apply(xyz:(Double, Double, Double), w:Double)   = new Point4(xyz._1, xyz._2, xyz._3, w)
     def apply(x:Double, yzw:(Double, Double, Double))   = new Point4(x, yzw._1, yzw._2, yzw._3)
