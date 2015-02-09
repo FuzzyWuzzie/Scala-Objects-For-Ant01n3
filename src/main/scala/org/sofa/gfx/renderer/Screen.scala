@@ -6,7 +6,7 @@ import akka.actor.{ActorRef}
 import org.sofa.math.{Rgba, Axes, AxisRange, Point3, Vector3, NumberSeq3}
 import org.sofa.collection.{SpatialHash, SpatialObject, SpatialPoint}
 import org.sofa.gfx.{Space, ShaderResource, ScissorStack, TypeFaceResource}
-import org.sofa.gfx.mesh.{PlaneMesh, LinesMesh, VertexAttribute}
+import org.sofa.gfx.mesh.{LinesMesh, VertexAttribute}
 import org.sofa.gfx.surface.event.{Event, MotionEvent}
 import org.sofa.gfx.text.{TextLayer, GLFont, GLTypeFace}
 

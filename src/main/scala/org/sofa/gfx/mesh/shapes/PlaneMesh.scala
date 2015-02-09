@@ -1,7 +1,8 @@
-package org.sofa.gfx.mesh
+package org.sofa.gfx.mesh.shapes
 
 import org.sofa.nio._
 import org.sofa.gfx._
+import org.sofa.gfx.mesh._
 import org.sofa.math.Rgba
 
 /** A single plane of several quads (themselves made of two triangles) in the XZ plane, centered

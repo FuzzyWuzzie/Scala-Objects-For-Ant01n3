@@ -1,7 +1,8 @@
-package org.sofa.gfx.mesh
+package org.sofa.gfx.mesh.shapes
 
 import org.sofa.nio._
 import org.sofa.gfx._
+import org.sofa.gfx.mesh._
 import org.sofa.math.Rgba
 
 /** A cube, centered around (0, 0, 0) whose `side` can be specified.

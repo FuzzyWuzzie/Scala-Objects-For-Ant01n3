@@ -8,7 +8,8 @@ import org.sofa.gfx.surface.event._
 import org.sofa.gfx.renderer.{NoSuchAvatarException}
 
 import org.sofa.gfx.{SGL, ShaderProgram}//, Camera, VertexArray, Texture, HemisphereLight, ResourceDescriptor, Libraries}
-import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh, HexaTilesMesh}//, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
+import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}
+import org.sofa.gfx.mesh.shapes.{HexaTilesMesh}//, PlaneMesh, BoneMesh, EditableMesh, VertexAttribute, LinesMesh}
 
 
 // == Renders ====================================================================

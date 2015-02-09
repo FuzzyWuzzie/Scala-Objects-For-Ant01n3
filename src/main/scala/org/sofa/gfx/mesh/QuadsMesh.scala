@@ -7,8 +7,8 @@ import org.sofa.nio.{IntBuffer, FloatBuffer}
 
 /** A dynamic set of quads, that can be updated and tries to send only changed informations to the GL. 
   *
-  * As in new opengl implementations, quads are no more valid, this class mimics quads using a
-  * [[TrianglesMesh]].
+  * As in new OpenGL implementations, quads are no more valid, this class mimics quads using a
+  * [[TrianglesMesh]], it is therefore not optimal, use [[TrianglesMesh]] if you can.
   */
 class QuadsMesh(gl:SGL, quadCount:Int) extends TrianglesMesh(gl, quadCount * 2) {
 	

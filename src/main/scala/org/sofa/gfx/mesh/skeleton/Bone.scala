@@ -2,7 +2,8 @@ package org.sofa.gfx.mesh.skeleton
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import org.sofa.gfx.{VertexArray, SGL, Space, ShaderProgram}
-import org.sofa.gfx.mesh.{VertexAttribute, Mesh, BoneLineMesh}
+import org.sofa.gfx.mesh.{VertexAttribute, Mesh}
+import org.sofa.gfx.mesh.shapes.BoneLineMesh
 import org.sofa.math.{Matrix4, Rgba, NumberSeq3, Point4}
 
 

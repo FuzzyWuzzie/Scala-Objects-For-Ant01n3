@@ -1,4 +1,4 @@
-// package org.sofa.gfx.mesh
+// package org.sofa.gfx.mesh.shapes
 
 // import org.sofa.nio._
 // import scala.math._

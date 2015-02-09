@@ -9,7 +9,7 @@ import org.sofa.gfx.{SGL, Camera, VertexArray, ShaderProgram, Texture, Shader, H
 import org.sofa.gfx.io.collada.{ColladaFile}
 import org.sofa.gfx.surface.{Surface, SurfaceRenderer, BasicCameraController}
 import org.sofa.gfx.surface.event.{Event, MotionEvent, ActionKeyEvent, UnicodeEvent, ScrollEvent, GestureEvent, ShortCutEvent}
-import org.sofa.gfx.mesh.{PlaneMesh, Mesh, VertexAttribute}
+import org.sofa.gfx.mesh.{Mesh, VertexAttribute}
 import org.sofa.gfx.mesh.skeleton.{Bone ⇒ SkelBone}
 
 import akka.actor.{Actor, Props, ActorSystem, ReceiveTimeout, ActorRef}
