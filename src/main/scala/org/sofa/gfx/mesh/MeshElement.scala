@@ -2,7 +2,7 @@ package org.sofa.gfx.mesh
 
 import scala.language.implicitConversions
 
-import org.sofa.FileLoader
+import org.sofa.Loader
 import org.sofa.nio._
 import org.sofa.gfx._
 import org.sofa.gfx.io.collada.ColladaFile

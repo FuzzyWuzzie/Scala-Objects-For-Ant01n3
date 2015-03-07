@@ -1,119 +1,154 @@
 #ifndef COLORED_LIGHT
 #define COLORED_LIGHT
-#include <es2/light.glsl>
+#include <light.glsl>
 
 
-vec4 coloredLightPlastic(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
+// ------------------------------------------------------------------------------------
+
+/** Utility function to compute a single colored light plastic (diffuse, specular and ambient).
+  * @param P The position.
+  * @param N The normal to the lighted surface, considered normalized.
+  * @param C The color of the surface.
+  * @param light The ColoredLight parameters.
+  * @param i The importance of this light source. */
+vec4 coloredLightPlastici(inout vec3 P, inout vec3 N, inout vec4 C, inout ColoredLight light, float i) {
 	vec3  L  = light.P - P;
 	float d  = length(L); 
 
 	L = normalize(L);
-	N = normalize(N);
 
-	float D  = diffuse(N, L);
-	float S  = specular(N, L, light.R);
-	vec3  CS = light.Cs.rgb;
-	vec3  CD = light.Cd.rgb;
-	vec3  CA = light.Ca.rgb;
+	float D = diffuse(N, L);
+	float S = specular(N, L, light.R);
 
 	d = 1.0 / (light.Ac + light.Al * d + light.Aq * d * d);
 
-	return vec4(C.rgb * ((light.Ka * CA) + (light.Kd * D * CD * d)) + (light.Ks * S * CS * d), C.a);
+	return vec4(C.rgb * 
+			( (light.Ka *     light.Ca.rgb) 
+			+ (light.Kd * D * light.Cd.rgb * d)) 
+			+ (light.Ks * S * light.Cs.rgb * d) , C.a) * i;
 }
 
 
+/** Utility function to compute a single colored light matte (diffuse and ambient).
+  * @param P The position.
+  * @param N The normal to the lighted surface, considered normalized.
+  * @param C The color of the surface.
+  * @param light The ColoredLight parameters.
+  * @param i The importance of this light source. */
+vec4 coloredLightMattei(inout vec3 P, inout vec3 N, inout vec4 C, inout ColoredLight light, float i) {
+	vec3  L  = light.P - P;
+	float d  = length(L); 
+
+	L = normalize(L);
+
+	float D = diffuse(N, L);
+
+	d = 1.0 / (light.Ac + light.Al * d + light.Aq * d * d);
+
+	return vec4(C.rgb * 
+			( (light.Ka *     light.Ca.rgb) 
+			+ (light.Kd * D * light.Ca.rgb * d)), C.a) * i;
+}
+
+
+// ------------------------------------------------------------------------------------
+
+
+/** Compute a single color light source on a plastic surface with diffuse, specular an ambient. */
+vec4 coloredLightPlastic(in vec3 P, in vec3 N, in vec4 C, in ColoredLight light) {
+	return coloredLightPlastici(P, N, C, light, 1.0);
+}
+
+
+/** Compute two color light sources on a plastic surface with diffuse, specular an ambient. */
 vec4 coloredLightPlastic2(vec3 P, vec3 N, vec4 C, in ColoredLight light[2]) {
-	vec4 R[2];
-
-	for(int i=0; i<2; i++) {
-		vec3  L  = light[i].P - P;
-		float d  = length(L); 
-
-		L = normalize(L);
-		N = normalize(N);
-
-		float D  = diffuse(N, L);
-		float S  = specular(N, L, light[i].R);
-		vec3  CS = light[i].Cs.rgb;
-		vec3  CD = light[i].Cd.rgb;
-		vec3  CA = light[i].Ca.rgb;
-
-		d = 1.0 / (light[i].Ac + light[i].Al * d + light[i].Aq * d * d);
-
-		R[i] = vec4(C.rgb * ((light[i].Ka * CA) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
-	}
-
-	return mix(R[0], R[1], 0.5);
+	// Avoid loops.
+	return coloredLightPlastici(P, N, C, light[0], 0.5)
+	     + coloredLightPlastici(P, N, C, light[1], 0.5);
 }
 
 
-vec4 coloredLightPlastic4(vec3 P, vec3 N, vec4 C, in ColoredLight light[4]) {
-	vec4 R[4];
-
-	for(int i=0; i<4; i++) {
-		vec3  L  = light[i].P - P;
-		float d  = length(L); 
-
-		L = normalize(L);
-		N = normalize(N);
-
-		float D  = diffuse(N, L);
-		float S  = specular(N, L, light[i].R);
-		vec3  CS = light[i].Cs.rgb;
-		vec3  CD = light[i].Cd.rgb;
-		vec3  CA = light[i].Ca.rgb;
-
-		d = 1.0 / (light[i].Ac + light[i].Al * d + light[i].Aq * d * d);
-
-		R[i] = vec4(C.rgb * ((light[i].Ka * CA) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
-		// Using a single vec4 R, and doing R+= vec4 * 0.25 is ultra slow ... why ?
-	}
-
-	return mix(mix(R[0], R[1], 0.5), mix(R[2], R[3], 0.5), 0.5);
+/** Compute four color light sources on a plastic surface with diffuse, specular an ambient. */
+vec4 coloredLightPlastic4(in vec3 P, in vec3 N, in vec4 C, in ColoredLight light[4]) {
+	// Avoid loops.
+	return coloredLightPlastici(P, N, C, light[0], 0.25)
+	     + coloredLightPlastici(P, N, C, light[1], 0.25)
+	     + coloredLightPlastici(P, N, C, light[2], 0.25)
+	     + coloredLightPlastici(P, N, C, light[3], 0.25);
 }
 
 
-vec4 coloredLightPlastic8(vec3 P, vec3 N, vec4 C, in ColoredLight light[8]) {
-	vec4 R[8];
-
-	for(int i=0; i<8; i++) {
-		vec3  L  = light[i].P - P;
-		float d  = length(L); 
-
-		L = normalize(L);
-		N = normalize(N);
-
-		float D  = diffuse(N, L);
-		float S  = specular(N, L, light[i].R);
-		vec3  CS = light[i].Cs.rgb;
-		vec3  CD = light[i].Cd.rgb;
-		vec3  CA = light[i].Ca.rgb;
-
-		d = 1.0 / (light[i].Ac + light[i].Al * d + light[i].Aq * d * d);
-
-		R[i] = vec4(C.rgb * ((light[i].Ka * CA) + (light[i].Kd * D * CD * d)) + (light[i].Ks * S * CS * d), C.a);
-	}
-
-	return mix(mix(mix(R[0], R[1], 0.5), mix(R[2], R[3], 0.5), 0.5), mix(mix(R[4], R[5], 0.5), mix(R[6], R[7], 0.5), 0.5), 0.5);
+/** Compute six color light sources on a plastic surface with diffuse, specular an ambient. */
+vec4 coloredLightPlastic6(in vec3 P, in vec3 N, in vec4 C, in ColoredLight light[6]) {
+	// Avoid loops.
+	return coloredLightPlastici(P, N, C, light[0], 0.1666)
+	     + coloredLightPlastici(P, N, C, light[1], 0.1666)
+	     + coloredLightPlastici(P, N, C, light[2], 0.1666)
+	     + coloredLightPlastici(P, N, C, light[3], 0.1666)
+	     + coloredLightPlastici(P, N, C, light[4], 0.1666)
+	     + coloredLightPlastici(P, N, C, light[5], 0.1666);
 }
 
 
-
-vec4 singleColoredLightMatte(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
-	vec3  L  = light.P - P;
-	float d  = length(L); 
-
-	L = normalize(L);
-	N = normalize(N);
-
-	float D  = diffuse(N, L);
-	vec3  CD = light.Cd.rgb;
-	vec3  CA = light.Ca.rgb;
-
-	d = 1.0 / (light.Ac + light.Al * d + light.Aq * d * d);
-
-	return vec4(C.rgb * ((light.Ka * CA) + (light.Kd * D * CD * d)), C.a);
+/** Compute height color light sources on a plastic surface with diffuse, specular an ambient. */
+vec4 coloredLightPlastic8(in vec3 P, in vec3 N, in vec4 C, in ColoredLight light[8]) {
+	// Avoid loops.
+	return coloredLightPlastici(P, N, C, light[0], 0.125)
+	     + coloredLightPlastici(P, N, C, light[1], 0.125)
+	     + coloredLightPlastici(P, N, C, light[2], 0.125)
+	     + coloredLightPlastici(P, N, C, light[3], 0.125)
+	     + coloredLightPlastici(P, N, C, light[4], 0.125)
+	     + coloredLightPlastici(P, N, C, light[5], 0.125)
+	     + coloredLightPlastici(P, N, C, light[6], 0.125)
+	     + coloredLightPlastici(P, N, C, light[7], 0.125);
 }
+
+
+// ------------------------------------------------------------------------------------
+
+
+vec4 coloredLightMatte(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
+	return coloredLightMattei(P, N, C, light, 1.0);
+}
+
+
+vec4 coloredLightMatte2(vec3 P, vec3 N, vec4 C, in ColoredLight light[2]) {
+	return coloredLightMattei(P, N, C, light[0], 0.5)
+	     + coloredLightMattei(P, N, C, light[1], 0.5);
+}
+
+
+vec4 coloredLightMatte4(vec3 P, vec3 N, vec4 C, in ColoredLight light[4]) {
+	return coloredLightMattei(P, N, C, light[0], 0.25)
+	     + coloredLightMattei(P, N, C, light[1], 0.25)
+	     + coloredLightMattei(P, N, C, light[2], 0.25)
+	     + coloredLightMattei(P, N, C, light[3], 0.25);
+}
+
+
+vec4 coloredLightMatte6(vec3 P, vec3 N, vec4 C, in ColoredLight light[6]) {
+	return coloredLightMattei(P, N, C, light[0], 0.1666)
+	     + coloredLightMattei(P, N, C, light[1], 0.1666)
+	     + coloredLightMattei(P, N, C, light[2], 0.1666)
+	     + coloredLightMattei(P, N, C, light[3], 0.1666)
+	     + coloredLightMattei(P, N, C, light[4], 0.1666)
+	     + coloredLightMattei(P, N, C, light[5], 0.1666);
+}
+
+
+vec4 coloredLightMatte8(vec3 P, vec3 N, vec4 C, in ColoredLight light[8]) {
+	return coloredLightMattei(P, N, C, light[0], 0.125)
+	     + coloredLightMattei(P, N, C, light[1], 0.125)
+	     + coloredLightMattei(P, N, C, light[2], 0.125)
+	     + coloredLightMattei(P, N, C, light[3], 0.125)
+	     + coloredLightMattei(P, N, C, light[4], 0.125)
+	     + coloredLightMattei(P, N, C, light[5], 0.125)
+	     + coloredLightMattei(P, N, C, light[6], 0.125)
+	     + coloredLightMattei(P, N, C, light[7], 0.125);
+}
+
+
+// ------------------------------------------------------------------------------------
 
 
 vec4 singleColoredLightMetal(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
@@ -137,4 +172,5 @@ vec4 singleColoredLightMetal(vec3 P, vec3 N, vec4 C, in ColoredLight light) {
 }
 
 
-#endif COLORED_LIGHT
+#endif
+//COLORED_LIGHT

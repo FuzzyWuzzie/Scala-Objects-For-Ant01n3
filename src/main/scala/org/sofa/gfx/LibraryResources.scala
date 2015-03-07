@@ -5,7 +5,7 @@ import java.net.URL
 
 import scala.collection.mutable.HashMap
 
-import org.sofa.{FileLoader, Timer}
+import org.sofa.{Loader, Timer}
 import org.sofa.gfx.text.{GLFont, GLTypeFace, GLText, GLString}
 import org.sofa.gfx.mesh.{Mesh, VertexAttribute}
 import org.sofa.gfx.armature.{Armature, Joint}

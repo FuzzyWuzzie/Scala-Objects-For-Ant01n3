@@ -5,12 +5,13 @@ import java.net.URL
 
 import scala.collection.mutable.HashMap
 
-import org.sofa.{FileLoader, Timer}
+import org.sofa.{Loader, FileLoader, Timer}
 import org.sofa.gfx.text.{GLFont, GLString}
 import org.sofa.gfx.mesh.{Mesh, VertexAttribute}
 import org.sofa.gfx.armature.{Armature, Joint}
 import org.sofa.behavior.{Behavior, Wait, InParallel, InSequence, Loop}
 import org.sofa.gfx.armature.behavior.{ArmatureBehavior, LerpToAngle, LerpToPosition, LerpToScale, LerpMove, Switch, LerpKeyArmature}
+import org.sofa.gfx.io.collada.{ColladaFile}
 
 import scala.xml.{XML, Elem, Node, NodeSeq}
 
@@ -201,6 +202,8 @@ class Libraries(gl:SGL) {
 	  *				<tex>there/can/be/several/pathes</tex>
 	  *             <behavior>path/to/sifz/behavior/descriptions</behavior>
 	  *				<font>path/to/fonts/files</font>
+	  *             <model>path/to/models</model>
+	  *             <file>path/to/arbitrary/files</file>
 	  *			</pathes>
 	  *			<shaders>
 	  *				<shader id="mandatoryId" vert="vertexShader" frag="fragmentShader"/>
@@ -212,6 +215,9 @@ class Libraries(gl:SGL) {
 	  *         <armatures>
 	  *             <armature id="man" tex="man-tex" shader="man-shader" svg="man-svg" scale="1.0"/>
 	  *         </armatures>
+	  *         <models>
+	  *             <model id="" res="aResource" geom="nameOfGeomInModel"/>
+	  *         </models>
 	  *         <behaviors>
 	  *             <in-parallel      id="S" arm="S" behaviors="S,S,S,S,S"/>
 	  *				<in-sequence      id="S" arm="S" behaviors="S,S,S,S,S"/>
@@ -240,6 +246,7 @@ class Libraries(gl:SGL) {
 		parseTexs(     xml \\ "texs")
 		parseArmatures(xml \\ "armatures")
 		parseBehaviors(xml \\ "behaviors")
+		parseModels(   xml \\ "models")
 	}
 
 	protected def parsePathes(nodes:NodeSeq) {
@@ -248,6 +255,8 @@ class Libraries(gl:SGL) {
 		nodes \ "armature" foreach { Armature.path         += _.text }
 		nodes \ "behavior" foreach { ArmatureBehavior.path += _.text }
 		nodes \ "font"     foreach { GLFont.path           += _.text }
+		nodes \ "model"    foreach { ColladaFile.path      += _.text }
+		nodes \ "file"     foreach { FileLoader.path       += _.text }
 	}
 
 	protected def parseShaders(nodes:NodeSeq) {
@@ -260,6 +269,16 @@ class Libraries(gl:SGL) {
 				(shader \\ "@vert").text,
 				(shader \\ "@frag").text,
 				geom))
+		}
+	}
+
+	protected def parseModels(nodes:NodeSeq) {
+		nodes \\ "model" foreach { model =>
+			var id = (model \\ "@id").text
+			var rs = (model \\ "@res").text
+			var ge = (model \\ "@geom").text
+
+			models.add(ModelResource(id, rs, ge))
 		}
 	}
 
@@ -425,11 +444,15 @@ class Libraries(gl:SGL) {
 	  *		"texture":  [ "S", "S" ],
 	  *		"armature": [ "S", "S" ],
 	  *		"behavior": [ "S", "S" ],
-	  *     "font":     [ "S", "S" ]
+	  *     "font":     [ "S", "S" ],
+	  *     "model":    [ "S", "S" ]
 	  *	},
 	  *	"shaders": [
 	  *		{ "id": "S", "vertex": "S", "fragment": "S", "geometry": "S" }
 	  *	],
+	  * "models": [
+	  *     { "id": "S", "res": "S", "geom": "S" }
+	  * ],
 	  *	"textures": [
 	  *		{ "id": "S", "res": "S", "mipMap": "S", "minFilter": "S", "magFilter": "S", "alpha": "S", "wrap": "S" }
 	  *	],
@@ -465,6 +488,7 @@ class Libraries(gl:SGL) {
 				jsonMapper.registerModule(DefaultScalaModule)
 				jsonMapper.registerSubtypes(classOf[Pathes], classOf[ShaderResource],
 					classOf[ArmatureResource], classOf[TextureResource],
+					// TODO classOf[ModelResource],
 					classOf[BehaviorsDesc], classOf[InParallelDesc], classOf[InSequenceDesc],
 					classOf[LoopDesc], classOf[SwitchDesc], classOf[LerpToAngleDesc],
 					classOf[LerpToPositionDesc], classOf[LerpToScaleDesc],
@@ -479,7 +503,9 @@ class Libraries(gl:SGL) {
 			conf.pathes.texture  foreach { Texture.path          += _ }
 			conf.pathes.armature foreach { Armature.path         += _ }
 			conf.pathes.behavior foreach { ArmatureBehavior.path += _ }
+			conf.pathes.model    foreach { ColladaFile.path      += _ }
 			conf.shaders foreach { shaders += _ }
+			// TODO models
 			conf.textures foreach { t =>
 				textures += TextureResource(t.id, t.res, TexParams(
 						alpha     = TexAlpha.fromString(t.alpha),
@@ -527,7 +553,8 @@ case class Pathes(
 	texture:Array[String],
 	armature:Array[String],
 	behavior:Array[String],
-	font:Array[String]) {}
+	font:Array[String],
+	model:Array[String]) {}
 
 case class TextureDesc(
 	id:String,

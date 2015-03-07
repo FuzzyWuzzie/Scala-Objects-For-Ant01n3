@@ -2,7 +2,7 @@ package org.sofa.gfx.armature.behavior
 
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
-import org.sofa.FileLoader
+import org.sofa.Loader
 import org.sofa.math.{Point2, Vector2}
 import org.sofa.gfx.armature.{Armature, Joint, SifzArmatureBehaviorLoader, TimedKeys, TimedValue, TimedVector}
 
@@ -13,7 +13,7 @@ import org.sofa.behavior._
 
 
 /** Pluggable loader for armature behavior sources. */
-trait ArmatureBehaviorLoader extends FileLoader {
+trait ArmatureBehaviorLoader extends Loader {
     /** Try to open a resource, or throw an IOException if not available. */
     def load(resource:String):HashMap[String,TimedKeys]
 }

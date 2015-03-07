@@ -4,7 +4,7 @@ import java.io.{File, InputStream, FileInputStream, IOException}
 import scala.collection.mutable._
 import org.sofa.math._
 import org.sofa.nio._
-import org.sofa.FileLoader
+import org.sofa.Loader
 
 case class ShaderCompilationException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
 case class ShaderLinkException(msg:String, nested:Throwable=null) extends Exception(msg, nested)
@@ -171,7 +171,7 @@ object Shader {
 
 
 /** Pluggable loader for shader sources. */
-trait ShaderLoader extends FileLoader {
+trait ShaderLoader extends Loader {
     /** Try to open a resource, or throw an IOException if not available. */
     def open(resource:String):InputStream
 }

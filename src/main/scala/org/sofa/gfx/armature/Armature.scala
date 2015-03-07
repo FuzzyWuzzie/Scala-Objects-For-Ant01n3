@@ -2,7 +2,7 @@ package org.sofa.gfx.armature
 
 import scala.collection.mutable.HashMap
 
-import org.sofa.FileLoader
+import org.sofa.Loader
 import org.sofa.gfx.{SGL, Space}
 import org.sofa.math.{Point3, Point2, Vector2}
 import org.sofa.gfx.{Texture, ShaderProgram, Libraries}
@@ -17,7 +17,7 @@ case class NoSuchJointException(message:String) extends Exception(message)
 
 
 /** Pluggable loader for armature sources. */
-trait ArmatureLoader extends FileLoader {
+trait ArmatureLoader extends Loader {
     /** Try to open a resource, or throw an IOException if not available. */
     def open(name:String, texRes:String, shaderRes:String, resource:String, armatureId:String="Armature", scale:Double = 1.0):Armature
 }

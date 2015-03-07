@@ -15,4 +15,5 @@ struct ColoredLight {
 	float Aq;
 };
 
-#endif COLORED_LIGHT_STRUCT
+#endif 
+//COLORED_LIGHT_STRUCT

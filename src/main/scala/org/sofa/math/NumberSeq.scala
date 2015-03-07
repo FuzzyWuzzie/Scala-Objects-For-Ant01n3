@@ -482,11 +482,13 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  */
 	def normalize():Double = {
 	    val len = norm
-	    var i   = 0
-	    val n   = size
-	    while(i < n) {
-	        data(i) /= len
-	        i += 1
+	    if(len != 0) {
+	    	var i   = 0
+	    	val n   = size
+	    	while(i < n) {
+	        	data(i) /= len
+	        	i += 1
+	    	}
 	    }
 	    len
 	}
@@ -622,8 +624,10 @@ trait NumberSeq2 extends NumberSeq {
     override def normalize():Double = {
         // Much faster than original on n elements.
         val len = norm
-        data(0) /= len
-        data(1) /= len
+        if(len != 0) {
+        	data(0) /= len
+        	data(1) /= len
+        }
         len
     }
 
@@ -741,9 +745,11 @@ trait NumberSeq3 extends NumberSeq2 {
     override def normalize():Double = {
         // Much faster than original on n elements.
         val len = norm
-        data(0) /= len
-        data(1) /= len
-        data(2) /= len
+        if(len != 0) {
+        	data(0) /= len
+        	data(1) /= len
+       		data(2) /= len
+    	}
         len
     }
 

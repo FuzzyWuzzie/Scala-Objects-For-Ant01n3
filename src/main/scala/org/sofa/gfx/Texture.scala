@@ -4,7 +4,7 @@ import org.sofa.nio._
 import java.io.{File, IOException}
 import scala.collection.mutable.{ArrayBuffer=>ScalaArrayBuffer}
 import org.sofa.gfx.backend.{TextureImageAwt, TextureImageTEX}
-import org.sofa.FileLoader
+import org.sofa.Loader
 
 
 /** The image formats supported by the texture system actually. */
@@ -54,7 +54,7 @@ class TextureIOException(msg:String) extends Exception(msg)
 
 
 /** Locate and fetch image data. */
-trait TextureLoader extends FileLoader {
+trait TextureLoader extends Loader {
     /** Try to locate a resource in the include path and load it.
       *
       * The params may indicate how to load the resource.

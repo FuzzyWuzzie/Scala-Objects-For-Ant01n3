@@ -11,5 +11,5 @@ uniform ColoredLight L[8];
 #include <ColoredLight.glsl>
 
 void main() {
-	gl_FragColor = coloredLightPlastic8(P, N, C, L);
+	gl_FragColor = coloredLightMatte8(P, N, C, L);
 }

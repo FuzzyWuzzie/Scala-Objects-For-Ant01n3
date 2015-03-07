@@ -309,7 +309,7 @@ Debug.stopMethodTracing()
     }
 
 	def onDown(event:AndroidMotionEvent):Boolean = { 
-//		debug("@@@ onDown")
+		debug("@@@ onDown ")
         true
     }
 

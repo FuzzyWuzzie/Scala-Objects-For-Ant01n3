@@ -63,5 +63,7 @@ trait MotionEvent extends SpatialEvent {
 	  * `pointerCount`. */
 	def tilt(pointer:Int=0):Vector3
 
-	override def toString():String = "Motion[pos=%s] %s".format(position(), if(isStart) "BEG" else if(isEnd) "END" else "")
+	override def toString():String = "Motion[pos=%s] %s [%s]".format(position(), 
+			if(isStart) "BEG" else if(isEnd) "END" else "",
+			if(button(0)) "1" else "")
 }

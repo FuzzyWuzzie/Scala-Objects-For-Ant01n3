@@ -2,7 +2,7 @@ package org.sofa.gfx.mesh
 
 import scala.language.implicitConversions
 
-import org.sofa.FileLoader
+import org.sofa.Loader
 import org.sofa.nio._
 import org.sofa.gfx._
 import org.sofa.gfx.io.collada.ColladaFile
@@ -11,7 +11,7 @@ import scala.collection.mutable.HashMap
 
 
 /** Pluggable loader for mesh sources. */
-trait MeshLoader extends FileLoader {
+trait MeshLoader extends Loader {
     /** Try to open a resource, and inside this resource a given
       * `geometry` part, or throw an IOException if not available. */
     def open(gl:SGL, resource:String, geometry:String):Mesh
@@ -26,8 +26,11 @@ trait MeshLoader extends FileLoader {
 class ColladaMeshLoader extends MeshLoader {
     def open(gl:SGL, resource:String, geometry:String):Mesh = {
     	val file = new ColladaFile(resource)
+    	val mesh = file.library.geometry(geometry).get.mesh
 
-    	file.library.geometry(geometry).get.mesh.toMesh(gl)
+    	mesh.blenderToOpenGL(true)
+    	mesh.mergeVertices(true)
+    	mesh.toMesh(gl)
     }
 }
 
@@ -83,7 +86,7 @@ object Mesh {
   * they are drawn.
   *
   * Vertex attributes is the data to draw, a vertex attribute contains for example
-  * vertices positions, color, normals, texture coordinates, etc. The mesh is trait
+  * vertices positions, colors, normals, texture coordinates, etc. The mesh trait
   * is not limited in the number of vertex attribute that can be added nor in their
   * name or definition.
   *
@@ -94,7 +97,7 @@ object Mesh {
   *
   * The mesh stores all its data internally and handles the transmission of this
   * data to OpenGL. It provides draw methods to render the data. However these
-  * methods are utilisable only after having bound the mesh with a shader. This
+  * methods are usable only after having bound the mesh with a shader. This
   * is done using the `bindShader` method that takes as arguments a [[ShaderProgram]] 
   * and an associative map of vertex attribute names to shader attribute names.
   * This operation makes the link between the various vertex attributes contained
@@ -114,6 +117,12 @@ object Mesh {
   * edited, it cannot be used by OpenGL. However some streaming meshes allow it.
   * There are no modification methods in this trait, they must be provided by the sub-classes
   * depending on the kind of primitive drawn.
+  *
+  * # Vertex attribute sharing
+  *
+  * Vertex attributes can be shared between meshes, the mesh makes the link between these
+  * vertex attributes, element data and the shader. However, naturally, updating a vertex
+  * attribute in one mesh will change the others that share this attribute.
   */
 trait Mesh {
 	import VertexAttribute._

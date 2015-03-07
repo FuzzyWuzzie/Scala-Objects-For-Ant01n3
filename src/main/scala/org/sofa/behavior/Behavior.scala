@@ -2,7 +2,7 @@ package org.sofa.behavior
 
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
-import org.sofa.FileLoader
+import org.sofa.Loader
 import org.sofa.math.{Point2, Vector2}
 
 

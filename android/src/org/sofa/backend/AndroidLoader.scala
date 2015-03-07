@@ -36,6 +36,7 @@ trait AndroidLoader {
 			}
 		}
 
+System.out.println("ANDROID exists '%s/%s'".format(newPath, newName))
 		resources.getAssets.list(newPath).contains(newName)
 	}	
 

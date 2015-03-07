@@ -43,12 +43,10 @@
 // First most fields are private. Second the running code is in GLThread
 // an inner class and it is not
 // possible to change the GLThread implementation without modifying
-// GLSurfaceView. Finally, the GLThread code is... no words can describe
-// this.
+// GLSurfaceView.
 //
-// Instead of this I merely copied it and changed what is needed. I took
-// this decision relentlessly, after having tried every possible things I
-// thought was cleaner... :'(
+// Instead of this I merely copied it and changed what is needed. If it
+// becomes possible to do otherwise, this class must disappear !
 //
 // The changes concern only the GLSurfaceView.Renderer.onDrawFrame()
 // method that returns true if a swap is needed. The rest of the changes

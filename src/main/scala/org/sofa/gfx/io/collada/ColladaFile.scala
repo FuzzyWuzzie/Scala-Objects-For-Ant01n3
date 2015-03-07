@@ -1,8 +1,9 @@
 package org.sofa.gfx.io.collada
 
-import org.sofa.FileLoader
+import org.sofa.Loader
 import scala.xml.NodeSeq
 import scala.collection.mutable.HashMap
+
 
 object ColladaFile{
 	/** Path to search for collada files. */
@@ -13,6 +14,7 @@ object ColladaFile{
 
 	def apply(resource:String):ColladaFile = new ColladaFile(resource)
 }
+
 
 /** A Collada file, assets, library of elements and a scene. */
 class ColladaFile(root:NodeSeq) {
@@ -33,11 +35,13 @@ class ColladaFile(root:NodeSeq) {
 	override def toString():String = "%s%n%s".format(asset, library)
 }
 
+
 /** Locate and fetch image data. */
-trait ColladaLoader extends FileLoader {
+trait ColladaLoader extends Loader {
     /** Try to locate a resource in the include path and load it. */
     def open(resource:String):NodeSeq
 }
+
 
 /** Default Collada loader that uses files in the local file system. */
 class DefaultColladaLoader extends ColladaLoader {
@@ -45,6 +49,7 @@ class DefaultColladaLoader extends ColladaLoader {
     	scala.xml.XML.loadFile(findFile(resource, ColladaFile.path))
     }
 }
+
 
 /** Library of elements used an referenced inside a Collada file. */
 class Library(root:NodeSeq) {
