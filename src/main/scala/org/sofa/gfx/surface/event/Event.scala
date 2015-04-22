@@ -105,7 +105,7 @@ object ActionKey extends Enumeration {
   *
   * All these kinds of events inherit this base trait. Some events (high-level or not) will
   * also inherit the [[SpatialEvent]] trait that marks events from devices or user actions
-  * that have a position in space.
+  * that have a position in space (not necessarilly on screen).
   */
 trait Event {
 	/** The kind of device sending this event. */
@@ -123,7 +123,7 @@ trait Event {
 
 
 /** Mark an event as having a position in space or a pointer. A spatial event may describe
-  * several positions or pointers at once. This is usually the case with touch
+  * several positions or pointers at once. This is for example usually the case with touch
   * devices where one or more fingers can be used to do an action. */
 trait SpatialEvent extends Event {
 	/** Actual position of the device pointer(s) in pixels with X axis positive going right,

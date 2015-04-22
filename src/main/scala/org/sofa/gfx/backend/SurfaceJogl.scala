@@ -38,7 +38,8 @@ object SurfaceNewt {
     /** Delay between two clicks under which the second click generates a double tap. */
     var doubleTapDelay:Long = 180000000L // 1 sec.
 
-    /** Send motion events for the mouse even when no button is pressed ? */
+    /** Send motion events for the mouse even when no button is pressed ? This can generate
+      * a lot of events. */
     var noButtonMotionEvents:Boolean = false
 
     /** If true the mouse scroll wheel event is transformed to a [[ScaleEvent]],
@@ -55,16 +56,16 @@ object SurfaceNewt {
   * Care has been taken to separate (and indicate) fields that are used in
   * a thread, from fields used in the other. */
 class SurfaceNewt(
-    protected[this] val renderer:SurfaceRenderer,
-    protected[this] var w:Int,
-    protected[this] var h:Int,
-    protected[this] val title:String,
-    protected[this] val caps:GLCapabilities,
-    protected[this] val backend:SurfaceNewtGLBackend.Value,
-    protected[this] var expectedFps:Int,
-    protected[this] var decorated:Boolean,
-    protected[this] var fullScreen:Boolean,
-    protected[this] val multiSample:Int)
+    protected val renderer:SurfaceRenderer,
+    protected var w:Int,
+    protected var h:Int,
+    protected val title:String,
+    protected val caps:GLCapabilities,
+    protected val backend:SurfaceNewtGLBackend.Value,
+    protected var expectedFps:Int,
+    protected var decorated:Boolean,
+    protected var fullScreen:Boolean,
+    protected val multiSample:Int)
 	extends Surface
 	with    JoglWindowListener
 	with    JoglKeyListener
@@ -91,29 +92,29 @@ class SurfaceNewt(
 	private[this] val eventQueue = new java.util.concurrent.ConcurrentLinkedQueue[Event]()// new SynchronizedQueue[Event] // Waiting for SynchronizedQueue to be corrected.
 
 	/** NEWT window. */
-    protected[this] var win:GLWindow = null
+    protected var win:GLWindow = null
     
     /** Animator thread. */
-    protected[this] var anim:FPSAnimator = null
+    protected var anim:FPSAnimator = null
 
     /** Used to fasten invoke, in order to test if we are in the correct thread. */
     private[this] var invokeThread:Thread = null
     
     /** OpenGL. */
-    protected[this] var sgl:SGL = null
+    protected var sgl:SGL = null
     
     /** Send motion events ? This field is used only in the EDT thread. */
-    protected[this] var motionEvents:Boolean = true
+    protected var motionEvents:Boolean = true
 
     /** Send high-level events ? This field is used only in the EDT thread. */
-    protected[this] var hlEvents:Boolean = true
+    protected var hlEvents:Boolean = true
 
     /** Delay between button press and release to consider it as a long press event.
       * This field is used only in the EDT thread. */
-    protected[this] var pressDelay:Long = SurfaceNewt.pressDelay
+    protected var pressDelay:Long = SurfaceNewt.pressDelay
 
     /** Delay between two clicks under which the second click generates a double tap. */
-    protected[this] val doubleTapDelay:Long = SurfaceNewt.doubleTapDelay
+    protected val doubleTapDelay:Long = SurfaceNewt.doubleTapDelay
 
     /** If this field is not zero, it contains the last date at which a single tap
       * has been issued. In this case if the difference between this and the current
@@ -121,19 +122,19 @@ class SurfaceNewt(
       * set to zero. If in between a [[DoubleTapEventJogl]] is issued the field is
       * reset to zero without sending a [[SingleTapEventJogl]]. This field is used
       * only in the renderer thread. */
-    protected[this] var needValidateSingleTap:Long = 0
+    protected var needValidateSingleTap:Long = 0
 
     /** When a single tap is issued, this allow to set a source from the last tap event,
       * to provide a position. See `needValidateSingleTap`. */
-    protected[this] var singleTapSource:TapEvent = null
+    protected var singleTapSource:TapEvent = null
 
     /** Send motion events for the mouse even when no button is pressed ? This field
       * is used only in the EDT thread. */
-    protected[this] var noButtonMotionEvents:Boolean = SurfaceNewt.noButtonMotionEvents
+    protected var noButtonMotionEvents:Boolean = SurfaceNewt.noButtonMotionEvents
 
     /** If true the mouse scroll wheel event is transformed to a [[ScaleEventJogl]],
       * else a [[ScrollEventJogl]] with a delta y is sent. */
-    protected[this] var mouseWheelSendsScale:Boolean = SurfaceNewt.mouseWheelSendsScale
+    protected var mouseWheelSendsScale:Boolean = SurfaceNewt.mouseWheelSendsScale
 
     build(backend)
     
@@ -240,8 +241,8 @@ class SurfaceNewt(
 
     def multiSampling:Int = multiSample
 
-    protected[this] var savedDpc = 0.0
-    protected[this] var dpcAsked = 0
+    protected var savedDpc = 0.0
+    protected var dpcAsked = 0
 
     def dpc = {
     	// To avoid requesting DPC potentially every frame, we use a counter and

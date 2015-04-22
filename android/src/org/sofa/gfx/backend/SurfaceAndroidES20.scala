@@ -1,6 +1,6 @@
 package org.sofa.gfx.backend
 
-import org.sofa.math.{Vector3, Point3}
+import org.sofa.math.{Vector3, Point2, Point3}
 import org.sofa.backend.SOFALog
 import org.sofa.gfx._
 import org.sofa.gfx.surface.{Surface, SurfaceRenderer}
@@ -51,43 +51,43 @@ class SurfaceAndroidES20(
         with ScaleGestureDetector.OnScaleGestureListener {
 
 	/** Gl Context. */
-    protected[this] var sgl:SGL = null
+    protected var sgl:SGL = null
 
     /** Width of the surface. */
-    protected[this] var w:Int = 0
+    protected var w:Int = 0
 
     /** Height of the surface. */
-    protected[this] var h:Int = 0
+    protected var h:Int = 0
 
     /** Used to compute fps. */
-    protected[this] var endTime:Long = 0
+    protected var endTime:Long = 0
 
     /** Used to compute fps. */
-    protected[this] var startTime:Long = 0
+    protected var startTime:Long = 0
 
     /** True once the surface is created. */
-    protected[this] var created = false
+    protected var created = false
 
     /** The renderer. */
-    protected[this] var renderer:SurfaceRenderer = null
+    protected var renderer:SurfaceRenderer = null
 
     /** The activity owning this surface (to call code on the UI thread). */
-    protected[this] var activity:Activity = null
+    protected var activity:Activity = null
 
     /** The gesture detector. */
-    protected[this] var gestures:GestureDetectorCompat = null
+    protected var gestures:GestureDetectorCompat = null
     
     /** The scale gesture detector. */
-    protected[this] var scaleGestures:ScaleGestureDetector = null
+    protected var scaleGestures:ScaleGestureDetector = null
 
     /** Send the base motion events ? */
-    protected[this] var motionEvents = true
+    protected var motionEvents = true
 
     /** Send high-level events ? */
-    protected[this] var hlEvents = true
+    protected var hlEvents = true
 
     /** Send motion events even when no button is pressed (only mouse or pen, touch requires... a touch). */
-    protected[this] var noButtonMotionEvents = false
+    protected var noButtonMotionEvents = false
 
 // -- Build --------------------
 
@@ -103,9 +103,9 @@ class SurfaceAndroidES20(
         setEGLContextClientVersion(2)
         setEGLConfigChooser(8,8,8,8,16,0)
 
-        this.renderer = renderer
-        this.activity = activity
-        this.expectedFps      = expectedFps
+        this.renderer    = renderer
+        this.activity    = activity
+        this.expectedFps = expectedFps
     
         if(created) {
             if(renderer.initSurface ne null) renderer.initSurface(gl, this)
@@ -252,7 +252,7 @@ Debug.stopMethodTracing()
     			event match {
     				case e:UnicodeEvent   => { if(renderer.unicode   ne null) renderer.unicode(  self, e) }
     				case e:ActionKeyEvent => { if(renderer.actionKey ne null) renderer.actionKey(self, e) }
-    				case e:MotionEvent    => { if(renderer.motion    ne null) renderer.motion(   self, e) }
+    				case e:MotionEvent    => { if(renderer.motion    ne null) renderer.motion(   self, e) else debug("no motion event listener???") }
     				case e:GestureEvent   => { if(renderer.gesture   ne null) renderer.gesture(  self, e) }
     				case e:ShortCutEvent  => { if(renderer.shortCut  ne null) renderer.shortCut( self, e) }
     				case _ => throw new RuntimeException("unexpected event type")
@@ -309,7 +309,7 @@ Debug.stopMethodTracing()
     }
 
 	def onDown(event:AndroidMotionEvent):Boolean = { 
-		debug("@@@ onDown ")
+		queueEvent(MotionEventAndroid(event))
         true
     }
 
@@ -336,6 +336,7 @@ Debug.stopMethodTracing()
     }
 
     def onSingleTapUp(event:AndroidMotionEvent):Boolean = {
+//    	queueEvent(TapEventAndroid(event, viewOff))
     	queueEvent(TapEventAndroid(event))
         true
     }
@@ -354,6 +355,8 @@ Debug.stopMethodTracing()
     	queueEvent(SingleTapEventAndroid(event))
         true
     }
+
+//    protected def viewOff():Point2 = { printf("### VIEW OFF (%f, %f) ###%n", getX, getY); Point2(getX, getY)}
 
 // -- Gestures scale events -------------------------------
 

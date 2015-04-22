@@ -8,7 +8,7 @@ import org.sofa.math.{Point3, Vector3}
   * often the combination of several base events. See [[BaseEvent]]. Hi-level
   * events are seen as actions or gestures, like a tap (or click) a double-tap
   * (or double-click) a long press, a fling, a scale gesture (or scroll
-  * wheel), etc.
+  * wheel, altought scroll can also be considered as a fling), etc.
   *
   * A high-level event will not represent data from any kind of device
   * (although you may know the device). For example a [[TapEvent]] action

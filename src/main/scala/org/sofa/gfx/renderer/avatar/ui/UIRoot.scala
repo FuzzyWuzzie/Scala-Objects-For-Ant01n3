@@ -42,14 +42,14 @@ class UIAvatarRenderRoot(avatar: Avatar) extends UIAvatarRender(avatar) with UIR
 
 class UIAvatarSpaceRoot(avatar: Avatar) extends UIAvatarSpace(avatar) {
 	/** Ratiohw height / width. */
-	protected[this] var ratiohw = 1.0
+	protected var ratiohw = 1.0
 
 	/** Dots per centimeter. */
-	protected[this] var dpc = 0.0
+	protected var dpc = 0.0
 
 	/** Size of the surface in pixels, to detect changes. First two coordinates
 	  * are the width and height of the surface, and third is the dpc. */
-	protected[this] val oldSurface = Point3(0, 0, 0)
+	protected val oldSurface = Point3(0, 0, 0)
 
 	//var scale1cm = 1.0
 

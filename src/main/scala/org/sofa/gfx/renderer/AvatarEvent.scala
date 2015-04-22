@@ -20,6 +20,7 @@ import org.sofa.gfx.surface.event.Event
 // //
 // //
 
+
 /** Represent the avatar acquaintances and a way to transmit events
   * and interaction occuring on the avatar to the world of actors
   * representing the controller and model.

@@ -11,6 +11,7 @@ trait Light {
 	def setIndex(i:Int)
 }
 
+
 trait PositionalLight extends Light {
 	def pos:Vector4
 

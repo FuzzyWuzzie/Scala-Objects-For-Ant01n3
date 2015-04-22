@@ -22,7 +22,8 @@ object UIPerspectiveStates {
 }
 
 
-/** An avatar that does not render anything, but acts as a camera that can be positionned in space. */
+/** An avatar that does not render anything, but defines a space acting as a camera
+  * that can be positionned in space. */
 class UIPerspective(name: AvatarName, screen: Screen)
 		extends UIAvatar(name, screen) {
 
@@ -89,23 +90,6 @@ class UIPerspective(name: AvatarName, screen: Screen)
 				renderer.consumeEvent(event)
 			}
 		}
-	}
-}
-
-
-// ----------------------------------------------------------------------------------------------
-
-
-class UIAvatarRenderBase(avatar:Avatar) extends UIAvatarRender(avatar) {
-
-	def this() { this(null) }
-
-	def setAvatar(avatar:UIPerspective) { this.self = avatar }
-
-	override def render() { super.render }
-
-	def consumeEvent(event:Event):Boolean = {
-		false
 	}
 }
 

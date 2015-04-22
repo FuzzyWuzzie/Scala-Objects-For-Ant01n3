@@ -1,6 +1,6 @@
 package org.sofa.gfx.backend
 
-import org.sofa.math.{Vector3, Point3}
+import org.sofa.math.{Vector3, Point2, Point3}
 import org.sofa.gfx.{SGL, Camera}
 import org.sofa.gfx.surface._
 import org.sofa.gfx.surface.event._
@@ -42,13 +42,19 @@ abstract class KeyEventAndroid(override val source:AndroidKeyEvent) extends Even
 }
 
 
-abstract class SpatialEventAndroid(override val source:AndroidMotionEvent) extends EventAndroid() {
+object SpatialEventAndroid {
+	final val ZeroOffset = Point2(0, 0)
+}
+
+
+abstract class SpatialEventAndroid(override val source:AndroidMotionEvent) extends EventAndroid() { //, viewOff:Point2 = SpatialEventAndroid.ZeroOffset) extends EventAndroid() {
 	
 	def isStart:Boolean = (source.getActionMasked == AndroidMotionEvent.ACTION_DOWN)
 
 	def isEnd:Boolean = (source.getActionMasked == AndroidMotionEvent.ACTION_UP)
 
     def position(pointer:Int=0):Point3 = Point3(source.getX(pointer), source.getY(pointer), 0)
+    						//Point3(source.getRawX - viewOff.x, source.getRawY - viewOff.y, 0)
 
     def pointerCount:Int = source.getPointerCount
 }
@@ -101,8 +107,7 @@ case class UnicodeEventAndroid(override val source:AndroidKeyEvent)
 }
 
 
-case class MotionEventAndroid(override val source:AndroidMotionEvent)
-	extends SpatialEventAndroid(source) with MotionEvent {
+case class MotionEventAndroid(override val source:AndroidMotionEvent) extends SpatialEventAndroid(source) with MotionEvent {
 
     def button(button:Int, pointer:Int=0):Boolean = button match {
 		case 1 => ((source.getButtonState & AndroidMotionEvent.BUTTON_PRIMARY)   != 0)
@@ -120,8 +125,8 @@ case class MotionEventAndroid(override val source:AndroidMotionEvent)
 // // -- HI-LEVEL EVENTS -------------------------------------------
 
 
-case class TapEventAndroid(override val source:AndroidMotionEvent)
-	extends SpatialEventAndroid(source) with TapEvent {}
+case class TapEventAndroid(override val source:AndroidMotionEvent)//, viewOff:Point2 = SpatialEventAndroid.ZeroOffset)
+	extends SpatialEventAndroid(source/*, viewOff*/) with TapEvent {}
 
 
 case class SingleTapEventAndroid(override val source:AndroidMotionEvent)
