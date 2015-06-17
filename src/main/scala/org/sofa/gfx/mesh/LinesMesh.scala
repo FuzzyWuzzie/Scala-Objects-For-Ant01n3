@@ -167,15 +167,7 @@ class LinesMesh(val gl:SGL, val count:Int) extends Mesh {
 		}
 	}
 
-	/** Create a grid in the XY plane.
-	  *
-	  * `w` and `h` express the width of horizontal lines and height of vertical lines
-	  * respectively. `originx` and `originy` express the position of the center of the grid.
-	  * `countx` and `county` give the number of lines along X and Y. `incrx` and `incry`
-	  * express the distance between each line segment along X and Y. Finally, `color`
-	  * gives the global color of lines segments, excepted the X and Y axis lines that are
-	  * colored using `xAxisColor` and `yAxisColor` respectively.
-	  */
+	/** Create a grid in the XY plane. See `setGrid()`. */
 	def setXYGrid(
 		w:Float,       h:Float,
 		originx:Float, originy:Float, 
@@ -184,28 +176,95 @@ class LinesMesh(val gl:SGL, val count:Int) extends Mesh {
 		color:Rgba, 
 		xAxisColor:Rgba = Rgba.Red,
 		yAxisColor:Rgba = Rgba.Green) {
-		
+		setColoredGrid(w, h, originx, originy, countx, county, incrx, incry, color, xAxisColor, yAxisColor, false)
+	}
+
+	/** Create a grid in the XZ plane. See `setGrid()`. */
+	def setXZGrid(
+		w:Float,       h:Float,
+		originx:Float, originy:Float, 
+		countx:Int,    county:Int, 
+		incrx:Float,   incry:Float, 
+		color:Rgba, 
+		xAxisColor:Rgba = Rgba.Red,
+		yAxisColor:Rgba = Rgba.Green) {
+		setColoredGrid(w, h, originx, originy, countx, county, incrx, incry, color, xAxisColor, yAxisColor, true)
+	}
+
+	/** Create a grid in the XY plane.
+	  * See `setGrid()`, here the color is changed for the X and Y axis independently. */
+	def setColoredGrid(
+		w:Float,       h:Float,
+		originx:Float, originy:Float, 
+		countx:Int,    county:Int, 
+		incrx:Float,   incry:Float, 
+		color:Rgba, 
+		xAxisColor:Rgba = Rgba.Red,
+		yAxisColor:Rgba = Rgba.Green,
+		alongXZ:Boolean = false) {
+		setGrid(
+			w, h, originx, originy, countx, county, incrx, incry,
+			{ x => if(x == countx/2) yAxisColor else color },
+			{ y => if(y == county/2) xAxisColor else color },
+			alongXZ
+		)
+	}
+
+	/** Create a grid in the XY plane.
+	  *
+	  * `w` and `h` express the width of horizontal lines and height of vertical lines
+	  * respectively. `originx` and `originy` express the position of the center of the grid.
+	  * `countx` and `county` give the number of lines along X and Y. `incrx` and `incry`
+	  * express the distance between each line segment along X and Y. Finally, `colorx`
+	  * and `colory` gives functors that takes a line number as argument and return a color.
+	  * They allow to choose which color to use for each grid line. Be careful, this is
+	  * not the x or y value that is passed, but the increment (for precision reasons)
+	  * between 0 and `countx` or `county`.
+	  *
+	  * By default, the grid is along the XY plane, passing `true` to the `alongXZ`
+	  * argument will put the grid in the XZ plane.
+	  *
+	  * For example, to draw a grid of 10x10 cells, with therefore 11 lines along each 
+	  * axis, with only the X and Y axes red and green, you could allocate a 
+	  * `val lines = new LinesMesh(gl, 121)`, an can for example use :
+	  * 
+	  *     lines.setGrid(10, 10, 0, 0, 10, 10, 1, 1, 
+	  *					{ x => if(x==5) Rgba.Red else Rgba.Grey50 },
+	  *					{ y => if(y==5) Rgba.Green else Rgba.Grey50 },
+	  *					false)
+	  */
+	def setGrid(
+		w:Float,       h:Float,
+		originx:Float, originy:Float, 
+		countx:Int,    county:Int, 
+		incrx:Float,   incry:Float, 
+		colorx: (Int) => Rgba, 
+		colory: (Int) => Rgba,
+		alongXZ:Boolean = false) {
+
 		var i = 0
 		var x = originx - (incrx * (countx/2))
 		var y = originy - (incry * (county/2))
+		val ww = w / 2f
+		val hh = h / 2f
 
 		while(i <= countx) {
-			setLine(i, x, originy-h, 0, x, originy+h, 0)
+			if(alongXZ)
+			     setLine(i, x, 0, originy - hh, x, 0, originy + hh)
+			else setLine(i, x, originy - hh, 0, x, originy + hh, 0)
 
-			if(x > -0.0001 && x < 0.0001)
-			     setColor(i, xAxisColor)
-			else setColor(i, color)
+			setColor(i, colorx(i))
 
 			x += incrx
 			i += 1
 		}
 
 		while(i <= countx+county+1) {
-			setLine(i, originx-w, y, 0, originx+w, y, 0)
+			if(alongXZ)
+			     setLine(i, originx - ww, 0, y, originx + ww, 0, y)
+			else setLine(i, originx - ww, y, 0, originx + ww, y, 0)
 
-			if(y > -0.0001 && y < 0.0001)
-			     setColor(i, yAxisColor)
-			else setColor(i, color)
+			setColor(i, colory(i-countx-1))
 
 			y += incry
 			i += 1

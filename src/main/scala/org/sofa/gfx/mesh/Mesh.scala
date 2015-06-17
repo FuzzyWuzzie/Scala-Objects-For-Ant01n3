@@ -22,7 +22,8 @@ trait MeshLoader extends Loader {
   * the Collada format, to read the geometry of the object.
   * This loader tries to open the given resource directly, then if not
   * found, tries to find it in each of the pathes provided by the include
-  * path of [[org.sofa.gfx.io.collada.ColladaFile]]. If not found it throws an IOException. */
+  * path of [[org.sofa.gfx.io.collada.ColladaFile]]. If not found it
+  * throws an IOException. */
 class ColladaMeshLoader extends MeshLoader {
     def open(gl:SGL, resource:String, geometry:String):Mesh = {
     	val file = new ColladaFile(resource)
@@ -53,8 +54,8 @@ class InvalidPrimitiveException(msg:String) extends Exception(msg)
 /** Thrown when a primitive vertex index is out of bounds. */
 class InvalidPrimitiveVertexException(msg:String) extends Exception(msg)
 
-/** Thrown when drawing without having called `bindShader` or when habing called `begin`
-  * but not `end`. */
+/** Thrown when drawing without having called `bindShader` or when having
+  * called `begin` but not `end`. */
 class InvalidStateException(msg:String) extends Exception(msg)
 
 
@@ -68,7 +69,7 @@ object Mesh {
   * The mesh trait is a very general one allowing all sorts of definition of
   * geometry. It comes as an abstraction above the handling of vertex attributes
   * and indices under the form of [[ArrayBuffer]], [[ElementBuffer]], [[VertexArray]]
-  * and tied [[Shader]].
+  * and a tied [[Shader]].
   *
   * The mesh trait is done to be inherited by concrete classes defining all kinds
   * of geometry, be it static or dynamic. For example there are three very general
@@ -143,7 +144,7 @@ trait Mesh {
 	/** The optional elements index. */
 	protected var meshElements:MeshElement = null
 
-	// XXX TODO dispose on the VA does not dispose the ArrayBuffers. But as they
+	// XXX TODO calling dispose() on the VA does not call dispose() the ArrayBuffers. But as they
 	// are shared, we should probably count the references on them (in MeshAttribute ?).
 
 	/** Release the resource of this mesh, the mesh is no more usable after this. */
@@ -307,21 +308,21 @@ trait Mesh {
     	}
     }
 
-    /** True if the vertex attribute whose name is given is defined in this mesh. */
+    /** True if the vertex attribute `name` is defined in this mesh. */
     def has(name:String):Boolean = {
     	if(meshAttributes ne null)
     		 meshAttributes.contains(name)
     	else false
     }
 
-    /** True if the vertex attribute whose name is given is defined in this mesh. */
+    /** True if the vertex attribute `name` is defined in this mesh. */
     def has(name:VertexAttribute.Value):Boolean = has(name.toString)
     
     /** True if the mesh has elements indices in the vertex attributes to define primitives. */
     def hasElements():Boolean = (meshElements ne null)
 
 // Attribute and element change commands
-// These methods require that begin be called
+// These methods require that begin() be called
 
 // XXX modifications should be done according to a specific mesh class.
 
@@ -333,7 +334,7 @@ trait Mesh {
 	/** This method must be called before any change is made to the data in the mesh.
 	  * If no `names` are given, all attributes will allow modification, as
 	  * well as the optional elements, else only the attributes whose name has
-	  * been given will allow it. The spatial name "Elements" allows modifications
+	  * been given will allow it. The special name "Elements" allows modifications
 	  * on the elements buffer.
 	  *
 	  * Begining modifications on attributes or elements can be costly (since they
@@ -436,7 +437,8 @@ trait Mesh {
       * This depends on the way the data is defined. */
     def drawAs():Int
 
-    /** Draw the last vertex array created. If no vertex array has been created 
+    /** Draw the mesh. For this to work, `bindShader()` must have been called. This will
+      * compile the mesh and send it to OpenGL. If `bindShader()` has never been called,
       * a `NoVertexArrayException` is thrown. This uses the `drawAs()` method to select
       * how to draw the mesh (triangles, points, etc.). */
     def draw() {
@@ -447,9 +449,9 @@ trait Mesh {
     	else throw new NoVertexArrayException("Call bindShader() before draw().")
     }
 
-    /** Draw the `count` first primitives the last vertex array created. A
+    /** Draw the `count` first primitives. A
       * primitive is a line or triangle for example, it depends on the kind of mesh.
-      * If no vertex array has been created a `NoVertexArrayException` is thrown.
+      * If no vertex array has been created with `bindShader()` a `NoVertexArrayException` is thrown.
       * This uses the `drawAs()` method to select
       * how to draw the mesh (triangles, points, etc.), and the `elementsPerPrimitive`
       * to know how many elements (vertices, colors) makes up a primitive. */
@@ -461,9 +463,9 @@ trait Mesh {
     	else throw new NoVertexArrayException("Call bindShader() before draw().")
     }
 
-    /** Draw `count` primitives of the last vertex array created starting at `start`. A
+    /** Draw `count` primitives, starting at `start`. A
       * primitive is a line or triangle for example, it depends on the kind of mesh.
-      * If no vertex array has been created a `NoVertexArrayException` is thrown.
+      * If no vertex array has been created with `bindShader()` a `NoVertexArrayException` is thrown.
       * This uses the `drawAs()` method to select
       * how to draw the mesh (triangles, points, etc.), and the `elementsPerPrimitive`
       * to know how many elements (vertices, colors) makes up a primitive. */
@@ -511,11 +513,10 @@ trait Mesh {
     	}
     }
 
-// Associated vertex array, XXX this API whill change
-
     /** The associated vertex array.
       *
       * This is created when `bindShader` is called. */
+// Associated vertex array, XXX this API whill change, since a mesh may not create a vertex array.
     def vertexArray():VertexArray = va
 
     /** True as soon as `bindShader` has been called. After this a vertex array is created
@@ -554,7 +555,7 @@ trait Mesh {
       *    myMesh.bindShader(myShader, Vertex -> "V", Normal -> "N")
 	  *
       * The vertex array is then remembered. It will be disposed only if a new vertex attribute
-      * is added.
+      * is added or `bindShader` is called anew.
       */
     def bindShader(shader:ShaderProgram, locations:Tuple2[String,String]*):VertexArray = {
     	if(! mapped.isEmpty)
