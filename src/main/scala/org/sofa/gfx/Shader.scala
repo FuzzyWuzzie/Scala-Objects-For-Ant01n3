@@ -183,7 +183,8 @@ trait ShaderLoader extends Loader {
   * path. If not found it throws an IOException. */
 class DefaultShaderLoader extends ShaderLoader {
     def open(resource:String):InputStream = {
-    	new FileInputStream(findFile(resource, Shader.path))
+    	//new FileInputStream(findFile(resource, Shader.path))
+    	findStream(resource, Shader.path)
     }
 }
 

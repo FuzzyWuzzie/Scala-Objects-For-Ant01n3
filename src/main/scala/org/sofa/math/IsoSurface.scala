@@ -6,6 +6,7 @@ import scala.collection.mutable.HashSet
 
 import org.sofa.collection.{SpatialHash, HashPoint3}
 
+
 /** One iso-cube of the marching cubes algorithm used by the `IsoSurface`.
   * 
   * An iso-cube evaluates the surface implicit function at its height vertices
@@ -102,9 +103,9 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 			var i = 0
 			
 			while(triTable(cubeIndex)(i) != -1) {
-				val a = triPoints(triTable(cubeIndex)(i))
-				val b = triPoints(triTable(cubeIndex)(i+1))
-				val c = triPoints(triTable(cubeIndex)(i+2))
+				var a = triPoints(triTable(cubeIndex)(i))
+				var b = triPoints(triTable(cubeIndex)(i+1))
+				var c = triPoints(triTable(cubeIndex)(i+2))
 				
 				// Create the triangle
 				
@@ -132,6 +133,8 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 		}
 	}
 	
+	/** Find the evaluation of the surface at a given point of a cube, or compute it if needed, and
+	  * return the point index in the `points` array. */
 	protected def cubePoint(p:Int, nb:Array[IsoCube], eval:(Point3)=>Double):Int = {
 		import IsoSurface._
 		
@@ -158,7 +161,7 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 		points(p)
 	} 
 	
-	/** Interpolate the point position along a edge of a marching cube defined by points
+	/** Interpolate the point position along an edge of a marching cube defined by points
 	  * `p0` and `p1` using the values `v0` and `v1` for the iso-values at these two
 	  * respective points. */
 	protected def vertexInterp(isoLevel:Double, edge:Int, p0:Int, p1:Int, v0:Double, v1:Double, nb:Array[IsoCube]):Int = {
@@ -198,20 +201,27 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 			
 			// Add the point.
 			
-			i = surface.triPoints.size
-			surface.triPoints += p
-			surface.pointsTri += null
-
-			assert(surface.triPoints.size == surface.pointsTri.size)
-			
-			if(surface.autoNormals) {
-				surface.normals   += null
-			
-				assert(surface.triPoints.size == surface.normals.size)
-			}			
+			i = addTriPoint(p)
 		}
 		
 		i
+	}
+
+	/** Add a triangle point `p`. */
+	protected def addTriPoint(p:Point3):Int = {
+		val i = surface.triPoints.size
+		surface.triPoints += p
+		surface.pointsTri += null
+
+		assert(surface.triPoints.size == surface.pointsTri.size)
+			
+		if(surface.autoNormals) {
+			surface.normals   += null
+			
+			assert(surface.triPoints.size == surface.normals.size)
+		}		
+
+		i	
 	}
 	
 	protected def cubeEdge(edge:Int, nb:Array[IsoCube]):Int = {
@@ -224,6 +234,7 @@ class IsoCube(val index:Int, val pos:HashPoint3, val surface:IsoSurface) {
 		}
 	}
 }
+
 
 /** A simple triangle in the iso-surface, it references points in the `triPoints`
   * field of the `IsoSurface`. It can compute its normal if enabled in the
@@ -249,11 +260,22 @@ class IsoTriangle(val a:Int, val b:Int, val c:Int) {
 		
 		normal
 	}
+
+	/** The coordinates of the i-th point of the surface. */
+	def getPoint(i:Int, surface:IsoSurface):Point3 = {
+		i match {
+			case 0 => surface.triPoints(a)
+			case 1 => surface.triPoints(b)
+			case 2 => surface.triPoints(c)
+			case _ => throw new RuntimeException("invalid point index %d (0..2)".format(i))
+		}
+	}
 	
 	override def toString():String = "tri[%d, %d, %d]".format(a, b, c)
 	
 	def toString(surface:IsoSurface):String = "tri[%d,%d,%d][%s, %s, %s]".format(a,b,c,surface.triPoints(a), surface.triPoints(b), surface.triPoints(c))
 }
+
 
 /** Build a surface from an iso-surface provided by an evaluation function and an iso-level
   * parameter.
@@ -324,7 +346,7 @@ class IsoSurface(val cellSize:Double) {
 	/** Activate the computation of normals from the triangles. Be careful, this
 	  * computation will merely use the normals of triangles that share a point to
 	  * average the normal on this point. As some triangles are very large and
-	  * other small, the reconstructed normals will nor probably be very good,
+	  * other small, the reconstructed normals will not probably be very good,
 	  * it is far better to try to evaluate the normal to the surface using
 	  * the derivative of you surface implicit function (furthermore the
 	  * normal computation takes more space and time). It is off by default. */
@@ -333,7 +355,8 @@ class IsoSurface(val cellSize:Double) {
 	}
 
 	/** Browse each point used by triangles. The indices are important as triangles
-	  * reference these indices and neighbor triangles share the points. */
+	  * reference these indices and neighbor triangles share the points (point
+	  * sharing may be disabled). */
 	def foreachTrianglePoint(code:(Int, Point3)=>Unit) {
 		var i = 0
 		val n = triPoints.size
@@ -488,9 +511,20 @@ class IsoSurface(val cellSize:Double) {
 	}
 }
 
+
 /** IsoSurface companion object. */
 object IsoSurface {
 
+	/** By default, the surface is built trying to share the points between triangles.
+	  * Some rendering methods need that each triangle own its points so that individual
+	  * triangle have individual vertex attributes. Activate this setting to avoid
+	  * sharing the points when building the triangles of the surface. The number of 
+	  * points of the surface will therefore be the triangles count times three. */
+	var trianglesDoNotSharePoints = false
+
+	/** By default the surface is trying to be as precise as possible. If you need
+	  * a rought approximation (only surface at 45°) and a slightly faster algorithm,
+	  * disable this setting. */
 	val interpolation = true
 	
 	/** Coordinates of each cube point in the cube as multiples of cellSize. */
@@ -868,14 +902,18 @@ object IsoSurface {
 	)
 }
 
+
 //-----------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------
+
 
 // And old a very inefficient implementation of the IsoSurface.
 
+
 /** A triangle. */
 class TriangleSimple(val p0:Point3, val p1:Point3, val p2:Point3) {}
+
 
 /** Old and inefficient implementation of the IsoSurface.
   *   

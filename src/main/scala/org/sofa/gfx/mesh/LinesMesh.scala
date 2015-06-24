@@ -2,7 +2,7 @@ package org.sofa.gfx.mesh
 
 import org.sofa.nio._
 import org.sofa.gfx._
-import org.sofa.math.{Point3, Rgba, Vector3}
+import org.sofa.math.{Point2, Point3, Rgba, Vector3, CubicCurve}
 import scala.math._
 
 /** A set of `count` disjoint line segments. */
@@ -32,11 +32,46 @@ class LinesMesh(val gl:SGL, val count:Int) extends Mesh {
     	def rgba(rgba:Rgba):Line = { setColor(line, rgba); this }
     }
 
+    class Curve(var lineStart:Int, var nLines:Int) {
+    	def abcd(from:Point3, ctrlFrom:Point3, ctrlTo:Point3, to:Point3):Curve = {
+    		var i = 0
+    		val step = 1.0 / nLines
+    		// while(i < nLines) {
+    		// 	setLine(lineStart + i,
+    		// 		CubicCurve.evalCubic(from, ctrlFrom, ctrlTo, to, step * i),
+    		// 		CubicCurve.evalCubic(from, ctrlFrom, ctrlTo, to, step * (i + 1)))
+    		// }
+    		var start = CubicCurve.evalCubic(from, ctrlFrom, ctrlTo, to, 0)
+    		while(i < nLines) {
+    			val end = CubicCurve.evalCubic(from, ctrlFrom, ctrlTo, to, step * (i + 1))
+    			setLine(lineStart + i, start, end)
+    			start = end
+    			i += 1
+    		}
+    		this
+    	}
+    	def rgba(r:Float, g:Float, b:Float, a:Float):Curve = {
+    		var i = 0
+    		while(i < nLines) { setColor(lineStart+i, r, g, b, a); i += 1 }
+    		this
+    	}
+    	def rgba(rgba:Rgba):Curve = {
+    		var i = 0
+    		while(i < nLines) { setColor(lineStart+i, rgba); i += 1 }
+    		this
+    	}
+    }
+
     /** A dummy object to avoir reallocate it at each call to `line(i)`. */
     protected val line = new Line(-1)
 
+    protected val curve = new Curve(-1, -1)
+
     /** Access to the i-th line for modification. */
     def line(i:Int):Line = { line.line = i; line }
+
+    /** Access to a curve of `nLines` starting at `lineStart`. */
+    def curve(lineStart:Int, nLines:Int):Curve = { curve.lineStart = lineStart; curve.nLines = nLines; curve }
 
     /** Set the i-th line as the line between points (`x0`,`y0`,`z0`) and (`x1`,`y1`,`z1`). */
     def setLine(i:Int, x0:Float, y0:Float, z0:Float, x1:Float, y1:Float, z1:Float):LinesMesh = {

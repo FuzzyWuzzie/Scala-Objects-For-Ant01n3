@@ -62,6 +62,10 @@ object VertexAttribute extends Enumeration {
 	  * instance of the repeatedly drawn mesh and is added to the position. */
 	val Offset = Value("Offset")
 
+	/** Barycentric coordinates for a triangle, usualy (1,0,0), (0,1,0) or (0,0,1).
+	  * Mostly used to draw wireframes. */
+	val BaryCoord = Value("BaryCoord")
+
 	/** Convert a pair (VertexAttribute,String) to a pair (String,String) as often used with Mesh.newVertexArray(). */
 	implicit def VaStPair2StStPair(p:(VertexAttribute,String)):(String,String) = (p._1.toString, p._2)
 

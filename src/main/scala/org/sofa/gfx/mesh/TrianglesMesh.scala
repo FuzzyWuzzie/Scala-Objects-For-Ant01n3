@@ -49,6 +49,9 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	/** The mutable set of bone weights. */
 	protected var W:MeshAttribute = _
 
+	/** The mutable set of barycentric coordinates. */
+	protected var By:MeshAttribute = _
+
 	/** The mutable set of elements to draw. */
 	protected var I:MeshElement = addIndices
 
@@ -97,6 +100,8 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 
 		/** Set the `vertex` bone weights. There can be up to four bones. */
 		def wei(w0:Float, w1:Float, w2:Float, w3:Float):Vx = { setVertexWeights(vertex,w0,w1,w2,w3); this }
+
+		def bry(a:Float, b:Float, c:Float):Vx = { setVertexBaryCoord(vertex,a,b,c); this }
 
 		/** Set the `values` for `vertex` attribute `name`. */
 		def usr(name:String, values:Float*):Vx = { 
@@ -281,6 +286,23 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 
 		this
 	}
+
+	/** Set the `barycoord` of `vertex`. */
+	def setVertexBaryCoord(vertex:Int, barycoord:NumberSeq3):TrianglesMesh = setVertexBaryCoord(vertex, barycoord.x.toFloat, barycoord.y.toFloat, barycoord.z.toFloat)
+	
+	/** Set the barycentric coordinate (`x`, `y`, `z`) of `vertex`. */
+	def setVertexBaryCoord(vertex:Int, x:Float, y:Float, z:Float):TrianglesMesh = {
+		val i = vertex * By.components
+		val data = By.data
+
+		data(i)   = x
+		data(i+1) = y
+		data(i+2) = z
+
+		By.range(vertex, vertex+1)		
+
+		this
+	}
 	
 	/** Map the `t`-th triangle to the vertex attributes indices (`a`, `b`, `c`). */
 	def setTriangle(triangle:Int, a:Int, b:Int, c:Int):TrianglesMesh = {
@@ -294,6 +316,12 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		I.range(triangle, triangle+1)
 
 		this
+	}
+
+	def setTriangleBaryCoord(a:Int, b:Int, c:Int):TrianglesMesh = {
+		setVertexBaryCoord(a, 1, 0, 0)		
+		setVertexBaryCoord(b, 0, 1, 0)		
+		setVertexBaryCoord(c, 0, 0, 1)		
 	}
 
 	/** Change the coordinates of vertices already identified by `triangle`. This method
@@ -651,4 +679,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 
 	/** Add a bones weight vertex attribute to this mesh. */
 	def addAttributeWeight:MeshAttribute = { if(W eq null) { W = addMeshAttribute(VertexAttribute.Weight, 4) }; W }
+
+	/** Add a barycentric coordinate vertex attribute to this mesh. */
+	def addAttributeBaryCoord:MeshAttribute = { if(By eq null) { By = addMeshAttribute(VertexAttribute.BaryCoord, 3) }; By }
 }

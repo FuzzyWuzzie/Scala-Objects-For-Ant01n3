@@ -53,10 +53,7 @@ object SVG {
 	/** Extract the data attribute of a `path`. */
 	def pathData(path:NodeSeq):String = (path \ "@d").text
 
-	/** Convert SVG `path` data to a list of lines and curves.
-	  * As some pathes data are relative to previous pathes, you
-	  * can give a `lpt` (the last point of the previous
-	  * path) used to compute the coordinates of this path. */
+	/** Convert SVG `path` data to a list of lines and curves. */
 	def convertPath(path:String, lpt:Point2 = Point2(0,0)):List[PathItem] = {
 		path match {
 			case CompatiblePath(points) => {  
@@ -71,8 +68,7 @@ object SVG {
 
 	/** Convert a set of SVG `pathes` data into a list of pathes under the
 	  * form of a list of lines and curves. This recursive method can take
-	  * a last encountered point `lpt`, as set of pathes can be relative one to
-	  * another. */
+	  * a last encountered point `lpt`, n. */
 	def convertPathes(pathes:List[String], lpt:Point2 = Point2(0,0)):List[List[PathItem]] = {
 		pathes match {
 			case Nil => { List[List[PathItem]]() }
@@ -109,7 +105,8 @@ object SVG {
 				else makePath(tail, a, null, fpt, "M")
 			}
 			case "m" :: x :: y :: tail => {
-				val a = Point2(x.toDouble + lpt.x, y.toDouble + lpt.y)
+//				val a = Point2(x.toDouble + lpt.x, y.toDouble + lpt.y)
+				val a = Point2(x.toDouble, y.toDouble)
 				if(fpt == null)
 				     makePath(tail, a, null, a, "m")
 				else makePath(tail, a, null, fpt, "m")
@@ -124,8 +121,8 @@ object SVG {
 			case "c" :: xb :: yb :: xc :: yc :: xd :: yd :: tail => {
 				val a = lpt												// pt1
 				val b = Point2(xb.toDouble + a.x, yb.toDouble + a.y)	// ctrl pt1
-				val c = Point2(xc.toDouble + b.x, yc.toDouble + b.y)	// ctrl pt2
-				val d = Point2(xd.toDouble + c.x, yd.toDouble + c.y)	// pt2
+				val c = Point2(xc.toDouble + a.x, yc.toDouble + a.y)	// ctrl pt2
+				val d = Point2(xd.toDouble + a.x, yd.toDouble + a.y)	// pt2
 				PathCurve(a, b, c, d) :: makePath(tail, d, c, fpt, "c")
 			}
 			case "S" :: xc :: yc :: xd :: yd :: tail => {
