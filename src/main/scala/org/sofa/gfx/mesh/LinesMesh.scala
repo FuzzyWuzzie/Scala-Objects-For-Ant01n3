@@ -5,6 +5,9 @@ import org.sofa.gfx._
 import org.sofa.math.{Point2, Point3, Rgba, Vector3, CubicCurve}
 import scala.math._
 
+// TODO - Rename Curve in CubicCurve (and add quadratic curves ?)
+
+
 /** A set of `count` disjoint line segments. */
 class LinesMesh(val gl:SGL, val count:Int) extends Mesh {
 

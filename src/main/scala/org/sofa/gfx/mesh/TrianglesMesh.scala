@@ -8,8 +8,8 @@ import org.sofa.nio.{IntBuffer}
 
 
 // TODO
-//   - Allow to add the indices if needed only.
-//   - Add methods to ensure vertexToTriangles relations are remembered and automatically
+//  - Allow to add the indices if needed only.
+//  - Add methods to ensure vertexToTriangles relations are remembered and automatically
 //     updated if needed.
 
 
@@ -19,7 +19,7 @@ import org.sofa.nio.{IntBuffer}
   *
   * There are `size` triangles at max in the mesh, and `size`*3 vertices
   * will be allocated by default. You can share vertices if you which,
-  * not all allocated vertices need to be used. Therefore if you specify
+  * not all allocated vertices need to be used. If you specify
   * a value > 0 for `vertices`, only this number of vertex attributes will
   * be allocated.
   */

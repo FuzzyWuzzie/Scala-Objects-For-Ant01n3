@@ -125,9 +125,9 @@ trait PointOfView {
     def eyeToFocusVector():Vector3 = Vector3(focus.x-cartesianEye.x, focus.y-cartesianEye.y, focus.z-cartesianEye.z)
     
     protected def cartesianFromSpherical() {
-        cartesianEye.x = sphericalEye.z * cos(sphericalEye.x) * sin(sphericalEye.y)
-        cartesianEye.z = sphericalEye.z * sin(sphericalEye.x) * sin(sphericalEye.y)
-        cartesianEye.y = sphericalEye.z * cos(sphericalEye.y)
+        cartesianEye.x = (sphericalEye.z * cos(sphericalEye.x) * sin(sphericalEye.y)) + focus.x
+        cartesianEye.z = (sphericalEye.z * sin(sphericalEye.x) * sin(sphericalEye.y)) + focus.z
+        cartesianEye.y = (sphericalEye.z * cos(sphericalEye.y))                       + focus.y
     	//Console.err.println("cart(%s) -> sphe(%s)".format(cartesianEye, sphericalEye))
     }
     

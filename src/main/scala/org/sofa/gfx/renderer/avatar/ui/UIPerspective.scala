@@ -1,7 +1,7 @@
 package org.sofa.gfx.renderer.avatar.ui
 
 import org.sofa.math.{ Point3, Vector3, Rgba, Box3, Box3From, Box3PosCentered, Box3Default }
-import org.sofa.gfx.surface.event.{ ActionKey=>SurfaceActionChar }
+import org.sofa.gfx.surface.event.{ ActionKey⇒SurfaceActionChar }
 import org.sofa.gfx.renderer.{ Screen }
 import org.sofa.gfx.renderer.{ Avatar, DefaultAvatar, DefaultAvatarComposed, AvatarName, AvatarRender, AvatarInteraction, AvatarSpace, AvatarContainer, AvatarFactory, DefaultAvatarFactory, AvatarSpaceState, AvatarState, AvatarBaseStates, NoSuchAvatarStateException, AvatarStateException }
 import org.sofa.gfx.surface.event._
@@ -19,6 +19,8 @@ object UIPerspectiveStates {
 	case class Eye(eye: Vector3) extends AvatarSpaceState
 	case class Focus(focus: Vector3) extends AvatarSpaceState
 	case class Projection(width: Double, near: Double, far: Double) extends AvatarSpaceState
+	case class ScrollSpeed(speed:Double) extends AvatarState
+	case class ScaleSpeed(speed:Double) extends AvatarState
 }
 
 
@@ -33,51 +35,59 @@ class UIPerspective(name: AvatarName, screen: Screen)
 
 	var step = 0.2
 
+	var scaleSpeed = 0.05
+
+	var scrollSpeed = 0.5
+
 	def camera:CameraSpace = space.camera
 
 	override def change(state:AvatarState) {
+		import UIPerspectiveStates._
+
 		if(! changed(state)) {
 			state match {
-				case AvatarBaseStates.ChangeRenderer(renderer) => {
+				case AvatarBaseStates.ChangeRenderer(renderer) ⇒ {
 					renderer match {
-						case r:UIAvatarRenderBase => {
+						case r:UIAvatarRenderBase ⇒ {
 							this.renderer = r
 							r.setAvatar(this)
 							self.screen.requestRender
 						}
-						case _ => throw new AvatarStateException("the renderer type must be UIAvatarRenderBase")
+						case _ ⇒ throw new AvatarStateException("the renderer type must be UIAvatarRenderBase")
 					}
 				}
-				case _ => throw new NoSuchAvatarStateException(state)
+				case ScrollSpeed(speed) ⇒ { scrollSpeed = speed }
+				case ScaleSpeed(speed) ⇒ { scaleSpeed = speed }
+				case _ ⇒ throw new NoSuchAvatarStateException(state)
 			}
 		}
 	}
 
 	def consumeEvent(event: Event): Boolean = {
 		event match {
-			case scroll:ScrollEvent => {
-				space.camera.rotateEyeHorizontal(scroll.delta.x * step * 0.5)
-				space.camera.rotateEyeVertical(-scroll.delta.y * step * 0.5)
+			case scroll:ScrollEvent ⇒ {
+				space.camera.rotateEyeHorizontal(scroll.delta.x * step * scrollSpeed)
+				space.camera.rotateEyeVertical(-scroll.delta.y * step * scrollSpeed)
 				self.screen.requestRender
 				true
 			}
-			case scale:ScaleEvent => {
-				space.camera.eyeTraveling(scale.delta * 0.05)
+			case scale:ScaleEvent ⇒ {
+				space.camera.eyeTraveling(scale.delta * scaleSpeed)
 				self.screen.requestRender
 				true
 			}
-			case k:ActionKeyEvent => {
+			case k:ActionKeyEvent ⇒ {
 			    import org.sofa.gfx.surface.event.ActionKey._
 
 			    if(k.isEnd) {
 					k.key match {
-		    			case PageUp   => space.camera.eyeTraveling(-step)
-		    			case PageDown => space.camera.eyeTraveling(step)
-		    			case Up       => space.camera.rotateEyeVertical(step)
-		    			case Down     => space.camera.rotateEyeVertical(-step)
-		    			case Left     => space.camera.rotateEyeHorizontal(-step)
-		    			case Right    => space.camera.rotateEyeHorizontal(step)
-		    			case _        => {}
+		    			case PageUp   ⇒ space.camera.eyeTraveling(-step)
+		    			case PageDown ⇒ space.camera.eyeTraveling(step)
+		    			case Up       ⇒ space.camera.rotateEyeVertical(step)
+		    			case Down     ⇒ space.camera.rotateEyeVertical(-step)
+		    			case Left     ⇒ space.camera.rotateEyeHorizontal(-step)
+		    			case Right    ⇒ space.camera.rotateEyeHorizontal(step)
+		    			case _        ⇒ {}
 					}
 					self.screen.requestRender
 					true
@@ -86,7 +96,7 @@ class UIPerspective(name: AvatarName, screen: Screen)
 					renderer.consumeEvent(event)
 				}	
 			}
-			case _ => {
+			case _ ⇒ {
 				renderer.consumeEvent(event)
 			}
 		}
