@@ -21,6 +21,7 @@ object UIPerspectiveStates {
 	case class Projection(width: Double, near: Double, far: Double) extends AvatarSpaceState
 	case class ScrollSpeed(speed:Double) extends AvatarState
 	case class ScaleSpeed(speed:Double) extends AvatarState
+	case class PanSpeed(speed:Double) extends AvatarState
 }
 
 
@@ -38,6 +39,10 @@ class UIPerspective(name: AvatarName, screen: Screen)
 	var scaleSpeed = 0.05
 
 	var scrollSpeed = 0.5
+
+	var panSpeed = 1.0
+
+	var shift = false
 
 	def camera:CameraSpace = space.camera
 
@@ -58,6 +63,7 @@ class UIPerspective(name: AvatarName, screen: Screen)
 				}
 				case ScrollSpeed(speed) ⇒ { scrollSpeed = speed }
 				case ScaleSpeed(speed) ⇒ { scaleSpeed = speed }
+				case PanSpeed(speed) ⇒ { panSpeed = speed }
 				case _ ⇒ throw new NoSuchAvatarStateException(state)
 			}
 		}
@@ -66,8 +72,12 @@ class UIPerspective(name: AvatarName, screen: Screen)
 	def consumeEvent(event: Event): Boolean = {
 		event match {
 			case scroll:ScrollEvent ⇒ {
-				space.camera.rotateEyeHorizontal(scroll.delta.x * step * scrollSpeed)
-				space.camera.rotateEyeVertical(-scroll.delta.y * step * scrollSpeed)
+				if(shift) {
+					space.camera.translateFocusSpherical(-scroll.delta.x * panSpeed, 0, -scroll.delta.y * panSpeed)
+				} else {
+					space.camera.rotateEyeHorizontal(scroll.delta.x * step * scrollSpeed)
+					space.camera.rotateEyeVertical(-scroll.delta.y * step * scrollSpeed)
+				}
 				self.screen.requestRender
 				true
 			}
@@ -80,20 +90,26 @@ class UIPerspective(name: AvatarName, screen: Screen)
 			    import org.sofa.gfx.surface.event.ActionKey._
 
 			    if(k.isEnd) {
+			    	val cam = space.camera
+
 					k.key match {
-		    			case PageUp   ⇒ space.camera.eyeTraveling(-step)
-		    			case PageDown ⇒ space.camera.eyeTraveling(step)
-		    			case Up       ⇒ space.camera.rotateEyeVertical(step)
-		    			case Down     ⇒ space.camera.rotateEyeVertical(-step)
-		    			case Left     ⇒ space.camera.rotateEyeHorizontal(-step)
-		    			case Right    ⇒ space.camera.rotateEyeHorizontal(step)
+		    			case PageUp   ⇒ cam.eyeTraveling(-step)
+		    			case PageDown ⇒ cam.eyeTraveling(step)
+		    			case Up       ⇒ if(shift) cam.translateFocusSpherical( 0, 0, -panSpeed) else cam.rotateEyeVertical(step)
+		    			case Down     ⇒ if(shift) cam.translateFocusSpherical( 0, 0,  panSpeed) else cam.rotateEyeVertical(-step)
+		    			case Left     ⇒ if(shift) cam.translateFocusSpherical( panSpeed, 0,  0) else cam.rotateEyeHorizontal(-step)
+		    			case Right    ⇒ if(shift) cam.translateFocusSpherical(-panSpeed, 0,  0) else cam.rotateEyeHorizontal(step)
+		    			case Shift    ⇒ shift = false
 		    			case _        ⇒ {}
 					}
 					self.screen.requestRender
 					true
 				}
 				else {
-					renderer.consumeEvent(event)
+					k.key match {
+						case Shift ⇒ { shift = true; self.screen.requestRender; true }
+						case _     ⇒ renderer.consumeEvent(event)
+					}
 				}	
 			}
 			case _ ⇒ {
