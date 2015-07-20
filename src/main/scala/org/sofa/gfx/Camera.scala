@@ -48,7 +48,7 @@ trait PointOfView {
 
     /** Distance between the two eyes divided by two. This value is used
       * by `lookAtLeftEye` and `lookAtRightEye`. */
-    var eyeAngle = Pi / 64.0
+    var eyeDist = 0.1
 
 	/** Distance from the eye to the focus. */    
     def radius_= (value:Double):Unit = { sphericalEye.z = value; cartesianFromSpherical }
@@ -158,6 +158,56 @@ trait PointOfView {
 object Camera { def apply() = new Camera() }
 
 
+trait StereoView extends PointOfView {
+
+	def lookAt()
+
+	/** Same as [[lookAt]], but offset the eye around the focus point by `eyeDist` to
+      * represent the scene as seen from the left eye. */
+    def lookAtLeftEye() {
+    	// Compute an offset vector perpendicular to the up X eye direction plane.
+    	val ce  = Vector3(cartesianEye)
+    	val fp  = Vector3(focus)
+    	val dir = up X Vector3(cartesianEye, focus)
+    	dir.normalize
+    	dir *= eyeDist
+
+    	// Offset the eye and focus to the left.
+    	cartesianEye += dir
+    	focus -= dir
+
+    	// Change the look at
+    	lookAt
+
+    	// Restore the cartesian eye and focus.
+    	cartesianEye.copy(ce)
+    	focus.copy(fp)
+    }
+
+    /** Same as [[lookAt]], but offset the eye around the focus point by `eyeDist` to
+      * represent the scene as seen from the right eye. */
+    def lookAtRightEye() {
+    	// Compute an offset vector perpendicular to the up X eye direction plane.
+    	val ce  = Vector3(cartesianEye)
+    	val fp  = Vector3(focus)
+    	val dir = up X Vector3(cartesianEye, focus)
+    	dir.normalize
+    	dir *= eyeDist
+
+    	// Offset the eye and focus to the right.
+    	cartesianEye -= dir
+    	focus -= dir
+
+    	// Change the look at
+    	lookAt
+
+    	// Restore the cartesian eye and focus.
+    	cartesianEye.copy(ce)
+    	focus.copy(fp)
+    }
+}
+
+
 /** A camera analogy for OpenGL.
   *
   * The camera fully implement a [[PointOfView]] and has the same abilities (the position
@@ -172,7 +222,7 @@ object Camera { def apply() = new Camera() }
   * It stores a view port in pixels that express the rendering canvas dimensions. This canvas also
   * allows to control the aspect-ratio of the camera. 
   */
-class Camera extends Space with PointOfView {
+class Camera extends Space with StereoView {
     
     /** Define a model-view matrix according to the eye position and pointing at the
       * focus point. This erases the model-view matrix at the top of the stack and copy in
@@ -186,24 +236,6 @@ class Camera extends Space with PointOfView {
       * This method does not empty the model-view matrix stack. */
     def lookAt() { lookAt(cartesianEye, focus, up) }
 
-    /** Same as [[lookAt]], but offset the eye around the focus point by `eyeAngle` to
-      * represent the scene as seen from the left eye. */
-    def lookAtLeftEye() {
-    	val t = theta
-    	theta = t + eyeAngle
-    	lookAt
-    	theta = t
-    }
-
-    /** Same as [[lookAt]], but offset the eye around the focus point by `eyeAngle` to
-      * represent the scene as seen from the right eye. */
-    def lookAtRightEye() {
-    	val t = theta
-    	theta = t - eyeAngle
-    	lookAt
-    	theta = t
-    }
-
     override def toString() = "cam{cartesian(%s) spherical(%s) focus(%s) up(%s) vp(%s)}".format(cartesianEye, sphericalEye, focus, up, viewport)
 }
 
@@ -211,7 +243,7 @@ class Camera extends Space with PointOfView {
 /** Identical to the [[Camera]] object but allows to wrap a [[Space]] instance to
   * reuse it as an orbiting camera. Use the `setSpace()` method to specify the space
   * to use. The `lookAt()`  method will overwrite the top-most model-view matrix. */
-class CameraSpace extends PointOfView {
+class CameraSpace extends StereoView {
 	var space:Space = null
 
 	def setSpace(space:Space) { this.space = space }
@@ -219,19 +251,5 @@ class CameraSpace extends PointOfView {
 	def lookAt() {
 		if(space ne null)
 			space.lookAt(cartesianEye, focus, up)
-	}
-
-	def lookAtLeftEye() {
-		val t = theta
-		theta = t + eyeAngle
-		lookAt
-		theta = t
-	}
-
-	def lookAtRightEye() {
-		val t = theta
-		theta = t - eyeAngle
-		lookAt
-		theta = t
 	}
 }

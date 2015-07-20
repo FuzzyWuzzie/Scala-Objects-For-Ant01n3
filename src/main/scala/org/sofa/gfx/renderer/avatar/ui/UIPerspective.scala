@@ -19,6 +19,7 @@ object UIPerspectiveStates {
 	case class Eye(eye: Vector3) extends AvatarSpaceState
 	case class Focus(focus: Vector3) extends AvatarSpaceState
 	case class Projection(width: Double, near: Double, far: Double) extends AvatarSpaceState
+	case class Stereo(eyeDist:Double) extends AvatarSpaceState
 	case class ScrollSpeed(speed:Double) extends AvatarState
 	case class ScaleSpeed(speed:Double) extends AvatarState
 	case class PanSpeed(speed:Double) extends AvatarState
@@ -181,6 +182,54 @@ class UIAvatarSpacePerspective(avatar: Avatar) extends UIAvatarSpace(avatar) {
 		camera.lookAt
 	}
 
+	def pushSubSpaceLeftEye() {
+		val screen = self.screen
+		val gl = screen.gl
+		val space = screen.space
+		val from = toSpace.from
+		val to = toSpace.to
+
+		// TODO actually this will work only when the UIPerspective uses the full canvas.
+		screen.space.viewport = (screen.surface.width/2, screen.surface.height)
+		gl.viewport(0, 0, screen.space.viewport.x.toInt, screen.space.viewport.y.toInt)
+		
+//printf("left -x = %f  +x = %f%n", from.x+camera.eyeDist, to.x+camera.eyeDist)
+		space.pushProjection
+		// Fustum assymetry
+		space.frustum(from.x+camera.eyeDist, to.x+camera.eyeDist, from.y, to.y, from.z)
+//		space.frustum(from.x, to.x, from.y, to.y, from.z)
+		space.maxDepth = to.z
+
+		space.push
+		camera.setSpace(space)
+
+		camera.lookAtLeftEye
+	}
+
+	def pushSubSpaceRightEye() {
+		val screen = self.screen
+		val gl = screen.gl
+		val space = screen.space
+		val from = toSpace.from
+		val to = toSpace.to
+
+		// TODO actually this will work only when the UIPerspective uses the full canvas.
+		screen.space.viewport = (screen.surface.width/2, screen.surface.height)
+		gl.viewport(screen.surface.width/2, 0, screen.space.viewport.x.toInt, screen.space.viewport.y.toInt)
+
+//printf("right -x = %f  +x = %f%n", from.x-camera.eyeDist, to.x-camera.eyeDist)
+		space.pushProjection
+		// Fustum assymetry
+		space.frustum(from.x-camera.eyeDist, to.x-camera.eyeDist, from.y, to.y, from.z)
+//		space.frustum(from.x, to.x, from.y, to.y, from.z)
+		space.maxDepth = to.z
+
+		space.push
+		camera.setSpace(space)
+
+		camera.lookAtRightEye
+	}
+
 	override def popSubSpace() {
 		val space = self.screen.space
 
@@ -194,6 +243,9 @@ class UIAvatarSpacePerspective(avatar: Avatar) extends UIAvatarSpace(avatar) {
 		val screen = self.screen
 
 		newState match {
+			case Stereo(eyeDist) ⇒ {
+				camera.eyeDist = eyeDist
+			}
 			case AvatarBaseStates.Move(offset) ⇒ {
 				camera.eyeCartesian(camera.cartesianEye.x + offset.x, camera.cartesianEye.y + offset.y, camera.cartesianEye.z + offset.z)
 				screen.requestRender

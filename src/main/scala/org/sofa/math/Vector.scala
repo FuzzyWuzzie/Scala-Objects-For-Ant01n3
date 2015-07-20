@@ -91,7 +91,7 @@ object Vector3 {
     implicit def vector3ToTuple(v:Vector3):(Double, Double, Double) = (v.x, v.y, v.z)
     def apply(x:Double, y:Double, z:Double) = new Vector3(x, y, z)
     def apply() = new Vector3()
-    def apply(from:Point3, to:Point3) = new Vector3(to.data(0)-from.data(0), to.data(1)-from.data(1), to.data(2)-from.data(2))
+    def apply(from:NumberSeq3, to:NumberSeq3) = new Vector3(to.data(0)-from.data(0), to.data(1)-from.data(1), to.data(2)-from.data(2))
     def apply(other:NumberSeq) = {
         if(other.size < 1) // Nooooo !!!
              new Vector3()
