@@ -3,7 +3,7 @@ package org.sofa.gfx.mesh
 import scala.collection.mutable.ArrayBuffer
 
 import org.sofa.gfx.{SGL, VertexArray, ShaderProgram}
-import org.sofa.math.{Rgba, Point2, Point3, Vector3, NumberSeq2, NumberSeq3, Triangle}
+import org.sofa.math.{Rgba, Point2, Point3, Vector3, NumberSeq2, NumberSeq3, Triangle, IndexedTriangle}
 import org.sofa.nio.{IntBuffer}
 
 
@@ -73,6 +73,9 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	final class Vx(var vertex:Int) {
 		/** Set the `vertex` position (`x`, `y`, `z`). */
 		def pos(x:Float, y:Float, z:Float):Vx = { setVertexPosition(vertex,x,y,z); this }
+
+		/** Set the `vertex` position `p`. */
+		def pos(p:Point3):Vx = { setVertexPosition(vertex,p.x.toFloat,p.y.toFloat,p.z.toFloat); this }
 		
 		/** Set the `vertex` texture coordinates (`u`, `v`). */
 		def tex(u:Float, v:Float):Vx = { setVertexTexCoords(vertex,u,v); this }
@@ -131,8 +134,14 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	/** Set the `t`-th triangle as composed of vertex attributes `v0`, `v1` and `v2` in this order. */
 	def triangle(t:Int, v0:Int, v1:Int, v2:Int) = setTriangle(t, v0, v1, v2)
 
+	/** Set the `t`-th triangle as composed of vertex attributes `v0`, `v1` and `v2` in this order. */
+	def triangle(t:Int, triangle:IndexedTriangle) = setTriangle(t, triangle.i0, triangle.i1, triangle.i2)
+
 	/** Synonym of `triangle()`. */
 	def t(i:Int, v0:Int, v1:Int, v2:Int) = triangle(i, v0, v1, v2)
+
+	/** Synonym of `triangle()`. */
+	def t(i:Int, triangle:IndexedTriangle) = this.triangle(i, triangle.i0, triangle.i1, triangle.i2)
 
 	/** The position of `vertex`. */
 	def position(vertex:Int):Point3 = getVertexPosition(vertex)

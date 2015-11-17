@@ -1,7 +1,7 @@
 package org.sofa.gfx.renderer.backend
 
-import javax.media.opengl._
-import javax.media.opengl.glu._
+import com.jogamp.opengl._
+import com.jogamp.opengl.glu._
 
 import com.jogamp.opengl.util._
 import com.jogamp.newt.event._

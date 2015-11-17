@@ -85,7 +85,7 @@ object SVG {
 	  * a token of the SVG path (numbers or commands 'M', 'l', 'z'...). 
 	  *
 	  * At start, we only need to know a previous point `lpt`. If no path were
-	  * present in the SVG group before this point must be `Point2(0,0)`.
+	  * present in the SVG group before, this point must be `Point2(0,0)`.
 	  * Commands in the path data may start relative to a previous path.
 	  *
 	  * During recursivity, we need the previous point `lpt`, as well as the last 

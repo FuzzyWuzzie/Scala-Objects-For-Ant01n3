@@ -15,7 +15,7 @@ import org.sofa.gfx.mesh.{TrianglesMesh, Mesh, VertexAttribute, LinesMesh}//, Pl
 import org.sofa.gfx.dl.DisplayList
 
 
-object UIrenderUtils {
+object UIRenderUtils {
 	/** A quad mesh to fill a rectangular area. */
 	var plainRect:TrianglesMesh = null
 
@@ -55,34 +55,34 @@ trait UIRenderUtils {
 	def self:Avatar
 
 	def shaderUniform:ShaderProgram = {
-		if(UIrenderUtils.shaderUniform eq null)
-			UIrenderUtils.shaderUniform = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
+		if(UIRenderUtils.shaderUniform eq null)
+			UIRenderUtils.shaderUniform = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
 				"uniform-color-shader",
 				ShaderResource("uniform-color-shader", "uniform_color.vert.glsl", "uniform_color.frag.glsl"))
-		UIrenderUtils.shaderUniform
+		UIRenderUtils.shaderUniform
 	}
 
 	def shaderColor:ShaderProgram = {
-		if(UIrenderUtils.shaderColor eq null) {
-			UIrenderUtils.shaderColor = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
+		if(UIRenderUtils.shaderColor eq null) {
+			UIRenderUtils.shaderColor = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
 				"color-shader",
 				ShaderResource("color-shader", "plain_shader.vert.glsl", "plain_shader.frag.glsl"))
 		}
-		UIrenderUtils.shaderColor
+		UIRenderUtils.shaderColor
 	}
 
 	def shaderTex:ShaderProgram = {
-		if(UIrenderUtils.shaderTex eq null) {
-			UIrenderUtils.shaderTex = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
+		if(UIRenderUtils.shaderTex eq null) {
+			UIRenderUtils.shaderTex = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
 				"image-shader",
 				ShaderResource("image-shader", "image_shader.vert.glsl", "image_shader.frag.glsl"))
 		}
-		UIrenderUtils.shaderTex
+		UIRenderUtils.shaderTex
 	}
 
 	def shaderLayer:ShaderProgram = {
-		if(UIrenderUtils.shaderLayer eq null) {
-			UIrenderUtils.shaderLayer = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
+		if(UIRenderUtils.shaderLayer eq null) {
+			UIRenderUtils.shaderLayer = self.screen.libraries.shaders.getOrAdd(self.screen.gl,
 				"layer-shader",
 				if(self.screen.gl.hasTexImage2DMultisample && self.screen.surface.multiSampling > 1) {
 					val ms = self.screen.surface.multiSampling
@@ -91,93 +91,93 @@ trait UIRenderUtils {
 					ShaderResource("layer-shader", "image_shader.vert.glsl", "image_shader.frag.glsl")
 				})
 		}
-		UIrenderUtils.shaderLayer
+		UIRenderUtils.shaderLayer
 	}
 
 	def plainRect:TrianglesMesh = {
-		if(UIrenderUtils.plainRect eq null) {
+		if(UIRenderUtils.plainRect eq null) {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.plainRect = new TrianglesMesh(gl, 2)
-			UIrenderUtils.plainRect.setVertexPosition(0, 0, 0, 0)
-			UIrenderUtils.plainRect.setVertexPosition(1, 1, 0, 0)
-			UIrenderUtils.plainRect.setVertexPosition(2, 1, 1, 0)
-			UIrenderUtils.plainRect.setVertexPosition(3, 0, 1, 0)
-			UIrenderUtils.plainRect.setTriangle(0, 0, 1, 2)
-			UIrenderUtils.plainRect.setTriangle(1, 0, 2, 3)
-			UIrenderUtils.plainRect.bindShader(shaderUniform, Position -> "position")			
+			UIRenderUtils.plainRect = new TrianglesMesh(gl, 2)
+			UIRenderUtils.plainRect.setVertexPosition(0, 0, 0, 0)
+			UIRenderUtils.plainRect.setVertexPosition(1, 1, 0, 0)
+			UIRenderUtils.plainRect.setVertexPosition(2, 1, 1, 0)
+			UIRenderUtils.plainRect.setVertexPosition(3, 0, 1, 0)
+			UIRenderUtils.plainRect.setTriangle(0, 0, 1, 2)
+			UIRenderUtils.plainRect.setTriangle(1, 0, 2, 3)
+			UIRenderUtils.plainRect.bindShader(shaderUniform, Position -> "position")			
 		}
 
-		UIrenderUtils.plainRect
+		UIRenderUtils.plainRect
 	}
 
 	def texRect:TrianglesMesh = {
-		if(UIrenderUtils.texRect eq null) {
+		if(UIRenderUtils.texRect eq null) {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.texRect = new TrianglesMesh(gl, 2)
-			UIrenderUtils.texRect v(0) pos(0, 0, 0) tex(0, 1)
-			UIrenderUtils.texRect v(1) pos(1, 0, 0) tex(1, 1)
-			UIrenderUtils.texRect v(2) pos(1, 1, 0) tex(1, 0)
-			UIrenderUtils.texRect v(3) pos(0, 1, 0) tex(0, 0)
-			UIrenderUtils.texRect.setTriangle(0, 0, 1, 2)
-			UIrenderUtils.texRect.setTriangle(1, 0, 2, 3)
-			UIrenderUtils.texRect.bindShader(shaderTex, Position -> "position", TexCoord -> "texCoords")
+			UIRenderUtils.texRect = new TrianglesMesh(gl, 2)
+			UIRenderUtils.texRect v(0) pos(0, 0, 0) tex(0, 1)
+			UIRenderUtils.texRect v(1) pos(1, 0, 0) tex(1, 1)
+			UIRenderUtils.texRect v(2) pos(1, 1, 0) tex(1, 0)
+			UIRenderUtils.texRect v(3) pos(0, 1, 0) tex(0, 0)
+			UIRenderUtils.texRect.setTriangle(0, 0, 1, 2)
+			UIRenderUtils.texRect.setTriangle(1, 0, 2, 3)
+			UIRenderUtils.texRect.bindShader(shaderTex, Position -> "position", TexCoord -> "texCoords")
 		}
 
-		UIrenderUtils.texRect
+		UIRenderUtils.texRect
 	}
 
 	def layerRect:TrianglesMesh = {
-		if(UIrenderUtils.layerRect eq null) {
+		if(UIRenderUtils.layerRect eq null) {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.layerRect = new TrianglesMesh(gl, 2)
-			UIrenderUtils.layerRect v(0) pos(0, 0, 0) tex(0, 1)
-			UIrenderUtils.layerRect v(1) pos(1, 0, 0) tex(1, 1)
-			UIrenderUtils.layerRect v(2) pos(1, 1, 0) tex(1, 0)
-			UIrenderUtils.layerRect v(3) pos(0, 1, 0) tex(0, 0)
-			UIrenderUtils.layerRect.setTriangle(0, 0, 1, 2)
-			UIrenderUtils.layerRect.setTriangle(1, 0, 2, 3)
-			UIrenderUtils.layerRect.bindShader(shaderTex, Position -> "position", TexCoord -> "texCoords")
+			UIRenderUtils.layerRect = new TrianglesMesh(gl, 2)
+			UIRenderUtils.layerRect v(0) pos(0, 0, 0) tex(0, 1)
+			UIRenderUtils.layerRect v(1) pos(1, 0, 0) tex(1, 1)
+			UIRenderUtils.layerRect v(2) pos(1, 1, 0) tex(1, 0)
+			UIRenderUtils.layerRect v(3) pos(0, 1, 0) tex(0, 0)
+			UIRenderUtils.layerRect.setTriangle(0, 0, 1, 2)
+			UIRenderUtils.layerRect.setTriangle(1, 0, 2, 3)
+			UIRenderUtils.layerRect.bindShader(shaderTex, Position -> "position", TexCoord -> "texCoords")
 		}
 
-		UIrenderUtils.layerRect
+		UIRenderUtils.layerRect
 	}
 
 	def strokeRect:LinesMesh = {
-		if(UIrenderUtils.strokeRect eq null) {
+		if(UIRenderUtils.strokeRect eq null) {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.strokeRect = new LinesMesh(gl, 4)
-			UIrenderUtils.strokeRect.setLine(0, 0,0,0, 1,0,0)
-			UIrenderUtils.strokeRect.setLine(1, 1,0,0, 1,1,0)
-			UIrenderUtils.strokeRect.setLine(2, 1,1,0, 0,1,0)
-			UIrenderUtils.strokeRect.setLine(3, 0,1,0, 0,0,0)
-			UIrenderUtils.strokeRect.bindShader(shaderUniform, Position -> "position")
+			UIRenderUtils.strokeRect = new LinesMesh(gl, 4)
+			UIRenderUtils.strokeRect.setLine(0, 0,0,0, 1,0,0)
+			UIRenderUtils.strokeRect.setLine(1, 1,0,0, 1,1,0)
+			UIRenderUtils.strokeRect.setLine(2, 1,1,0, 0,1,0)
+			UIRenderUtils.strokeRect.setLine(3, 0,1,0, 0,0,0)
+			UIRenderUtils.strokeRect.bindShader(shaderUniform, Position -> "position")
 		}		
-		UIrenderUtils.strokeRect
+		UIRenderUtils.strokeRect
 	}
 
 	def shadowUnderRect:TrianglesMesh = {
-		if(UIrenderUtils.shadowUnderRect eq null) {
+		if(UIRenderUtils.shadowUnderRect eq null) {
 			import VertexAttribute._	
 			val gl = self.screen.gl
 
-			UIrenderUtils.shadowUnderRect = new TrianglesMesh(gl, 2)
-			UIrenderUtils.shadowUnderRect v(0) pos(0, 0, 0) clr(0, 0, 0, 0.25f)
-			UIrenderUtils.shadowUnderRect v(1) pos(1, 0, 0) clr(0, 0, 0, 0.25f)
-			UIrenderUtils.shadowUnderRect v(2) pos(1, 1, 0) clr(0, 0, 0, 0)
-			UIrenderUtils.shadowUnderRect v(3) pos(0, 1, 0) clr(0, 0, 0, 0)
-			UIrenderUtils.shadowUnderRect t(0, 0, 1, 2)
-			UIrenderUtils.shadowUnderRect t(1, 0, 2, 3)
-			UIrenderUtils.shadowUnderRect.bindShader(shaderColor, Position -> "position", Color -> "color")
+			UIRenderUtils.shadowUnderRect = new TrianglesMesh(gl, 2)
+			UIRenderUtils.shadowUnderRect v(0) pos(0, 0, 0) clr(0, 0, 0, 0.25f)
+			UIRenderUtils.shadowUnderRect v(1) pos(1, 0, 0) clr(0, 0, 0, 0.25f)
+			UIRenderUtils.shadowUnderRect v(2) pos(1, 1, 0) clr(0, 0, 0, 0)
+			UIRenderUtils.shadowUnderRect v(3) pos(0, 1, 0) clr(0, 0, 0, 0)
+			UIRenderUtils.shadowUnderRect t(0, 0, 1, 2)
+			UIRenderUtils.shadowUnderRect t(1, 0, 2, 3)
+			UIRenderUtils.shadowUnderRect.bindShader(shaderColor, Position -> "position", Color -> "color")
 		}
-		UIrenderUtils.shadowUnderRect
+		UIRenderUtils.shadowUnderRect
 	}
 
 	/** Stroke the space of the avatar with an uniform color. */

@@ -8,11 +8,11 @@ import org.sofa.gfx.{SGL, Camera}
 import org.sofa.gfx.surface._
 import org.sofa.gfx.surface.event._
 
-import javax.media.opengl.{GLCapabilities, GLEventListener, GLAutoDrawable}
-import javax.media.opengl.{GLDrawableFactory, GLRunnable}
-import javax.media.opengl.awt.GLCanvas
-import javax.media.opengl.glu.GLU
-import javax.media.nativewindow.WindowClosingProtocol.WindowClosingMode
+import com.jogamp.opengl.{GLCapabilities, GLEventListener, GLAutoDrawable}
+import com.jogamp.opengl.{GLDrawableFactory, GLRunnable}
+import com.jogamp.opengl.awt.GLCanvas
+import com.jogamp.opengl.glu.GLU
+import com.jogamp.nativewindow.WindowClosingProtocol.WindowClosingMode
 
 import com.jogamp.newt.opengl.GLWindow
 import com.jogamp.newt.event.{NEWTEvent=>JoglEvent, KeyEvent=>JoglKeyEvent, MouseEvent=>JoglMouseEvent, MouseListener=>JoglMouseListener, WindowListener=>JoglWindowListener, KeyListener=>JoglKeyListener, WindowEvent=>JoglWindowEvent, WindowUpdateEvent=>JoglWindowUpdateEvent}
