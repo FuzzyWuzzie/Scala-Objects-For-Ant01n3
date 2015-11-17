@@ -32,6 +32,32 @@ object Point2 {
       * ordinates within [miny..maxy[. */
     def random(minx:Double, maxx:Double, miny:Double, maxy:Double):Point2 =
     	Point2(Random.nextDouble*(maxx-minx)-minx, Random.nextDouble*(maxy-miny)-miny)
+
+    /** A point whose components are the minimum of the corresponding components in the given sequence of points. */
+    def min(pp:Point2 *):Point2 = {
+    	val p = new Point2(Double.PositiveInfinity,Double.PositiveInfinity)
+    	var i = 0
+    	val n = p.size 
+    	while(i < n) {
+    		if(pp(i).x < p.x) p.x = pp(i).x
+    		if(pp(i).y < p.y) p.y = pp(i).y
+    		i += 1
+    	}
+    	p
+    }
+
+    /** A point whose components are the maximum of the corresponding components in the given sequence of points. */
+    def max(pp:Point2 *):Point2 = {
+    	val p = new Point2(Double.NegativeInfinity,Double.NegativeInfinity)
+    	var i = 0
+    	val n = p.size 
+    	while(i < n) {
+    		if(pp(i).x > p.x) p.x = pp(i).x
+    		if(pp(i).y > p.y) p.y = pp(i).y
+    		i += 1
+    	}
+    	p
+    }
 }
 
 
@@ -145,6 +171,34 @@ object Point3 {
     	Point3(Random.nextDouble*(maxx-minx)-minx,
     		   Random.nextDouble*(maxy-miny)-miny,
     		   Random.nextDouble*(maxz-minz)-minz)
+
+    /** A point whose components are the minimum of the corresponding components in the given sequence of points. */
+    def min(pp:Point3*):Point3 = {
+    	val p = new Point3(Double.PositiveInfinity,Double.PositiveInfinity,Double.PositiveInfinity)
+    	var i = 0
+    	val n = p.size 
+    	while(i < n) {
+    		if(pp(i).x < p.x) p.x = pp(i).x
+    		if(pp(i).y < p.y) p.y = pp(i).y
+    		if(pp(i).z < p.z) p.z = pp(i).z
+    		i += 1
+    	}
+    	p
+    }
+
+    /** A point whose components are the maximum of the corresponding components in the given sequence of points. */
+    def max(pp:Point3*):Point3 = {
+    	val p = new Point3(Double.NegativeInfinity,Double.NegativeInfinity,Double.NegativeInfinity)
+    	var i = 0
+    	val n = p.size 
+    	while(i < n) {
+    		if(pp(i).x > p.x) p.x = pp(i).x
+    		if(pp(i).y > p.y) p.y = pp(i).y
+    		if(pp(i).z > p.z) p.z = pp(i).z
+    		i += 1
+    	}
+    	p
+    }
 }
 
 

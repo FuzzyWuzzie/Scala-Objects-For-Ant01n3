@@ -22,7 +22,7 @@ trait Circle {
 		//p.distance(center) <= radius
 		// More efficient:
 		val xx = center.x-p.x
-		val xy = center.x-p.y
+		val yy = center.x-p.y
 		(xx*xx+yy*yy) <= radius*radius
 	}
 

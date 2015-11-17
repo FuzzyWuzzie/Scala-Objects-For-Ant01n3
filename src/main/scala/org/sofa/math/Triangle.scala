@@ -439,4 +439,6 @@ case class IndexedTriangle(i0:Int, i1:Int, i2:Int, points:IndexedSeq[Point3]) ex
 		} 
 		case _ => false
 	}
+
+	override def toString():String = "ITri[%s -> %s -> %s]".format(points(i0), points(i1), points(i2))
 }
