@@ -64,8 +64,10 @@ object PointCloud {
 }
 
 
+/** A set of points considered as a cloud and methods to handle such a cloud. */
 class PointCloud(scaleFactor:Double, yFactor:Double) {
-	val points = new ArrayBuffer[Point3]()
+	
+	var points = new ArrayBuffer[Point3]()
 
 	val min = Point3(Double.MaxValue, Double.MaxValue, Double.MaxValue)
 
@@ -88,6 +90,10 @@ class PointCloud(scaleFactor:Double, yFactor:Double) {
 		if(y > max.y) max.y = y
 		if(z < min.z) min.z = z
 		if(z > max.z) max.z = z
+	}
+
+	def sortOnX() {
+		points = points.sortWith { (a, b) => a.x < b.x }
 	}
 
 	def swapYZ() {
