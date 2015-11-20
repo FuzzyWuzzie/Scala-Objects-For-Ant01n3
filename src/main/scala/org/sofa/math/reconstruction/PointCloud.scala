@@ -126,49 +126,71 @@ class PointCloud(scaleFactor:Double, yFactor:Double) {
 		out.close
 	}
 
-	def closePoints(a:Point3, b:Point3, distance:Double=0.001):Boolean = {
+	/** Utility method to use with `mergeClosePoints()` to see
+	  * if two points are close by `distance` one of another. */
+	def closePoints(a:Point3, b:Point3, distance:Double):Boolean = {
 		val x = b.x-a.x
 		val y = b.y-a.y
-		val z = b.z-a.z 
+		val z = b.z-a.z
 		(x*x + y*y + z*z) < distance*distance
 	}
 
-	def closePointsXZ(a:Point3, b:Point3, distance:Double=0.001):Boolean = {
+	/** Utility method to use with `mergeClosePoints()` that compare
+	  * point only for their X and Z axes to see if the two
+	  * points are close by `distance` one of another.. */
+	def closePointsXZ(a:Point3, b:Point3, distance:Double):Boolean = {
 		val x = b.x-a.x
-		val z = b.z-a.z 
+		val z = b.z-a.z
 		(x*x + z*z) < distance*distance
 	}
 
 	/** Locate too close points and merge them.
-	  * This modifies the points set by removint points that are superposed.
+	  * This modifies the points set by removing points that are superposed.
 	  * Points are considered one on another if their distance is less than 
 	  * the `distance` parameter.
 	  * Note that this method alter the points ordering. */
-	def mergeClosePoints(close:(Point3,Point3,Double)=>Boolean, distance:Double=0.001) {
+	def mergeClosePoints(close:(Point3,Point3,Double)=>Boolean, distance:Double = 0.001) {
 		case class IndexedPoint(idx:Int, var tmp:Int)
+
+		// Sort all points along X. This allows to prune points
+		// when comparing with the others, and make this fast.
 
 		sortOnX
 
 		val okPoints = new ArrayBuffer[Point3]()
 		val tmpPoints = new ArrayBuffer[IndexedPoint]()
+		val ok = new ArrayBuffer[IndexedPoint]()
 		val n = points.size
 		var i = 1
+
 		tmpPoints += IndexedPoint(0, 0)
-		val ok = new ArrayBuffer[IndexedPoint]()
+
+		// Insert points one by one.
+
 		while(i < n) {
-			if(i % 1000 == 0) printf("[%d]", i)
-			// Browse tmp points to look for doubles and put
+			// Browse tmp points to look for doubles with the
+			// currently inserted point. Also, put
 			// points that are too far along X in the ok list,
-			// since points are sorted along X.
+			// since points are sorted along X, these points
+			// need no more to be considered.
+
 			var j = 0
 			var m = tmpPoints.size
 			var found = false
 			ok.clear()
+
 			while(j < m) {
 				if(points(i).x - points(tmpPoints(j).idx).x > distance) ok += tmpPoints(j)
-				else if(!found) found = closePoints(points(i), points(tmpPoints(j).idx), distance)
+				else if(!found) found = close(points(i), points(tmpPoints(j).idx), distance)
 				j += 1
 			}
+
+			// Prune points that will now be too far to be superposed.
+			// This is the main optimization making this process fast.
+			// The TMP list removal is fast since we pivote removed
+			// points with the last one of the TMP list and we know
+			// the index of each point in the TMP list.
+
 			ok.foreach { p =>
 				okPoints += points(p.idx)
 				if(p.tmp < m-1) {
@@ -178,19 +200,21 @@ class PointCloud(scaleFactor:Double, yFactor:Double) {
 				tmpPoints.remove(m-1)
 				m -= 1
 			}
-			// insert the point in the tmp list if no close match only.
-			if(!found) {
+			
+			// Insert the point in the TMP list if no close match only.
+			// Else merely ignore the point, its a double.
+
+			if(!found)
 				tmpPoints += IndexedPoint(i, tmpPoints.size)
-			} else {
-				printf("(* %d)", i)
-			}
 
 			i += 1
 		}
 
+		// Add remaining TMP points in the OK list.
+
 		tmpPoints.foreach { p => okPoints += points(p.idx) }
 
-		printf("%d points -> %d points (%d doubles removed)%n", n, okPoints.size, n-okPoints.size)
+		// Replace the old point list with the new.
 
 		points = okPoints
 	}

@@ -55,10 +55,14 @@ class DelaunayTriangulation(scaleFactor:Double, yFactor:Double) extends PointClo
 		
 		timer.measureStart("triangulation")
 		
+		// Remove superposed points that may create invalid triangles.
+
 		if(mergePoints) {
+			val n = points.size
 			timer.measureStart("mergeDouble")
 			mergeClosePoints(closePointsXZ, 0.01)
 			timer.measureEnd("mergeDouble")
+			printf("* removed %d double points%n", n - points.size)
 		}
 
 		// Sort on X each point to allow a classification between
@@ -80,8 +84,8 @@ class DelaunayTriangulation(scaleFactor:Double, yFactor:Double) extends PointClo
 		printf("* triangulate [%d points]", n)
 
 		while(i < n) {
-			if(i%100 == 0) printf("[%d]", i)
-			if(i%1000 == 0) { printf(" -> %d OK -> %d TMP%n", triangles.size, tmpTriangles.size); timer.printAvgs("Triangulation") }
+			if(i%1000 == 0) printf("[%d]", i)
+			if(i%10000 == 0) { printf(" -> %d OK -> %d TMP%n", triangles.size, tmpTriangles.size); timer.printAvgs("Triangulation") }
 
 			val p = points(i)
 			
