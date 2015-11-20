@@ -31,8 +31,22 @@ class DelaunayTriangulation(scaleFactor:Double, yFactor:Double) extends PointClo
 	private[this] val ok = new ArrayBuffer[DelaunayTriangle]()
 
 	/** Triangulate the point cloud using a Bowyer-Watson algorithm.
-	  * The triangulation is stored in the `triangles` field. */
-	def triangulation() {
+	  *
+	  * The triangulation is stored in the `triangles` field.
+	  *
+	  * Although the Bowyer-Watson method is naively in O(n^2), if points
+	  * are sorted along X, which is the case here, we greatly reduce the
+	  * triangulation time by pruning some triangles that we are sure will
+	  * appear in the final triangulation.
+	  *
+	  * If the `mergePoints` paramter is true, the method tries to find
+	  * superposed points along the XZ plane. Such points may produce
+	  * degenerate triangles and may produce bad triangulation. If you
+	  * know this * is not the case, you can gain some time by disabling
+	  * this.
+	  *
+	  * Interesting resource: "http://paulbourke.net/papers/triangulate/" */
+	def triangulation(mergePoints:Boolean = true) {
 		triangles.clear()
 		tmpTriangles.clear()
 
@@ -41,13 +55,19 @@ class DelaunayTriangulation(scaleFactor:Double, yFactor:Double) extends PointClo
 		
 		timer.measureStart("triangulation")
 		
+		if(mergePoints) {
+			timer.measureStart("mergeDouble")
+			mergeClosePoints(closePointsXZ, 0.01)
+			timer.measureEnd("mergeDouble")
+		}
+
 		// Sort on X each point to allow a classification between
 		// OK triangles and TMP triangles. This is the optimization
 		// that makes the algorithm extremely fast.
-
+		
 		timer.measureStart("sorting")
 		sortOnX()
-		timer.measureEnd("sorting")
+		timer.measureEnd("sorting")			
 		
 		// Enclose the point cloud is two super-triangles forming a rectangle.
 
@@ -209,14 +229,35 @@ object DelaunayTriangulation {
 /** A triangle "by index" usable in a ReuseArrayBuffer, with caching of the
   * circumcicle to avoid recomputations. */
 class DelaunayTriangle(i0:Int,i1:Int,i2:Int,points:IndexedSeq[Point3]) extends IndexedTriangle(i0,i1,i2,points) with Indexed {
-	val min = Point3(ccircle.center.x-ccircle.radius, 0.1, ccircle.center.y-ccircle.radius)
-	val max = Point3(ccircle.center.x+ccircle.radius, 0.1, ccircle.center.y+ccircle.radius)
 	var index = -1
 	override val edge0 = IndexedEdge(i0, i1, points)
 	override val edge1 = IndexedEdge(i1, i2, points)
 	override val edge2 = IndexedEdge(i2, i0, points)
 	private[this] var ccircle:Circle = _
-	
+	circumcircleXZ	
+	val min = Point3(ccircle.center.x-ccircle.radius, 0.1, ccircle.center.y-ccircle.radius)
+	val max = Point3(ccircle.center.x+ccircle.radius, 0.1, ccircle.center.y+ccircle.radius)
+
+//	checkClosePoints()
+
+	/** Check if two or three points of the triangle are supperposed.
+	  * throw a `RuntimeException` if this is the case. */
+	def checkClosePoints(distance:Double=0.01) {
+		var x = (points(i0).x - points(i1).x)
+		var z = (points(i0).z - points(i1).z)
+		var l = x*x + z*z
+		var d = distance*distance
+		if(l < d) throw new RuntimeException("too close (%f) points %d and %d (%s -> %s)".format(l, i0, i1, points(i0), points(i1)))
+		x = (points(i0).x - points(i2).x)
+		z = (points(i0).z - points(i2).z)
+		l = x*x + z*z
+		if(l < d) throw new RuntimeException("too close (%f) points %d and %d (%s -> %s)".format(l, i0, i2, points(i0), points(i2)))
+		x = (points(i1).x - points(i2).x)
+		z = (points(i1).z - points(i2).z)
+		l = x*x + z*z
+		if(l < d) throw new RuntimeException("too close (%f) points %d and %d (%s -> %s)".format(l, i1, i2, points(i1), points(i2)))
+	}
+
 	def setIndex(i:Int) { index = i }
 
 	override def circumcircleXZ = { if(ccircle eq null) { ccircle = super.circumcircleXZ }; ccircle }

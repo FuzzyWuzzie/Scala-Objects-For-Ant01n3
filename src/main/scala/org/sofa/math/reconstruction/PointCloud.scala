@@ -125,4 +125,73 @@ class PointCloud(scaleFactor:Double, yFactor:Double) {
 		out.flush
 		out.close
 	}
+
+	def closePoints(a:Point3, b:Point3, distance:Double=0.001):Boolean = {
+		val x = b.x-a.x
+		val y = b.y-a.y
+		val z = b.z-a.z 
+		(x*x + y*y + z*z) < distance*distance
+	}
+
+	def closePointsXZ(a:Point3, b:Point3, distance:Double=0.001):Boolean = {
+		val x = b.x-a.x
+		val z = b.z-a.z 
+		(x*x + z*z) < distance*distance
+	}
+
+	/** Locate too close points and merge them.
+	  * This modifies the points set by removint points that are superposed.
+	  * Points are considered one on another if their distance is less than 
+	  * the `distance` parameter.
+	  * Note that this method alter the points ordering. */
+	def mergeClosePoints(close:(Point3,Point3,Double)=>Boolean, distance:Double=0.001) {
+		case class IndexedPoint(idx:Int, var tmp:Int)
+
+		sortOnX
+
+		val okPoints = new ArrayBuffer[Point3]()
+		val tmpPoints = new ArrayBuffer[IndexedPoint]()
+		val n = points.size
+		var i = 1
+		tmpPoints += IndexedPoint(0, 0)
+		val ok = new ArrayBuffer[IndexedPoint]()
+		while(i < n) {
+			if(i % 1000 == 0) printf("[%d]", i)
+			// Browse tmp points to look for doubles and put
+			// points that are too far along X in the ok list,
+			// since points are sorted along X.
+			var j = 0
+			var m = tmpPoints.size
+			var found = false
+			ok.clear()
+			while(j < m) {
+				if(points(i).x - points(tmpPoints(j).idx).x > distance) ok += tmpPoints(j)
+				else if(!found) found = closePoints(points(i), points(tmpPoints(j).idx), distance)
+				j += 1
+			}
+			ok.foreach { p =>
+				okPoints += points(p.idx)
+				if(p.tmp < m-1) {
+					tmpPoints(m-1).tmp = p.tmp
+					tmpPoints(p.tmp) = tmpPoints(m-1)
+				}
+				tmpPoints.remove(m-1)
+				m -= 1
+			}
+			// insert the point in the tmp list if no close match only.
+			if(!found) {
+				tmpPoints += IndexedPoint(i, tmpPoints.size)
+			} else {
+				printf("(* %d)", i)
+			}
+
+			i += 1
+		}
+
+		tmpPoints.foreach { p => okPoints += points(p.idx) }
+
+		printf("%d points -> %d points (%d doubles removed)%n", n, okPoints.size, n-okPoints.size)
+
+		points = okPoints
+	}
 }

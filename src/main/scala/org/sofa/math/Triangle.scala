@@ -402,25 +402,21 @@ case class IndexedTriangle(i0:Int, i1:Int, i2:Int, points:IndexedSeq[Point3]) ex
 	override def edge1:Edge = IndexedEdge(i1, i2, points)
 	override def edge2:Edge = IndexedEdge(i2, i0, points)
 
-	def commonPointi(other:Triangle, p:Int, butNot:Int = -1):Int = other match {
-		case that:IndexedTriangle => {
-			if((butNot < 0) || (butNot != p)) {
-				if(p == that.i0 || p == that.i1 || p == that.i2) p else -1
-			} else {
-				-1
-			}
-		} 
-		case _ => -1
+	def commonPointi(other:IndexedTriangle, p:Int, butNot:Int = -1):Int = {
+		if(butNot != p)
+			if(p == other.i0 || p == other.i1 || p == other.i2) p else -1
+		else -1
 	}
 
 	override def sharedEdge(other:Triangle):Edge = {
-		var sp0 = commonPointi(other, i0)
-		if(sp0 < 0) sp0 = commonPointi(other, i1)
-		if(sp0 < 0) sp0 = commonPointi(other, i2)
+		val that = other.asInstanceOf[IndexedTriangle]
+		var sp0 = commonPointi(that, i0)
+		if(sp0 < 0) sp0 = commonPointi(that, i1)
+		if(sp0 < 0) sp0 = commonPointi(that, i2)
 		if(sp0 >= 0) {
-			var sp1 = commonPointi(other, i0, sp0)
-			if(sp1 < 0) sp1 = commonPointi(other, i1, sp0)
-			if(sp1 < 0) sp1 = commonPointi(other, i2, sp0)
+			var sp1 = commonPointi(that, i0, sp0)
+			if(sp1 < 0) sp1 = commonPointi(that, i1, sp0)
+			if(sp1 < 0) sp1 = commonPointi(that, i2, sp0)
 			if(sp1 >= 0) {
 				IndexedEdge(sp0, sp1, points)
 			} else {
@@ -432,12 +428,14 @@ case class IndexedTriangle(i0:Int, i1:Int, i2:Int, points:IndexedSeq[Point3]) ex
 	}
 
 	override def isShared(edge:Edge, other:Triangle):Boolean = edge match {
-		case that:IndexedEdge => {
-			var sp0 = commonPointi(other, that.i0)
-			var sp1 = if(sp0 >= 0) commonPointi(other, that.i1, sp0) else -1
-			(sp0 >= 0 && sp1 >= 0)
-		} 
+		case that:IndexedEdge => isSharedi(that, other.asInstanceOf[IndexedTriangle]) 
 		case _ => false
+	}
+
+	def isSharedi(edge:IndexedEdge, other:IndexedTriangle):Boolean = {
+		var sp0 = commonPointi(other, edge.i0)
+		var sp1 = if(sp0 >= 0) commonPointi(other, edge.i1, sp0) else -1
+		(sp0 >= 0 && sp1 >= 0)		
 	}
 
 	override def toString():String = "ITri[%s -> %s -> %s]".format(points(i0), points(i1), points(i2))

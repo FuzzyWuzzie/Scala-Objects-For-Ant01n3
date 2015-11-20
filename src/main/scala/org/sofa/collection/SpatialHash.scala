@@ -498,6 +498,17 @@ printf("*** minArea = %s%n*** maxArea = %s%n", minArea, maxArea)
 		getThings(points, volumes, p.x-s2, p.y - s2, p.x+s2, p.y+s2)
 	}
 
+	def neighborsInBoxRadius(p:Point3, size:Double, radius:Double, points:ArrayBuffer[P], volumes:HashSet[V]) {
+		val s2 = size/2
+
+		getThingsRadius(points, volumes, p, radius, p.x-s2, p.y-s2, p.z-s2, p.x+s2, p.y+s2, p.z+s2)
+	}
+
+	def neighborsInBoxRadiusXZ(p:Point3, size:Double, radius:Double, points:ArrayBuffer[P], volumes:HashSet[V]) {
+		val s2 = size/2
+		getThingsRadiusXZ(points, volumes, p, radius, p.x-s2, p.z-s2, p.x+s2, p.z+s2)
+	}
+
 	def neighborsInBoxRadius(thing:T, size:Double, radius:Double, points:ArrayBuffer[P], volumes:HashSet[V]) {
 		val s2 = size/2
 		val p  = thing.from
@@ -509,7 +520,7 @@ printf("*** minArea = %s%n*** maxArea = %s%n", minArea, maxArea)
 		val s2 = size/2
 		val p  = thing.from
 	
-		getThingsRadius(points, volumes, thing, radius, p.x-s2, p.y - s2, p.x+s2, p.y+s2)
+		getThingsRadiusXY(points, volumes, thing, radius, p.x-s2, p.y - s2, p.x+s2, p.y+s2)
 	}
 
 	
@@ -603,11 +614,12 @@ printf("*** minArea = %s%n*** maxArea = %s%n", minArea, maxArea)
 		}
 	}
 
-	def getThingsRadius(points:ArrayBuffer[P], volumes:HashSet[V], thing:T, radius:Double, x0:Double, y0:Double, x1:Double, y1:Double) {
+	def getThingsRadiusXY(points:ArrayBuffer[P], volumes:HashSet[V], thing:T, radius:Double, x0:Double, y0:Double, x1:Double, y1:Double) {
 		val from = hash(x0, y0, 0)
 		val to   = hash(x1, y1, 0)
 		val p    = thing.from
 		var y    = from.y
+		val r2   = radius*radius
 
 		while(y <= to.y) {
 			var x = from.x
@@ -619,9 +631,11 @@ printf("*** minArea = %s%n*** maxArea = %s%n", minArea, maxArea)
 							if(point ne thing) {
 								val dx = point.from(0) - p(0)
 								val dy = point.from(1) - p(1)
-								val l = math.sqrt(dx*dx + dy*dy)
+								//val l = math.sqrt(dx*dx + dy*dy)
+								val l = dx*dx + dy*dy
 								//val l = point.from.distance(p)
-								if(l < radius) {
+								//if(l < radius) {
+								if(l < r2) {
 									points += point
 								}
 							}
@@ -636,12 +650,78 @@ printf("*** minArea = %s%n*** maxArea = %s%n", minArea, maxArea)
 		}
 	}
 
+	def getThingsRadius(points:ArrayBuffer[P], volumes:HashSet[V], p:Point3, radius:Double, x0:Double, y0:Double, z0:Double, x1:Double, y1:Double, z1:Double) {
+		val from = hash(x0, y0, z0)
+		val to   = hash(x1, y1, z1)
+		var z    = from.z
+		val r2   = radius*radius
+		while(z <= to.z) {
+			var y = from.y
+			while(y <= to.y) {
+				var x = from.x
+				while(x <= to.x) {
+					val b = buckets.get(HashPoint3(x,y,z)).getOrElse(null)
+					if(b ne null) {
+						if(b.points ne null) {
+							b.points.foreach { point =>
+								//if(point ne thing) {
+									val dx = point.from(0) - p(0)
+									val dy = point.from(1) - p(1)
+									val dz = point.from(2) - p(2)
+									//val l = math.sqrt(dx*dx + dy*dy + dz*dz)
+									val l = dx*dx + dy*dy + dz*dz
+									//val l = point.from.distance(p)
+									//if(l < radius) {
+									if(l < r2) {
+										points += point
+									}
+								//}
+							}
+						}
+						if((volumes ne null) && (b.volumes ne null))
+							volumes ++= b.volumes
+					}
+					x += 1
+				}
+				y += 1
+			}
+			z += 1
+		}	
+	}
+
+	def getThingsRadiusXZ(points:ArrayBuffer[P], volumes:HashSet[V], p:Point3, radius:Double, x0:Double, z0:Double, x1:Double, z1:Double) {
+		val from = hash(x0, 0, z0)
+		val to   = hash(x1, 0, z1)
+		var z    = from.z
+		val r2   = radius*radius
+
+		while(z <= to.z) {
+			var x = from.x
+			while(x <= to.x) {
+				val b = buckets.get(HashPoint3(x,0,z)).getOrElse(null)
+				if(b ne null) {
+					if(b.points ne null) {
+						b.points.foreach { point =>
+							val dx = point.from(0) - p(0)
+							val dz = point.from(2) - p(2)
+							if((dx*dx + dz*dz) < r2) points += point
+						}
+					}
+					if((volumes ne null) && (b.volumes ne null))
+						volumes ++= b.volumes
+				}
+				x += 1
+			}
+			z += 1
+		}
+	}
 
 	def getThingsRadius(points:ArrayBuffer[P], volumes:HashSet[V], thing:T, radius:Double, x0:Double, y0:Double, z0:Double, x1:Double, y1:Double, z1:Double) {
 		val from = hash(x0, y0, z0)
 		val to   = hash(x1, y1, z1)
 		val p    = thing.from
 		var z    = from.z
+		val r2   = radius*radius
 		while(z <= to.z) {
 			var y = from.y
 			while(y <= to.y) {
@@ -655,9 +735,11 @@ printf("*** minArea = %s%n*** maxArea = %s%n", minArea, maxArea)
 									val dx = point.from(0) - p(0)
 									val dy = point.from(1) - p(1)
 									val dz = point.from(2) - p(2)
-									val l = math.sqrt(dx*dx + dy*dy + dz*dz)
+									//val l = math.sqrt(dx*dx + dy*dy + dz*dz)
+									val l = dx*dx + dy*dy + dz*dz
 									//val l = point.from.distance(p)
-									if(l < radius) {
+									//if(l < radius) {
+									if(l < r2) {
 										points += point
 									}
 								}
@@ -674,10 +756,10 @@ printf("*** minArea = %s%n*** maxArea = %s%n", minArea, maxArea)
 		}	
 	}
 
-
 	def getThingsRadius(p:Point2, radius:Double, x0:Double, y0:Double, x1:Double, y1:Double, f:(Double,P)=> Unit) {
 		val from = hash(x0, y0, 0)
 		val to   = hash(x1, y1, 0)
+		val r2   = radius*radius
 		//val p    = thing.from
 		var y    = from.y
 		while(y <= to.y) {
@@ -691,8 +773,10 @@ printf("*** minArea = %s%n*** maxArea = %s%n", minArea, maxArea)
 								//val l = point.from.distance(p)
 								val dx = point.from(0) - p(0)
 								val dy = point.from(1) - p(1)
-								val l = math.sqrt(dx*dx + dy*dy)
-								if(l < radius) {
+								//val l = math.sqrt(dx*dx + dy*dy)
+								val l = dx*dx + dy*dy
+								//if(l < radius) {
+								if(l < r2) {
 									f(l,point)
 									//points += point
 								}
