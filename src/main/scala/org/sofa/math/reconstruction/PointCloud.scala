@@ -9,12 +9,16 @@ import org.sofa.math.{Point3, Vector3, Rgba}
 import java.io.{File, InputStream, FileInputStream, FileOutputStream, PrintStream, IOException}
 
 
+/** Point cloud companion object. */
 object PointCloud {
 
-	final val PointDesc = """\s*([0-9]+[\.,]?[0-9]*)\s+([0-9]+[\.,]?[0-9]*)\s+(-?[0-9]+[\.,]?[0-9]*)\s*""".r
-	final val Empty     = """\s*""".r
+	private final val PointDesc = """\s*([0-9]+[\.,]?[0-9]*)\s+([0-9]+[\.,]?[0-9]*)\s+(-?[0-9]+[\.,]?[0-9]*)\s*""".r
+	private final val Empty     = """\s*""".r
 
-	def apply(fileName:String, scaleFactor:Double, yFactor:Double):PointCloud = {
+	/** Create a point cloud from a XYZ file.
+	  * `scaleFactor` allows scale the cloud. `yFactor` allows to only enlarge heights.
+	  * The two factors can be given at the same time. */
+	def apply(fileName:String, scaleFactor:Double = 1.0, yFactor:Double = 1.0):PointCloud = {
 		if(fileName.endsWith(".xyz")) {
 			readFileXYZ(fileName, new PointCloud(scaleFactor, yFactor))
 		} else {
@@ -22,7 +26,7 @@ object PointCloud {
 		}
 	}
 
-	/** Created a [[HeightMap]] from a CSV or ASC file. */
+	/** Created a [[PointCloud]] from a CSV or ASC file. */
 	def readFileXYZ(fileName:String, cloud:PointCloud):PointCloud = {
 		val src    = new BufferedSource(new FileInputStream(fileName))
 		var curRow = 0
@@ -64,42 +68,63 @@ object PointCloud {
 }
 
 
-/** A set of points considered as a cloud and methods to handle such a cloud. */
+/** A set of points considered as a cloud and methods to handle them
+  *
+  * `scaleFactor` allows scale the cloud. `yFactor` allows to only enlarge heights.
+  * The two factors can be given at the same time. 
+  *
+  * Point clouds are considered by convention in a coordinate system where X positive
+  * goes right, Y positive goes up, and Z positive goes toward the viewer, hence a
+  * right handed coordinate system.
+  */
 class PointCloud(scaleFactor:Double, yFactor:Double) {
 	
+	/** The point data. */	
 	var points = new ArrayBuffer[Point3]()
 
+	/** The minimum coordinates (not part of the cloud). */
 	val min = Point3(Double.MaxValue, Double.MaxValue, Double.MaxValue)
 
+	/** The maximium coordinates (not part of the cloud). */
 	var max = Point3(Double.MinValue, Double.MinValue, Double.MinValue)
 
-	def size:Int = points.size
+	protected def checkMin(p:Point3) { checkMin(p.x, p.y, p.z) }
 
-	def point(i:Int) = points(i)
-
-	def apply(i:Int) = points(i)
-
-	def addPoint(p:Point3) { addPoint(p.x, p.y, p.z) }
-
-	def addPoint(x:Double, y:Double, z:Double) {
-		points += Point3(x, y, z)
-
+	protected def checkMin(x:Double, y:Double, z:Double) { 
 		if(x < min.x) min.x = x 
 		if(x > max.x) max.x = x
 		if(y < min.y) min.y = y
 		if(y > max.y) max.y = y
 		if(z < min.z) min.z = z
-		if(z > max.z) max.z = z
+		if(z > max.z) max.z = z			
 	}
 
-	def sortOnX() {
-		points = points.sortWith { (a, b) => a.x < b.x }
+	/** Number of points. */
+	def size:Int = points.size
+
+	/** `i`-th point. */
+	def point(i:Int) = points(i)
+
+	/** `i`-th point. */
+	def apply(i:Int) = points(i)
+
+	/** Add a point `p` at index `size()`. */
+	def addPoint(p:Point3) { addPoint(p.x, p.y, p.z) }
+
+	/** Add a point (`x`, `y`, `z`) at index `size()`. */
+	def addPoint(x:Double, y:Double, z:Double) {
+		points += Point3(x, y, z)
+		checkMin(x, y, z)
 	}
 
-	def swapYZ() {
-		points.foreach { p => p.set(p.x, p.z, p.y) }
-	}
+	/** Sort the point cloud so that points are ordered by their X coordinate,
+	  * the lower ones first. */
+	def sortOnX() { points = points.sortWith { (a, b) => a.x < b.x } }
 
+	/** Swap each point Y and Z coordinates. */
+	def swapYZ() { points.foreach { p => p.set(p.x, p.z, p.y) } }
+
+	/** Move the whole cloud so that the minimum point is at (0,0,0). */
 	def toOrigin() {
 		points.foreach { p => p.set(p.x-min.x, p.y-min.y, p.z-min.z) }
 		max.x -= min.x
@@ -110,15 +135,21 @@ class PointCloud(scaleFactor:Double, yFactor:Double) {
 		min.z = 0
 	}
 
-	def normalize(scale:Double) {
+	/** Move the cloud at origin and resize it by `scale` factor. 
+	  * If `invertY` is true, invert the Y coordinate (often seen in XYZ files). */
+	def rescale(scale:Double, invertY:Boolean) {
 		toOrigin()
 		val ratio = math.max(max.x, math.max(max.y, max.z))
-		points.foreach { p => p.set((p.x/ratio)*scale, scale-((p.y/ratio)*scale), (p.z/ratio)*scale) }
+		if(invertY)
+		     points.foreach { p => p.set((p.x/ratio)*scale, scale-((p.y/ratio)*scale), (p.z/ratio)*scale) }
+		else points.foreach { p => p.set((p.x/ratio)*scale, (p.y/ratio)*scale, (p.z/ratio)*scale) }
 		max.x = scale
 		max.y = scale
 		max.z = scale
 	}
 
+	/** Create a wavefront OBJ file named `fileName` containing only points.
+	  * If `fileName` is null, output the file to the standard output. */
 	def toObj(fileName:String) {
 		val out = if(fileName eq null) System.out else new PrintStream(new FileOutputStream(fileName))
 		points.foreach { p => out.print("v %f %f %f%n".format(p.x-min.x, p.y-min.y, p.z).replace(",", ".")) }
@@ -137,7 +168,7 @@ class PointCloud(scaleFactor:Double, yFactor:Double) {
 
 	/** Utility method to use with `mergeClosePoints()` that compare
 	  * point only for their X and Z axes to see if the two
-	  * points are close by `distance` one of another.. */
+	  * points are close by `distance` one of another. */
 	def closePointsXZ(a:Point3, b:Point3, distance:Double):Boolean = {
 		val x = b.x-a.x
 		val z = b.z-a.z
@@ -145,12 +176,20 @@ class PointCloud(scaleFactor:Double, yFactor:Double) {
 	}
 
 	/** Locate too close points and merge them.
+	  *
 	  * This modifies the points set by removing points that are superposed.
-	  * Points are considered one on another if their distance is less than 
-	  * the `distance` parameter.
-	  * Note that this method alter the points ordering. */
+	  *
+	  * Points are considered one on another if the `close` function returns
+	  * true. The `distance` parameter is passed to this function and is
+	  * often considered the radius of closeness.
+	  *
+	  * Note that this method alter the points ordering, the minimum point,
+	  * maximum point and the number of points. */
 	def mergeClosePoints(close:(Point3,Point3,Double)=>Boolean, distance:Double = 0.001) {
 		case class IndexedPoint(idx:Int, var tmp:Int)
+
+		min.set(Double.MaxValue, Double.MaxValue, Double.MaxValue)
+		min.set(Double.MinValue, Double.MinValue, Double.MinValue)
 
 		// Sort all points along X. This allows to prune points
 		// when comparing with the others, and make this fast.
@@ -204,15 +243,20 @@ class PointCloud(scaleFactor:Double, yFactor:Double) {
 			// Insert the point in the TMP list if no close match only.
 			// Else merely ignore the point, its a double.
 
-			if(!found)
+			if(!found) {
+				checkMin(points(i))
 				tmpPoints += IndexedPoint(i, tmpPoints.size)
+			}
 
 			i += 1
 		}
 
 		// Add remaining TMP points in the OK list.
 
-		tmpPoints.foreach { p => okPoints += points(p.idx) }
+		tmpPoints.foreach { p =>
+			checkMin(points(p.idx))
+			okPoints += points(p.idx) 
+		}
 
 		// Replace the old point list with the new.
 
