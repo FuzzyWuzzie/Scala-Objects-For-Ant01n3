@@ -1,9 +1,17 @@
 package org.sofa.math
 
+import scala.math._
+
 
 object Triangle {
-	def apply(p0:Point3, p1:Point3, p2:Point3):Triangle = new Triangle(p0, p1, p2)
+	def apply(p0:Point3, p1:Point3, p2:Point3):Triangle = new VarTriangle(p0, p1, p2)
 	def unapply(t:Triangle):(Point3,Point3,Point3) = (Point3(t.p0),Point3(t.p1),Point3(t.p2))
+}
+
+
+object VarTriangle {
+	def apply(p0:Point3, p1:Point3, p2:Point3):VarTriangle = new VarTriangle(p0, p1, p2)
+	def unapply(t:VarTriangle):(Point3,Point3,Point3) = (Point3(t.p0),Point3(t.p1),Point3(t.p2))
 }
 
 
@@ -13,15 +21,25 @@ object ConstTriangle {
 }
 
 
-/** A simple triangle class that allows to easily compute
-  * a normal form, a normal and a distance from the triangle, with the calculus of
-  * the nearest point on the triangle surface.
+/** A simple triangle trait containing or referencing three points in 3 dimensions.
   *
-  * This class is made for triangles whose points can be changed at any time. If
-  * the triangle is not to be modified, you can improve performance by using the
-  * ConstTriangle class that will pre-compute the normal and the normal form, and
-  * avoid calculus during collision and distance tests. */
-class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {
+  * The two implementations given [[VarTriangle]] and [[ConstTriangle]] contain the
+  * points. Other implementations could contain only point indices inside a larger
+  * mesh.
+  *
+  * This class provides various utilities to handle triangles and geometry on
+  * on triangles :
+  *   - compute a normal form,
+  *   - compute a normal,
+  *   - compute a distance of a point from the triangle, with the calculus of
+  *     the nearest point on the triangle surface.
+  *   - compute the center and radius of a circumcircle (a cricle that pass by
+  *     the three points of the triangle).
+  */
+trait Triangle {
+	def p0:Point3
+	def p1:Point3
+	def p2:Point3
 
 	/** Computes the normal form of a triangle, that is a base point,
 	  * and two vectors to locate the two other points from the base point. */
@@ -36,6 +54,101 @@ class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {
 		normal.normalize
 		normal
 	}
+
+	/** Plane of the triangle. */
+	def plane():Plane = Plane(p0, normal)
+
+	/** Circumcircle of the triangle using only the absissa and ordinates (x and y) of points. */
+// TODO NOT TESTED
+	def circumcircleXY():Circle = {
+		var d = 2 * ((p0.x * (p1.y - p2.y)) + (p1.x * (p2.y - p0.y)) + (p2.x * (p0.y - p1.y)))
+		var x = 0.0
+		var y = 0.0
+		if(d != 0) {
+			x = ((p0.x*p0.x + p0.y*p0.y)*(p1.y - p2.y) + (p1.x*p1.x + p1.y*p1.y)*(p2.y - p0.y) + (p2.x*p2.x + p2.y*p2.y)*(p0.y - p1.y)) / d
+			y = ((p0.x*p0.x + p0.y*p0.y)*(p2.x - p1.x) + (p1.x*p1.x + p1.y*p1.y)*(p0.x - p2.x) + (p2.x*p2.x + p2.y*p2.y)*(p1.x - p0.x)) / d
+		}
+		val r = sqrt((p0.x-x)*(p0.x-x) + (p0.y-y)*(p0.y-y))
+		
+		Circle(Point2(x, y), r)
+	}
+
+
+	/** Circumcircle of the triangle using only the absissa and depth (x and z) of points. */
+// TODO NOT TESTED
+	def circumcircleXZ():Circle = {
+		var d = 2 * ((p0.x * (p1.z - p2.z)) + (p1.x * (p2.z - p0.z)) + (p2.x * (p0.z - p1.z)))
+		var x = 0.0
+		var y = 0.0
+		if(d != 0) {
+			x = ((p0.x*p0.x + p0.z*p0.z)*(p1.z - p2.z) + (p1.x*p1.x + p1.z*p1.z)*(p2.z - p0.z) + (p2.x*p2.x + p2.z*p2.z)*(p0.z - p1.z)) / d
+			y = ((p0.x*p0.x + p0.z*p0.z)*(p2.x - p1.x) + (p1.x*p1.x + p1.z*p1.z)*(p0.x - p2.x) + (p2.x*p2.x + p2.z*p2.z)*(p1.x - p0.x)) / d
+		}
+		val r = sqrt((p0.x-x)*(p0.x-x) + (p0.z-y)*(p0.z-y))
+		
+		Circle(Point2(x, y), r)
+	}
+
+	/** Sphere deduced of the circumcircle of the triangle considering the points in 3D. */
+// TODO NOT TESTED
+	def circumsphere():Sphere = {
+		val (p0,v0,v1) = normalForm
+
+		// Perpendicular bisectors
+		val pb0 = Line(p0 + (v0*0.5), v0 X normal)
+		val pb1 = Line(p0 + (v1*0.5), v1 X normal)
+
+		// Intersection point
+		val ip = pb0.intersection(pb1) match {
+			case Some(p) => p
+			case None => throw new RuntimeException("WTF ?")
+		}
+
+		// Radius
+		val r = p0.distance(ip)
+
+		Sphere(ip, r)
+	}
+
+	def edge0:Edge = VarEdge(p0, p1)
+	def edge1:Edge = VarEdge(p1, p2)
+	def edge2:Edge = VarEdge(p2, p0)
+
+	/** Return `p` if it is shared with the `other` triangle, else null.
+	  * The `butNot` argument allows to return `p` only if it is not `butNot`. */
+	def commonPoint(other:Triangle, p:Point3, butNot:Point3 = null):Point3 = {
+		if((butNot eq null) || (butNot != p)) {
+			if(p == other.p0 || p == other.p1 || p == other.p2) p else null
+		} else {
+			null
+		}
+	}
+
+	/** The shared edge between this and the `other` triangle or null if no edge is shared. */
+	def sharedEdge(other:Triangle):Edge = {
+		var sp0 = commonPoint(other, p0)
+		if(sp0 eq null) sp0 = commonPoint(other, p1)
+		if(sp0 eq null) sp0 = commonPoint(other, p2)
+		if(sp0 ne null) {
+			var sp1 = commonPoint(other, p0, sp0)
+			if(sp1 eq null) sp1 = commonPoint(other, p1, sp0)
+			if(sp1 eq null) sp1 = commonPoint(other, p2, sp0)
+			if(sp1 ne null) {
+				VarEdge(sp0, sp1)
+			} else {
+				null
+			}
+		} else {
+			null
+		}
+	}
+
+	/** True if the given `edge` is shared with the `other` triangle. */
+	def isShared(edge:Edge, other:Triangle):Boolean = {
+		var sp0 = commonPoint(other, edge.p0)
+		var sp1 = if(sp0 ne null) commonPoint(other, edge.p1, sp0) else null
+		((sp0 ne null) && (sp1 ne null))
+	} 
 	
 	/** Compute the distance from the given point `p` to this triangle.
 	  * Return the distance, and a point on the triangle where the distance
@@ -234,15 +347,27 @@ class Triangle(val p0:Point3, val p1:Point3, val p2:Point3) {
 		pp0 += e1
 
 		(dist,pp0)
-	}
+	}	
 }
+
+
+/** A triangle class that can be moved.
+  *
+  * This class is made for triangles whose points can be changed at any time. If
+  * the triangle is not to be modified, you can improve performance by using the
+  * [[ConstTriangle]] class that will pre-compute the normal and the normal form, and
+  * avoid calculus during collision and distance tests. */
+class VarTriangle(val p0:Point3, val p1:Point3, val p2:Point3) extends Triangle {
+}
+
 
 /** A triangle that will not be moved.
   * 
   * The use of such a triangle allows to ensure we can compute the normal to the triangle and the
   * normal form of the triangle once and forall. Then the computation of distanceFrom is far more
-  * efficient. As such triangles are often used in collision tests, this can greatly improve things. */
-class ConstTriangle(p0:Point3, p1:Point3, p2:Point3) extends Triangle(p0, p1, p2) {
+  * efficient. As such triangles are often used in collision tests, this can greatly improve things.
+  * Edges are not memorized. */
+class ConstTriangle(val p0:Point3, val p1:Point3, val p2:Point3) extends Triangle {
 
 	/** Vector between point 0 and 1. */
 	val v0 = Vector3(p0, p1)
@@ -261,4 +386,57 @@ class ConstTriangle(p0:Point3, p1:Point3, p2:Point3) extends Triangle(p0, p1, p2
 
 	/** Triangle normal. */
 	override def normal():Vector3 = v2
+
+	override def edge0:Edge = ConstEdge(p0, p1)
+	override def edge1:Edge = ConstEdge(p1, p2)
+	override def edge2:Edge = ConstEdge(p2, p0)
+}
+
+
+/** A triangle class where points pertain to a pool of shared points. */
+case class IndexedTriangle(i0:Int, i1:Int, i2:Int, points:IndexedSeq[Point3]) extends Triangle {
+	def p0:Point3 = points(i0)
+	def p1:Point3 = points(i1)
+	def p2:Point3 = points(i2)
+	override def edge0:Edge = IndexedEdge(i0, i1, points)
+	override def edge1:Edge = IndexedEdge(i1, i2, points)
+	override def edge2:Edge = IndexedEdge(i2, i0, points)
+
+	def commonPointi(other:IndexedTriangle, p:Int, butNot:Int = -1):Int = {
+		if(butNot != p)
+			if(p == other.i0 || p == other.i1 || p == other.i2) p else -1
+		else -1
+	}
+
+	override def sharedEdge(other:Triangle):Edge = {
+		val that = other.asInstanceOf[IndexedTriangle]
+		var sp0 = commonPointi(that, i0)
+		if(sp0 < 0) sp0 = commonPointi(that, i1)
+		if(sp0 < 0) sp0 = commonPointi(that, i2)
+		if(sp0 >= 0) {
+			var sp1 = commonPointi(that, i0, sp0)
+			if(sp1 < 0) sp1 = commonPointi(that, i1, sp0)
+			if(sp1 < 0) sp1 = commonPointi(that, i2, sp0)
+			if(sp1 >= 0) {
+				IndexedEdge(sp0, sp1, points)
+			} else {
+				null
+			}
+		} else {
+			null
+		}
+	}
+
+	override def isShared(edge:Edge, other:Triangle):Boolean = edge match {
+		case that:IndexedEdge => isSharedi(that, other.asInstanceOf[IndexedTriangle]) 
+		case _ => false
+	}
+
+	def isSharedi(edge:IndexedEdge, other:IndexedTriangle):Boolean = {
+		var sp0 = commonPointi(other, edge.i0)
+		var sp1 = if(sp0 >= 0) commonPointi(other, edge.i1, sp0) else -1
+		(sp0 >= 0 && sp1 >= 0)		
+	}
+
+	override def toString():String = "ITri[%s -> %s -> %s]".format(points(i0), points(i1), points(i2))
 }

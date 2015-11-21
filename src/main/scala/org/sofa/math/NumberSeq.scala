@@ -459,9 +459,9 @@ trait NumberSeq extends IndexedSeq[Double] {
 	  * The two sequences must have the same size.
 	  */
 	def **(other:NumberSeq):Double = dot(other)
-	
-	/** Magnitude of this (length in terms of distance). */
-	def norm:Double = {
+
+	/** Square of the norm. */
+	def norm2:Double = {
 		var result = 0.0
 		var i = 0
 		val n = size
@@ -469,11 +469,12 @@ trait NumberSeq extends IndexedSeq[Double] {
 			result += data(i) * data(i)
 			i += 1
 		}
-		math.sqrt(result)
-
-	    // var result = 0.0
-	    // foreach { item => result += item * item }
-	    // scala.math.sqrt(result)
+		result
+	}
+	
+	/** Magnitude of this (length in terms of distance). */
+	def norm:Double = {
+		math.sqrt(norm2)
 	}
 	
 	/** Multiply each element of this by the norm of this.
@@ -616,6 +617,10 @@ trait NumberSeq2 extends NumberSeq {
         data(1) = o(1)
     }
 
+    override def norm2:Double = {
+    	data(0)*data(0) + data(1)*data(1)
+    }
+
     override def norm:Double = {
         // Much faster than original on n elements.
         math.sqrt(data(0)*data(0) + data(1)*data(1))
@@ -735,6 +740,11 @@ trait NumberSeq3 extends NumberSeq2 {
         data(0) = o(0)
         data(1) = o(1)
         data(2) = o(2)
+    }
+
+    override def norm2:Double = {
+        // Much faster than original on n elements.
+        data(0)*data(0) + data(1)*data(1) + data(2)*data(2)
     }
 
     override def norm:Double = {

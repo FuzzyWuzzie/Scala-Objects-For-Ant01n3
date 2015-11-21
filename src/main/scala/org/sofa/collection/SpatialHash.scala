@@ -1,5 +1,6 @@
 package org.sofa.collection
 
+import scala.math._
 
 import scala.collection.mutable.{Set, ArrayBuffer, HashMap, HashSet}
 
@@ -10,15 +11,11 @@ import org.sofa.math.{Point3, Point2}
   * a specific hash function. */
 class HashPoint3(val x:Int, val y:Int, val z:Int) {	
 
-	override def hashCode():Int = { (x*73856093)^(y*19349663)^(z*83492791) }
-	
-	override def equals(other:Any):Boolean = {
-		var result = false
-		if(other.isInstanceOf[HashPoint3]) {
-			val o = other.asInstanceOf[HashPoint3]
-			result = o.x == x && o.y == y && o.z == z
-		}
-		result
+	override val hashCode = (x*73856093)^(y*19349663)^(z*83492791)
+
+	override def equals(thing:Any):Boolean = thing match {
+		case that:HashPoint3 => that.x == this.x && that.y == this.y && that.z == this.z
+		case _ => false
 	}
 	
 	override def toString():String = "[%d, %d, %d]".format(x, y, z)
@@ -252,6 +249,10 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 	/** Set of buckets. */
 	val buckets = new HashMap[HashPoint3,Bucket[T,P,V]]()
 
+	protected var maxArea = HashPoint3(Int.MaxValue, Int.MaxValue, Int.MaxValue)
+
+	protected var minArea = HashPoint3(Int.MinValue, Int.MinValue, Int.MinValue)
+
 	/** Transform "user" space coordinates into "bucket" space coordinates. */
 	def hash(p:Point3):HashPoint3 = hash(p.x, p.y, p.z)
 		
@@ -266,6 +267,13 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		if(zz < 0) zz -= 1
 		
 		new HashPoint3(xx.toInt, yy.toInt, zz.toInt)
+	}
+
+	/** Restricted area for volumes. */
+	def setRestrictedArea(from:Point3, to:Point3) {
+		minArea = hash(from)
+		maxArea = hash(to)
+printf("*** minArea = %s%n*** maxArea = %s%n", minArea, maxArea)
 	}
 
 	/** Number of points and volumes inside the hash. */
@@ -285,33 +293,67 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 
 	/** Add a new object in the spatial index. If the object is point,
 	  * it will occupy only one bucket (creating it if needed). If the object
-	  * is a volume, it will occupy all the buckets it intersects. */
+	  * is a volume, it will occupy all the buckets it intersects. Therefore,
+	  * for volumes, this operation can be quite time consuming as a volume
+	  * may cover a large tri-dimensional area of buckets. For volumes that
+	  * may cover a larger area than the one of interest, you can use
+	  * setRestrictedArea() to avoid creating unused buckets. */
 	def add(thing:T) {
 		if(thing.isVolume) {
 			val p0 = hash(thing.from)
 			val p1 = hash(thing.to)
-			
-			for(z <- p0.z to p1.z) {
-				for(y <- p0.y to p1.y) {
-					for(x <- p0.x to p1.x) {
-						val p = HashPoint3(x,y,z) //hash(x,y,z)
-						var b = buckets.get(p).getOrElse({new Bucket(p)})
+			val z0 = max(p0.z, minArea.z)
+			val z1 = min(p1.z, maxArea.z)
+			val y0 = max(p0.y, minArea.y)
+			val y1 = min(p1.y, maxArea.y)
+			val x0 = max(p0.x, minArea.x)
+			val x1 = min(p1.x, maxArea.x)
+			var z = z0
+//printf("* add to buckets [%s -> %s][(%d, %d, %d) -> (%d, %d, %d)]%n", p0, p1, x0, y0, z0, x1, y1, z1)
+			while(z <= z1) {
+				var y = y0
+				while(y <= y1) {
+					var x = x0
+					while(x <= x1) {
+						var newb = false
+						val p = HashPoint3(x,y,z)
+						var b = buckets.get(p).getOrElse({ newb = true; new Bucket[T,P,V](p) })
 						
 						b.addVolume(thing.asInstanceOf[V])
 						thing.addBucket(b.asInstanceOf[GenericBucket])
-						buckets += ((p, b))
+						if(newb) buckets += ((p, b))
+
+						x += 1
 					}
+
+					y += 1
 				}
+
+				z += 1
 			}
+
+			// for(z <- p0.z to p1.z) {
+			// 	for(y <- p0.y to p1.y) {
+			// 		for(x <- p0.x to p1.x) {
+			// 			val p = HashPoint3(x,y,z) //hash(x,y,z)
+			// 			var b = buckets.get(p).getOrElse({new Bucket(p)})
+						
+			// 			b.addVolume(thing.asInstanceOf[V])
+			// 			thing.addBucket(b.asInstanceOf[GenericBucket])
+			// 			buckets += ((p, b))
+			// 		}
+			// 	}
+			// }
 
 			volumes += 1
 		} else {
+			var newb = false
 			val p = hash(thing.from)
-			var b = buckets.get(p).getOrElse(new Bucket(p))
+			var b = buckets.get(p).getOrElse({ newb = true; new Bucket[T,P,V](p) })
 		
 			b.addPoint(thing.asInstanceOf[P])
 			thing.addBucket(b.asInstanceOf[GenericBucket])
-			buckets += ((p,b))
+			if(newb) buckets += ((p, b))
 
 			points += 1
 		}
@@ -456,6 +498,17 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		getThings(points, volumes, p.x-s2, p.y - s2, p.x+s2, p.y+s2)
 	}
 
+	def neighborsInBoxRadius(p:Point3, size:Double, radius:Double, points:ArrayBuffer[P], volumes:HashSet[V]) {
+		val s2 = size/2
+
+		getThingsRadius(points, volumes, p, radius, p.x-s2, p.y-s2, p.z-s2, p.x+s2, p.y+s2, p.z+s2)
+	}
+
+	def neighborsInBoxRadiusXZ(p:Point3, size:Double, radius:Double, points:ArrayBuffer[P], volumes:HashSet[V]) {
+		val s2 = size/2
+		getThingsRadiusXZ(points, volumes, p, radius, p.x-s2, p.z-s2, p.x+s2, p.z+s2)
+	}
+
 	def neighborsInBoxRadius(thing:T, size:Double, radius:Double, points:ArrayBuffer[P], volumes:HashSet[V]) {
 		val s2 = size/2
 		val p  = thing.from
@@ -467,7 +520,7 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		val s2 = size/2
 		val p  = thing.from
 	
-		getThingsRadius(points, volumes, thing, radius, p.x-s2, p.y - s2, p.x+s2, p.y+s2)
+		getThingsRadiusXY(points, volumes, thing, radius, p.x-s2, p.y - s2, p.x+s2, p.y+s2)
 	}
 
 	
@@ -561,11 +614,12 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		}
 	}
 
-	def getThingsRadius(points:ArrayBuffer[P], volumes:HashSet[V], thing:T, radius:Double, x0:Double, y0:Double, x1:Double, y1:Double) {
+	def getThingsRadiusXY(points:ArrayBuffer[P], volumes:HashSet[V], thing:T, radius:Double, x0:Double, y0:Double, x1:Double, y1:Double) {
 		val from = hash(x0, y0, 0)
 		val to   = hash(x1, y1, 0)
 		val p    = thing.from
 		var y    = from.y
+		val r2   = radius*radius
 
 		while(y <= to.y) {
 			var x = from.x
@@ -577,9 +631,11 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 							if(point ne thing) {
 								val dx = point.from(0) - p(0)
 								val dy = point.from(1) - p(1)
-								val l = math.sqrt(dx*dx + dy*dy)
+								//val l = math.sqrt(dx*dx + dy*dy)
+								val l = dx*dx + dy*dy
 								//val l = point.from.distance(p)
-								if(l < radius) {
+								//if(l < radius) {
+								if(l < r2) {
 									points += point
 								}
 							}
@@ -594,12 +650,78 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		}
 	}
 
+	def getThingsRadius(points:ArrayBuffer[P], volumes:HashSet[V], p:Point3, radius:Double, x0:Double, y0:Double, z0:Double, x1:Double, y1:Double, z1:Double) {
+		val from = hash(x0, y0, z0)
+		val to   = hash(x1, y1, z1)
+		var z    = from.z
+		val r2   = radius*radius
+		while(z <= to.z) {
+			var y = from.y
+			while(y <= to.y) {
+				var x = from.x
+				while(x <= to.x) {
+					val b = buckets.get(HashPoint3(x,y,z)).getOrElse(null)
+					if(b ne null) {
+						if(b.points ne null) {
+							b.points.foreach { point =>
+								//if(point ne thing) {
+									val dx = point.from(0) - p(0)
+									val dy = point.from(1) - p(1)
+									val dz = point.from(2) - p(2)
+									//val l = math.sqrt(dx*dx + dy*dy + dz*dz)
+									val l = dx*dx + dy*dy + dz*dz
+									//val l = point.from.distance(p)
+									//if(l < radius) {
+									if(l < r2) {
+										points += point
+									}
+								//}
+							}
+						}
+						if((volumes ne null) && (b.volumes ne null))
+							volumes ++= b.volumes
+					}
+					x += 1
+				}
+				y += 1
+			}
+			z += 1
+		}	
+	}
+
+	def getThingsRadiusXZ(points:ArrayBuffer[P], volumes:HashSet[V], p:Point3, radius:Double, x0:Double, z0:Double, x1:Double, z1:Double) {
+		val from = hash(x0, 0, z0)
+		val to   = hash(x1, 0, z1)
+		var z    = from.z
+		val r2   = radius*radius
+
+		while(z <= to.z) {
+			var x = from.x
+			while(x <= to.x) {
+				val b = buckets.get(HashPoint3(x,0,z)).getOrElse(null)
+				if(b ne null) {
+					if(b.points ne null) {
+						b.points.foreach { point =>
+							val dx = point.from(0) - p(0)
+							val dz = point.from(2) - p(2)
+							if((dx*dx + dz*dz) < r2) points += point
+						}
+					}
+					if((volumes ne null) && (b.volumes ne null))
+						volumes ++= b.volumes
+				}
+				x += 1
+			}
+			z += 1
+		}
+	}
 
 	def getThingsRadius(points:ArrayBuffer[P], volumes:HashSet[V], thing:T, radius:Double, x0:Double, y0:Double, z0:Double, x1:Double, y1:Double, z1:Double) {
 		val from = hash(x0, y0, z0)
 		val to   = hash(x1, y1, z1)
 		val p    = thing.from
 		var z    = from.z
+		val r2   = radius*radius
 		while(z <= to.z) {
 			var y = from.y
 			while(y <= to.y) {
@@ -613,9 +735,11 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 									val dx = point.from(0) - p(0)
 									val dy = point.from(1) - p(1)
 									val dz = point.from(2) - p(2)
-									val l = math.sqrt(dx*dx + dy*dy + dz*dz)
+									//val l = math.sqrt(dx*dx + dy*dy + dz*dz)
+									val l = dx*dx + dy*dy + dz*dz
 									//val l = point.from.distance(p)
-									if(l < radius) {
+									//if(l < radius) {
+									if(l < r2) {
 										points += point
 									}
 								}
@@ -632,10 +756,10 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 		}	
 	}
 
-
 	def getThingsRadius(p:Point2, radius:Double, x0:Double, y0:Double, x1:Double, y1:Double, f:(Double,P)=> Unit) {
 		val from = hash(x0, y0, 0)
 		val to   = hash(x1, y1, 0)
+		val r2   = radius*radius
 		//val p    = thing.from
 		var y    = from.y
 		while(y <= to.y) {
@@ -649,8 +773,10 @@ class SpatialHash[T<:SpatialObject, P<:SpatialPoint, V<:SpatialCube](val bucketS
 								//val l = point.from.distance(p)
 								val dx = point.from(0) - p(0)
 								val dy = point.from(1) - p(1)
-								val l = math.sqrt(dx*dx + dy*dy)
-								if(l < radius) {
+								//val l = math.sqrt(dx*dx + dy*dy)
+								val l = dx*dx + dy*dy
+								//if(l < radius) {
+								if(l < r2) {
 									f(l,point)
 									//points += point
 								}

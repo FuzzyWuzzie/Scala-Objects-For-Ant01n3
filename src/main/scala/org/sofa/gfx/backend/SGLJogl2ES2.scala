@@ -3,8 +3,10 @@ package org.sofa.gfx.backend
 import org.sofa.gfx._
 import org.sofa.math.Rgba
 import java.nio.{Buffer,ByteBuffer=>NioByteBuffer, FloatBuffer=>NioFloatBuffer, DoubleBuffer=>NioDoubleBuffer, IntBuffer=>NioIntBuffer}
-import javax.media.opengl.glu._
-import javax.media.opengl._
+//import javax.media.opengl.glu._
+import com.jogamp.opengl.glu._
+//import javax.media.opengl._
+import com.jogamp.opengl._
 import org.sofa.nio._
 import GL._
 import GL2._
@@ -59,7 +61,7 @@ class SGLJogl2ES2(val gl:GL2ES2, val glu:GLU, var ShaderVersion:String) extends 
 	val ALWAYS:Int = GL.GL_ALWAYS
 
     val TEXTURE_2D:Int = GL.GL_TEXTURE_2D
-    val TEXTURE_2D_MULTISAMPLE:Int = GL3.GL_TEXTURE_2D_MULTISAMPLE
+    val TEXTURE_2D_MULTISAMPLE:Int = GL2ES2.GL_TEXTURE_2D_MULTISAMPLE
     val TEXTURE0:Int = GL.GL_TEXTURE0
     val TEXTURE1:Int = GL.GL_TEXTURE1
     val TEXTURE2:Int = GL.GL_TEXTURE2

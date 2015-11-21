@@ -1,7 +1,7 @@
 package org.sofa.math
 
-
 import scala.language.implicitConversions
+import scala.util.Random
 import scala.math._
 
 
@@ -21,6 +21,43 @@ object Point2 {
     }
   
     def apply(xy:(Double, Double)) = new Point2(xy._1, xy._2)
+
+    /** A random point with coordinates within [0..1[. */
+    def random():Point2 = random(0, 1)
+
+    /** A random point with coordinates within [min..max[. */
+    def random(min:Double, max:Double):Point2 = random(min, max, min, max)
+
+    /** A random point with absissa coordinates within [minx..maxx[ and
+      * ordinates within [miny..maxy[. */
+    def random(minx:Double, maxx:Double, miny:Double, maxy:Double):Point2 =
+    	Point2(Random.nextDouble*(maxx-minx)-minx, Random.nextDouble*(maxy-miny)-miny)
+
+    /** A point whose components are the minimum of the corresponding components in the given sequence of points. */
+    def min(pp:Point2 *):Point2 = {
+    	val p = new Point2(Double.PositiveInfinity,Double.PositiveInfinity)
+    	var i = 0
+    	val n = p.size 
+    	while(i < n) {
+    		if(pp(i).x < p.x) p.x = pp(i).x
+    		if(pp(i).y < p.y) p.y = pp(i).y
+    		i += 1
+    	}
+    	p
+    }
+
+    /** A point whose components are the maximum of the corresponding components in the given sequence of points. */
+    def max(pp:Point2 *):Point2 = {
+    	val p = new Point2(Double.NegativeInfinity,Double.NegativeInfinity)
+    	var i = 0
+    	val n = p.size 
+    	while(i < n) {
+    		if(pp(i).x > p.x) p.x = pp(i).x
+    		if(pp(i).y > p.y) p.y = pp(i).y
+    		i += 1
+    	}
+    	p
+    }
 }
 
 
@@ -82,6 +119,15 @@ class Point2(xInit:Double, yInit:Double) extends NumberSeq2 {
       * the distance between the two points.
       */
     def -->(other:Point2):Vector2 = new Vector2(other.x-x, other.y-y)
+
+    override def canEqual(a:Any) = a.isInstanceOf[Point2]
+
+  	override def equals(that:Any):Boolean = that match {
+		case that:Point2 => this.x == that.x && this.y == that.y && that.hashCode == this.hashCode
+		case _ => false
+	}
+
+	override def hashCode:Int = (x*73856093).toInt^(y*19349663).toInt
 }
 
 
@@ -112,6 +158,47 @@ object Point3 {
     def apply(xy:(Double, Double), z:Double) = new Point3(xy._1, xy._2, z)
     
     def apply(x:Double, yz:(Double, Double)) = new Point3(x, yz._1, yz._2)
+
+     /** A random point with coordinates within [0..1[. */
+   def random():Point3 = random(0, 1)
+
+   /** A random point with coordinates within [min..max[. */
+     def random(min:Double, max:Double):Point3 = random(min, max, min, max, min, max)
+
+    /** A random point with absissa coordinates within [minx..maxx[,
+      * ordinates within [miny..maxy[ and depth within [minz..maxz[. */
+    def random(minx:Double, maxx:Double, miny:Double, maxy:Double, minz:Double, maxz:Double):Point3 =
+    	Point3(Random.nextDouble*(maxx-minx)-minx,
+    		   Random.nextDouble*(maxy-miny)-miny,
+    		   Random.nextDouble*(maxz-minz)-minz)
+
+    /** A point whose components are the minimum of the corresponding components in the given sequence of points. */
+    def min(pp:Point3*):Point3 = {
+    	val p = new Point3(Double.PositiveInfinity,Double.PositiveInfinity,Double.PositiveInfinity)
+    	var i = 0
+    	val n = p.size 
+    	while(i < n) {
+    		if(pp(i).x < p.x) p.x = pp(i).x
+    		if(pp(i).y < p.y) p.y = pp(i).y
+    		if(pp(i).z < p.z) p.z = pp(i).z
+    		i += 1
+    	}
+    	p
+    }
+
+    /** A point whose components are the maximum of the corresponding components in the given sequence of points. */
+    def max(pp:Point3*):Point3 = {
+    	val p = new Point3(Double.NegativeInfinity,Double.NegativeInfinity,Double.NegativeInfinity)
+    	var i = 0
+    	val n = p.size 
+    	while(i < n) {
+    		if(pp(i).x > p.x) p.x = pp(i).x
+    		if(pp(i).y > p.y) p.y = pp(i).y
+    		if(pp(i).z > p.z) p.z = pp(i).z
+    		i += 1
+    	}
+    	p
+    }
 }
 
 
@@ -193,6 +280,15 @@ class Point3(xInit:Double, yInit:Double, zInit:Double) extends NumberSeq3 {
       * the distance between the two points.
       */
     def -->(other:Point3):Vector3 = new Vector3(other.x-x, other.y-y, other.z-z)
+
+    override def canEqual(a:Any) = a.isInstanceOf[Point3]
+
+  	override def equals(that:Any):Boolean = that match {
+		case that:Point3 => this.x == that.x && this.y == that.y && this.z == that.z && that.hashCode == this.hashCode
+		case _ => false
+	}
+
+	override def hashCode:Int = (x*73856093).toInt^(y*19349663).toInt^(z*83492791).toInt
 }
 
 
@@ -318,4 +414,13 @@ class Point4(xInit:Double, yInit:Double, zInit:Double, wInit:Double) extends Num
       * the distance between the two points.
       */
     def -->(other:Point4):Vector4 = new Vector4(other.x-x, other.y-y, other.z-z, other.w-w)
+
+    override def canEqual(a:Any) = a.isInstanceOf[Point4]
+
+  	override def equals(that:Any):Boolean = that match {
+		case that:Point4 => this.x == that.x && this.y == that.y && this.z == that.z && this.w == that.w && that.hashCode == this.hashCode
+		case _ => false
+	}
+
+	override def hashCode:Int = (x*73856093).toInt^(y*19349663).toInt^(z*83492791).toInt^(w*19349663).toInt
 }

@@ -3,7 +3,7 @@ package org.sofa.gfx.mesh.shapes
 import org.sofa.nio._
 import org.sofa.gfx._
 import org.sofa.gfx.mesh._
-import org.sofa.math.Rgba
+import org.sofa.math.{Rgba, Point3}
 
 /** A cube, centered around (0, 0, 0) whose `side` can be specified.
   * 
@@ -309,6 +309,15 @@ class CubeMesh(val gl:SGL, val side:Float) extends Mesh {
     	d(v+0) = x
     	d(v+1) = y
     	d(v+2) = z
+    	P.range(i, i+1)
+    }
+
+    def offset(i:Int, p:Point3) {
+    	val d = P.data
+    	val v = i * 3
+    	d(v+0) = p.x.toFloat
+    	d(v+1) = p.y.toFloat
+    	d(v+2) = p.z.toFloat
     	P.range(i, i+1)
     }
 }

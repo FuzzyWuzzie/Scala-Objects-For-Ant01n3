@@ -3,8 +3,10 @@ package org.sofa.gfx.backend
 import org.sofa.gfx._
 import org.sofa.math.Rgba
 import java.nio.{Buffer,ByteBuffer=>NioByteBuffer, FloatBuffer=>NioFloatBuffer, DoubleBuffer=>NioDoubleBuffer, IntBuffer=>NioIntBuffer}
-import javax.media.opengl.glu._
-import javax.media.opengl._
+//import javax.media.opengl.glu._
+import com.jogamp.opengl.glu._
+//import javax.media.opengl._
+import com.jogamp.opengl._
 import org.sofa.nio._
 import GL._
 import GL2._
@@ -58,7 +60,7 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
 	val ALWAYS:Int = GL_ALWAYS
     
     val TEXTURE_2D:Int = GL.GL_TEXTURE_2D
-    val TEXTURE_2D_MULTISAMPLE:Int = GL3.GL_TEXTURE_2D_MULTISAMPLE
+    val TEXTURE_2D_MULTISAMPLE:Int = GL2ES2.GL_TEXTURE_2D_MULTISAMPLE
     val TEXTURE0:Int = GL.GL_TEXTURE0
     val TEXTURE1:Int = GL.GL_TEXTURE1
     val TEXTURE2:Int = GL.GL_TEXTURE2
@@ -104,7 +106,7 @@ class SGLJogl3(val gl:GL3, val glu:GLU, var ShaderVersion:String) extends SGL {
 
     val VERTEX_SHADER:Int = GL2ES2.GL_VERTEX_SHADER
     val FRAGMENT_SHADER:Int = GL2ES2.GL_FRAGMENT_SHADER
-    val GEOMETRY_SHADER:Int = GL3.GL_GEOMETRY_SHADER
+    val GEOMETRY_SHADER:Int = GL3ES3.GL_GEOMETRY_SHADER
 
     val POINTS:Int = GL.GL_POINTS
     val LINE_STRIP:Int = GL.GL_LINE_STRIP

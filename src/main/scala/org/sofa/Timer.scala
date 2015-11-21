@@ -13,11 +13,23 @@ object Timer {
 
 	/** Global shared timer. */
 	val timer = new Timer()
+
+	def unitOf(msecs:Double):String = {
+		if(msecs < 1000) {
+			"%8.2f ms".format(msecs)
+		} else if(msecs < 60000) {
+			"%8.2f s ".format(msecs/1000.0)
+		} else {
+			"%8.2f m ".format(msecs/60000.0)
+		}
+	}
 }
 
 
 /** Timer allowing to measure the duration of a code block. */
 class Timer(val out:PrintStream = Console.out) {
+	import Timer._
+
 	/** The set of measures, identified by names. */
 	protected[this] val measures = new HashMap[String,Measures]()
 
@@ -45,11 +57,14 @@ class Timer(val out:PrintStream = Console.out) {
 	/** Print all the average times of all measures. The header is a string to print before all the measures. */
 	def printAvgs(header:String) {
 		out.println(header)
-		var sum = 0.0
+		var sumavg = 0.0
+		var sumsum = 0.0
 		measures.foreach { measure =>
-			sum += measure._2.printAvg(out)
+			measure._2.printAvg(out)
+			sumavg += measure._2.average
+			sumsum += measure._2.sum
 		}
-		out.println("  total: %.2f msecs".format(sum/100000.0))
+		out.println("  average total: %s | sum total: %s".format(unitOf(sumavg/1000000.0), unitOf(sumsum/1000000.0)))
 	}
 
 	/** Reset all measures. */
@@ -61,6 +76,8 @@ class Timer(val out:PrintStream = Console.out) {
   *
   * The name argument allows to identify to measured thing. */
 class Measures(val name:String) {
+	import Timer._
+
 	/** Used during the measure to store the start time.
 	  * A start time is stored in each measure, although not
 	  * useful for the measure itself, it allows the timer to
@@ -71,7 +88,7 @@ class Measures(val name:String) {
 	protected[this] var count = 0
 
 	/** The sum of all measures. */
-	protected[this] var sum = 0L
+	protected[this] var sumt = 0L
 
 	/** The last measure. */
 	protected[this] var last = 0L
@@ -85,7 +102,7 @@ class Measures(val name:String) {
 	/** Add a measure. */
 	def addMeasure(value:Long) {
 		count += 1
-		sum   += value
+		sumt  += value
 		last   = value
 
 		if(value > max) max = value
@@ -93,12 +110,17 @@ class Measures(val name:String) {
 	}
 
 	/** The average of all measures until now. */
-	def average():Double = { sum.toDouble / count.toDouble }
+	def average():Double = { if(count != 0) sumt.toDouble / count.toDouble else 0.0 }
+
+	/** The sum of all measures until now. */
+	def sum():Double = { sumt.toDouble }
 
 	/** Print the average measure to the given output stream. */
 	def printAvg(out:PrintStream):Double = {
 		val avg = average
-		out.println("    %32s: ~%8.2f msecs | %6d samples || last %8.2f | max %8.2f | min %8.2f | sum %8.2f |".format(name, avg/100000.0, count, last/100000.0, max/100000.0, min/100000.0, sum/100000.0))
+		out.println("    %32s: ~%s | %6d samples || last %s | max %s | min %s | sum %s |".format(
+			name, unitOf(avg/1000000.0), count, unitOf(last/1000000.0), 
+			unitOf(max/1000000.0), unitOf(min/1000000.0), unitOf(sumt/1000000.0)))
 		avg
 	}
 }

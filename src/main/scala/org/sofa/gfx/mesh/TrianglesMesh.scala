@@ -3,7 +3,7 @@ package org.sofa.gfx.mesh
 import scala.collection.mutable.ArrayBuffer
 
 import org.sofa.gfx.{SGL, VertexArray, ShaderProgram}
-import org.sofa.math.{Rgba, Point2, Point3, Vector3, NumberSeq2, NumberSeq3, Triangle}
+import org.sofa.math.{Rgba, Point2, Point3, Vector3, NumberSeq2, NumberSeq3, Triangle, IndexedTriangle}
 import org.sofa.nio.{IntBuffer}
 
 
@@ -73,6 +73,9 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	final class Vx(var vertex:Int) {
 		/** Set the `vertex` position (`x`, `y`, `z`). */
 		def pos(x:Float, y:Float, z:Float):Vx = { setVertexPosition(vertex,x,y,z); this }
+
+		/** Set the `vertex` position `p`. */
+		def pos(p:Point3):Vx = { setVertexPosition(vertex,p.x.toFloat,p.y.toFloat,p.z.toFloat); this }
 		
 		/** Set the `vertex` texture coordinates (`u`, `v`). */
 		def tex(u:Float, v:Float):Vx = { setVertexTexCoords(vertex,u,v); this }
@@ -88,6 +91,9 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		
 		/** Set the `vertex` normal (`x`, `y`, `z`). */
 		def nrm(x:Float, y:Float, z:Float):Vx = { setVertexNormal(vertex,x,y,z); this }
+
+		/** Set the `vertex` normal to `n`. */
+		def nrm(n:Vector3):Vx = { setVertexNormal(vertex,n.x.toFloat,n.y.toFloat,n.z.toFloat); this }
 		
 		/** Set the `vertex` tangent (`x`, `y`, `z`). */
 		def tan(x:Float, y:Float, z:Float):Vx = { setVertexTangent(vertex,x,y,z); this }
@@ -131,8 +137,14 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	/** Set the `t`-th triangle as composed of vertex attributes `v0`, `v1` and `v2` in this order. */
 	def triangle(t:Int, v0:Int, v1:Int, v2:Int) = setTriangle(t, v0, v1, v2)
 
+	/** Set the `t`-th triangle as composed of vertex attributes `v0`, `v1` and `v2` in this order. */
+	def triangle(t:Int, triangle:IndexedTriangle) = setTriangle(t, triangle.i0, triangle.i1, triangle.i2)
+
 	/** Synonym of `triangle()`. */
 	def t(i:Int, v0:Int, v1:Int, v2:Int) = triangle(i, v0, v1, v2)
+
+	/** Synonym of `triangle()`. */
+	def t(i:Int, triangle:IndexedTriangle) = this.triangle(i, triangle.i0, triangle.i1, triangle.i2)
 
 	/** The position of `vertex`. */
 	def position(vertex:Int):Point3 = getVertexPosition(vertex)
@@ -388,11 +400,12 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		this
 	}
 
-	/** Compute the normals of a `triangle` whose indices and position vertex attribute are already set.
-	  * The computed normals are all perpendicular to the `triangle` face. The points are taken 
-	  * in order (first to second, then first to third) to create two vectors and compute a third perpendicular
-	  * vector), use parameter `opposite` to change the orientation of the resulting normal. */
-	def computeTriangleNormals(triangle:Int, opposite:Boolean=false) {
+	/** Compute the normal of a `triangle` whose indices and position vertex attribute are already set.
+	  * The points are taken in order (first to second, then first to third) to create two vectors and
+	  * compute a third perpendicular vector), use parameter `opposite` to change the orientation of
+	  * the resulting normal. The returned normal do not change a potential normal buffer, see
+	  * 'computetriangleNormals()' for this. */
+	def computeTriangleNormal(triangle:Int, opposite:Boolean=false):Vector3 = {
 		val (i0, i1, i2) = getTriangle(triangle)
 		//autoComputeTriangleNormals(triangle, getVertexPosition(i0), getVertexPosition(i1), getVertexPosition(i2), opposite)
 		val p0 = getVertexPosition(i0)
@@ -403,10 +416,16 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		val n  = v1 X v0
 		
 		n.normalize
-		
-		if(opposite)
-		     setTriangleNormal(triangle, n.oppose)
-		else setTriangleNormal(triangle, n)
+		if(opposite) n.oppose else n		
+	}
+
+	/** Compute the normals of a `triangle` whose indices and position vertex attribute are already set.
+	  * The computed normals are all perpendicular to the `triangle` face. The points are taken 
+	  * in order (first to second, then first to third) to create two vectors and compute a third perpendicular
+	  * vector), use parameter `opposite` to change the orientation of the resulting normal. */
+	def computeTriangleNormals(triangle:Int, opposite:Boolean=false) {
+		val n = computeTriangleNormal(triangle, opposite)		
+		setTriangleNormal(triangle, n)
 	}
 	
 	/** The position of `vertex`. */
@@ -452,6 +471,40 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 		(data(i), data(i+1), data(i+2))
 	}
 
+	def autoComputeNormals() {
+		if(modifiable) throw new RuntimeException("you must compute normals outside of begin()/end()")
+		if(!hasElements) throw new RuntimeException("TODO autoComputeNormals with ordered triangles")
+		if(!has(VertexAttribute.Normal)) throw new RuntimeException("you must add a normal buffer to compute normals")
+
+		begin()
+
+		val toTriangles = vertexToTriangle
+
+		// Compute the normals of each triangle
+
+		val normals = new Array[Vector3](size)
+		var i = 0
+		while(i < size) {
+			normals(i) = computeTriangleNormal(i)
+			i += 1
+		}
+
+		// For each point find all the participating triangle normals
+		// and average them.
+
+		i = 0
+		val n = vertexCount
+		while(i < n) {
+			val N = Vector3(0,0,0)
+			if(toTriangles(i) ne null) toTriangles(i).foreach { p => N += normals(p) } else N.set(1,0,0)
+			N.normalize
+			setVertexNormal(i, N)
+			i += 1
+		}
+
+		end()
+	}
+
 	/** Compute the tangents and optionnaly bi-tangents of the whole mesh.
 	  *
 	  * The mesh must already have the triangles indices, the vertices position, normals, and texture coordinates, all
@@ -463,7 +516,7 @@ class TrianglesMesh(val gl:SGL, val size:Int, val vertices:Int = -1) extends Mes
 	def autoComputeTangents(alsoComputeBiTangents:Boolean=true) {
 		// Do some verifications.
 
-		if(modifiable) throw new RuntimeException("you mus compute tangents outside of begin()/end()")
+		if(modifiable) throw new RuntimeException("you must compute tangents outside of begin()/end()")
 		if(!hasElements) throw new RuntimeException("TODO autoComputeTangents with ordered triangles")
 		if(T eq null) throw new RuntimeException("autoComputeTangents() needs texture coordinates to produce tangents")
 		if(N eq null) throw new RuntimeException("autoComputeTangents() needs normals to produce tangents")
