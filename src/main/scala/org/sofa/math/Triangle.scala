@@ -150,6 +150,43 @@ trait Triangle {
 		((sp0 ne null) && (sp1 ne null))
 	} 
 	
+	/** Number of points of the triangle that are superimposed.
+	  * If this is larger than zero, the triangle points are colinear.
+	  * The optional `distance` is the minimum distance between points to
+	  * consider them superimposed. */
+	def superimposedPoints(distance:Double=0.001):Int = {
+		var sip = 0
+		if(p0.distance(p1) < distance) sip += 1
+		if(p0.distance(p2) < distance) sip += 1
+		if(p1.distance(p2) < distance) sip += 1
+		sip
+	}
+
+	/** Same as `superimposedPoints` but only considering X and Z coordinates. */
+	def superimposedPointsXZ(distance:Double=0.001):Int = {
+		var sip = 0
+		var x = (p0.x - p1.x)
+		var z = (p0.z - p1.z)
+		var l = x*x + z*z
+		var d = distance*distance
+		if(l < d) sip += 1
+		x = (p0.x - p2.x)
+		z = (p0.z - p2.z)
+		l = x*x + z*z
+		if(l < d) sip += 1
+		x = (p1.x - p2.x)
+		z = (p1.z - p2.z)
+		l = x*x + z*z
+		if(l < d) sip += 1
+		sip
+	}
+
+	/** Check if the triangle points are colinear. */
+	def colinearPoints():Boolean = (superimposedPoints() > 0)
+
+	/** Same as `colinearPoints` but only considering X and Z coordinates. */
+	def colinearPointsXZ():Boolean = (superimposedPointsXZ() > 0)
+
 	/** Compute the distance from the given point `p` to this triangle.
 	  * Return the distance, and a point on the triangle where the distance
 	  * is minimum to `p`.

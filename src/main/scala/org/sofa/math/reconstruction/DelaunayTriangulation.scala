@@ -4,10 +4,24 @@ import scala.math._
 import scala.io.BufferedSource
 import scala.collection.mutable.ArrayBuffer
 
+import java.io.{File, InputStream, FileInputStream, FileOutputStream, PrintStream, IOException}
+
 import org.sofa.Timer
 import org.sofa.collection.{ReuseArrayBuffer, Indexed}
 import org.sofa.math.{Point3, Vector3, Rgba}
 import org.sofa.math.{Rgba, Point2, Point3, Point4, Vector2, Vector3, Plane, Line, Triangle, IndexedTriangle, Edge, IndexedEdge, Circle}
+
+
+/** DelaunayTriangulation companion object. */
+object DelaunayTriangulation {
+	def apply(fileName:String, scaleFactor:Double, yFactor:Double):DelaunayTriangulation = {
+		if(fileName.endsWith(".xyz")) {
+			PointCloud.readFileXYZ(fileName, new DelaunayTriangulation(scaleFactor, yFactor)).asInstanceOf[DelaunayTriangulation]
+		} else {
+			throw new RuntimeException("only '.xyz' files are accepted")
+		}
+	}
+}
 
 
 /** A point cloud able to compute a Delaunay triangulation. */
@@ -215,17 +229,99 @@ class DelaunayTriangulation(scaleFactor:Double, yFactor:Double) extends PointClo
 	protected def retriangulateHole(hole:ArrayBuffer[IndexedEdge], p:Int) {
 		hole.foreach { edge => addTriangle(new DelaunayTriangle(p, edge.i0, edge.i1, points)) }
 	}
-}
 
+	override def toObj(fileName:String) {
+		var fname = fileName
+		var out = System.out
 
-/** DelaunayTriangulation companion object. */
-object DelaunayTriangulation {
-	def apply(fileName:String, scaleFactor:Double, yFactor:Double):DelaunayTriangulation = {
-		if(fileName.endsWith(".xyz")) {
-			PointCloud.readFileXYZ(fileName, new DelaunayTriangulation(scaleFactor, yFactor)).asInstanceOf[DelaunayTriangulation]
-		} else {
-			throw new RuntimeException("only '.xyz' files are accepted")
+		if( fname ne null) {
+			if(!fname.endsWith(".obj")) fname = "%s.obj".format(fname)
+			out = new PrintStream(new FileOutputStream(fname))
 		}
+
+		points foreach { p =>
+			out.print("v %f %f %f%n".format(p.x-min.x, p.y-min.y, p.z).replace(",", "."))
+		}
+
+		if(triangles.size > 0) {
+			val normals = computeNormals()
+
+			normals foreach { n =>
+				out.print("vn %f %f %f%n".format(n.x, n.y, n.z).replace(",", "."))
+			}
+
+			triangles foreach { t =>
+				out.print("f %d//%d %d//%d %d//%d%n", t.i0, t.i0, t.i1, t.i1, t.i2, t.i2)
+			}
+		}
+
+		out.flush
+		out.close
+	}
+
+	/** Points to triangles relationship.
+	  *
+	  * The process in O(n) with n * the number of triangles. The size of
+	  * the array is the number of points, and for each point there is an
+	  * array of triangle indices.
+	  * 
+	  * Note : We could compute this as the triangulation goes, but it would
+	  * cost time for triangles that will be removed later. */
+	def pointToTriangle():Array[ArrayBuffer[Int]] = {
+		var t = 0
+		val n = triangles.size
+		val p2t = new Array[ArrayBuffer[Int]](points.size)
+
+		while(t < n) {
+			val tri = triangles(t)
+			
+			if(p2t(tri.i0) eq null) p2t(tri.i0) = new ArrayBuffer[Int]()
+			if(p2t(tri.i1) eq null) p2t(tri.i1) = new ArrayBuffer[Int]()
+			if(p2t(tri.i2) eq null) p2t(tri.i2) = new ArrayBuffer[Int]()
+			
+			p2t(tri.i0) += t
+			p2t(tri.i1) += t
+			p2t(tri.i2) += t
+			
+			t += 1
+		}
+
+		p2t
+	}
+
+	/** Compute a normal for each point as the average normal of
+	  * each triangle sharing this point. The result is therefore
+	  * and array of normal with each index  */
+	def computeNormals():Array[Vector3] = {
+		val p2t = pointToTriangle
+
+		// Compute the normals of each triangle
+
+		var t = 0
+		val nt = triangles.size
+		val tnormals = new Array[Vector3](nt)
+		
+		while(t < nt) {
+			tnormals(t) = triangles(t).normal
+			t += 1
+		}
+
+		// For each point find all the participating triangle normals
+		// and average them.
+
+		var i = 0
+		val np = points.size
+		val normals = new Array[Vector3](np)
+
+		while(i < np) {
+			val N = Vector3(0,0,0)
+			if(p2t(i) ne null) p2t(i).foreach { p => N += tnormals(p) } else N.set(1,0,0)
+			N.normalize
+			normals(i) = N
+			i += 1
+		}
+
+		normals
 	}
 }
 
@@ -234,33 +330,17 @@ object DelaunayTriangulation {
   * circumcicle to avoid recomputations. */
 class DelaunayTriangle(i0:Int,i1:Int,i2:Int,points:IndexedSeq[Point3]) extends IndexedTriangle(i0,i1,i2,points) with Indexed {
 	var index = -1
+	
 	override val edge0 = IndexedEdge(i0, i1, points)
 	override val edge1 = IndexedEdge(i1, i2, points)
 	override val edge2 = IndexedEdge(i2, i0, points)
+	
 	private[this] var ccircle:Circle = _
-	circumcircleXZ	
-	val min = Point3(ccircle.center.x-ccircle.radius, 0.1, ccircle.center.y-ccircle.radius)
-	val max = Point3(ccircle.center.x+ccircle.radius, 0.1, ccircle.center.y+ccircle.radius)
-
-//	checkClosePoints()
-
-	/** Check if two or three points of the triangle are supperposed.
-	  * throw a `RuntimeException` if this is the case. */
-	def checkClosePoints(distance:Double=0.01) {
-		var x = (points(i0).x - points(i1).x)
-		var z = (points(i0).z - points(i1).z)
-		var l = x*x + z*z
-		var d = distance*distance
-		if(l < d) throw new RuntimeException("too close (%f) points %d and %d (%s -> %s)".format(l, i0, i1, points(i0), points(i1)))
-		x = (points(i0).x - points(i2).x)
-		z = (points(i0).z - points(i2).z)
-		l = x*x + z*z
-		if(l < d) throw new RuntimeException("too close (%f) points %d and %d (%s -> %s)".format(l, i0, i2, points(i0), points(i2)))
-		x = (points(i1).x - points(i2).x)
-		z = (points(i1).z - points(i2).z)
-		l = x*x + z*z
-		if(l < d) throw new RuntimeException("too close (%f) points %d and %d (%s -> %s)".format(l, i1, i2, points(i1), points(i2)))
-	}
+	
+	// circumcircleXZ	
+	// val min = Point3(ccircle.center.x-ccircle.radius, 0.1, ccircle.center.y-ccircle.radius)
+	// val max = Point3(ccircle.center.x+ccircle.radius, 0.1, ccircle.center.y+ccircle.radius)
+	// if(colinearPointsXZ()) throw new RuntimeException("triangle with colinear points !")
 
 	def setIndex(i:Int) { index = i }
 
