@@ -21,6 +21,58 @@ object DelaunayTriangulation {
 			throw new RuntimeException("only '.xyz' files are accepted")
 		}
 	}
+
+	def main(args:Array[String]) {
+		options(args.toList)
+		delaunayCmdLine
+	}
+
+	private[this] var inputXYZ:String = _
+
+	private[this] var outputOBJ:String = _
+
+	private def options(list:List[String]) {
+		list match {
+			case Nil => {}
+			case "-out" :: fname :: tail => { outputOBJ = fname; options(tail) }
+			case a :: tail => { if(a.startsWith("-")) usage("Unknown option '%s'.".format(a)) else { inputXYZ = a; options(tail) } }
+		}
+	}
+
+	private def usage(message:String) {
+		if(message ne null)
+			printf("%s%n%n".format(message))
+		println("Usage: delaunay <input.xyz>")
+		println("       <input.xyz>          A XYZ file.")
+		println("       -out <filename>      Output a file in the given filename as a wavefront OBJ format.")
+		println("                            If this option is not given the data is output on standard output.")
+		sys.exit(1)
+	}
+
+	private def delaunayCmdLine() {
+		var cloud:DelaunayTriangulation = null
+		if(inputXYZ eq null) {
+			printf("* Generating...%n")
+			cloud = new DelaunayTriangulation(1.0, 1.0)
+			var i = 0
+			while(i < 100) {
+				cloud.addPoint(Point3.random(0, 500, 0, 20, 0, 500))
+				i += 1
+			}
+		} else {
+			printf("* Reading...%n")
+			cloud = DelaunayTriangulation(inputXYZ, 1.0, 1.0)
+			printf("* Rescaling...%n")
+			cloud.rescale(1000, true)
+			cloud.swapYZ()
+		}
+
+		printf("* Triangulating...%n")
+		cloud.triangulation()
+		printf("* Output...")
+		cloud.toObj(outputOBJ)
+		printf(" OK%n")
+	}
 }
 
 
@@ -251,8 +303,11 @@ class DelaunayTriangulation(scaleFactor:Double, yFactor:Double) extends PointClo
 			}
 
 			triangles foreach { t =>
-				out.print("f %d//%d %d//%d %d//%d%n", t.i0, t.i0, t.i1, t.i1, t.i2, t.i2)
+				out.print("f %d//%d %d//%d %d//%d%n".format(t.i0+1, t.i0+1, t.i1+1, t.i1+1, t.i2+1, t.i2+1))
+				//out.print("f %d %d %d%n".format(t.i0, t.i1, t.i2))
 			}
+		} else {
+			printf("* No triangles to output...")
 		}
 
 		out.flush

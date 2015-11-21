@@ -189,7 +189,7 @@ class PointCloud(scaleFactor:Double, yFactor:Double) {
 		case class IndexedPoint(idx:Int, var tmp:Int)
 
 		min.set(Double.MaxValue, Double.MaxValue, Double.MaxValue)
-		min.set(Double.MinValue, Double.MinValue, Double.MinValue)
+		max.set(Double.MinValue, Double.MinValue, Double.MinValue)
 
 		// Sort all points along X. This allows to prune points
 		// when comparing with the others, and make this fast.
